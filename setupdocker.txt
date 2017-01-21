@@ -1,7 +1,15 @@
 #!/bin/sh
 set -e
+#
+# This script is meant for quick & easy install via:
+#   'curl -sSL https://imranq2.github.io/InstallScripts/setupdocker.txt | sh'
+# or:
+#   'wget -qO- https://imranq2.github.io/InstallScripts/setupdocker.txt | sh'
+#
+#
 
-sudo sysctl -w vm.max_map_count=262144
+
+# sudo sysctl -w vm.max_map_count=262144
 
 sudo systemctl enable docker.service
 

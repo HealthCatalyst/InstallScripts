@@ -1,0 +1,14 @@
+#!/bin/sh
+set -e
+#
+# This script is meant for quick & easy install via:
+#   'curl -sSL https://imranq2.github.io/InstallScripts/installelasticsearch.txt | sh -s <nodename> <ip1> <ip2> <ip3>'
+# or:
+#   'wget -qO- https://imranq2.github.io/InstallScripts/installelasticsearch.txt | sh -s <nodename> <ip1> <ip2> <ip3>'
+#
+#
+
+echo "1: $1"
+echo "2: $2"
+echo "3: $3"
+echo "4: $4"

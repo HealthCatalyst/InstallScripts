@@ -12,9 +12,15 @@ u="$(whoami)"
 echo "User name: $u"
 
 # shell syntax: http://linuxcommand.org/wss0090.php
+echo "installing sudo if it doesn't exist"
 yum install sudo -y
-sudo yum update
+
+echo "updating yum package manager"
+sudo yum update -y
+
+echo "downloading and installing docker"
 curl -fsSL https://get.docker.com/ | sh
+
 if $u != "root" then
     echo "giving permission to $u"
     sudo usermod -aG docker $u

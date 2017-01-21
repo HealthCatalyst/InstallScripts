@@ -2,31 +2,22 @@
 set -e
 #
 # This script is meant for quick & easy install via:
-#   'curl -sSL https://imranq2.github.io/InstallScripts/installdocker.txt | sh "imran.qureshi@hqcatalyst.local"'
+#   'curl -sSL https://imranq2.github.io/InstallScripts/installdocker.txt | sh'
 # or:
 #   'wget -qO- https://imranq2.github.io/InstallScripts/installdocker.txt | sh'
 #
 #
 
-u="$USER"
-echo "User name $u"
+u="$(whoami)"
+echo "User name: $u"
 
-echo "whoami = $(whoami)"
-
-
-echo "user=  $USER"
-
-
-echo "First arg: $1"
-
-# syntax: http://linuxcommand.org/wss0090.php
-if [ -z $1 ]; then
-    echo "Please pass in the username"
-    exit 1
-fi
+# shell syntax: http://linuxcommand.org/wss0090.php
 
 sudo yum update
 curl -fsSL https://get.docker.com/ | sh
-sudo usermod -aG docker $1
+if $u != "root" then
+    echo "giving permission to $u"
+    sudo usermod -aG docker $u
+    echo "Logout and Login and run: curl -sSL https://imranq2.github.io/InstallScripts/setupdocker.txt | sh"
+fi
 
-echo "Logout and Login and run: curl -sSL https://imranq2.github.io/InstallScripts/setupdocker.txt | sh"

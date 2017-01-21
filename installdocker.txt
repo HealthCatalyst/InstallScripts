@@ -12,7 +12,7 @@ u="$(whoami)"
 echo "User name: $u"
 
 # shell syntax: http://linuxcommand.org/wss0090.php
-
+yum install sudo
 sudo yum update
 curl -fsSL https://get.docker.com/ | sh
 if $u != "root" then

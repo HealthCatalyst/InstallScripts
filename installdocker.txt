@@ -2,25 +2,22 @@
 set -e
 #
 # This script is meant for quick & easy install via:
-#   'curl -sSL https://get.docker.com/ | sh'
+#   'curl -sSL https://imranq2.github.io/InstallScripts/installdocker.txt | sh "imran.qureshi@hqcatalyst.local"'
 # or:
-#   'wget -qO- https://get.docker.com/ | sh'
+#   'wget -qO- https://imranq2.github.io/InstallScripts/installdocker.txt | sh'
 #
-# For test builds (ie. release candidates):
-#   'curl -fsSL https://test.docker.com/ | sh'
-# or:
-#   'wget -qO- https://test.docker.com/ | sh'
-#
-# For experimental builds:
-#   'curl -fsSL https://experimental.docker.com/ | sh'
-# or:
-#   'wget -qO- https://experimental.docker.com/ | sh'
-#
-# Docker Maintainers:
-#   To update this script on https://get.docker.com,
-#   use hack/release.sh during a normal release,
-#   or the following one-liner for script hotfixes:
-#     aws s3 cp --acl public-read hack/install.sh s3://get.docker.com/index
 #
 
-echo "Hello World!"
+echo "First arg: $1"
+
+# syntax: http://linuxcommand.org/wss0090.php
+if [ -z $1 ]; then
+    echo "Please pass in the username"
+    exit 1
+fi
+
+sudo yum update
+curl -fsSL https://get.docker.com/ | sh
+sudo usermod -aG docker $1
+
+echo "Logout and Login and run: curl -sSL https://imranq2.github.io/InstallScripts/setupdocker.txt | sh"

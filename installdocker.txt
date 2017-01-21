@@ -8,6 +8,9 @@ set -e
 #
 #
 
+u="$USER"
+echo "User name $u"
+
 echo "First arg: $1"
 
 # syntax: http://linuxcommand.org/wss0090.php

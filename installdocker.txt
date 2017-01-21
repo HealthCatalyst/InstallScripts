@@ -21,7 +21,7 @@ sudo yum update -y
 echo "downloading and installing docker"
 curl -fsSL https://get.docker.com/ | sh
 
-if $u != "root" then
+if [ $u != "root" ]; then
     echo "giving permission to $u"
     sudo usermod -aG docker $u
     echo "Logout and Login and run: curl -sSL https://imranq2.github.io/InstallScripts/setupdocker.txt | sh"

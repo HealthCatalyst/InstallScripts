@@ -11,12 +11,12 @@ set -e
 
 echo "Hello"
 
-nodename= $1
+# nodename= $1
 #ip1 = "$2"
 #ip2 = "$3"
 #ip3 = "$4"
 
-echo "node name: $nodename"
+echo "node name: $nodename" $1
 #echo "ip1: $ip1"
 #echo "ip2: $ip2"
 #echo "ip3: $ip3"

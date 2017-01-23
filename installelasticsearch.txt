@@ -9,17 +9,26 @@ set -e
 #
 #
 
-echo "Hello"
+echo "Starting setup..."
 
-echo "param 1: [" $1 "]"
+# echo "param 1: [" $1 "]"
 
+# no spaces allowed in variable set commands
 MyNodeName="$1"
-#ip1 = "$2"
-#ip2 = "$3"
-#ip3 = "$4"
+ip1="$2"
+ip2="$3"
+ip3="$4"
 
 
 echo "node name: [$MyNodeName]" 
-#echo "ip1: $ip1"
-#echo "ip2: $ip2"
-#echo "ip3: $ip3"
+echo "ip1: $ip1"
+echo "ip2: $ip2"
+echo "ip3: $ip3"
+
+echo "Creating update script"
+
+echo "#!/bin/sh" > /opt/updateelasticsearch
+echo "docker stop dockerelasticsearch" >> /opt/updateelasticsearch
+echo "docker rm dockerelasticsearch" >> /opt/updateelasticsearch
+echo "docker rmi imranq2/dockerelasticsearch" >> /opt/updateelasticsearch
+echo "docker pull imranq2/dockerelasticsearch" >> /opt/updateelasticsearch

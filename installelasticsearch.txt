@@ -13,7 +13,7 @@ echo "Hello"
 
 echo "param 1: " $1
 
-nodename= "$1"
+MyNodeName="$1"
 #ip1 = "$2"
 #ip2 = "$3"
 #ip3 = "$4"

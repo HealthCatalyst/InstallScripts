@@ -19,7 +19,7 @@ MyNodeName="$1"
 #ip3 = "$4"
 
 
-echo "node name: $nodename ]" 
+echo "node name: [$MyNodeName]" 
 #echo "ip1: $ip1"
 #echo "ip2: $ip2"
 #echo "ip3: $ip3"

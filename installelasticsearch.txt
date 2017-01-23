@@ -17,3 +17,9 @@ echo "node name: $nodename"
 echo "ip1: $ip1"
 echo "ip2: $ip2"
 echo "ip3: $ip3"
+
+echo "#!/bin/sh" > /opt/updateelasticsearch
+echo "docker stop dockerelasticsearch" >> /opt/updateelasticsearch
+echo "docker rm dockerelasticsearch" >> /opt/updateelasticsearch
+echo "docker rmi imranq2/dockerelasticsearch" >> /opt/updateelasticsearch
+echo "docker pull imranq2/dockerelasticsearch" >> /opt/updateelasticsearch

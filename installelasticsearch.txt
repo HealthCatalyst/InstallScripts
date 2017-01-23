@@ -3,7 +3,7 @@ set -e
 #
 # This script is meant for quick & easy install via:
 #   'curl -sSL https://imranq2.github.io/InstallScripts/installelasticsearch.txt | sh -s <nodename> <ip1> <ip2> <ip3>'
-#   'curl -sSL https://imranq2.github.io/InstallScripts/installelasticsearch.txt | sh -s master 10.0.0.4 10.0.0.5 10.0.0.6'
+#   'curl -sSL https://imranq2.github.io/InstallScripts/installelasticsearch.txt | sh -s master 10.0.0.5 10.0.0.6 10.0.0.7'
 # or:
 #   'wget -qO- https://imranq2.github.io/InstallScripts/installelasticsearch.txt | sh -s <nodename> <ip1> <ip2> <ip3>'
 #
@@ -28,7 +28,7 @@ ip2="$3"
 ip3="$4"
 
 # http://stackoverflow.com/questions/8529181/which-terminal-command-to-get-just-ip-address-and-nothing-else
-myip=ip -4 addr show eth0 | grep -oP '(?<=inet\s)\d+(\.\d+){3}'
+myip=$(ip -4 addr show eth0 | grep -oP '(?<=inet\s)\d+(\.\d+){3}')
 
 echo "node name: [$MyNodeName]" 
 echo "ip1: $ip1"

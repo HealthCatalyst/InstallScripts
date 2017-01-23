@@ -30,6 +30,8 @@ ip3="$4"
 # http://stackoverflow.com/questions/8529181/which-terminal-command-to-get-just-ip-address-and-nothing-else
 myip=$(ip -4 addr show eth0 | grep -oP '(?<=inet\s)\d+(\.\d+){3}')
 
+externalip=$(curl ipecho.net/plain)
+
 echo "node name: [$MyNodeName]" 
 echo "ip1: $ip1"
 echo "ip2: $ip2"
@@ -57,4 +59,11 @@ echo "Downloading and installing ElasticSearch Docker container"
 
 sh /opt/install/updateelasticsearch
 
+echo "Listing docker containers"
 docker ps
+
+echo "checking from localhost"
+curl -X GET http://localhost:9200
+
+echo "checking from externalip"
+curl -X GET http://$externalip:9200

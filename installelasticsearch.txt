@@ -28,11 +28,11 @@ ip2="$3"
 ip3="$4"
 hosts="$ip1"
 
-if [$ip2 != ""]; then
+if ["$ip2" != ""]; then
   hosts="$hosts"",""$ip2"
 fi
 
-if [$ip3 != ""]; then
+if ["$ip3" != ""]; then
   hosts="$hosts"",""$ip3"
 fi
 

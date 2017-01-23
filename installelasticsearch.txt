@@ -15,8 +15,8 @@ echo "User name: $u"
 
 # echo "param 1: [" $1 "]"
 
-if [ "$#" -ne 4 ]; then
-  echo "Error: Must pass NodeName IP1 IP2 IP3" >&2
+if [ "$#" -lt 2 ]; then
+  echo "Error: Must pass NodeName IP1 IP2(optional) IP3(optional)" >&2
   echo "Usage: curl -sSL https://imranq2.github.io/InstallScripts/installelasticsearch.txt | sh -s <nodename> <ip1> <ip2> <ip3>" >&2
   exit 1
 fi
@@ -26,6 +26,15 @@ MyNodeName="$1"
 ip1="$2"
 ip2="$3"
 ip3="$4"
+hosts="$ip1"
+
+if [$ip2 != ""]; then
+  hosts="$hosts"",""$ip2"
+fi
+
+if [$ip3 != ""]; then
+  hosts="$hosts"",""$ip3"
+fi
 
 # http://stackoverflow.com/questions/8529181/which-terminal-command-to-get-just-ip-address-and-nothing-else
 myip=$(ip -4 addr show eth0 | grep -oP '(?<=inet\s)\d+(\.\d+){3}')
@@ -37,6 +46,7 @@ echo "ip1: $ip1"
 echo "ip2: $ip2"
 echo "ip3: $ip3"
 echo "myip: $myip"
+echo "hosts: $hosts"
 
 echo "Creating persistent volume for ElasticSearch"
 docker volume create --name esdata
@@ -56,7 +66,7 @@ echo "docker rm dockerelasticsearch" >> $installscript
 echo "docker rmi imranq2/dockerelasticsearch" >> $installscript
 echo "docker pull imranq2/dockerelasticsearch" >> $installscript
 
-echo "docker run -d -p 9200:9200 -p 9300:9300 -v esdata:/usr/share/elasticsearch/data --add-host es-master:$ip1 --add-host es-slave1:$ip2 --add-host es-slave2:$ip3 --security-opt seccomp=unconfined -e ES_JAVA_OPTS=\"-Xms2g -Xmx2g\" --name dockerelasticsearch imranq2/dockerelasticsearch -Enetwork.host=_eth0_ -Enetwork.publish_host=$myip -Enode.name=$MyNodeName" -Ediscovery.zen.ping.unicast.hosts=\"$ip1,$ip2,$ip3\"  >> /opt/install/updateelasticsearch
+echo "docker run -d -p 9200:9200 -p 9300:9300 -v esdata:/usr/share/elasticsearch/data --add-host es-master:$ip1 --add-host es-slave1:$ip2 --add-host es-slave2:$ip3 --security-opt seccomp=unconfined -e ES_JAVA_OPTS=\"-Xms2g -Xmx2g\" --name dockerelasticsearch imranq2/dockerelasticsearch -Enetwork.host=_eth0_ -Enetwork.publish_host=$myip -Enode.name=$MyNodeName" -Ediscovery.zen.ping.unicast.hosts=\"$hosts\"  >> /opt/install/updateelasticsearch
 
 echo "Downloading and installing ElasticSearch Docker container"
 

@@ -3,16 +3,17 @@ set -e
 #
 # This script is meant for quick & easy install via:
 #   'curl -sSL https://imranq2.github.io/InstallScripts/installelasticsearch.txt | sh -s <nodename> <ip1> <ip2> <ip3>'
+#   'curl -sSL https://imranq2.github.io/InstallScripts/installelasticsearch.txt | sh -s master 10.0.0.4 10.0.0.5 10.0.0.6'
 # or:
 #   'wget -qO- https://imranq2.github.io/InstallScripts/installelasticsearch.txt | sh -s <nodename> <ip1> <ip2> <ip3>'
 #
 #
-nodename= "$1"
-ip1 = "$2"
-ip2 = "$3"
-ip3 = "$4"
+# nodename= "$1"
+#ip1 = "$2"
+#ip2 = "$3"
+#ip3 = "$4"
 
-echo "node name: $nodename"
-echo "ip1: $ip1"
-echo "ip2: $ip2"
-echo "ip3: $ip3"
+#echo "node name: $nodename"
+#echo "ip1: $ip1"
+#echo "ip2: $ip2"
+#echo "ip3: $ip3"

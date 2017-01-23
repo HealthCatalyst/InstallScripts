@@ -65,6 +65,7 @@ docker ps
 echo "sleeping for 10 seconds"
 sleep 10s
 
+echo "wait"
 read  -n 1 -p "Click to continue"
 
 echo "checking from localhost"

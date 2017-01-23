@@ -11,7 +11,7 @@ set -e
 
 echo "Hello"
 
-echo "param 1: " $1
+echo "param 1: [" $1 "]"
 
 MyNodeName="$1"
 #ip1 = "$2"

@@ -62,8 +62,11 @@ sh /opt/install/updateelasticsearch
 echo "Listing docker containers"
 docker ps
 
+echo "sleeping for 5 seconds"
+sleep 5s
+
 echo "checking from localhost"
 curl -X GET http://localhost:9200
 
-echo "checking from externalip"
-curl -X GET http://$externalip:9200
+# echo "checking from externalip"
+# curl -X GET http://$externalip:9200

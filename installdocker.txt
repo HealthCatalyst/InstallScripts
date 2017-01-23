@@ -12,8 +12,8 @@ u="$(whoami)"
 echo "User name: $u"
 
 # shell syntax: http://linuxcommand.org/wss0090.php
-echo "installing sudo if it doesn't exist"
-yum install sudo -y
+# echo "installing sudo if it doesn't exist"
+# yum install sudo -y
 
 echo "updating yum package manager"
 sudo yum update -y

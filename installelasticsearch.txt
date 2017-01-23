@@ -15,6 +15,12 @@ echo "User name: $u"
 
 # echo "param 1: [" $1 "]"
 
+if [ "$#" -ne 4 ]; then
+  echo "Error: Must pass NodeName IP1 IP2 IP3" >&2
+  echo "Usage: curl -sSL https://imranq2.github.io/InstallScripts/installelasticsearch.txt | sh -s <nodename> <ip1> <ip2> <ip3>" >&2
+  exit 1
+fi
+
 # no spaces allowed in variable set commands
 MyNodeName="$1"
 ip1="$2"

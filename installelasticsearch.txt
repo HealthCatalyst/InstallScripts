@@ -62,8 +62,8 @@ sh /opt/install/updateelasticsearch
 echo "Listing docker containers"
 docker ps
 
-echo "sleeping for 5 seconds"
-sleep 5s
+echo "sleeping for 10 seconds"
+sleep 10s
 
 echo "checking from localhost"
 curl -X GET http://localhost:9200

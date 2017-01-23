@@ -10,6 +10,8 @@ set -e
 #
 
 echo "Starting setup..."
+u="$(whoami)"
+echo "User name: $u"
 
 # echo "param 1: [" $1 "]"
 
@@ -27,8 +29,12 @@ echo "ip3: $ip3"
 
 echo "Creating update script"
 
-echo "#!/bin/sh" > /opt/updateelasticsearch
-echo "docker stop dockerelasticsearch" >> /opt/updateelasticsearch
-echo "docker rm dockerelasticsearch" >> /opt/updateelasticsearch
-echo "docker rmi imranq2/dockerelasticsearch" >> /opt/updateelasticsearch
-echo "docker pull imranq2/dockerelasticsearch" >> /opt/updateelasticsearch
+sudo mkdir -p /opt/install
+
+sudo setfacl -m u:$u:rwx /opt/install
+
+echo "#!/bin/sh" > /opt/install/updateelasticsearch
+echo "docker stop dockerelasticsearch" >> /opt/install/updateelasticsearch
+echo "docker rm dockerelasticsearch" >> /opt/install/updateelasticsearch
+echo "docker rmi imranq2/dockerelasticsearch" >> /opt/install/updateelasticsearch
+echo "docker pull imranq2/dockerelasticsearch" >> /opt/install/updateelasticsearch

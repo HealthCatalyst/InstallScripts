@@ -11,7 +11,7 @@ set -e
 
 echo "Hello"
 
-nodename= "$1"
+nodename= $1
 #ip1 = "$2"
 #ip2 = "$3"
 #ip3 = "$4"

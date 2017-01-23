@@ -8,6 +8,9 @@ set -e
 #   'wget -qO- https://imranq2.github.io/InstallScripts/installelasticsearch.txt | sh -s <nodename> <ip1> <ip2> <ip3>'
 #
 #
+
+echo "Hello"
+
 # nodename= "$1"
 #ip1 = "$2"
 #ip2 = "$3"

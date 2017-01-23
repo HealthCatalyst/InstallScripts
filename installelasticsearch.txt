@@ -7,7 +7,6 @@ set -e
 #   'wget -qO- https://imranq2.github.io/InstallScripts/installelasticsearch.txt | sh -s <nodename> <ip1> <ip2> <ip3>'
 #
 #
-
 nodename= "$1"
 ip1 = "$2"
 ip2 = "$3"
@@ -17,9 +16,3 @@ echo "node name: $nodename"
 echo "ip1: $ip1"
 echo "ip2: $ip2"
 echo "ip3: $ip3"
-
-echo "#!/bin/sh" > /opt/updateelasticsearch
-echo "docker stop dockerelasticsearch" >> /opt/updateelasticsearch
-echo "docker rm dockerelasticsearch" >> /opt/updateelasticsearch
-echo "docker rmi imranq2/dockerelasticsearch" >> /opt/updateelasticsearch
-echo "docker pull imranq2/dockerelasticsearch" >> /opt/updateelasticsearch

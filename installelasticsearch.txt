@@ -38,3 +38,5 @@ echo "docker stop dockerelasticsearch" >> /opt/install/updateelasticsearch
 echo "docker rm dockerelasticsearch" >> /opt/install/updateelasticsearch
 echo "docker rmi imranq2/dockerelasticsearch" >> /opt/install/updateelasticsearch
 echo "docker pull imranq2/dockerelasticsearch" >> /opt/install/updateelasticsearch
+
+echo "docker run -d -p 9200:9200 -p 9300:9300 --add-host es-master:$ip1 --add-host es-slave1:$ip2 --add-host es-slave2:$ip3 --security-opt seccomp=unconfined -e ES_JAVA_OPTS="-Xms6g -Xmx6g" --name dockerelasticsearch imranq2/dockerelasticsearch -Enetwork.host=_eth0_ -Enetwork.publish_host=$MyNodeName -Enode.name=$MyNodeName"  >> /opt/install/updateelasticsearch

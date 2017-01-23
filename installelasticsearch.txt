@@ -3,6 +3,7 @@ set -e
 #
 # This script is meant for quick & easy install via:
 #   'curl -sSL https://imranq2.github.io/InstallScripts/installelasticsearch.txt | sh -s <nodename> <ip1> <ip2> <ip3>'
+#   'curl -sSL https://imranq2.github.io/InstallScripts/installelasticsearch.txt | sh -s master 10.0.0.1 10.0.0.2 10.0.0.3'
 # or:
 #   'wget -qO- https://imranq2.github.io/InstallScripts/installelasticsearch.txt | sh -s <nodename> <ip1> <ip2> <ip3>'
 #

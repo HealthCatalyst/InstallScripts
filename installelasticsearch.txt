@@ -33,6 +33,9 @@ echo "ip1: $ip1"
 echo "ip2: $ip2"
 echo "ip3: $ip3"
 
+echo "Creating persistent volume for ElasticSearch"
+docker volume create --name esdata
+
 echo "Creating update script"
 
 sudo mkdir -p /opt/install
@@ -45,7 +48,7 @@ echo "docker rm dockerelasticsearch" >> /opt/install/updateelasticsearch
 echo "docker rmi imranq2/dockerelasticsearch" >> /opt/install/updateelasticsearch
 echo "docker pull imranq2/dockerelasticsearch" >> /opt/install/updateelasticsearch
 
-echo "docker run -d -p 9200:9200 -p 9300:9300 --add-host es-master:$ip1 --add-host es-slave1:$ip2 --add-host es-slave2:$ip3 --security-opt seccomp=unconfined -e ES_JAVA_OPTS=\"-Xms2g -Xmx2g\" --name dockerelasticsearch imranq2/dockerelasticsearch -Enetwork.host=_eth0_ -Enetwork.publish_host=es-master -Enode.name=$MyNodeName"  >> /opt/install/updateelasticsearch
+echo "docker run -d -p 9200:9200 -p 9300:9300 -v esdata:/usr/share/elasticsearch/data --add-host es-master:$ip1 --add-host es-slave1:$ip2 --add-host es-slave2:$ip3 --security-opt seccomp=unconfined -e ES_JAVA_OPTS=\"-Xms2g -Xmx2g\" --name dockerelasticsearch imranq2/dockerelasticsearch -Enetwork.host=_eth0_ -Enetwork.publish_host=es-master -Enode.name=$MyNodeName"  >> /opt/install/updateelasticsearch
 
 echo "Downloading and installing ElasticSearch Docker container"
 

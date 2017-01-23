@@ -65,7 +65,7 @@ docker ps
 echo "sleeping for 10 seconds"
 sleep 10s
 
-read  -n 1 -p "Click to continue" mainmenuinput
+read  -n 1 -p "Click to continue"
 
 echo "checking from localhost"
 curl -X GET http://localhost:9200

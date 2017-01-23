@@ -16,7 +16,7 @@ set nodename= "$1"
 #ip2 = "$3"
 #ip3 = "$4"
 
-#echo "node name: $nodename"
+echo "node name: $nodename"
 #echo "ip1: $ip1"
 #echo "ip2: $ip2"
 #echo "ip3: $ip3"

@@ -103,6 +103,8 @@ docker ps
 
 echo "checking from localhost"
 
+declare -i c=10
+
 c=0
 
 # disable set -e so the script does not break when there is an error with curl

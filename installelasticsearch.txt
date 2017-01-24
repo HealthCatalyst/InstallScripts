@@ -111,7 +111,9 @@ done
 
 set -e
 
-echo "curl result: $?"
+# echo "curl result: $?"
+
+curl -X GET http://localhost:9200/_cluster/health
 
 # curl -X GET http://localhost:9200
 

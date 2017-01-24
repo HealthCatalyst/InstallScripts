@@ -116,6 +116,7 @@ while [ $? -ne 0 ]; do
     if [ $c -gt 60 ]; then 
       break 
     fi    
+    echo "$c"
     sleep 1s
 done
 

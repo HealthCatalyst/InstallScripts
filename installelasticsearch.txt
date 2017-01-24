@@ -41,8 +41,8 @@ if [ ! -z "$ip3" ]; then
 fi
 
 # http://stackoverflow.com/questions/8529181/which-terminal-command-to-get-just-ip-address-and-nothing-else
-# myip=$(ip -4 addr show eth0 | grep -oP '(?<=inet\s)\d+(\.\d+){3}')
-myip=$(hostname -i)
+myip=$(ip -4 addr show eth0 | grep -oP '(?<=inet\s)\d+(\.\d+){3}')
+#myip=$(hostname -i)
 
 externalip=$(curl ipecho.net/plain)
 

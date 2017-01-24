@@ -4,6 +4,7 @@ set -e
 # This script is meant for quick & easy install via:
 #   'curl -sSL https://imranq2.github.io/InstallScripts/installelasticsearch.txt | sh -s <ip1> <ip2> <ip3>'
 #   'curl -sSL https://imranq2.github.io/InstallScripts/installelasticsearch.txt | sh -s 10.0.0.5 10.0.0.6 10.0.0.7'
+#   'curl -sSL https://imranq2.github.io/InstallScripts/installelasticsearch.txt | sh -s 10.4.0.5 10.4.0.6 10.4.0.7'
 # or:
 #   'wget -qO- https://imranq2.github.io/InstallScripts/installelasticsearch.txt | sh -s <ip1> <ip2> <ip3>'
 #
@@ -107,6 +108,7 @@ set +e
 curl -X GET http://localhost:9200
 while [ $? -ne 0 ]; do
     curl -X GET http://localhost:9200
+    sleep 1s
 done
 
 set -e

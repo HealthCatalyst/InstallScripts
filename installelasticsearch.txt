@@ -101,10 +101,15 @@ docker ps
 #read -n 1 -p "Click to continue" < /dev/tty
 
 echo "checking from localhost"
+
+# disable set -e so the script does not break when there is an error with curl
+set +e
 curl -X GET http://localhost:9200
 while [ $? -ne 0 ]; do
     curl -X GET http://localhost:9200
 done
+
+set -e
 
 echo "curl result: $?"
 

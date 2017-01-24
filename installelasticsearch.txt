@@ -108,7 +108,7 @@ set +e
 curl -X GET http://localhost:9200
 while [ $? -ne 0 ]; do
     curl -X GET http://localhost:9200
-    ((c++)) && ((c==60)) && break    
+    ((c++)) && ((c==600)) && break    
     sleep 1s
 done
 
@@ -116,7 +116,7 @@ set -e
 
 # echo "curl result: $?"
 
-curl -X GET http://localhost:9200/_cluster/health
+curl -X GET http://localhost:9200/_cluster/health?pretty
 
 # curl -X GET http://localhost:9200
 

@@ -13,6 +13,9 @@ echo "Starting setup..."
 u="$(whoami)"
 echo "User name: $u"
 
+declare -i freememInBytes=10
+freememInBytes=$(free|awk '/^Mem:/{print $2}')
+
 # echo "param 1: [" $1 "]"
 
 if [ "$#" -lt 1 ]; then
@@ -42,12 +45,20 @@ myip=$(hostname -i)
 
 externalip=$(curl ipecho.net/plain)
 
+$javaOpts="-Xms6g -Xmx6g"
+if [ $freememInBytes -lt 8000000 ]; then
+  echo "WARNING: Less than 8GB of memory is free so setting ES to run in 2GB but this is not recommended for good performance"
+  $javaOpts="-Xms2g -Xmx2g"
+fi
+
 echo "node name: [$hostname]" 
 echo "ip1: $ip1"
 echo "ip2: $ip2"
 echo "ip3: $ip3"
 echo "myip: $myip"
 echo "hosts: $hosts"
+echo "freememInBytes: $freememInBytes"
+echo "javaOpts: $javaOpts"
 
 echo "Creating persistent volume for ElasticSearch"
 docker volume create --name esdata
@@ -67,13 +78,16 @@ echo "docker rm dockerelasticsearch" >> $installscript
 echo "docker rmi imranq2/dockerelasticsearch" >> $installscript
 echo "docker pull imranq2/dockerelasticsearch" >> $installscript
 
-echo "docker run -d -p 9200:9200 -p 9300:9300 -v esdata:/usr/share/elasticsearch/data --add-host es-master:$ip1 --add-host es-slave1:$ip2 --add-host es-slave2:$ip3 --security-opt seccomp=unconfined -e ES_JAVA_OPTS=\"-Xms2g -Xmx2g\" --name dockerelasticsearch imranq2/dockerelasticsearch -Enetwork.host=_eth0_ -Enetwork.publish_host=$myip -Enode.name=$hostname" -Ediscovery.zen.ping.unicast.hosts=\"$hosts\"  >> /opt/install/updateelasticsearch
+echo "docker run -d -p 9200:9200 -p 9300:9300 -v esdata:/usr/share/elasticsearch/data --add-host es-master:$ip1 --add-host es-slave1:$ip2 --add-host es-slave2:$ip3 --security-opt seccomp=unconfined -e ES_JAVA_OPTS=\"$javaOpts\" --name dockerelasticsearch imranq2/dockerelasticsearch -Enetwork.host=_eth0_ -Enetwork.publish_host=$myip -Enode.name=$hostname -Ediscovery.zen.ping.unicast.hosts=\"$hosts\" " >> /opt/install/updateelasticsearch
 
 echo "Downloading and installing ElasticSearch Docker container"
 
 chmod +x $installscript
 
+echo "Update script:"
+echo "------------------------"
 cat $installscript
+echo "------------------------"
 
 $installscript
 
@@ -81,13 +95,18 @@ echo "Listing docker containers"
 docker ps
 
 echo "sleeping for 10 seconds"
-sleep 10s
+sleep 30s
 
 #echo "waiting"
 #read -n 1 -p "Click to continue" < /dev/tty
 
 echo "checking from localhost"
 curl -X GET http://localhost:9200
+while [ $? -ne 0 ]; do
+    curl -X GET http://localhost:9200
+done
+
+# curl -X GET http://localhost:9200
 
 # echo "checking from externalip"
 # curl -X GET http://$externalip:9200

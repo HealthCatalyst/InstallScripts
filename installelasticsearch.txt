@@ -45,7 +45,7 @@ myip=$(hostname -i)
 
 externalip=$(curl ipecho.net/plain)
 
-$javaOpts='-Xms6g \-Xmx6g'
+$javaOpts='-Xms6g -Xmx6g'
 if [ $freememInBytes -lt 8000000 ]; then
   echo "WARNING: Less than 8GB of memory is free so setting ES to run in 2GB but this is not recommended for good performance"
   $javaOpts='-Xms2g -Xmx2g'

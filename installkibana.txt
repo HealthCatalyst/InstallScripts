@@ -1,0 +1,89 @@
+#!/bin/sh
+set -e
+#
+# This script is meant for quick & easy install via:
+#   'curl -sSL https://imranq2.github.io/InstallScripts/installkibana.txt | sh -s <ip1 of elasticsarch>'
+#   'curl -sSL https://imranq2.github.io/InstallScripts/installkibana.txt | sh -s 10.4.0.5'
+# or:
+#   'wget -qO- https://imranq2.github.io/InstallScripts/installkibana.txt | sh -s <ip1> <ip2> <ip3>'
+#
+#
+
+echo "Starting setup..."
+u="$(whoami)"
+echo "User name: $u"
+
+if [ "$#" -lt 1 ]; then
+  echo "Error: Must pass IP1 IP2(optional) IP3(optional)" >&2
+  echo "Usage: curl -sSL https://imranq2.github.io/InstallScripts/installkibana.txt | sh -s <ip1> <ip2> <ip3>" >&2
+  exit 1
+fi
+
+# no spaces allowed in variable set commands
+ip1="$1"
+
+echo "==== Parameters ======"
+echo "node name: [$hostname]" 
+echo "ip1: $ip1"
+echo "==== End Parameters ===="
+
+echo "==== Creating update script ===="
+
+installfolder="/opt/install/"
+installscriptfile="updatedocker"
+installscript="$installfolder$installscriptfile"
+
+mkdir -p $HOME/bin
+sudo mkdir -p $installfolder
+
+sudo setfacl -m u:$u:rwx $installfolder
+
+echo "#!/bin/sh" > $installscript
+echo "curl -sSL https://imranq2.github.io/InstallScripts/installkibana.txt | sh -s $@" >> $installscript
+chmod +x $installscript
+
+echo "creating a symbolic link for install file"
+echo "ln -f -s $installscript $HOME/bin/$installscriptfile"
+ln -f -s $installscript $HOME/bin/$installscriptfile
+
+echo "==== Update script ===="
+cat $installscript
+echo "==== End Update Script ===="
+
+echo "==== Downloading and installing ElasticSearch Docker container ===="
+
+echo "====  existing containers on this host ===="
+docker ps -a
+
+echo "==== existing images on this host ===="
+docker images
+
+echo "==== existing volumes on this host ===="
+docker volume ls
+
+# check to see if volume already exists.  if not, create it
+if [ -z $(docker volume ls -q --filter "name=esdata") ]; then
+  echo "==== Creating persistent volume for ElasticSearch ===="
+  docker volume create --name esdata
+fi
+
+echo "stopping existing docker container"
+docker stop dockerkibana || echo 'no container to stop'
+echo "removing docker container"
+docker rm dockerkibana || echo 'no container to remove'
+echo "removing docker image"
+docker rmi imranq2/dockerkibana || echo 'no image to remove'
+echo "pulling latest docker image from repo"
+docker pull imranq2/dockerkibana
+echo "starting docker container with new image"
+docker run -d -p 5601:5601 --name dockerkibana --add-host elasticsearch:$ip1 imranq2/dockerkibana
+
+echo "sleeping for 5s so docker container is up"
+sleep 5s
+
+echo "==== Listing running docker containers ===="
+docker ps
+
+echo "==== All Done ===="
+echo "NOTE To update the docker image on this host in the future, just run"
+echo "$installscriptfile"

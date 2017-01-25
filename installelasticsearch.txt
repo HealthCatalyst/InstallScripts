@@ -152,7 +152,7 @@ echo "creating a test index"
 curl -XPOST "http://localhost:9200/testindex/testdoc/1" -d'{"name": "foo","age":10}'
 
 echo "querying test document"
-curl -XPOST "http://localhost:9200/testindex/_search" -d'{"query": {"match_all": {}}}'
+curl -XPOST "http://localhost:9200/testindex/_search?pretty" -d'{"query": {"match_all": {}}}'
 
 # echo "checking from externalip"
 # curl -X GET http://$externalip:9200

@@ -63,9 +63,6 @@ echo "freememInBytes: $freememInBytes"
 echo "javaOpts: $javaOpts"
 echo "==== End Parameters ===="
 
-echo "Creating persistent volume for ElasticSearch"
-docker volume create --name esdata
-
 echo "==== Creating update script ===="
 
 installfolder="/opt/install/"
@@ -91,6 +88,15 @@ docker ps -a
 
 echo "==== existing images on this host ===="
 docker images
+
+echo "==== existing volumes on this host ===="
+docker volume ls
+
+# check to see if volume already exists.  if not, create it
+if [ -z $(docker volume ls -q --filter "name=esdata") ]; then
+  echo "==== Creating persistent volume for ElasticSearch ===="
+  docker volume create --name esdata
+fi
 
 echo "stopping existing docker container"
 docker stop dockerelasticsearch || echo 'no container to stop'

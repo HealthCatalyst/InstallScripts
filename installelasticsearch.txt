@@ -52,6 +52,7 @@ if [ $freememInBytes -lt 8000000 ]; then
   javaOpts="-Xms2g -Xmx2g"
 fi
 
+echo "==== Parameters ======"
 echo "node name: [$hostname]" 
 echo "ip1: $ip1"
 echo "ip2: $ip2"
@@ -60,11 +61,12 @@ echo "myip: $myip"
 echo "hosts: $hosts"
 echo "freememInBytes: $freememInBytes"
 echo "javaOpts: $javaOpts"
+echo "==== End Parameters ===="
 
 echo "Creating persistent volume for ElasticSearch"
 docker volume create --name esdata
 
-echo "Creating update script"
+echo "==== Creating update script ===="
 
 installfolder="/opt/install/"
 installscript=$installfolder"updateelasticsearch"
@@ -74,15 +76,7 @@ sudo mkdir -p $installfolder
 sudo setfacl -m u:$u:rwx $installfolder
 
 echo "#!/bin/sh" > $installscript
-echo "docker stop dockerelasticsearch" >> $installscript
-echo "docker rm dockerelasticsearch" >> $installscript
-echo "docker rmi imranq2/dockerelasticsearch" >> $installscript
-echo "docker pull imranq2/dockerelasticsearch" >> $installscript
-
-echo "docker run -d -p 9200:9200 -p 9300:9300 -v esdata:/usr/share/elasticsearch/data --add-host es-master:$ip1 --add-host es-slave1:$ip2 --add-host es-slave2:$ip3 --security-opt seccomp=unconfined -e ES_JAVA_OPTS=\"$javaOpts\" --name dockerelasticsearch imranq2/dockerelasticsearch -Enetwork.host=_eth0_ -Enetwork.publish_host=$myip -Enode.name=$hostname -Ediscovery.zen.ping.unicast.hosts=\"$hosts\" " >> /opt/install/updateelasticsearch
-
-echo "Downloading and installing ElasticSearch Docker container"
-
+echo "curl -sSL https://imranq2.github.io/InstallScripts/installelasticsearch.txt | sh $@" >> $installscript
 chmod +x $installscript
 
 echo "Update script:"
@@ -90,18 +84,27 @@ echo "------------------------"
 cat $installscript
 echo "------------------------"
 
-$installscript
+echo "==== Downloading and installing ElasticSearch Docker container ===="
 
-echo "Listing docker containers"
+echo "existing stopping docker container"
+docker stop dockerelasticsearch
+echo "removing docker container"
+docker rm dockerelasticsearch
+echo "removing docker image"
+docker rmi imranq2/dockerelasticsearch
+echo "pulling latest docker image from repo"
+docker pull imranq2/dockerelasticsearch"
+echo "starting docker container with new image"
+docker run -d -p 9200:9200 -p 9300:9300 -v esdata:/usr/share/elasticsearch/data --add-host es-master:$ip1 --add-host es-slave1:$ip2 --add-host es-slave2:$ip3 --security-opt seccomp=unconfined -e ES_JAVA_OPTS=\"$javaOpts\" --name dockerelasticsearch imranq2/dockerelasticsearch -Enetwork.host=_eth0_ -Enetwork.publish_host=$myip -Enode.name=$hostname -Ediscovery.zen.ping.unicast.hosts="$hosts"
+
+echo "sleeping for 5s so docker container is up"
+sleep 5s
+
+echo "==== Listing running docker containers ===="
 docker ps
 
-# echo "sleeping for 10 seconds"
-# sleep 30s
 
-#echo "waiting"
-#read -n 1 -p "Click to continue" < /dev/tty
-
-echo "checking from localhost"
+echo "==== calling ElasticSearch from localhost ===="
 
 declare -i c=10
 
@@ -109,10 +112,9 @@ c=0
 
 # disable set -e so the script does not break when there is an error with curl
 set +e
-curl -X GET http://localhost:9200
-echo "curl result: $?"
 
 while [ $c -lt 60 ]; do
+    echo "curl -X GET http://localhost:9200"
     curl -X GET http://localhost:9200
     RETVAL=$?
     echo "RETVAL:[$RETVAL]"
@@ -120,17 +122,17 @@ while [ $c -lt 60 ]; do
       break 
     fi    
     c=$c+1
-    echo "$c"
+    echo "Trying again [$c]"
     sleep 1s
 done
 
 set -e
 
-echo "curl result: $?"
-
+echo "curl -X GET http://localhost:9200/_cluster/health?pretty"
 curl -X GET http://localhost:9200/_cluster/health?pretty
-
-# curl -X GET http://localhost:9200
 
 # echo "checking from externalip"
 # curl -X GET http://$externalip:9200
+
+echo "==== All Done ===="
+echo "NOTE: To update the docker image on this host in the future, just run: $installscript"

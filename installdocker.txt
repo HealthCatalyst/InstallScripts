@@ -8,6 +8,11 @@ set -e
 #
 #
 
+echo "Current OS"
+echo "$(cat /etc/*-release)"
+
+echo "$(free)"
+
 u="$(whoami)"
 echo "User name: $u"
 

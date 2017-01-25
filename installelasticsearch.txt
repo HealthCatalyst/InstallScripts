@@ -87,11 +87,12 @@ echo "------------------------"
 echo "==== Downloading and installing ElasticSearch Docker container ===="
 
 echo "stopping existing docker container"
-docker stop dockerelasticsearch
+# ignore error if there is no container by using || true
+docker stop dockerelasticsearch || true
 echo "removing docker container"
-docker rm dockerelasticsearch
+docker rm dockerelasticsearch || true
 echo "removing docker image"
-docker rmi imranq2/dockerelasticsearch
+docker rmi imranq2/dockerelasticsearch || true
 echo "pulling latest docker image from repo"
 docker pull imranq2/dockerelasticsearch"
 echo "starting docker container with new image"

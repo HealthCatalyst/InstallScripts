@@ -90,7 +90,7 @@ echo "------------------------"
 cat $installscript
 echo "------------------------"
 
-$installscript
+# $installscript
 
 echo "Listing docker containers"
 docker ps

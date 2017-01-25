@@ -79,7 +79,7 @@ echo "curl -sSL https://imranq2.github.io/InstallScripts/installelasticsearch.tx
 chmod +x $installscript
 
 echo "ln -s $HOME/bin/$installscriptfile $installscript"
-ln -s $HOME/bin/$installscriptfile $installscript
+ln -f -s $HOME/bin/$installscriptfile $installscript
 
 echo "Update script:"
 echo "------------------------"

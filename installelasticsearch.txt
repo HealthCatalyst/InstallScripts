@@ -106,7 +106,6 @@ echo "checking from localhost"
 declare -i c=10
 
 c=0
-result=0
 
 # disable set -e so the script does not break when there is an error with curl
 set +e
@@ -115,11 +114,10 @@ echo "curl result: $?"
 
 while [ $c -lt 60 ]; do
     curl -X GET http://localhost:9200
-    result=$?
-    c=$c+1
-    if [ $result -ne 0 ]; then 
+    if [ $? -ne 0 ]; then 
       break 
     fi    
+    c=$c+1
     echo "$c"
     sleep 1s
 done

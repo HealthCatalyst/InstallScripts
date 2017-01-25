@@ -66,8 +66,10 @@ echo "==== End Parameters ===="
 echo "==== Creating update script ===="
 
 installfolder="/opt/install/"
-installscript=$installfolder"updatedocker"
+installscriptfile="updatedocker"
+installscript="$installfolder$installscriptfile"
 
+mkdir $HOME/bin
 sudo mkdir -p $installfolder
 
 sudo setfacl -m u:$u:rwx $installfolder
@@ -75,6 +77,8 @@ sudo setfacl -m u:$u:rwx $installfolder
 echo "#!/bin/sh" > $installscript
 echo "curl -sSL https://imranq2.github.io/InstallScripts/installelasticsearch.txt | sh -s $@" >> $installscript
 chmod +x $installscript
+
+ln -s $HOME/bin/$installscriptfile $installscript
 
 echo "Update script:"
 echo "------------------------"
@@ -148,4 +152,4 @@ curl -X GET http://localhost:9200/_cluster/health?pretty
 
 echo "==== All Done ===="
 echo "NOTE To update the docker image on this host in the future, just run"
-echo "$installscript"
+echo "$installscriptfile"

@@ -86,10 +86,10 @@ echo "------------------------"
 
 echo "==== Downloading and installing ElasticSearch Docker container ===="
 
-echo "existing containers"
+echo "====  existing containers on this host ===="
 docker ps -a
 
-echo "existing images"
+echo "==== existing images on this host ===="
 docker images
 
 echo "stopping existing docker container"

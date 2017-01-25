@@ -69,7 +69,7 @@ installfolder="/opt/install/"
 installscriptfile="updatedocker"
 installscript="$installfolder$installscriptfile"
 
-mkdir $HOME/bin
+mkdir -p $HOME/bin
 sudo mkdir -p $installfolder
 
 sudo setfacl -m u:$u:rwx $installfolder
@@ -78,6 +78,7 @@ echo "#!/bin/sh" > $installscript
 echo "curl -sSL https://imranq2.github.io/InstallScripts/installelasticsearch.txt | sh -s $@" >> $installscript
 chmod +x $installscript
 
+echo "ln -s $HOME/bin/$installscriptfile $installscript"
 ln -s $HOME/bin/$installscriptfile $installscript
 
 echo "Update script:"

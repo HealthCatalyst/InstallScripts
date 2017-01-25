@@ -11,7 +11,7 @@ set -e
 echo "Current OS"
 echo "$(cat /etc/*-release)"
 
-echo "$(free)"
+echo "$(free -g)"
 
 u="$(whoami)"
 echo "User name: $u"

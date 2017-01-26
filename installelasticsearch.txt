@@ -78,7 +78,7 @@ echo "#!/bin/sh" > $installscript
 echo "curl -sSL https://imranq2.github.io/InstallScripts/installelasticsearch.txt | sh -s $@" >> $installscript
 chmod +x $installscript
 
-if [ ! -L "$HOME/bin/$installscriptfile" ]; then
+if [ ! -h "$HOME/bin/$installscriptfile" ]; then
   echo "creating a symbolic link for install file"
   echo "ln -f -s $installscript $HOME/bin/$installscriptfile"
   ln -f -s $installscript $HOME/bin/$installscriptfile

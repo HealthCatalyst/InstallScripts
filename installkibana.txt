@@ -34,17 +34,22 @@ installscriptfile="updatedocker"
 installscript="$installfolder$installscriptfile"
 
 mkdir -p $HOME/bin
-sudo mkdir -p $installfolder
 
-sudo setfacl -m u:$u:rwx $installfolder
+if [[ ! -d "$installfolder" ]]; then
+  sudo mkdir -p $installfolder
+
+  sudo setfacl -m u:$u:rwx $installfolder
+fi
 
 echo "#!/bin/sh" > $installscript
 echo "curl -sSL https://imranq2.github.io/InstallScripts/installkibana.txt | sh -s $@" >> $installscript
 chmod +x $installscript
 
-echo "creating a symbolic link for install file"
-echo "ln -f -s $installscript $HOME/bin/$installscriptfile"
-ln -f -s $installscript $HOME/bin/$installscriptfile
+if [[ ! -e "$HOME/bin/$installscriptfile" ]]; then 
+  echo "creating a symbolic link for install file"
+  echo "ln -f -s $installscript $HOME/bin/$installscriptfile"
+  ln -f -s $installscript $HOME/bin/$installscriptfile
+fi
 
 echo "==== Update script ===="
 cat $installscript

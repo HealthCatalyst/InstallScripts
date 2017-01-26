@@ -1,4 +1,4 @@
-# curl -useb https://imranq2.github.io/InstallScripts/installelasticsearchonwindows.txt | iex; install
+# curl -useb https://imranq2.github.io/InstallScripts/installelasticsearchonwindows.txt | iex; 
 
 echo "starting"
 

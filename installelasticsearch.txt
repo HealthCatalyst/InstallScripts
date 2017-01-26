@@ -150,6 +150,9 @@ set -e
 echo "curl -X GET http://localhost:9200/_cluster/health?pretty"
 curl -X GET http://localhost:9200/_cluster/health?pretty
 
+echo "listing all nodes"
+curl -XGET http://localhost:9200/_nodes/_all/host,ip,name?pretty
+
 echo "creating a test index"
 curl -XPOST "http://localhost:9200/testindex/testdoc/1" -d'{"name": "foo","age":10}'
 

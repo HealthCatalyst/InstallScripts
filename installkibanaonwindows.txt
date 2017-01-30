@@ -1,0 +1,11 @@
+# curl -useb https://imranq2.github.io/InstallScripts/installkibanaonwindows.txt | iex; 
+
+echo "starting"
+
+docker stop dockerkibana
+docker rm dockerkibana
+docker rmi imranq2/dockerkibana
+docker pull imranq2/dockerkibana
+docker run -d -p 5601:5601 --name dockerkibana --add-host elasticsearch:127.0.0.1 imranq2/dockerkibana
+
+echo "Finished"

@@ -43,7 +43,7 @@ fi
 
 if [ ! -z "$ssl" ]; then
   echo "Setting up SSL"
-  paramsToES="-E xpack.security.http.ssl.enabled=true -E xpack.ssl.key=/usr/share/elasticsearch/config/node.key -E xpack.ssl.certificate=/usr/share/elasticsearch/config/node.crt -E xpack.ssl.certificate_authorities=/usr/share/elasticsearch/config/ca.crt -E xpack.security.http.ssl.enabled=false"
+  paramsToES="-E xpack.security.http.ssl.enabled=true -E xpack.ssl.key=/usr/share/elasticsearch/config/node.key -E xpack.ssl.certificate=/usr/share/elasticsearch/config/node.crt -E xpack.ssl.certificate_authorities=/usr/share/elasticsearch/config/ca.crt -E xpack.security.http.ssl.enabled=true"
 fi
 
 

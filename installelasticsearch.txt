@@ -175,7 +175,7 @@ if [[ -f "$nodekeypath" ]]; then
   docker cp $installfolder/ca.crt dockerelasticsearch:/usr/share/elasticsearch/config
 fi
 
-docker container restart dockerelasticsearch
+docker restart dockerelasticsearch
 
 echo "==== All Done ===="
 echo "NOTE To update the docker image on this host in the future, just run"

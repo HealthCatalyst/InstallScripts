@@ -164,6 +164,13 @@ curl -XPOST "http://localhost:9200/testindex/_search?pretty" -d'{"query": {"matc
 # echo "checking from externalip"
 # curl -X GET http://$externalip:9200
 
+if [[ ! -f "$installfolder/node.key" ]]; then
+  echo "copying ssl keys from $installfolder"
+  docker cp $installfolder/node.key dockerelasticsearch:/usr/share/elasticsearch/config
+  docker cp $installfolder/node.crt dockerelasticsearch:/usr/share/elasticsearch/config
+  docker cp $installfolder/ca.crt dockerelasticsearch:/usr/share/elasticsearch/config
+fi
+
 echo "==== All Done ===="
 echo "NOTE To update the docker image on this host in the future, just run"
 echo "$installscriptfile"

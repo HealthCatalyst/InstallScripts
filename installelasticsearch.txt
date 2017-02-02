@@ -3,8 +3,7 @@ set -e
 #
 # This script is meant for quick & easy install via:
 #   'curl -sSL https://imranq2.github.io/InstallScripts/installelasticsearch.txt | sh -s <ip1> <ip2> <ip3>'
-#   'curl -sSL https://imranq2.github.io/InstallScripts/installelasticsearch.txt | sh -s 10.0.0.5 10.0.0.6 10.0.0.7'
-#   'curl -sSL https://imranq2.github.io/InstallScripts/installelasticsearch.txt | sh -s 10.4.0.5 10.4.0.6 10.4.0.7'
+#   'curl -sSL https://imranq2.github.io/InstallScripts/installelasticsearch.txt | sh -s 10.4.0.5 10.4.0.6 10.4.0.7 ssl'
 # or:
 #   'wget -qO- https://imranq2.github.io/InstallScripts/installelasticsearch.txt | sh -s <ip1> <ip2> <ip3>'
 #
@@ -29,6 +28,8 @@ fi
 ip1="$1"
 ip2="$2"
 ip3="$3"
+ssl="$4"
+paramsToES=""
 hosts="$ip1"
 hostname="$(hostname -s)"
 
@@ -39,6 +40,12 @@ fi
 if [ ! -z "$ip3" ]; then
   hosts="$hosts"",""$ip3"
 fi
+
+if [ ! -z "$ssl" ]; then
+  echo "Setting up SSL"
+  paramsToES="-E xpack.security.http.ssl.enabled=true"
+fi
+
 
 # http://stackoverflow.com/questions/8529181/which-terminal-command-to-get-just-ip-address-and-nothing-else
 myip=$(ip -4 addr show eth0 | grep -oP '(?<=inet\s)\d+(\.\d+){3}')
@@ -116,14 +123,41 @@ docker rmi imranq2/dockerelasticsearch || echo 'no image to remove'
 echo "pulling latest docker image from repo"
 docker pull imranq2/dockerelasticsearch
 echo "starting docker container with new image"
-docker run -d -p 9200:9200 -p 9300:9300 -v esdata:/usr/share/elasticsearch/data --add-host es-master:$ip1 --add-host es-slave1:$ip2 --add-host es-slave2:$ip3 --security-opt seccomp=unconfined -e ES_JAVA_OPTS="$javaOpts" --name dockerelasticsearch imranq2/dockerelasticsearch -E network.host=_eth0_ -E network.publish_host=$myip -E node.name=$hostname -E discovery.zen.ping.unicast.hosts="$hosts"
+docker run -d -p 9200:9200 -p 9300:9300 -v esdata:/usr/share/elasticsearch/data --add-host es-master:$ip1 --add-host es-slave1:$ip2 --add-host es-slave2:$ip3 --security-opt seccomp=unconfined -e ES_JAVA_OPTS="$javaOpts" --name dockerelasticsearch imranq2/dockerelasticsearch -E network.host=_eth0_ -E network.publish_host=$myip -E node.name=$hostname -E discovery.zen.ping.unicast.hosts="$hosts" $paramsToES
 
-echo "sleeping for 5s so docker container is up"
-sleep 5s
+echo "sleeping until docker container is up"
+until [ "`/usr/bin/docker inspect -f {{.State.Running}} dockerelasticsearch`"=="true" ]; do
+    sleep 1s;
+done;
+
+nodekeyfile="node.key"
+nodekeypath="$installfolder$nodekeyfile"
+
+protocol="http"
+
+if [ ! -z "$ssl" ]; then
+  echo "Checking if [$nodekeypath] exists"
+  if [[ -f "$nodekeypath" ]]; then
+    echo "copying ssl keys from $installfolder"
+    docker cp $installfolder/node.key dockerelasticsearch:/usr/share/elasticsearch/config
+    docker cp $installfolder/node.crt dockerelasticsearch:/usr/share/elasticsearch/config
+    docker cp $installfolder/ca.crt dockerelasticsearch:/usr/share/elasticsearch/config
+
+    protocol="https"
+  else
+    echo "ERROR: No key files found in [$nodekeypath] so cannot set up SSL"
+  fi
+
+  docker restart dockerelasticsearch
+  echo "sleeping until docker container is up"
+  until [ "`/usr/bin/docker inspect -f {{.State.Running}} dockerelasticsearch`"=="true" ]; do
+      sleep 1s;
+  done;
+
+fi
 
 echo "==== Listing running docker containers ===="
 docker ps
-
 
 echo "==== calling ElasticSearch from localhost ===="
 
@@ -135,8 +169,8 @@ c=0
 set +e
 
 while [ $c -lt 60 ]; do
-    echo "curl -X GET http://localhost:9200"
-    curl -X GET http://localhost:9200
+    echo "curl -X GET $protocol://localhost:9200"
+    curl -X GET $protocol://localhost:9200
     RETVAL=$?
     echo "RETVAL:[$RETVAL]"
     if [ $RETVAL -eq 0 ]; then 
@@ -149,33 +183,20 @@ done
 
 set -e
 
-echo "curl -X GET http://localhost:9200/_cluster/health?pretty"
-curl -X GET http://localhost:9200/_cluster/health?pretty
+echo "curl -X GET $protocol://localhost:9200/_cluster/health?pretty"
+curl -X GET $protocol://localhost:9200/_cluster/health?pretty
 
 echo "listing all nodes"
-curl -XGET http://localhost:9200/_nodes/_all/host,ip,name?pretty
+curl -XGET $protocol://localhost:9200/_nodes/_all/host,ip,name?pretty
 
 echo "creating a test index"
-curl -XPOST "http://localhost:9200/testindex/testdoc/1" -d'{"name": "foo","age":10}'
+curl -XPOST "$protocol://localhost:9200/testindex/testdoc/1" -d'{"name": "foo","age":10}'
 
 echo "querying test document"
-curl -XPOST "http://localhost:9200/testindex/_search?pretty" -d'{"query": {"match_all": {}}}'
+curl -XPOST "$protocol://localhost:9200/testindex/_search?pretty" -d'{"query": {"match_all": {}}}'
 
 # echo "checking from externalip"
 # curl -X GET http://$externalip:9200
-
-nodekeyfile="node.key"
-nodekeypath="$installfolder$nodekeyfile"
-
-echo "Checking if [$nodekeypath] exists"
-if [[ -f "$nodekeypath" ]]; then
-  echo "copying ssl keys from $installfolder"
-  docker cp $installfolder/node.key dockerelasticsearch:/usr/share/elasticsearch/config
-  docker cp $installfolder/node.crt dockerelasticsearch:/usr/share/elasticsearch/config
-  docker cp $installfolder/ca.crt dockerelasticsearch:/usr/share/elasticsearch/config
-fi
-
-docker restart dockerelasticsearch
 
 echo "==== All Done ===="
 echo "NOTE To update the docker image on this host in the future, just run"

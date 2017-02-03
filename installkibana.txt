@@ -9,7 +9,7 @@ set -e
 #
 #
 
-defaultpassword="ILoveElasticSearch2017!"
+defaultpassword="ILoveElasticSearch2017"
 
 echo "Starting setup..."
 u="$(whoami)"

@@ -10,7 +10,7 @@ set -e
 #
 
 clustername="catalystdev"
-defaultpassword="ILoveElasticSearch2017!"
+defaultpassword="ILoveElasticSearch2017"
 
 echo "Starting setup..."
 u="$(whoami)"
@@ -208,7 +208,9 @@ curl -XPOST "$protocol://localhost:9200/testindex/_search?pretty" -d'{"query": {
 
 # https://www.elastic.co/guide/en/x-pack/current/setting-up-authentication.html
 echo "Resetting default passwords"
+set -x
 curl -XPUT "$protocol://localhost:9200/_xpack/security/user/elastic/_password" -d'{ "password": "$defaultpassword"}' -k
+set +x
 curl -XPUT "$protocol://localhost:9200/_xpack/security/user/kibana/_password" -d'{ "password": "$defaultpassword"}' -k
 curl -XPUT "$protocol://localhost:9200/_xpack/security/user/logstash_system/_password" -d'{ "password": "$defaultpassword"}' -k
 

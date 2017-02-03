@@ -9,6 +9,8 @@ set -e
 #
 #
 
+defaultpassword="ILoveElasticSearch2017!"
+
 echo "Starting setup..."
 u="$(whoami)"
 echo "User name: $u"
@@ -81,10 +83,12 @@ docker rmi imranq2/dockerkibana || echo 'no image to remove'
 echo "pulling latest docker image from repo"
 docker pull imranq2/dockerkibana
 echo "starting docker container with new image"
-docker run -d -p 5601:5601 --name dockerkibana --add-host elasticsearch:$ip1 imranq2/dockerkibana
+docker run -d -p 5601:5601 --name dockerkibana --add-host elasticsearch:$ip1 imranq2/dockerkibana -E elasticsearch.password=$defaultpassword
 
 echo "sleeping for 5s so docker container is up"
 sleep 5s
+
+# https://www.elastic.co/guide/en/x-pack/current/kibana.html
 
 echo "==== Listing running docker containers ===="
 docker ps

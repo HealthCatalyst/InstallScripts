@@ -171,8 +171,8 @@ c=0
 set +e
 
 while [ $c -lt 60 ]; do
-    echo "curl -X GET $protocol://localhost:9200"
-    curl -X GET $protocol://localhost:9200
+    echo "curl -X GET http://localhost:9200"
+    curl -X GET http://localhost:9200
     RETVAL=$?
     echo "RETVAL:[$RETVAL]"
     if [ $RETVAL -eq 0 ]; then 

@@ -45,7 +45,7 @@ fi
 
 if [ ! -z "$ssl" ]; then
   echo "Setting up SSL"
-  paramsToES="-E xpack.security.http.ssl.enabled=true -E xpack.ssl.key=node.key -E xpack.ssl.certificate=node.crt -E xpack.ssl.certificate_authorities=ca.crt -E xpack.security.transport.ssl.enabled=true -E xpack.security.enabled=true -E xpack.security.authc.anonymous.roles=superuser"
+  paramsToES="-E xpack.security.http.ssl.enabled=true -E xpack.ssl.key=node.key -E xpack.ssl.certificate=node.crt -E xpack.ssl.certificate_authorities=ca.crt -E xpack.security.transport.ssl.enabled=true -E xpack.security.enabled=true -E xpack.security.authc.anonymous.roles=superuser -E xpack.security.transport.ssl.verification_mode=certificate"
 
   echo $paramsToES
 fi

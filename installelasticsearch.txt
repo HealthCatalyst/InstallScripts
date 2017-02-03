@@ -124,7 +124,8 @@ echo "pulling latest docker image from repo"
 docker pull imranq2/dockerelasticsearch
 echo "starting docker container with new image"
 set -x
-docker run -d -p 9200:9200 -p 9300:9300 -v esdata:/usr/share/elasticsearch/data --add-host es-master:$ip1 --add-host es-slave1:$ip2 --add-host es-slave2:$ip3 --security-opt seccomp=unconfined -e ES_JAVA_OPTS="$javaOpts" --name dockerelasticsearch imranq2/dockerelasticsearch -E network.host=_eth0_ -E network.publish_host=$myip -E node.name=$hostname -E discovery.zen.ping.unicast.hosts="$hosts" -E cluster.name=catalystdev2 $paramsToES
+# https://www.elastic.co/guide/en/elasticsearch/reference/current/docker.html
+docker run -d -p 9200:9200 -p 9300:9300 -v esdata:/usr/share/elasticsearch/data --add-host es-master:$ip1 --add-host es-slave1:$ip2 --add-host es-slave2:$ip3 --security-opt seccomp=unconfined -e ES_JAVA_OPTS="$javaOpts" --name dockerelasticsearch imranq2/dockerelasticsearch -E network.host=_eth0_ -E network.publish_host=$myip -E node.name=$hostname -e "bootstrap.memory_lock=true" -E discovery.zen.ping.unicast.hosts="$hosts" -E cluster.name=catalystdev2 $paramsToES
 set +x
 
 echo "sleeping until docker container is up"

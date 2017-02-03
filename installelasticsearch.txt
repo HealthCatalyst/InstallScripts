@@ -9,6 +9,8 @@ set -e
 #
 #
 
+clustername="catalystdev"
+
 echo "Starting setup..."
 u="$(whoami)"
 echo "User name: $u"
@@ -127,7 +129,7 @@ docker pull imranq2/dockerelasticsearch
 echo "starting docker container with new image"
 set -x
 # https://www.elastic.co/guide/en/elasticsearch/reference/current/docker.html
-docker run -d -p 9200:9200 -p 9300:9300 -v esdata:/usr/share/elasticsearch/data --add-host es-master:$ip1 --add-host es-slave1:$ip2 --add-host es-slave2:$ip3 --security-opt seccomp=unconfined -e ES_JAVA_OPTS="$javaOpts" --name dockerelasticsearch imranq2/dockerelasticsearch -E network.host=_eth0_ -E network.publish_host=$myip -E node.name=$hostname -E discovery.zen.ping.unicast.hosts="$hosts" -E cluster.name=catalystdev2 $paramsToES
+docker run -d -p 9200:9200 -p 9300:9300 -v esdata:/usr/share/elasticsearch/data --add-host es-master:$ip1 --add-host es-slave1:$ip2 --add-host es-slave2:$ip3 --security-opt seccomp=unconfined -e ES_JAVA_OPTS="$javaOpts" --name dockerelasticsearch imranq2/dockerelasticsearch -E network.host=_eth0_ -E network.publish_host=$myip -E node.name=$hostname -E discovery.zen.ping.unicast.hosts="$hosts" -E cluster.name=$clustername $paramsToES
 set +x
 
 echo "sleeping until docker container is up"
@@ -174,8 +176,8 @@ c=0
 set +e
 
 while [ $c -lt 60 ]; do
-    echo "curl -X GET http://localhost:9200"
-    curl -X GET http://localhost:9200
+    echo "curl -X GET $protocol://localhost:9200"
+    curl -X GET $protocol://localhost:9200 -k
     RETVAL=$?
     echo "RETVAL:[$RETVAL]"
     if [ $RETVAL -eq 0 ]; then 
@@ -189,16 +191,16 @@ done
 set -e
 
 echo "curl -X GET $protocol://localhost:9200/_cluster/health?pretty"
-curl -X GET $protocol://localhost:9200/_cluster/health?pretty
+curl -X GET $protocol://localhost:9200/_cluster/health?pretty -k
 
 echo "listing all nodes"
-curl -XGET $protocol://localhost:9200/_nodes/_all/host,ip,name?pretty
+curl -XGET $protocol://localhost:9200/_nodes/_all/host,ip,name?pretty -k
 
 echo "creating a test index"
-curl -XPOST "$protocol://localhost:9200/testindex/testdoc/1" -d'{"name": "foo","age":10}'
+curl -XPOST "$protocol://localhost:9200/testindex/testdoc/1" -d'{"name": "foo","age":10}' -k
 
 echo "querying test document"
-curl -XPOST "$protocol://localhost:9200/testindex/_search?pretty" -d'{"query": {"match_all": {}}}'
+curl -XPOST "$protocol://localhost:9200/testindex/_search?pretty" -d'{"query": {"match_all": {}}}' -k
 
 # echo "checking from externalip"
 # curl -X GET http://$externalip:9200

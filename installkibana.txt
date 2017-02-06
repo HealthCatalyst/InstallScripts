@@ -3,7 +3,7 @@ set -e
 #
 # This script is meant for quick & easy install via:
 #   'curl -sSL https://imranq2.github.io/InstallScripts/installkibana.txt | sh -s <ip1 of elasticsarch>'
-#   'curl -sSL https://imranq2.github.io/InstallScripts/installkibana.txt | sh -s 10.4.0.5'
+#   'curl -sSL https://imranq2.github.io/InstallScripts/installkibana.txt | sh -s 10.5.4.4'
 # or:
 #   'wget -qO- https://imranq2.github.io/InstallScripts/installkibana.txt | sh -s <ip1> <ip2> <ip3>'
 #
@@ -83,7 +83,7 @@ docker rmi imranq2/dockerkibana || echo 'no image to remove'
 echo "pulling latest docker image from repo"
 docker pull imranq2/dockerkibana
 echo "starting docker container with new image"
-docker run -d -p 5601:5601 --name dockerkibana --add-host elasticsearch:$ip1 imranq2/dockerkibana -E elasticsearch.password=$defaultpassword
+docker run -d -p 5601:5601 --name dockerkibana --add-host elasticsearch:$ip1 imranq2/dockerkibana -e ELASTICSEARCH_PASSWORD=$defaultpassword
 
 echo "sleeping for 5s so docker container is up"
 sleep 5s

@@ -23,11 +23,21 @@ fi
 
 # no spaces allowed in variable set commands
 ip1="$1"
+ssl="$2"
+paramsToES=""
 
 echo "==== Parameters ======"
 echo "node name: [$hostname]" 
 echo "ip1: $ip1"
+echo "ssl: $ssl"
 echo "==== End Parameters ===="
+
+if [ ! -z "$ssl" ]; then
+  echo "Setting up SSL"
+  paramsToES="-e ELASTICSEARCH_URL="https://elasticsearch:9200" -e SERVER_SSL_KEY=node.key -e SERVER_SSL_CERT=node.crt -e ELASTICSEARCH_SSL_KEY=node.key -e ELASTICSEARCH_SSL_CER=node.crt -e ELASTICSEARCH_SSL_CA=ca.crt"
+
+  echo $paramsToES
+fi
 
 echo "==== Creating update script ===="
 
@@ -83,10 +93,28 @@ docker rmi imranq2/dockerkibana || echo 'no image to remove'
 echo "pulling latest docker image from repo"
 docker pull imranq2/dockerkibana
 echo "starting docker container with new image."
-docker run -d -p 5601:5601 --name dockerkibana --add-host elasticsearch:$ip1 -e ELASTICSEARCH_URL="https://elasticsearch:9200" -e ELASTICSEARCH_PASSWORD="$defaultpassword" imranq2/dockerkibana 
+set -x
+docker run -d -p 5601:5601 --name dockerkibana --add-host elasticsearch:$ip1 $paramsToES -e ELASTICSEARCH_USERNAME="elastic" -e ELASTICSEARCH_PASSWORD="$defaultpassword" imranq2/dockerkibana 
+set +x
 
 echo "sleeping for 5s so docker container is up"
 sleep 5s
+
+if [ ! -z "$ssl" ]; then
+  echo "Checking if [$nodekeypath] exists"
+  if [[ -f "$nodekeypath" ]]; then
+    echo "copying ssl keys from $installfolder"
+    docker cp $installfolder/node.key dockerkibana:/usr/share/kibana/config
+    docker cp $installfolder/node.crt dockerkibana:/usr/share/kibana/config
+    docker cp $installfolder/ca.crt dockerkibana:/usr/share/kibana/config
+
+    protocol="https"
+  else
+    echo "ERROR: No key files found in [$nodekeypath] so cannot set up SSL"
+  fi
+
+    docker restart dockerkibana
+  fi
 
 # https://www.elastic.co/guide/en/x-pack/current/kibana.html
 

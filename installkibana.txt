@@ -34,7 +34,7 @@ echo "==== End Parameters ===="
 
 if [ ! -z "$ssl" ]; then
   echo "Setting up SSL"
-  paramsToES="-e ELASTICSEARCH_URL="https://elasticsearch:9200" -e SERVER_SSL_KEY=node.key -e SERVER_SSL_CERT=node.crt -e ELASTICSEARCH_SSL_KEY=node.key -e ELASTICSEARCH_SSL_CER=node.crt -e ELASTICSEARCH_SSL_CA=ca.crt -e XPACK_SECURITY_ENCRYPTIONKEY=0123456789012345678901234567890123456789"
+  # paramsToES="-e ELASTICSEARCH_URL="https://elasticsearch:9200" -e SERVER_SSL_KEY=node.key -e SERVER_SSL_CERT=node.crt -e ELASTICSEARCH_SSL_KEY=node.key -e ELASTICSEARCH_SSL_CER=node.crt -e ELASTICSEARCH_SSL_CA=ca.crt -e XPACK_SECURITY_ENCRYPTIONKEY=0123456789012345678901234567890123456789"
 
   echo $paramsToES
 fi
@@ -94,7 +94,7 @@ echo "pulling latest docker image from repo"
 docker pull imranq2/dockerkibana
 echo "starting docker container with new image."
 set -x
-docker run -d -p 5601:5601 --name dockerkibana --add-host elasticsearch:$ip1 -e LOGGING_VERBOSE=true $paramsToES -e ELASTICSEARCH_USERNAME="kibana" -e ELASTICSEARCH_PASSWORD="$defaultpassword" imranq2/dockerkibana 
+docker run -d -p 5601:5601 --name dockerkibana --add-host elasticsearch:$ip1 imranq2/dockerkibana 
 set +x
 
 echo "sleeping for 5s so docker container is up"

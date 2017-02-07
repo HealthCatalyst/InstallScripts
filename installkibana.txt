@@ -94,7 +94,7 @@ echo "pulling latest docker image from repo"
 docker pull imranq2/dockerkibana
 echo "starting docker container with new image."
 set -x
-docker run -d -p 5601:5601 --name dockerkibana --add-host elasticsearch:$ip1 $paramsToES -e ELASTICSEARCH_USERNAME="kibana" -e ELASTICSEARCH_PASSWORD="$defaultpassword" imranq2/dockerkibana 
+docker run -d -p 5601:5601 --name dockerkibana --add-host elasticsearch:$ip1 -e LOGGING_VERBOSE=true $paramsToES -e ELASTICSEARCH_USERNAME="kibana" -e ELASTICSEARCH_PASSWORD="$defaultpassword" imranq2/dockerkibana 
 set +x
 
 echo "sleeping for 5s so docker container is up"

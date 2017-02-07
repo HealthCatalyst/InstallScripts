@@ -100,6 +100,9 @@ set +x
 echo "sleeping for 5s so docker container is up"
 sleep 5s
 
+nodekeyfile="node.key"
+nodekeypath="$installfolder$nodekeyfile"
+
 if [ ! -z "$ssl" ]; then
   echo "Checking if [$nodekeypath] exists"
   if [[ -f "$nodekeypath" ]]; then

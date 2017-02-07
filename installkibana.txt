@@ -107,9 +107,9 @@ if [ ! -z "$ssl" ]; then
   echo "Checking if [$nodekeypath] exists"
   if [[ -f "$nodekeypath" ]]; then
     echo "copying ssl keys from $installfolder"
-    docker cp $installfolder/node.key dockerkibana:/usr/share/kibana/config
-    docker cp $installfolder/node.crt dockerkibana:/usr/share/kibana/config
-    docker cp $installfolder/ca.crt dockerkibana:/usr/share/kibana/config
+    docker cp $installfolder/node.key dockerkibana:/opt/kibana/config
+    docker cp $installfolder/node.crt dockerkibana:/opt/kibana/config
+    docker cp $installfolder/ca.crt dockerkibana:/opt/kibana/config
 
     protocol="https"
   else

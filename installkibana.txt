@@ -34,7 +34,7 @@ echo "==== End Parameters ===="
 
 if [ ! -z "$ssl" ]; then
   echo "Setting up SSL"
-  # paramsToES="-e ELASTICSEARCH_URL="https://elasticsearch:9200" -e SERVER_SSL_KEY=node.key -e SERVER_SSL_CERT=node.crt -e ELASTICSEARCH_SSL_KEY=node.key -e ELASTICSEARCH_SSL_CER=node.crt -e ELASTICSEARCH_SSL_CA=ca.crt -e XPACK_SECURITY_ENCRYPTIONKEY=0123456789012345678901234567890123456789"
+# paramsToES="-e ELASTICSEARCH_URL="https://elasticsearch:9200" -e SERVER_SSL_KEY=node.key -e SERVER_SSL_CERT=node.crt -e ELASTICSEARCH_SSL_KEY=node.key -e ELASTICSEARCH_SSL_CER=node.crt -e ELASTICSEARCH_SSL_CA=ca.crt -e XPACK_SECURITY_ENCRYPTIONKEY=0123456789012345678901234567890123456789"
 
   echo $paramsToES
 fi

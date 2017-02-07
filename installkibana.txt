@@ -94,7 +94,7 @@ echo "pulling latest docker image from repo"
 docker pull imranq2/dockerkibana
 echo "starting docker container with new image."
 set -x
-docker run -d -p 5601:5601 --name dockerkibana --add-host elasticsearch:$ip1 imranq2/dockerkibana 
+docker create -d -p 5601:5601 --name dockerkibana --add-host elasticsearch:$ip1 imranq2/dockerkibana 
 set +x
 
 echo "sleeping for 5s so docker container is up"
@@ -107,16 +107,16 @@ if [ ! -z "$ssl" ]; then
   echo "Checking if [$nodekeypath] exists"
   if [[ -f "$nodekeypath" ]]; then
     echo "copying ssl keys from $installfolder"
-    docker cp $installfolder/node.key dockerkibana:/opt/kibana/config
-    docker cp $installfolder/node.crt dockerkibana:/opt/kibana/config
-    docker cp $installfolder/ca.crt dockerkibana:/opt/kibana/config
+    docker cp $installfolder/node.key dockerkibana:/usr/share/kibana/config
+    docker cp $installfolder/node.crt dockerkibana:/usr/share/kibana/config
+    docker cp $installfolder/ca.crt dockerkibana:/usr/share/kibana/config
 
     protocol="https"
   else
     echo "ERROR: No key files found in [$nodekeypath] so cannot set up SSL"
   fi
 
-    docker restart dockerkibana
+    docker start dockerkibana
   fi
 
 # https://www.elastic.co/guide/en/x-pack/current/kibana.html

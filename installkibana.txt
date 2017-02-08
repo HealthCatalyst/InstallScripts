@@ -94,7 +94,7 @@ echo "pulling latest docker image from repo"
 docker pull imranq2/dockerkibana
 echo "starting docker container with new image."
 set -x
-docker create -p 5601:5601 --name dockerkibana --add-host elasticsearch:$ip1 imranq2/dockerkibana 
+docker create -p 5601:5601 --name dockerkibana --add-host elasticsearch:$ip1 -e SERVER_HOST=_eth0_ imranq2/dockerkibana 
 set +x
 
 echo "sleeping for 5s so docker container is up"

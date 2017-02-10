@@ -117,6 +117,10 @@ if [ ! -z "$ssl" ]; then
   fi
 
     docker start dockerkibana
+
+    docker exec dockerkibana gosu kibana /usr/share/kibana/bin/kibana-plugin install x-pack
+
+    docker restart dockerkibana
   fi
 
 # https://www.elastic.co/guide/en/x-pack/current/kibana.html

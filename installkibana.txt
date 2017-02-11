@@ -34,7 +34,7 @@ echo "==== End Parameters ===="
 
 if [ ! -z "$ssl" ]; then
   echo "Setting up SSL"
-  paramsToES="-e ELASTICSEARCH_URL=\"https://elasticsearch:9200\" -e SERVER_SSL_KEY=\"/usr/share/kibana/config/node.key\" -e SERVER_SSL_CERT=\"/usr/share/kibana/config/node.crt\" -e ELASTICSEARCH_SSL_KEY=\"/usr/share/kibana/config/node.key\" -e ELASTICSEARCH_SSL_VERIFY=false -e ELASTICSEARCH_SSL_CER=\"/usr/share/kibana/config/node.key\" -e ELASTICSEARCH_SSL_CA=\"/usr/share/kibana/config/ca.crt\" -e XPACK_SECURITY_ENCRYPTIONKEY=\"0123456789012345678901234567890123456789\" -e ELASTICSEARCH_USERNAME=kibana -e ELASTICSEARCH_PASSWORD=\"$defaultpassword\""
+  paramsToES="-e ELASTICSEARCH_URL=\"https://elasticsearch:9200\" -e SERVER_SSL_KEY=\"/usr/share/kibana/config/node.key\" -e SERVER_SSL_CERT=\"/usr/share/kibana/config/node.crt\" -e ELASTICSEARCH_SSL_KEY=\"/usr/share/kibana/config/node.key\" -e ELASTICSEARCH_SSL_VERIFY=false -e ELASTICSEARCH_SSL_CER=\"/usr/share/kibana/config/node.crt\" -e ELASTICSEARCH_SSL_CA=\"/usr/share/kibana/config/ca.crt\" -e XPACK_SECURITY_ENCRYPTIONKEY=\"0123456789012345678901234567890123456789\" -e ELASTICSEARCH_USERNAME=kibana -e ELASTICSEARCH_PASSWORD=\"$defaultpassword\""
 #  paramsToES="-e ELASTICSEARCH_URL=\"https://elasticsearch:9200\""
 
   

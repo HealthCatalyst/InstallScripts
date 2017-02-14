@@ -34,11 +34,10 @@ echo "==== End Parameters ===="
 
 if [ ! -z "$ssl" ]; then
   echo "Setting up SSL"
-  paramsToES="-e ELASTICSEARCH_URL=\"https://elasticsearch:9200\" -e SERVER_SSL_KEY=/usr/share/kibana/config/node.key -e SERVER_SSL_CERT=/usr/share/kibana/config/node.crt -e ELASTICSEARCH_SSL_KEY=/usr/share/kibana/config/node.key -e ELASTICSEARCH_SSL_VERIFY=false -e ELASTICSEARCH_SSL_CERT=/usr/share/kibana/config/node.crt -e ELASTICSEARCH_SSL_CA=/usr/share/kibana/config/ca.crt -e XPACK_SECURITY_ENCRYPTIONKEY=0123456789012345678901234567890123456789 -e ELASTICSEARCH_USERNAME=kibana -e ELASTICSEARCH_PASSWORD=$defaultpassword"
+#  paramsToES="-e ELASTICSEARCH_URL=\"https://elasticsearch:9200\" -e SERVER_SSL_KEY=/usr/share/kibana/config/node.key -e SERVER_SSL_CERT=/usr/share/kibana/config/node.crt -e ELASTICSEARCH_SSL_KEY=/usr/share/kibana/config/node.key -e ELASTICSEARCH_SSL_VERIFY=false -e ELASTICSEARCH_SSL_CERT=/usr/share/kibana/config/node.crt -e ELASTICSEARCH_SSL_CA=/usr/share/kibana/config/ca.crt -e XPACK_SECURITY_ENCRYPTIONKEY=0123456789012345678901234567890123456789 -e ELASTICSEARCH_USERNAME=kibana -e ELASTICSEARCH_PASSWORD=$defaultpassword"
 #  paramsToES="-e ELASTICSEARCH_URL=\"https://elasticsearch:9200\""
 
-  
-  echo $paramsToES
+  #echo $paramsToES
 fi
 
 echo "==== Creating update script ===="
@@ -113,6 +112,8 @@ if [ ! -z "$ssl" ]; then
     docker cp $installfolder/node.crt dockerkibana:/usr/share/kibana/config
     docker cp $installfolder/ca.crt dockerkibana:/usr/share/kibana/config
 
+#    docker exec dockerkibana /bin/cp -rf /usr/share/kibana/config/kibanassl.yml /usr/share/kibana/config/kibana.yml
+
     protocol="https"
   else
     echo "ERROR: No key files found in [$nodekeypath] so cannot set up SSL"
@@ -120,9 +121,9 @@ if [ ! -z "$ssl" ]; then
 
     docker start dockerkibana
 
-    docker exec dockerkibana gosu kibana /usr/share/kibana/bin/kibana-plugin install x-pack
+#    docker exec dockerkibana gosu kibana /usr/share/kibana/bin/kibana-plugin install x-pack
 
-    docker restart dockerkibana
+#    docker restart dockerkibana
   fi
 
 # https://www.elastic.co/guide/en/x-pack/current/kibana.html

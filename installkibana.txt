@@ -114,9 +114,9 @@ if [ ! -z "$ssl" ]; then
 
     docker start dockerkibana
 
-    docker exec dockerkibana /bin/cp -rf /usr/share/kibana/config/kibanassl.yml /usr/share/kibana/config/kibana.yml
-
     sleep 5s
+
+    docker exec dockerkibana /bin/cp -rf /usr/share/kibana/config/kibanassl.yml /usr/share/kibana/config/kibana.yml
 
     docker restart dockerkibana
 

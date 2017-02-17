@@ -1,6 +1,6 @@
 # curl -useb https://imranq2.github.io/InstallScripts/installelasticsearchonwindows.txt | iex; 
 
-echo "starting"
+echo "starting version 1.1"
 
 docker volume create --name esdata
 

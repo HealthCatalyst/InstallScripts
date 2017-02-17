@@ -14,6 +14,6 @@ echo "Sleeping"
 Start-Sleep -s 10
 
 echo "Checking ElasticSearch"
-curl -useb http://localhost:9200
+Invoke-WebRequest http://localhost:9200
 
 echo "Finished"

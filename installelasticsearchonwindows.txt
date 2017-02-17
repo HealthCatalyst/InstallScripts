@@ -1,6 +1,6 @@
 # curl -useb https://imranq2.github.io/InstallScripts/installelasticsearchonwindows.txt | iex; 
 
-echo "starting version 1.1"
+echo "starting version 1.2"
 
 docker volume create --name esdata
 
@@ -13,7 +13,9 @@ docker run -d -p 9200:9200 -p 9300:9300 -v esdata:/usr/share/elasticsearch/data 
 echo "Sleeping"
 Start-Sleep -s 10
 
-echo "Checking ElasticSearch"
-Invoke-WebRequest http://localhost:9200
+# echo "Checking ElasticSearch"
+# Invoke-WebRequest http://localhost:9200
 
+echo "You can verify ElasticSearch by running:"
+echo "curl http://localhost" 
 echo "Finished"

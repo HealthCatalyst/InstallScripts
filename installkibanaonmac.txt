@@ -6,7 +6,7 @@ echo "starting kibana install v1.2"
 # docker network disconnect mynetwork dockerkibana
 # docker network rm mynetwork
 
-$cmdOutput = docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' dockerelasticsearch
+cmdOutput=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' dockerelasticsearch)
 
 echo "ElasticSearch IP:"
 echo $cmdOutput

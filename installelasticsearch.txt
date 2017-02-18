@@ -16,8 +16,20 @@ echo "Starting setup..."
 u="$(whoami)"
 echo "User name: $u"
 
+runningOnOS=$(uname)
+runningOnMac=0
+
+if [ "$runningOnOS" == "Darwin" ]; then
+  echo "Running on Mac"
+  runningOnMac=1
+fi
+
 declare -i freememInBytes=10
-freememInBytes=$(free|awk '/^Mem:/{print $2}')
+
+freememInBytes=8000000
+if [ "$runningOnMac" == "0" ]; then
+  freememInBytes=$(free|awk '/^Mem:/{print $2}')
+fi
 
 # echo "param 1: [" $1 "]"
 

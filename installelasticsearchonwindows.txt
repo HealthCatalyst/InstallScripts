@@ -17,5 +17,5 @@ Start-Sleep -s 10
 # Invoke-WebRequest http://localhost:9200
 
 echo "You can verify ElasticSearch by running:"
-echo "curl http://localhost" 
+echo "curl http://localhost:9200" 
 echo "Finished"

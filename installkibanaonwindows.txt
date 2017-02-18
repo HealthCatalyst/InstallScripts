@@ -22,4 +22,10 @@ docker run -d -p 5601:5601 --name dockerkibana --add-host elasticsearch:$cmdOutp
 
 # docker network connect mynetwork dockerkibana
 
+echo "Sleeping"
+Start-Sleep -s 10
+
+echo "You can verify Kibana by running:"
+echo "curl http://localhost:5601" 
+
 echo "Finished"

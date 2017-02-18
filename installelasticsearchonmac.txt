@@ -1,0 +1,21 @@
+# curl -useb https://imranq2.github.io/InstallScripts/installelasticsearchonwindows.txt | iex; 
+
+echo "starting version 1.2"
+
+docker volume create --name esdata
+
+docker stop dockerelasticsearch
+docker rm dockerelasticsearch
+docker rmi imranq2/dockerelasticsearch
+docker pull imranq2/dockerelasticsearch
+docker run -d -p 9200:9200 -p 9300:9300 -v esdata:/usr/share/elasticsearch/data --add-host es-master:127.0.0.1 --add-host es-slave1:127.0.0.1 --add-host es-slave2:127.0.0.1 --security-opt seccomp=unconfined -e ES_JAVA_OPTS="-Xms2g -Xmx2g" --name dockerelasticsearch imranq2/dockerelasticsearch -E network.host=_eth0_ -E network.publish_host=es-master -E node.name=es-master -E discovery.zen.ping.unicast.hosts=127.0.0.1
+
+echo "Sleeping"
+#Start-Sleep -s 10
+
+# echo "Checking ElasticSearch"
+# Invoke-WebRequest http://localhost:9200
+
+echo "You can verify ElasticSearch by running:"
+echo "curl http://localhost:9200" 
+echo "Finished"

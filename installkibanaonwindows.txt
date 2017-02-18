@@ -1,6 +1,6 @@
 # curl -useb https://imranq2.github.io/InstallScripts/installkibanaonwindows.txt | iex; 
 
-echo "starting now"
+echo "starting kibana install v1.1"
 
 # docker network disconnect mynetwork dockerelasticsearch
 # docker network disconnect mynetwork dockerkibana

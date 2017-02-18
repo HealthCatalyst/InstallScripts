@@ -1,4 +1,4 @@
-# curl -useb https://imranq2.github.io/InstallScripts/installelasticsearchonwindows.txt | iex; 
+# curl -useb https://imranq2.github.io/InstallScripts/installelasticsearchonmac.txt | iex; 
 
 echo "starting version 1.2"
 

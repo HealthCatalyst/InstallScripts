@@ -70,7 +70,7 @@ fi
 
 if [ ! -z "$ssl" ]; then
   echo "Setting up SSL"
-  paramsToES="-E xpack.security.http.ssl.enabled=true -E xpack.ssl.key=node.key -E xpack.ssl.certificate=node.crt -E xpack.ssl.certificate_authorities=ca.crt -E xpack.security.transport.ssl.enabled=true -E xpack.security.authc.anonymous.roles=superuser -E xpack.security.transport.ssl.verification_mode=certificate"
+  paramsToES="-E xpack.security.http.ssl.enabled=true -E xpack.ssl.key=node.key -E xpack.ssl.certificate=node.crt -E xpack.ssl.certificate_authorities=ca.crt -E xpack.security.transport.ssl.enabled=true -E xpack.security.transport.ssl.verification_mode=certificate"
 
   echo $paramsToES
 fi
@@ -147,7 +147,7 @@ docker pull imranq2/dockerelasticsearch
 echo "starting docker container with new image"
 set -x
 # https://www.elastic.co/guide/en/elasticsearch/reference/current/docker.html
-docker run -d -p 9200:9200 -p 9300:9300 -v esdata:/usr/share/elasticsearch/data --add-host es-master:$ip1 --add-host es-slave1:$ip2 --add-host es-slave2:$ip3 --security-opt seccomp=unconfined -e ES_JAVA_OPTS="$javaOpts" --name dockerelasticsearch imranq2/dockerelasticsearch -E network.host=_eth0_ -E network.publish_host=$myip -E node.name=$hostname -E discovery.zen.ping.unicast.hosts="$hosts" -E cluster.name=$clustername -E xpack.security.enabled=true $paramsToES
+docker run -d -p 9200:9200 -p 9300:9300 -v esdata:/usr/share/elasticsearch/data --add-host es-master:$ip1 --add-host es-slave1:$ip2 --add-host es-slave2:$ip3 --security-opt seccomp=unconfined -e ES_JAVA_OPTS="$javaOpts" --name dockerelasticsearch imranq2/dockerelasticsearch -E network.host=_eth0_ -E network.publish_host=$myip -E node.name=$hostname -E discovery.zen.ping.unicast.hosts="$hosts" -E cluster.name=$clustername -E xpack.security.enabled=true  -E xpack.security.authc.anonymous.roles=superuser  $paramsToES
 set +x
 
 echo "sleeping until docker container is up"

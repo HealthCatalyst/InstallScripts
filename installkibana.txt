@@ -21,7 +21,7 @@ ip1="$1"
 ssl="$2"
 paramsToES=""
 
-if [ ! -z "$ip1" ]; then
+if [ -z "$ip1" ]; then
   myip=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' dockerelasticsearch)
 
   echo "ElasticSearch IP:"

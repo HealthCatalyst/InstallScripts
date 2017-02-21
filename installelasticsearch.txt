@@ -33,12 +33,6 @@ fi
 
 # echo "param 1: [" $1 "]"
 
-# no spaces allowed in variable set commands
-ip1="$1"
-ip2="$2"
-ip3="$3"
-ssl="$4"
-paramsToES=""
 
 externalip=$(curl ipecho.net/plain)
 
@@ -52,6 +46,13 @@ fi
 
 hosts="$ip1"
 hostname="$(hostname -s)"
+
+# no spaces allowed in variable set commands
+ip1="$1"
+ip2="$2"
+ip3="$3"
+ssl="$4"
+paramsToES=""
 
 if [ ! -z "$ip2" ]; then
   hosts="$hosts"",""$ip2"

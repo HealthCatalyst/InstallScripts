@@ -42,8 +42,12 @@ paramsToES=""
 
 externalip=$(curl ipecho.net/plain)
 
+# http://stackoverflow.com/questions/8529181/which-terminal-command-to-get-just-ip-address-and-nothing-else
+myip=$(ip -4 addr show eth0 | grep -oP '(?<=inet\s)\d+(\.\d+){3}')
+#myip=$(hostname -i)
+
 if [ ! -z "$ip1" ]; then
-  ip1="$externalip"
+  ip1="$myip"
 fi
 
 hosts="$ip1"
@@ -63,10 +67,6 @@ if [ ! -z "$ssl" ]; then
 
   echo $paramsToES
 fi
-
-# http://stackoverflow.com/questions/8529181/which-terminal-command-to-get-just-ip-address-and-nothing-else
-myip=$(ip -4 addr show eth0 | grep -oP '(?<=inet\s)\d+(\.\d+){3}')
-#myip=$(hostname -i)
 
 javaOpts="-Xms6g -Xmx6g"
 if [ $freememInBytes -lt 8000000 ]; then

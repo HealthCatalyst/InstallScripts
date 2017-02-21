@@ -9,7 +9,7 @@ set -e
 #
 #
 
-echo "starting version 1.5"
+echo "starting version 1.6"
 
 clustername="catalystdev"
 defaultpassword="ILoveElasticSearch2017"
@@ -212,12 +212,13 @@ set -e
 echo "Resetting default passwords"
 set -x
 curl -XPUT "$protocol://elastic:changeme@localhost:9200/_xpack/security/user/elastic/_password" -d'{ "password": "$defaultpassword"}' -k
-set +x
+
 curl -XPUT "$protocol://elastic:$defaultpassword@localhost:9200/_xpack/security/user/kibana/_password" -d'{ "password": "$defaultpassword"}' -k
 curl -XPUT "$protocol://elastic:$defaultpassword@localhost:9200/_xpack/security/user/logstash_system/_password" -d'{ "password": "$defaultpassword"}' -k
 
 echo "curl -X GET $protocol://localhost:9200/_cluster/health?pretty"
 curl -X GET $protocol://elastic:$defaultpassword@localhost:9200/_cluster/health?pretty -k
+set +x
 
 echo "listing all nodes"
 curl -XGET $protocol://elastic:$defaultpassword@localhost:9200/_nodes/_all/host,ip,name?pretty -k

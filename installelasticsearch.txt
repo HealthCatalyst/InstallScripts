@@ -9,7 +9,7 @@ set -e
 #
 #
 
-echo "starting version 1.4"
+echo "starting version 1.5"
 
 clustername="catalystdev"
 defaultpassword="ILoveElasticSearch2017"
@@ -51,6 +51,7 @@ myip=$(ip -4 addr show eth0 | grep -oP '(?<=inet\s)\d+(\.\d+){3}')
 echo "MyIP:"$myip
 
 if [ ! -z "$ip1" ]; then
+  echo "No IP passed in command line so setting ip1 to $myip"
   ip1="$myip"
 fi
 

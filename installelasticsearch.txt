@@ -53,6 +53,8 @@ echo "MyIP:"$myip
 if [ -z "$ip1" ]; then
   echo "No IP passed in command line so setting ip1 to $myip"
   ip1="$myip"
+  ip2="$myip"
+  ip3="$myip"
 fi
 
 hosts="$ip1"

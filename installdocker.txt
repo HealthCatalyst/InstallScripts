@@ -23,6 +23,11 @@ echo "User name: $u"
 echo "updating yum package manager"
 sudo yum update -y
 
+echo "installing jq"
+wget http://stedolan.github.io/jq/download/linux64/jq
+chmod +x ./jq
+sudo cp jq /usr/bin
+
 echo "downloading and installing docker"
 curl -fsSL https://get.docker.com/ | sh
 

@@ -35,11 +35,6 @@ fi
 
 # echo "param 1: [" $1 "]"
 
-echo "installing jq"
-wget http://stedolan.github.io/jq/download/linux64/jq
-chmod +x ./jq
-sudo cp jq /usr/bin
-
 # no spaces allowed in variable set commands
 ip1="$1"
 ip2="$2"
@@ -219,11 +214,11 @@ set -x
 responseStatus=$(curl -X GET -u elastic:changeme $protocol://localhost:9200 -k | jq -s .[0].status)
 
 if [ "$responseStatus" != "401" ]; then
-curl -XPUT -u elastic:changeme "$protocol://localhost:9200/_xpack/security/user/elastic/_password" -d'{ "password": "$defaultpassword"}' -k
+  curl -XPUT -u elastic:changeme "$protocol://localhost:9200/_xpack/security/user/elastic/_password" -d"{ \"password\": \"$defaultpassword\"}" -k
 fi
 
-curl -XPUT -u elastic:$defaultpassword "$protocol://localhost:9200/_xpack/security/user/kibana/_password" -d'{ "password": "$defaultpassword"}' -k
-curl -XPUT -u elastic:$defaultpassword "$protocol://localhost:9200/_xpack/security/user/logstash_system/_password" -d'{ "password": "$defaultpassword"}' -k
+curl -XPUT -u elastic:$defaultpassword "$protocol://localhost:9200/_xpack/security/user/kibana/_password" -d"{ \"password\": \"$defaultpassword\"}" -k
+curl -XPUT -u elastic:$defaultpassword "$protocol://localhost:9200/_xpack/security/user/logstash_system/_password" -d"{ \"password\": \"$defaultpassword\"}" -k
 
 echo "curl -X GET $protocol://localhost:9200/_cluster/health?pretty"
 curl -X GET -u elastic:$defaultpassword $protocol://localhost:9200/_cluster/health?pretty -k

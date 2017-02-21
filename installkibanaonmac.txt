@@ -1,4 +1,4 @@
-# curl -useb https://imranq2.github.io/InstallScripts/installkibanaonmac.txt | iex; 
+# curl -sSL https://imranq2.github.io/InstallScripts/installkibanaonmac.txt | sh 
 
 echo "starting kibana install v1.2"
 
@@ -24,6 +24,9 @@ docker run -d -p 5601:5601 --name dockerkibana --add-host elasticsearch:$cmdOutp
 
 echo "Sleeping"
 # Start-Sleep -s 10
+
+externalip=$(curl ipecho.net/plain)
+echo "External IP:" $externalip
 
 echo "You can verify Kibana by running:"
 echo "curl http://localhost:5601" 

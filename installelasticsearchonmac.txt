@@ -1,4 +1,4 @@
-# curl -useb https://imranq2.github.io/InstallScripts/installelasticsearchonmac.txt | iex; 
+# curl -sSL https://imranq2.github.io/InstallScripts/installelasticsearchonmac.txt | sh 
 
 echo "starting version 1.2"
 
@@ -15,6 +15,9 @@ echo "Sleeping"
 
 # echo "Checking ElasticSearch"
 # Invoke-WebRequest http://localhost:9200
+
+externalip=$(curl ipecho.net/plain)
+echo "External IP:" $externalip
 
 echo "You can verify ElasticSearch by running:"
 echo "curl http://localhost:9200" 

@@ -125,12 +125,16 @@ if [ ! -z "$ssl" ]; then
     echo "ERROR: No key files found in [$nodekeypath] so cannot set up SSL"
   fi
 
-#    docker start dockerkibana
+else
+    docker start dockerkibana
 
-#    docker exec dockerkibana gosu kibana /usr/share/kibana/bin/kibana-plugin install x-pack
+    sleep 5s
 
-#    docker restart dockerkibana
-  fi
+    # use kibanassl.yml
+    docker exec dockerkibana /bin/cp -rf /usr/share/kibana/config/kibanasecure.yml /usr/share/kibana/config/kibana.yml
+
+    docker restart dockerkibana
+fi
 
 
   echo "sleeping until docker container is up"

@@ -9,6 +9,7 @@ set -e
 #
 #
 
+echo "starting version 1.7"
 defaultpassword="ILoveElasticSearch2017"
 
 echo "Starting setup..."
@@ -42,7 +43,7 @@ echo "==== End Parameters ===="
 
 if [ ! -z "$ssl" ]; then
   echo "Setting up SSL"
-#  paramsToES="-e ELASTICSEARCH_URL=\"https://elasticsearch:9200\" -e SERVER_SSL_KEY=/usr/share/kibana/config/node.key -e SERVER_SSL_CERT=/usr/share/kibana/config/node.crt -e ELASTICSEARCH_SSL_KEY=/usr/share/kibana/config/node.key -e ELASTICSEARCH_SSL_VERIFY=false -e ELASTICSEARCH_SSL_CERT=/usr/share/kibana/config/node.crt -e ELASTICSEARCH_SSL_CA=/usr/share/kibana/config/ca.crt -e XPACK_SECURITY_ENCRYPTIONKEY=0123456789012345678901234567890123456789 -e ELASTICSEARCH_USERNAME=kibana -e ELASTICSEARCH_PASSWORD=$defaultpassword"
+#  paramsToES="-e ELASTICSEARCH_URL=\"https://elasticsearch:9200\" -e SERVER_SSL_KEY=/usr/share/kibana/config/node.key -e SERVER_SSL_CERT=/usr/share/kibana/config/node.crt -e ELASTICSEARCH_SSL_KEY=/usr/share/kibana/config/node.key -e ELASTICSEARCH_SSL_VERIFY=false -e ELASTICSEARCH_SSL_CERT=/usr/share/kibana/config/node.crt -e ELASTICSEARCH_SSL_CA=/usr/share/kibana/config/ca.crt -e XPACK_SECURITY_ENCRYPTIONKEY=0123456789012345678901234567890123456789"
 #  paramsToES="-e ELASTICSEARCH_URL=\"https://elasticsearch:9200\""
 
   #echo $paramsToES
@@ -103,7 +104,7 @@ echo "pulling latest docker image from repo"
 docker pull imranq2/dockerkibana
 echo "starting docker container with new image."
 set -x
-docker create -p 5601:5601 --name dockerkibana --add-host elasticsearch:$ip1 -e SERVER_HOST=dev-es01.cafe.healthcatalyst.com $paramsToES imranq2/dockerkibana 
+docker create -p 5601:5601 --name dockerkibana --add-host elasticsearch:$ip1 -e SERVER_HOST=dev-es01.cafe.healthcatalyst.com  -e ELASTICSEARCH_USERNAME=kibana -e ELASTICSEARCH_PASSWORD=$defaultpassword $paramsToES imranq2/dockerkibana 
 set +x
 
 echo "sleeping for 5s so docker container is up"

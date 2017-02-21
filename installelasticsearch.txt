@@ -9,7 +9,7 @@ set -e
 #
 #
 
-echo "starting version 1.6"
+echo "starting version 1.7"
 
 clustername="catalystdev"
 defaultpassword="ILoveElasticSearch2017"

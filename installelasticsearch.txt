@@ -35,6 +35,11 @@ fi
 
 # echo "param 1: [" $1 "]"
 
+echo "installing jq"
+wget http://stedolan.github.io/jq/download/linux64/jq
+chmod +x ./jq
+sudo cp jq /usr/bin
+
 # no spaces allowed in variable set commands
 ip1="$1"
 ip2="$2"
@@ -211,7 +216,11 @@ set -e
 # https://www.elastic.co/guide/en/x-pack/current/setting-up-authentication.html
 echo "Resetting default passwords"
 set -x
+responseStatus=$(curl -X GET $protocol://elastic:changeme@localhost:9200 -k | jq -s .[0].status)
+
+if [ "$responseStatus" != "401" ]; then
 curl -XPUT "$protocol://elastic:changeme@localhost:9200/_xpack/security/user/elastic/_password" -d'{ "password": "$defaultpassword"}' -k
+fi
 
 curl -XPUT "$protocol://elastic:$defaultpassword@localhost:9200/_xpack/security/user/kibana/_password" -d'{ "password": "$defaultpassword"}' -k
 curl -XPUT "$protocol://elastic:$defaultpassword@localhost:9200/_xpack/security/user/logstash_system/_password" -d'{ "password": "$defaultpassword"}' -k

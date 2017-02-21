@@ -142,10 +142,19 @@ if [ ! -z "$ssl" ]; then
 #    docker restart dockerkibana
   fi
 
+
+  echo "sleeping until docker container is up"
+  until [ "`/usr/bin/docker inspect -f {{.State.Running}} dockerkibana`"=="true" ]; do
+      sleep 1s;
+  done;
+
 # https://www.elastic.co/guide/en/x-pack/current/kibana.html
 
 echo "==== Listing running docker containers ===="
 docker ps
+
+externalip=$(curl ipecho.net/plain)
+echo "External IP:" $externalip
 
 echo "==== All Done ===="
 echo "NOTE To update the docker image on this host in the future, just run"

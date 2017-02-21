@@ -29,6 +29,8 @@ if [ -z "$ip1" ]; then
   ip1="$myip"
 fi
 
+hostname="$(hostname -s)"
+
 echo "==== Parameters ======"
 echo "node name: [$hostname]" 
 echo "ip1: $ip1"

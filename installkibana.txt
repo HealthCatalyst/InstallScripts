@@ -9,7 +9,7 @@ set -e
 #
 #
 
-echo "starting version 1.7"
+echo "starting version 1.8"
 defaultpassword="ILoveElasticSearch2017"
 
 echo "Starting setup..."

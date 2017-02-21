@@ -200,7 +200,7 @@ set +e
 
 while [ $c -lt 60 ]; do
     echo "curl -X GET $protocol://localhost:9200"
-    curl -X GET $protocol://elastic:changeme@localhost:9200 -k
+    curl -X GET -u elastic:changeme $protocol://localhost:9200 -k
     RETVAL=$?
     echo "RETVAL:[$RETVAL]"
     if [ $RETVAL -eq 0 ]; then 
@@ -216,27 +216,27 @@ set -e
 # https://www.elastic.co/guide/en/x-pack/current/setting-up-authentication.html
 echo "Resetting default passwords"
 set -x
-responseStatus=$(curl -X GET $protocol://elastic:changeme@localhost:9200 -k | jq -s .[0].status)
+responseStatus=$(curl -X GET -u elastic:changeme $protocol://localhost:9200 -k | jq -s .[0].status)
 
 if [ "$responseStatus" != "401" ]; then
-curl -XPUT "$protocol://elastic:changeme@localhost:9200/_xpack/security/user/elastic/_password" -d'{ "password": "$defaultpassword"}' -k
+curl -XPUT -u elastic:changeme "$protocol://localhost:9200/_xpack/security/user/elastic/_password" -d'{ "password": "$defaultpassword"}' -k
 fi
 
-curl -XPUT "$protocol://elastic:$defaultpassword@localhost:9200/_xpack/security/user/kibana/_password" -d'{ "password": "$defaultpassword"}' -k
-curl -XPUT "$protocol://elastic:$defaultpassword@localhost:9200/_xpack/security/user/logstash_system/_password" -d'{ "password": "$defaultpassword"}' -k
+curl -XPUT -u elastic:$defaultpassword "$protocol://localhost:9200/_xpack/security/user/kibana/_password" -d'{ "password": "$defaultpassword"}' -k
+curl -XPUT -u elastic:$defaultpassword "$protocol://localhost:9200/_xpack/security/user/logstash_system/_password" -d'{ "password": "$defaultpassword"}' -k
 
 echo "curl -X GET $protocol://localhost:9200/_cluster/health?pretty"
-curl -X GET $protocol://elastic:$defaultpassword@localhost:9200/_cluster/health?pretty -k
+curl -X GET -u elastic:$defaultpassword $protocol://localhost:9200/_cluster/health?pretty -k
 set +x
 
 echo "listing all nodes"
-curl -XGET $protocol://elastic:$defaultpassword@localhost:9200/_nodes/_all/host,ip,name?pretty -k
+curl -XGET -u elastic:$defaultpassword $protocol://localhost:9200/_nodes/_all/host,ip,name?pretty -k
 
 echo "creating a test index"
-curl -XPOST "$protocol://elastic:$defaultpassword@localhost:9200/testindex/testdoc/1" -d'{"name": "foo","age":10}' -k
+curl -XPOST -u elastic:$defaultpassword "$protocol://localhost:9200/testindex/testdoc/1" -d'{"name": "foo","age":10}' -k
 
 echo "querying test document"
-curl -XPOST "$protocol://elastic:$defaultpassword@localhost:9200/testindex/_search?pretty" -d'{"query": {"match_all": {}}}' -k
+curl -XPOST -u elastic:$defaultpassword "$protocol://localhost:9200/testindex/_search?pretty" -d'{"query": {"match_all": {}}}' -k
 
 # echo "checking from externalip"
 # curl -X GET http://$externalip:9200

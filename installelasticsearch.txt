@@ -213,7 +213,8 @@ echo "Resetting default passwords"
 set -x
 responseStatus=$(curl -X GET -u elastic:changeme $protocol://localhost:9200 -k | jq -s .[0].status)
 
-if [ "$responseStatus" != "401" ]; then
+if [ "$responseStatus" == "401" ]; then
+else
   curl -XPUT -u elastic:changeme "$protocol://localhost:9200/_xpack/security/user/elastic/_password" -d"{ \"password\": \"$defaultpassword\"}" -k
 fi
 

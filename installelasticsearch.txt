@@ -184,6 +184,9 @@ fi
 echo "==== Listing running docker containers ===="
 docker ps
 
+echo "sleeping for 10 secs"
+sleep 10s;
+
 echo "==== calling ElasticSearch from localhost ===="
 
 declare -i c=10

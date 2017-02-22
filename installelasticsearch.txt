@@ -217,7 +217,9 @@ set -x
 responseStatus=$(curl -X GET -u elastic:changeme $protocol://localhost:9200 -k | jq -s .[0].status)
 
 if [ "$responseStatus" == "401" ]; then
+  echo "default password was already changed"
 else
+  echo "changing default password"
   curl -XPUT -u elastic:changeme "$protocol://localhost:9200/_xpack/security/user/elastic/_password" -d"{ \"password\": \"$defaultpassword\"}" -k
 fi
 

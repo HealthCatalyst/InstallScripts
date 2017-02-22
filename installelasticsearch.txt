@@ -220,6 +220,9 @@ fi
 curl -XPUT -u elastic:$defaultpassword "$protocol://localhost:9200/_xpack/security/user/kibana/_password" -d"{ \"password\": \"$defaultpassword\"}" -k
 curl -XPUT -u elastic:$defaultpassword "$protocol://localhost:9200/_xpack/security/user/logstash_system/_password" -d"{ \"password\": \"$defaultpassword\"}" -k
 
+echo "Giving kibana_user access to all indexes
+curl -XPOST -u elastic:$defaultpassword "$protocol://localhost:9200/_xpack/security/role/kibana_user" -d '{"indices": [{"names": ["*"]}]}'
+
 echo "curl -X GET $protocol://localhost:9200/_cluster/health?pretty"
 curl -X GET -u elastic:$defaultpassword $protocol://localhost:9200/_cluster/health?pretty -k
 set +x

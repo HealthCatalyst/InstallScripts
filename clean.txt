@@ -4,3 +4,4 @@ docker rm dockerkibana
 docker stop dockerelasticsearch
 docker rm dockerelasticsearch
 docker volume rm esdata
+

@@ -1,0 +1,6 @@
+# curl -sSL https://imranq2.github.io/InstallScripts/clean.txt | sh
+docker stop dockerkibana
+docker rm dockerkibana
+docker stop dockerelasticsearch
+docker rm dockerelasticsearch
+docker volume rm esdata

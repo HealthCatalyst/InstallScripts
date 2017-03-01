@@ -23,6 +23,8 @@ echo "User name: $u"
 echo "updating yum package manager"
 sudo yum update -y
 
+sudo yum install wget
+
 echo "installing jq"
 wget http://stedolan.github.io/jq/download/linux64/jq
 chmod +x ./jq

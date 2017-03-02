@@ -151,7 +151,7 @@ docker images
 echo "==== existing volumes on this host ===="
 docker volume ls
 
-volumeParam="-v esdata1:/datadrive1 -v esdata2:/datadrive2"
+volumeParam="-v esdata1:/usr/share/elasticsearch/data1 -v esdata2:/usr/share/elasticsearch/data2"
 
 if [[ ! -d "/datadrive1" ]]; then
   echo "/datadrive1 does not exist so creating docker volumes"
@@ -165,7 +165,7 @@ if [[ ! -d "/datadrive1" ]]; then
     docker volume create --name esdata2
   fi
 else
-  volumeParam="-v /datadrive1:/datadrive1 -v /datadrive2:/datadrive2"
+  volumeParam="-v /datadrive1:/usr/share/elasticsearch/data -v /datadrive2:/usr/share/elasticsearch/data2"
 fi
 
 echo "stopping existing docker container"

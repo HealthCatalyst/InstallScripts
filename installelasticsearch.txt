@@ -9,38 +9,30 @@ set -e
 #
 
 
-echo "starting version 1.7"
+echo "starting version 1.8"
 
 clustername="catalystdev"
 defaultpassword="ILoveElasticSearch2017"
+
+echo "Please enter name for cluster:"
+read clustername
+
+echo "Please type in password to use for ElasticSearch built-in accounts:"
+read defaultpassword
 
 echo "Starting setup..."
 u="$(whoami)"
 echo "User name: $u"
 
-runningOnOS=$(uname)
-runningOnMac=0
-
-if [ "$runningOnOS" == "Darwin" ]; then
-  echo "Running on Mac"
-  runningOnMac=1
-fi
-
 declare -i freememInBytes=10
 
-freememInBytes=8000000
-if [ "$runningOnMac" == "0" ]; then
-  freememInBytes=$(free|awk '/^Mem:/{print $2}')
-fi
+freememInBytes=$(free|awk '/^Mem:/{print $2}')
 
-# echo "param 1: [" $1 "]"
-
-# no spaces allowed in variable set commands
+# Remember: no spaces allowed in variable set commands in bash
 ip1="$1"
 ip2="$2"
 ip3="$3"
 ssl="$4"
-prod="$5"
 paramsToES=""
 
 externalip=$(curl ipecho.net/plain)
@@ -63,7 +55,7 @@ if [[ ! -d "$installfolder" ]]; then
   sudo setfacl -m u:$u:rwx $installfolder
 fi
 
-
+# if no IP passed then use this node's IP for ElasticSearch
 if [ -z "$ip1" ]; then
   echo "No IP passed in command line so setting ip1 to $myip"
   ip1="$myip"
@@ -82,6 +74,7 @@ if [ ! -z "$ip3" ]; then
   hosts="$hosts"",""$ip3"
 fi
 
+# ask if user wants to use SSL
 if [ ! -z "$ssl" ]; then
   while true; do
       read -p "Do you wish to turn on SSL?" yn
@@ -92,24 +85,6 @@ if [ ! -z "$ssl" ]; then
       esac
   done
 fi
-
-if [ ! -z "$prod" ]; then
-  while true; do
-      read -p "Are you installing in production?" yn
-      case $yn in
-          [Yy]* ) prod="yes"; break;;
-          [Nn]* ) exit;;
-          * ) echo "Please answer yes or no.";;
-      esac
-  done
-
-  echo "Please enter name for cluster:"
-  read clustername
-
-  echo "Please type in password to use for ElasticSearch built-in accounts:"
-  read defaultpassword
-fi
-
 
 if [ ! -z "$ssl" ]; then
   echo "Setting up SSL"
@@ -129,31 +104,12 @@ if [ ! -z "$ssl" ]; then
 
   paramsToES="-E xpack.security.http.ssl.enabled=true -E xpack.ssl.key=node.key -E xpack.ssl.certificate=node.crt -E xpack.ssl.certificate_authorities=ca.crt -E xpack.security.transport.ssl.enabled=true -E xpack.security.transport.ssl.verification_mode=certificate"
 
-  echo $paramsToES
 fi
 
 javaOpts="-Xms6g -Xmx6g"
 if [ $freememInBytes -lt 8000000 ]; then
   echo "WARNING: Less than 8GB of memory is free so setting ES to run in 2GB but this is not recommended for good performance"
   javaOpts="-Xms2g -Xmx2g"
-fi
-
-if [ ! -z "$prod" ]; then
-  echo "Setting up Production"
-  
-  if [[ ! -d "/datadrive1" ]]; then
-    echo "ERROR: /datadrive1 does not exist"
-    exit 1
-  fi
-  if [[ ! -d "/datadrive2" ]]; then
-    echo "ERROR: /datadrive2 does not exist"
-    exit 1
-  fi  
-
-  paramsToES=$paramsToES" -E path.data=/datadrive1,/datadrive2"
-
-  echo $paramsToES
-  javaOpts="-Xms8g -Xmx8g"
 fi
 
 echo "==== Parameters ======"
@@ -195,14 +151,20 @@ docker images
 echo "==== existing volumes on this host ===="
 docker volume ls
 
-# check to see if volume already exists.  if not, create it
-if [ -z $(docker volume ls -q --filter "name=esdata") ]; then
-  echo "==== Creating persistent volume for ElasticSearch ===="
-  docker volume create --name esdata
-fi
+volumeParam="-v esdata1:/datadrive1 -v esdata2:/datadrive2"
 
-volumeParam="-v esdata:/usr/share/elasticsearch/data"
-if [ ! -z "$prod" ]; then
+if [[ ! -d "/datadrive1" ]]; then
+  echo "/datadrive1 does not exist so creating docker volumes"
+  # check to see if volume already exists.  if not, create it
+  if [ -z $(docker volume ls -q --filter "name=esdata1") ]; then
+    echo "==== Creating persistent volume for ElasticSearch ===="
+    docker volume create --name esdata1
+  fi
+  if [ -z $(docker volume ls -q --filter "name=esdata2") ]; then
+    echo "==== Creating persistent volume for ElasticSearch ===="
+    docker volume create --name esdata2
+  fi
+else
   volumeParam="-v /datadrive1:/datadrive1 -v /datadrive2:/datadrive2"
 fi
 
@@ -218,7 +180,7 @@ echo "starting docker container with new image"
 set -x
 # https://www.elastic.co/guide/en/elasticsearch/reference/current/docker.html
 
-docker run -d -p 9200:9200 -p 9300:9300 $volumeParam --cap-add=IPC_LOCK --ulimit memlock=-1:-1 --ulimit nofile=65536:65536 --add-host es-master:$ip1 --add-host es-slave1:$ip2 --add-host es-slave2:$ip3 --security-opt seccomp=unconfined -e ES_JAVA_OPTS="$javaOpts" --name dockerelasticsearch imranq2/dockerelasticsearch -E network.host=_eth0_ -E network.publish_host=$myip -E node.name=$hostname -E discovery.zen.ping.unicast.hosts="$hosts" -E cluster.name=$clustername -E xpack.security.enabled=true -E bootstrap.mlockall=true $paramsToES
+docker run -d -p 9200:9200 -p 9300:9300 $volumeParam --cap-add=IPC_LOCK --ulimit memlock=-1:-1 --ulimit nofile=65536:65536 --add-host es-master:$ip1 --add-host es-slave1:$ip2 --add-host es-slave2:$ip3 --security-opt seccomp=unconfined -e ES_JAVA_OPTS="$javaOpts" --name dockerelasticsearch imranq2/dockerelasticsearch -E network.host=_eth0_ -E network.publish_host=$myip -E node.name=$hostname -E discovery.zen.ping.unicast.hosts="$hosts" -E cluster.name=$clustername -E xpack.security.enabled=true -E bootstrap.mlockall=true  -E path.data="/datadrive1,/datadrive2" $paramsToES
 set +x
 
 echo "sleeping until docker container is up"

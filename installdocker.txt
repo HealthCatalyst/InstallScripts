@@ -32,6 +32,8 @@ wget http://stedolan.github.io/jq/download/linux64/jq
 chmod +x ./jq
 sudo cp jq /usr/bin
 
+sudo sysctl -w vm.max_map_count=262144
+
 echo "downloading and installing docker"
 curl -fsSL https://get.docker.com/ | sh
 

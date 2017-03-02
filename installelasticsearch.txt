@@ -15,10 +15,10 @@ clustername="catalystdev"
 defaultpassword="ILoveElasticSearch2017"
 
 echo "Please enter name for cluster:"
-read clustername < /dev/tty 
+read -e clustername < /dev/tty 
 
 echo "Please type in password to use for ElasticSearch built-in accounts:"
-read defaultpassword < /dev/tty 
+read -e defaultpassword < /dev/tty 
 
 echo "Starting setup..."
 u="$(whoami)"
@@ -77,7 +77,7 @@ fi
 # ask if user wants to use SSL
 if [ ! -z "$ssl" ]; then
   while true; do
-      read -p "Do you wish to turn on SSL?" yn < /dev/tty
+      read -e -p "Do you wish to turn on SSL?" yn < /dev/tty
       case $yn in
           [Yy]* ) ssl="yes"; break;;
           [Nn]* ) exit;;

@@ -40,6 +40,7 @@ ip1="$1"
 ip2="$2"
 ip3="$3"
 ssl="$4"
+prod="$5"
 paramsToES=""
 
 externalip=$(curl ipecho.net/plain)
@@ -49,6 +50,19 @@ myip=$(ip -4 addr show eth0 | grep -oP '(?<=inet\s)\d+(\.\d+){3}')
 #myip=$(hostname -i)
 
 echo "MyIP:"$myip
+
+# create /opt/install folder
+installfolder="/opt/install/"
+installscriptfile="updatedocker"
+installscript="$installfolder$installscriptfile"
+
+mkdir -p $HOME/bin
+if [[ ! -d "$installfolder" ]]; then
+  sudo mkdir -p $installfolder
+
+  sudo setfacl -m u:$u:rwx $installfolder
+fi
+
 
 if [ -z "$ip1" ]; then
   echo "No IP passed in command line so setting ip1 to $myip"
@@ -69,7 +83,50 @@ if [ ! -z "$ip3" ]; then
 fi
 
 if [ ! -z "$ssl" ]; then
+  while true; do
+      read -p "Do you wish to turn on SSL?" yn
+      case $yn in
+          [Yy]* ) ssl="yes"; break;;
+          [Nn]* ) exit;;
+          * ) echo "Please answer yes or no.";;
+      esac
+  done
+fi
+
+if [ ! -z "$prod" ]; then
+  while true; do
+      read -p "Are you installing in production?" yn
+      case $yn in
+          [Yy]* ) prod="yes"; break;;
+          [Nn]* ) exit;;
+          * ) echo "Please answer yes or no.";;
+      esac
+  done
+
+  echo "Please enter name for cluster:"
+  read clustername
+
+  echo "Please type in password to use for ElasticSearch built-in accounts:"
+  read defaultpassword
+fi
+
+
+if [ ! -z "$ssl" ]; then
   echo "Setting up SSL"
+
+  if [[ ! -f "$installfolder/node.key" ]]; then
+    echo "$installfolder/node.key does not exist" 
+    exit 1
+  fi
+  if [[ ! -f "$installfolder/node.crt" ]]; then
+    echo "$installfolder/node.crt does not exist" 
+    exit 1
+  fi
+  if [[ ! -f "$installfolder/ca.crt" ]]; then
+    echo "$installfolder/ca.crt does not exist" 
+    exit 1
+  fi    
+
   paramsToES="-E xpack.security.http.ssl.enabled=true -E xpack.ssl.key=node.key -E xpack.ssl.certificate=node.crt -E xpack.ssl.certificate_authorities=ca.crt -E xpack.security.transport.ssl.enabled=true -E xpack.security.transport.ssl.verification_mode=certificate"
 
   echo $paramsToES
@@ -79,6 +136,24 @@ javaOpts="-Xms6g -Xmx6g"
 if [ $freememInBytes -lt 8000000 ]; then
   echo "WARNING: Less than 8GB of memory is free so setting ES to run in 2GB but this is not recommended for good performance"
   javaOpts="-Xms2g -Xmx2g"
+fi
+
+if [ ! -z "$prod" ]; then
+  echo "Setting up Production"
+  
+  if [[ ! -d "/datadrive1" ]]; then
+    echo "ERROR: /datadrive1 does not exist"
+    exit 1
+  fi
+  if [[ ! -d "/datadrive2" ]]; then
+    echo "ERROR: /datadrive2 does not exist"
+    exit 1
+  fi  
+
+  paramsToES=$paramsToES" -E path.data=/datadrive1,/datadrive2"
+
+  echo $paramsToES
+  javaOpts="-Xms8g -Xmx8g"
 fi
 
 echo "==== Parameters ======"
@@ -94,16 +169,6 @@ echo "==== End Parameters ===="
 
 echo "==== Creating update script ===="
 
-installfolder="/opt/install/"
-installscriptfile="updatedocker"
-installscript="$installfolder$installscriptfile"
-
-mkdir -p $HOME/bin
-if [[ ! -d "$installfolder" ]]; then
-  sudo mkdir -p $installfolder
-
-  sudo setfacl -m u:$u:rwx $installfolder
-fi
 
 echo "#!/bin/sh" > $installscript
 echo "curl -sSL https://imranq2.github.io/InstallScripts/installelasticsearch.txt | sh -s $@" >> $installscript
@@ -136,6 +201,11 @@ if [ -z $(docker volume ls -q --filter "name=esdata") ]; then
   docker volume create --name esdata
 fi
 
+volumeParam="-v esdata:/usr/share/elasticsearch/data"
+if [ ! -z "$prod" ]; then
+  volumeParam="-v /datadrive1:/datadrive1 -v /datadrive2:/datadrive2"
+fi
+
 echo "stopping existing docker container"
 docker stop dockerelasticsearch || echo 'no container to stop'
 echo "removing docker container"
@@ -147,7 +217,8 @@ docker pull imranq2/dockerelasticsearch
 echo "starting docker container with new image"
 set -x
 # https://www.elastic.co/guide/en/elasticsearch/reference/current/docker.html
-docker run -d -p 9200:9200 -p 9300:9300 -v esdata:/usr/share/elasticsearch/data --add-host es-master:$ip1 --add-host es-slave1:$ip2 --add-host es-slave2:$ip3 --security-opt seccomp=unconfined -e ES_JAVA_OPTS="$javaOpts" --name dockerelasticsearch imranq2/dockerelasticsearch -E network.host=_eth0_ -E network.publish_host=$myip -E node.name=$hostname -E discovery.zen.ping.unicast.hosts="$hosts" -E cluster.name=$clustername -E xpack.security.enabled=true $paramsToES
+
+docker run -d -p 9200:9200 -p 9300:9300 $volumeParam --cap-add=IPC_LOCK --ulimit memlock=-1:-1 --ulimit nofile=65536:65536 --add-host es-master:$ip1 --add-host es-slave1:$ip2 --add-host es-slave2:$ip3 --security-opt seccomp=unconfined -e ES_JAVA_OPTS="$javaOpts" --name dockerelasticsearch imranq2/dockerelasticsearch -E network.host=_eth0_ -E network.publish_host=$myip -E node.name=$hostname -E discovery.zen.ping.unicast.hosts="$hosts" -E cluster.name=$clustername -E xpack.security.enabled=true -E bootstrap.mlockall=true $paramsToES
 set +x
 
 echo "sleeping until docker container is up"

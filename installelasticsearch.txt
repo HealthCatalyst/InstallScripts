@@ -14,11 +14,13 @@ echo "starting version 1.92"
 clustername="catalystdev"
 defaultpassword="ILoveElasticSearch2017"
 
-echo "Please enter name for cluster:"
-read -e clustername  -i "catalystdev" < /dev/tty 
+echo "Please enter name for cluster[default:catalystdev]:"
+read -e clustername < /dev/tty 
+clustername=${clustername:-catalystdev}
 
-echo "Please type in password to use for ElasticSearch built-in accounts:"
-read -e defaultpassword  -i "ILoveElasticSearch2017" < /dev/tty 
+echo "Please type in password to use for ElasticSearch built-in accounts[default:ILoveElasticSearch2017]:"
+read -e defaultpassword < /dev/tty
+defaultpassword=${defaultpassword:-ILoveElasticSearch2017}
 
 echo "Starting setup..."
 u="$(whoami)"

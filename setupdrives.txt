@@ -1,0 +1,4 @@
+sudo fdisk /dev/sdc
+sudo mkfs -t ext4 /dev/sdc1
+sudo mkdir /mnt/data1
+sudo mount /dev/sdc1 /mnt/data1

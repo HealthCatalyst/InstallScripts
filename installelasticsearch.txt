@@ -153,7 +153,8 @@ docker images
 echo "==== existing volumes on this host ===="
 docker volume ls
 
-volumeParam="-v esdata1:/usr/share/elasticsearch/data1 -v esdata2:/usr/share/elasticsearch/data2"
+# use the :Z suffix to give write perms: http://www.projectatomic.io/blog/2015/06/using-volumes-with-docker-can-cause-problems-with-selinux/
+volumeParam="-v esdata1:/usr/share/elasticsearch/data1:Z -v esdata2:/usr/share/elasticsearch/data2:Z"
 
 if [[ ! -d "/mnt/data1" ]]; then
   echo "/mnt/data1 does not exist so creating docker volumes"

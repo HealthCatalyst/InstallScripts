@@ -9,7 +9,7 @@ set -e
 #
 
 
-echo "starting version 1.93"
+echo "starting version 1.94"
 
 clustername="catalystdev"
 defaultpassword="ILoveElasticSearch2017"
@@ -153,23 +153,26 @@ docker images
 echo "==== existing volumes on this host ===="
 docker volume ls
 
-# use the :Z suffix to give write perms: http://www.projectatomic.io/blog/2015/06/using-volumes-with-docker-can-cause-problems-with-selinux/
-volumeParam="-v esdata1:/usr/share/elasticsearch/data1:Z -v esdata2:/usr/share/elasticsearch/data2:Z"
+data1File="/mnt/data1"
+data2File="/mnt/data2"
 
-if [[ ! -d "/mnt/data1" ]]; then
-  echo "/mnt/data1 does not exist so creating docker volumes"
-  # check to see if volume already exists.  if not, create it
-  if [ -z $(docker volume ls -q --filter "name=esdata1") ]; then
-    echo "==== Creating persistent volume for ElasticSearch ===="
-    docker volume create --name esdata1
+if [[ ! -d "$data1File" ]]; then
+  echo "$data1File does not exist so creating docker volumes"
+  data1File="$installfolder"data1
+  data2File="$installfolder"data2
+
+  if [[ ! -d "$data1File" ]]; then
+    sudo mkdir -p $data1File
+    sudo setfacl -m u:$u:rwx $data1File
   fi
-  if [ -z $(docker volume ls -q --filter "name=esdata2") ]; then
-    echo "==== Creating persistent volume for ElasticSearch ===="
-    docker volume create --name esdata2
-  fi
-else
-  volumeParam="-v /mnt/data1:/usr/share/elasticsearch/data1 -v /mnt/data2:/usr/share/elasticsearch/data2"
+  if [[ ! -d "$data2File" ]]; then
+    sudo mkdir -p $data2File
+    sudo setfacl -m u:$u:rwx $data2File
+  fi  
 fi
+
+volumeParam="-v $data1File:/usr/share/elasticsearch/data1 -v $data2File:/usr/share/elasticsearch/data2"
+
 
 echo "stopping existing docker container"
 docker stop dockerelasticsearch || echo 'no container to stop'

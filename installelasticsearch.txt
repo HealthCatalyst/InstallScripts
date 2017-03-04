@@ -9,7 +9,7 @@ set -e
 #
 
 
-echo "starting version 1.94"
+echo "starting version 1.95"
 
 clustername="catalystdev"
 defaultpassword="ILoveElasticSearch2017"
@@ -29,6 +29,8 @@ echo "User name: $u"
 declare -i freememInBytes=10
 
 freememInBytes=$(free|awk '/^Mem:/{print $2}')
+freememInGB=$(($freememInBytes/1000000))
+memToUseForES=$(($freememInBytes-8))
 
 # Remember: no spaces allowed in variable set commands in bash
 ip1="$1"
@@ -108,10 +110,12 @@ if [ ! -z "$ssl" ]; then
 
 fi
 
-javaOpts="-Xms6g -Xmx6g"
-if [ $freememInBytes -lt 8000000 ]; then
+if [ $freememInGB -lt 8 ]; then
   echo "WARNING: Less than 8GB of memory is free so setting ES to run in 2GB but this is not recommended for good performance"
   javaOpts="-Xms2g -Xmx2g"
+else
+  echo "Using $memToUseForES GB of memory for ElasticSearch"
+  javaOpts="-Xms"$memToUseForES"g -Xmx"$memToUseForES"6g"
 fi
 
 echo "==== Parameters ======"

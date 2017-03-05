@@ -17,7 +17,7 @@ EEOF
 
 
 sudo mkfs -t ext4 /dev/sdc1
-sudo mkdir /mnt/data1
+sudo mkdir -p /mnt/data1
 sudo mount /dev/sdc1 /mnt/data1
 
 sudo mkdir -p /mnt/data1/db
@@ -27,7 +27,7 @@ uuidDisk1=$(blkid $1 | grep "^/dev/sdc1:" | awk '{ print $2 }' | tr -d '"' | cut
 
 echo "UUID=" $uuidDisk1
 
-sudo echo "UUID=$uuidDisk1       /mnt/data1        ext4   defaults        0 0" >> /etc/fstab
+echo "UUID=$uuidDisk1       /mnt/data1        ext4   defaults        0 0" | sudo tee -a /etc/fstab
 
 # sudo chgrp -R docker /mnt/data1/
 
@@ -44,7 +44,7 @@ EEOF
 
 
 sudo mkfs -t ext4 /dev/sdd1
-sudo mkdir /mnt/data2
+sudo mkdir -p /mnt/data2
 sudo mount /dev/sdd1 /mnt/data2
 
 sudo mkdir -p /mnt/data2/db
@@ -53,7 +53,7 @@ sudo mkdir -p /mnt/data2/log
 uuidDisk2=$(blkid $1 | grep "^/dev/sdd1:" | awk '{ print $2 }' | tr -d '"' | cut -c 6-)
 echo "UUID=" $uuidDisk2
 
-sudo echo "UUID=$uuidDisk2       /mnt/data2        ext4   defaults        0 0" >> /etc/fstab
+echo "UUID=$uuidDisk2       /mnt/data2        ext4   defaults        0 0" | sudo tee -a /etc/fstab
 
 # sudo chgrp -R docker /mnt/data2/
 

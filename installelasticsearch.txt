@@ -9,7 +9,7 @@ set -e
 #
 
 
-echo "starting version 1.95"
+echo "starting version 1.96"
 
 clustername="catalystdev"
 defaultpassword="ILoveElasticSearch2017"
@@ -30,7 +30,7 @@ declare -i freememInBytes=10
 
 freememInBytes=$(free|awk '/^Mem:/{print $2}')
 freememInGB=$(($freememInBytes/1000000))
-memToUseForES=$(($freememInBytes-8))
+memToUseForES=$(($freememInGB-8))
 
 # Remember: no spaces allowed in variable set commands in bash
 ip1="$1"

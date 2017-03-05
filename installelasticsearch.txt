@@ -115,7 +115,7 @@ if [ $freememInGB -lt 8 ]; then
   javaOpts="-Xms2g -Xmx2g"
 else
   echo "Using $memToUseForES GB of memory for ElasticSearch"
-  javaOpts="-Xms"$memToUseForES"g -Xmx"$memToUseForES"6g"
+  javaOpts="-Xms"$memToUseForES"g -Xmx"$memToUseForES"g"
 fi
 
 echo "==== Parameters ======"

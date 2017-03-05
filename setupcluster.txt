@@ -1,0 +1,32 @@
+#!/bin/bash
+# curl -sSL https://imranq2.github.io/InstallScripts/setupcluster.txt | sh
+
+echo "Version 1.41"
+set -x
+
+echo "setting up ElasticSearchNode1"
+ssh hcadmin@ElasticSearchNode1 'curl -sSL https://imranq2.github.io/InstallScripts/setupdrives.txt | sh'
+ssh hcadmin@ElasticSearchNode1 'curl -sSL https://imranq2.github.io/InstallScripts/installdocker.txt | sh'
+ssh hcadmin@ElasticSearchNode1 'curl -sSL https://imranq2.github.io/InstallScripts/setupdocker.txt | sh'
+ssh hcadmin@ElasticSearchNode1 'curl -sSL https://imranq2.github.io/InstallScripts/installelasticsearch.txt | sh -s ElasticSearchNode1 ElasticSearchNode2 ElasticSearchNode3'
+
+echo "setting up ElasticSearchNode2"
+ssh hcadmin@ElasticSearchNode2 'curl -sSL https://imranq2.github.io/InstallScripts/setupdrives.txt | sh'
+ssh hcadmin@ElasticSearchNode2 'curl -sSL https://imranq2.github.io/InstallScripts/installdocker.txt | sh'
+ssh hcadmin@ElasticSearchNode2 'curl -sSL https://imranq2.github.io/InstallScripts/setupdocker.txt | sh'
+ssh hcadmin@ElasticSearchNode2 'curl -sSL https://imranq2.github.io/InstallScripts/installelasticsearch.txt | sh -s ElasticSearchNode1 ElasticSearchNode2 ElasticSearchNode3'
+
+echo "setting up ElasticSearchNode3"
+ssh hcadmin@ElasticSearchNode3 'curl -sSL https://imranq2.github.io/InstallScripts/setupdrives.txt | sh'
+ssh hcadmin@ElasticSearchNode3 'curl -sSL https://imranq2.github.io/InstallScripts/installdocker.txt | sh'
+ssh hcadmin@ElasticSearchNode3 'curl -sSL https://imranq2.github.io/InstallScripts/setupdocker.txt | sh'
+ssh hcadmin@ElasticSearchNode3 'curl -sSL https://imranq2.github.io/InstallScripts/installelasticsearch.txt | sh -s ElasticSearchNode1 ElasticSearchNode2 ElasticSearchNode3'
+
+echo "setting up ElasticSearchKibanaNode1"
+ssh hcadmin@ElasticSearchKibanaNode1 'curl -sSL https://imranq2.github.io/InstallScripts/installdocker.txt | sh'
+ssh hcadmin@ElasticSearchKibanaNode1 'curl -sSL https://imranq2.github.io/InstallScripts/setupdocker.txt | sh'
+ssh hcadmin@ElasticSearchKibanaNode1 'curl -sSL https://imranq2.github.io/InstallScripts/installkibana.txt | sh -s ElasticSearchNode1'
+
+set +x
+
+echo "Finished"

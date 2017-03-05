@@ -173,10 +173,13 @@ if [[ ! -d "$data1File" ]]; then
     sudo mkdir -p $data2File
     sudo setfacl -m u:$u:rwx $data2File
   fi  
+else
+  # give permissions
+    sudo setfacl -m u:$u:rwx $data1File  
+    sudo setfacl -m u:$u:rwx $data2File
 fi
 
 volumeParam="-v $data1File:/usr/share/elasticsearch/data1 -v $data2File:/usr/share/elasticsearch/data2"
-
 
 echo "stopping existing docker container"
 docker stop dockerelasticsearch || echo 'no container to stop'

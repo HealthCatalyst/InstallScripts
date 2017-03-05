@@ -13,7 +13,7 @@ p
 
 w
 EEOF
-exit 0
+
 
 sudo mkfs -t ext4 /dev/sdc1
 sudo mkdir /mnt/data1
@@ -29,7 +29,7 @@ p
 
 w
 EEOF
-exit 0
+
 
 sudo mkfs -t ext4 /dev/sdd2
 sudo mkdir /mnt/data2

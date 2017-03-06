@@ -5,6 +5,8 @@ echo "Version 1.42"
 
 echo "setting up ElasticSearchNode1"
 ssh -tt hcadmin@ElasticSearchNode1 'curl -sSL https://imranq2.github.io/InstallScripts/setupdrives.txt | sudo sh && wait'
+echo "Enter to contine:"
+read -e clustername < /dev/tty 
 echo "installing docker"
 ssh -tt hcadmin@ElasticSearchNode1 'curl -sSL https://imranq2.github.io/InstallScripts/installdocker.txt | sudo sh && wait'
 ssh -tt hcadmin@ElasticSearchNode1 'curl -sSL https://imranq2.github.io/InstallScripts/setupdocker.txt | sudo sh'

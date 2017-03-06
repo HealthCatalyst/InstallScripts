@@ -9,7 +9,7 @@ set -e
 #
 #
 
-echo "starting version 1.93"
+echo "starting version 1.94"
 defaultpassword="ILoveElasticSearch2017"
 
 echo "Starting setup..."
@@ -29,6 +29,11 @@ if [ -z "$ip1" ]; then
   echo $myip
   ip1="$myip"
 fi
+
+if [ -z "$serverhost" ]; then
+  serverhost="0.0.0.0"
+fi
+
 
 hostname="$(hostname -s)"
 
@@ -93,7 +98,7 @@ echo "pulling latest docker image from repo"
 docker pull imranq2/dockerkibana
 echo "starting docker container with new image."
 set -x
-docker create -p 5601:5601 --name dockerkibana -e ELASTICSEARCH_URL=http://$ip1 -e SERVER_HOST=$serverhost -e ELASTICSEARCH_USERNAME=kibana -e ELASTICSEARCH_PASSWORD=$defaultpassword $paramsToES imranq2/dockerkibana 
+docker create -p 5601:5601 --name dockerkibana -e ELASTICSEARCH_URL=http://$ip1:9200 -e SERVER_HOST=$serverhost -e ELASTICSEARCH_USERNAME=kibana -e ELASTICSEARCH_PASSWORD=$defaultpassword $paramsToES imranq2/dockerkibana 
 set +x
 
 echo "sleeping for 5s so docker container is up"

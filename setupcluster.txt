@@ -2,7 +2,6 @@
 # curl -sSL https://imranq2.github.io/InstallScripts/setupcluster.txt | sh
 
 echo "Version 1.42"
-set -x
 
 echo "setting up ElasticSearchNode1"
 ssh -tt hcadmin@ElasticSearchNode1 'curl -sSL https://imranq2.github.io/InstallScripts/setupdrives.txt | sudo sh'
@@ -26,7 +25,5 @@ echo "setting up ElasticSearchKibanaNode1"
 ssh -tt hcadmin@ElasticSearchKibanaNode1 'curl -sSL https://imranq2.github.io/InstallScripts/installdocker.txt | sudo sh'
 ssh -tt hcadmin@ElasticSearchKibanaNode1 'curl -sSL https://imranq2.github.io/InstallScripts/setupdocker.txt | sudo sh'
 ssh -tt hcadmin@ElasticSearchKibanaNode1 'curl -sSL https://imranq2.github.io/InstallScripts/installkibana.txt | sudo sh -s ElasticSearchNode1'
-
-set +x
 
 echo "Finished"

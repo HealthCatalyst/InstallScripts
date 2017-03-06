@@ -1,7 +1,7 @@
 #!/bin/bash
 # curl -sSL https://imranq2.github.io/InstallScripts/setupcluster.txt | sh
 
-echo "Version 1.43"
+echo "Version 1.44"
 set -x
 
 echo "setting up ElasticSearchNode1"

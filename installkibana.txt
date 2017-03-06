@@ -9,7 +9,7 @@ set -e
 #
 #
 
-echo "starting version 1.91"
+echo "starting version 1.92"
 defaultpassword="ILoveElasticSearch2017"
 
 echo "Starting setup..."
@@ -92,7 +92,7 @@ echo "pulling latest docker image from repo"
 docker pull imranq2/dockerkibana
 echo "starting docker container with new image."
 set -x
-docker create -p 5601:5601 --name dockerkibana -e ELASTICSEARCH_URL=$ip1 -e SERVER_HOST=dev-es01.cafe.healthcatalyst.com  -e ELASTICSEARCH_USERNAME=kibana -e ELASTICSEARCH_PASSWORD=$defaultpassword $paramsToES imranq2/dockerkibana 
+docker create -p 5601:5601 --name dockerkibana -e ELASTICSEARCH_URL=http://$ip1 -e SERVER_HOST=dev-es01.cafe.healthcatalyst.com  -e ELASTICSEARCH_USERNAME=kibana -e ELASTICSEARCH_PASSWORD=$defaultpassword $paramsToES imranq2/dockerkibana 
 set +x
 
 echo "sleeping for 5s so docker container is up"

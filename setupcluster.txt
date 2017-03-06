@@ -1,31 +1,31 @@
 #!/bin/bash
 # curl -sSL https://imranq2.github.io/InstallScripts/setupcluster.txt | sh
 
-echo "Version 1.41"
+echo "Version 1.42"
 set -x
 
 echo "setting up ElasticSearchNode1"
-ssh -t hcadmin@ElasticSearchNode1 'curl -sSL https://imranq2.github.io/InstallScripts/setupdrives.txt | sh'
-ssh -t hcadmin@ElasticSearchNode1 'curl -sSL https://imranq2.github.io/InstallScripts/installdocker.txt | sh'
-ssh -t hcadmin@ElasticSearchNode1 'curl -sSL https://imranq2.github.io/InstallScripts/setupdocker.txt | sh'
-ssh -t hcadmin@ElasticSearchNode1 'curl -sSL https://imranq2.github.io/InstallScripts/installelasticsearch.txt | sh -s ElasticSearchNode1 ElasticSearchNode2 ElasticSearchNode3'
+ssh -tt hcadmin@ElasticSearchNode1 'curl -sSL https://imranq2.github.io/InstallScripts/setupdrives.txt | sh'
+ssh -tt hcadmin@ElasticSearchNode1 'curl -sSL https://imranq2.github.io/InstallScripts/installdocker.txt | sh'
+ssh -tt hcadmin@ElasticSearchNode1 'curl -sSL https://imranq2.github.io/InstallScripts/setupdocker.txt | sh'
+ssh -tt hcadmin@ElasticSearchNode1 'curl -sSL https://imranq2.github.io/InstallScripts/installelasticsearch.txt | sh -s ElasticSearchNode1 ElasticSearchNode2 ElasticSearchNode3'
 
 echo "setting up ElasticSearchNode2"
-ssh -t hcadmin@ElasticSearchNode2 'curl -sSL https://imranq2.github.io/InstallScripts/setupdrives.txt | sh'
-ssh -t hcadmin@ElasticSearchNode2 'curl -sSL https://imranq2.github.io/InstallScripts/installdocker.txt | sh'
-ssh -t hcadmin@ElasticSearchNode2 'curl -sSL https://imranq2.github.io/InstallScripts/setupdocker.txt | sh'
-ssh -t hcadmin@ElasticSearchNode2 'curl -sSL https://imranq2.github.io/InstallScripts/installelasticsearch.txt | sh -s ElasticSearchNode1 ElasticSearchNode2 ElasticSearchNode3'
+ssh -tt hcadmin@ElasticSearchNode2 'curl -sSL https://imranq2.github.io/InstallScripts/setupdrives.txt | sh'
+ssh -tt hcadmin@ElasticSearchNode2 'curl -sSL https://imranq2.github.io/InstallScripts/installdocker.txt | sh'
+ssh -tt hcadmin@ElasticSearchNode2 'curl -sSL https://imranq2.github.io/InstallScripts/setupdocker.txt | sh'
+ssh -tt hcadmin@ElasticSearchNode2 'curl -sSL https://imranq2.github.io/InstallScripts/installelasticsearch.txt | sh -s ElasticSearchNode1 ElasticSearchNode2 ElasticSearchNode3'
 
 echo "setting up ElasticSearchNode3"
-ssh -t hcadmin@ElasticSearchNode3 'curl -sSL https://imranq2.github.io/InstallScripts/setupdrives.txt | sh'
-ssh -t hcadmin@ElasticSearchNode3 'curl -sSL https://imranq2.github.io/InstallScripts/installdocker.txt | sh'
-ssh -t hcadmin@ElasticSearchNode3 'curl -sSL https://imranq2.github.io/InstallScripts/setupdocker.txt | sh'
-ssh -t hcadmin@ElasticSearchNode3 'curl -sSL https://imranq2.github.io/InstallScripts/installelasticsearch.txt | sh -s ElasticSearchNode1 ElasticSearchNode2 ElasticSearchNode3'
+ssh -tt hcadmin@ElasticSearchNode3 'curl -sSL https://imranq2.github.io/InstallScripts/setupdrives.txt | sh'
+ssh -tt hcadmin@ElasticSearchNode3 'curl -sSL https://imranq2.github.io/InstallScripts/installdocker.txt | sh'
+ssh -tt hcadmin@ElasticSearchNode3 'curl -sSL https://imranq2.github.io/InstallScripts/setupdocker.txt | sh'
+ssh -tt hcadmin@ElasticSearchNode3 'curl -sSL https://imranq2.github.io/InstallScripts/installelasticsearch.txt | sh -s ElasticSearchNode1 ElasticSearchNode2 ElasticSearchNode3'
 
 echo "setting up ElasticSearchKibanaNode1"
-ssh -t hcadmin@ElasticSearchKibanaNode1 'curl -sSL https://imranq2.github.io/InstallScripts/installdocker.txt | sh'
-ssh -t hcadmin@ElasticSearchKibanaNode1 'curl -sSL https://imranq2.github.io/InstallScripts/setupdocker.txt | sh'
-ssh -t hcadmin@ElasticSearchKibanaNode1 'curl -sSL https://imranq2.github.io/InstallScripts/installkibana.txt | sh -s ElasticSearchNode1'
+ssh -tt hcadmin@ElasticSearchKibanaNode1 'curl -sSL https://imranq2.github.io/InstallScripts/installdocker.txt | sh'
+ssh -tt hcadmin@ElasticSearchKibanaNode1 'curl -sSL https://imranq2.github.io/InstallScripts/setupdocker.txt | sh'
+ssh -tt hcadmin@ElasticSearchKibanaNode1 'curl -sSL https://imranq2.github.io/InstallScripts/installkibana.txt | sh -s ElasticSearchNode1'
 
 set +x
 

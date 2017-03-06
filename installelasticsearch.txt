@@ -9,7 +9,7 @@ set -e
 #
 
 
-echo "starting version 1.98"
+echo "starting version 1.99"
 
 clustername="catalystdev"
 defaultpassword="ILoveElasticSearch2017"
@@ -193,7 +193,7 @@ echo "starting docker container with new image"
 set -x
 # https://www.elastic.co/guide/en/elasticsearch/reference/current/docker.html
 
-docker run -d -p 9200:9200 -p 9300:9300 $volumeParam --cap-add=IPC_LOCK --ulimit memlock=-1:-1 --ulimit nofile=262144:262144 --security-opt seccomp=unconfined -e ES_JAVA_OPTS="$javaOpts" -e network.host=_eth0_ -e network.publish_host=$myip -e node.name=$hostname -e discovery.zen.ping.unicast.hosts="$hosts" -e cluster.name=$clustername -e xpack.security.enabled=true -e bootstrap.memory_lock=true -e path.data="/usr/share/elasticsearch/data1,/usr/share/elasticsearch/data2" -e path.logs:"/usr/share/elasticsearch/data1,/usr/share/elasticsearch/data2" $paramsToES --name dockerelasticsearch imranq2/dockerelasticsearch
+docker run -d -p 9200:9200 -p 9300:9300 $volumeParam --cap-add=IPC_LOCK --ulimit memlock=-1:-1 --ulimit nofile=262144:262144 --security-opt seccomp=unconfined -e ES_JAVA_OPTS="$javaOpts" -e network.host=_eth0_ -e network.publish_host=$myip -e node.name=$hostname -e discovery.zen.ping.unicast.hosts="$hosts" -e cluster.name=$clustername -e xpack.security.enabled=true -e bootstrap.memory_lock=true -e path.data="/usr/share/elasticsearch/data1,/usr/share/elasticsearch/data2" -e path.logs="/usr/share/elasticsearch/data1,/usr/share/elasticsearch/data2" -e http.compression=true $paramsToES --name dockerelasticsearch imranq2/dockerelasticsearch
 set +x
 
 echo "sleeping until docker container is up"

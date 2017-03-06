@@ -5,14 +5,9 @@ echo "Version 1.45"
 set -x
 
 echo "setting up ElasticSearchNode1"
-ssh -t -t hcadmin@ElasticSearchNode1 "curl -sSL https://imranq2.github.io/InstallScripts/setupdrives.txt | sudo sh" < <(cat)
+ssh -t -t hcadmin@ElasticSearchNode1 'curl -sSL https://imranq2.github.io/InstallScripts/setupdrives.txt | sh && curl -sSL https://imranq2.github.io/InstallScripts/installdocker.txt | sh'
 
-echo "Enter to contine:"
-read -e clustername < /dev/tty 
-echo "installing docker"
-ssh -tt hcadmin@ElasticSearchNode1 'curl -sSL https://imranq2.github.io/InstallScripts/installdocker.txt | sudo sh && wait'
-ssh -tt hcadmin@ElasticSearchNode1 'curl -sSL https://imranq2.github.io/InstallScripts/setupdocker.txt | sudo sh'
-ssh -tt hcadmin@ElasticSearchNode1 'curl -sSL https://imranq2.github.io/InstallScripts/installelasticsearch.txt | sudo sh -s ElasticSearchNode1 ElasticSearchNode2 ElasticSearchNode3'
+ssh -tt hcadmin@ElasticSearchNode1 'curl -sSL https://imranq2.github.io/InstallScripts/setupdocker.txt | sh && curl -sSL https://imranq2.github.io/InstallScripts/installelasticsearch.txt | sh -s ElasticSearchNode1 ElasticSearchNode2 ElasticSearchNode3'
 
 echo "setting up ElasticSearchNode2"
 ssh -tt hcadmin@ElasticSearchNode2 'curl -sSL https://imranq2.github.io/InstallScripts/setupdrives.txt | sudo sh'

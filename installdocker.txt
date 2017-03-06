@@ -29,7 +29,7 @@ sudo yum install wget -y
 
 echo "installing jq"
 wget http://stedolan.github.io/jq/download/linux64/jq
-chmod +x ./jq
+sudo chmod +x ./jq
 sudo cp jq /usr/bin
 
 sudo sysctl -w vm.max_map_count=262144

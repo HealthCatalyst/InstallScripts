@@ -1,11 +1,11 @@
 #!/bin/bash
 # curl -sSL https://imranq2.github.io/InstallScripts/setupcluster.txt | sh
 
-echo "Version 1.44"
+echo "Version 1.45"
 set -x
 
 echo "setting up ElasticSearchNode1"
-ssh -t -t hcadmin@ElasticSearchNode1 "curl -sSL https://imranq2.github.io/InstallScripts/setupdrives.txt | sudo sh" && wait
+ssh -t -t hcadmin@ElasticSearchNode1 "curl -sSL https://imranq2.github.io/InstallScripts/setupdrives.txt | sudo sh" < <(cat)
 
 echo "Enter to contine:"
 read -e clustername < /dev/tty 

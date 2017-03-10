@@ -9,7 +9,7 @@ set -e
 #
 
 
-echo "starting version 1.99"
+echo "starting version 2.00"
 
 clustername="catalystdev"
 defaultpassword="ILoveElasticSearch2017"
@@ -84,7 +84,7 @@ if [ -z "$ssl" ]; then
       read -e -p "Do you wish to turn on SSL?" yn < /dev/tty
       case $yn in
           [Yy]* ) ssl="yes"; break;;
-          [Nn]* ) exit;;
+          [Nn]* ) break;;
           * ) echo "Please answer yes or no.";;
       esac
   done

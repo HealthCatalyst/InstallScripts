@@ -79,7 +79,7 @@ if [ ! -z "$ip3" ]; then
 fi
 
 # ask if user wants to use SSL
-if [ ! -z "$ssl" ]; then
+if [ -z "$ssl" ]; then
   while true; do
       read -e -p "Do you wish to turn on SSL?" yn < /dev/tty
       case $yn in

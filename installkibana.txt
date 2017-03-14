@@ -197,6 +197,20 @@ sleep 30s;
 externalip=$(curl ipecho.net/plain)
 echo "External IP:" $externalip
 
+while [ $c -lt 60 ]; do
+    echo "curl -X GET $protocol://localhost:5601 -k -verbose"
+    curl -X GET -u elastic:$defaultpassword $protocol://localhost:5601 -k -verbose
+    RETVAL=$?
+    echo "RETVAL:[$RETVAL]"
+    if [ $RETVAL -eq 0 ]; then 
+      break 
+    fi    
+    c=$c+1
+    echo "Trying again [$c]"
+    sleep 1s
+done
+
+
 echo "==== All Done ===="
 echo "NOTE To update the docker image on this host in the future, just run"
 echo "$installscriptfile"

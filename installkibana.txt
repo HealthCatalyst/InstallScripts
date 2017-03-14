@@ -9,7 +9,7 @@ set -e
 #
 #
 
-echo "starting version 2.02"
+echo "starting version 2.03"
 defaultpassword="ILoveElasticSearch2017"
 
 echo "Starting setup..."
@@ -196,6 +196,10 @@ sleep 30s;
 
 externalip=$(curl ipecho.net/plain)
 echo "External IP:" $externalip
+
+declare -i c=10
+
+c=0
 
 while [ $c -lt 60 ]; do
     echo "curl -X GET $protocol://localhost:5601 -k -verbose"

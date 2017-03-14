@@ -9,7 +9,7 @@ set -e
 #
 #
 
-echo "starting version 2.01"
+echo "starting version 2.02"
 defaultpassword="ILoveElasticSearch2017"
 
 echo "Starting setup..."
@@ -69,7 +69,6 @@ installscriptfile="updatedocker"
 installscript="$installfolder$installscriptfile"
 
 mkdir -p $HOME/bin
-
 if [[ ! -d "$installfolder" ]]; then
   sudo mkdir -p $installfolder
 
@@ -86,9 +85,12 @@ if [[ ! -e "$HOME/bin/$installscriptfile" ]]; then
   ln -f -s $installscript $HOME/bin/$installscriptfile
 fi
 
+protocol="http"
+
 if [ ! -z "$ssl" ]; then
   echo "Setting up SSL"
 
+  protocol="https"
   if [[ ! -f "$installfolder/node.key" ]]; then
     echo "$installfolder/node.key does not exist" 
     exit 1
@@ -134,7 +136,7 @@ echo "pulling latest docker image from repo"
 docker pull imranq2/dockerkibana
 echo "starting docker container with new image."
 set -x
-docker create -p 5601:5601 --restart=unless-stopped --name dockerkibana -e ELASTICSEARCH_URL=http://$ip1:9200 -e SERVER_HOST=$serverhost -e ELASTICSEARCH_USERNAME=kibana -e ELASTICSEARCH_PASSWORD=$defaultpassword $paramsToES imranq2/dockerkibana 
+docker create -p 5601:5601 --restart=unless-stopped --name dockerkibana -e ELASTICSEARCH_URL=$protocol://$ip1:9200 -e SERVER_HOST=$serverhost -e ELASTICSEARCH_USERNAME=kibana -e ELASTICSEARCH_PASSWORD=$defaultpassword $paramsToES imranq2/dockerkibana 
 set +x
 
 echo "sleeping for 5s so docker container is up"
@@ -188,6 +190,9 @@ fi
 
 echo "==== Listing running docker containers ===="
 docker ps
+
+echo "sleeping for 30 secs"
+sleep 30s;
 
 externalip=$(curl ipecho.net/plain)
 echo "External IP:" $externalip

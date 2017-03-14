@@ -34,6 +34,25 @@ if [ -z "$serverhost" ]; then
   serverhost="0.0.0.0"
 fi
 
+echo "Please enter name for cluster[default:catalystdev]:"
+read -e clustername < /dev/tty 
+clustername=${clustername:-catalystdev}
+
+echo "Please type in password to use for ElasticSearch built-in accounts[default:ILoveElasticSearch2017]:"
+read -e defaultpassword < /dev/tty
+defaultpassword=${defaultpassword:-ILoveElasticSearch2017}
+
+# ask if user wants to use SSL
+if [ -z "$ssl" ]; then
+  while true; do
+      read -e -p "Do you wish to turn on SSL?" yn < /dev/tty
+      case $yn in
+          [Yy]* ) ssl="yes"; break;;
+          [Nn]* ) break;;
+          * ) echo "Please answer yes or no.";;
+      esac
+  done
+fi
 
 hostname="$(hostname -s)"
 
@@ -65,6 +84,23 @@ if [[ ! -e "$HOME/bin/$installscriptfile" ]]; then
   echo "creating a symbolic link for install file"
   echo "ln -f -s $installscript $HOME/bin/$installscriptfile"
   ln -f -s $installscript $HOME/bin/$installscriptfile
+fi
+
+if [ ! -z "$ssl" ]; then
+  echo "Setting up SSL"
+
+  if [[ ! -f "$installfolder/node.key" ]]; then
+    echo "$installfolder/node.key does not exist" 
+    exit 1
+  fi
+  if [[ ! -f "$installfolder/node.crt" ]]; then
+    echo "$installfolder/node.crt does not exist" 
+    exit 1
+  fi
+  if [[ ! -f "$installfolder/ca.crt" ]]; then
+    echo "$installfolder/ca.crt does not exist" 
+    exit 1
+  fi 
 fi
 
 echo "==== Update script ===="

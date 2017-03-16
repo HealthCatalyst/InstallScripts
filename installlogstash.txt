@@ -1,0 +1,31 @@
+#!/bin/sh
+set -e
+#
+# This script is meant for quick & easy install via:
+#   'curl -sSL https://imranq2.github.io/InstallScripts/installlogstash.txt | sh -s <ip1 of elasticsarch>'
+
+echo "Starting setup..."
+u="$(whoami)"
+
+installfolder="/opt/install/logstash"
+
+if [[ ! -d "$installfolder" ]]; then
+  sudo mkdir -p $installfolder
+
+  sudo setfacl -m u:$u:rwx $installfolder
+fi
+
+echo "stopping existing docker container"
+docker stop dockerlogstash || echo 'no container to stop'
+echo "removing docker container"
+docker rm dockerlogstash || echo 'no container to remove'
+echo "removing docker image"
+docker rmi docker.elastic.co/logstash/logstash:5.2.2 || echo 'no image to remove'
+echo "pulling latest docker image from repo"
+docker pull docker.elastic.co/logstash/logstash:5.2.2
+
+echo "starting docker container with new image."
+
+docker run --restart=unless-stopped --name dockerlogstash -v $installfolder:/usr/share/logstash/pipeline/ docker.elastic.co/logstash/logstash:5.2.2
+
+

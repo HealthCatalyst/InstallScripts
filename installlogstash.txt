@@ -9,12 +9,12 @@ u="$(whoami)"
 
 elasticsearchhost="$1"
 
-installfolder="/opt/install/logstash"
+pipelinefolder="/opt/install/logstash/pipeline"
 
-if [[ ! -d "$installfolder" ]]; then
-  sudo mkdir -p $installfolder
+if [[ ! -d "$pipelinefolder" ]]; then
+  sudo mkdir -p $pipelinefolder
 
-  sudo setfacl -m u:$u:rwx $installfolder
+  sudo setfacl -m u:$u:rwx $pipelinefolder
 fi
 
 echo "stopping existing docker container"
@@ -28,6 +28,6 @@ docker pull docker.elastic.co/logstash/logstash:5.2.2
 
 echo "starting docker container with new image."
 
-docker run --add-host elasticsearch:%elasticsearchhost% --restart=unless-stopped --name dockerlogstash -v $installfolder:/usr/share/logstash/pipeline/ docker.elastic.co/logstash/logstash:5.2.2
+docker run --add-host elasticsearch:%elasticsearchhost% --restart=unless-stopped --name dockerlogstash -v $pipelinefolder:/usr/share/logstash/pipeline/ docker.elastic.co/logstash/logstash:5.2.2
 
 

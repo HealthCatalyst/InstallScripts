@@ -4,7 +4,7 @@ set -e
 # This script is meant for quick & easy install via:
 #   'curl -sSL https://imranq2.github.io/InstallScripts/installlogstash.txt | sh -s <ip1 of elasticsarch>'
 
-echo "Starting script version 1.04"
+echo "Starting script version 1.05"
 u="$(whoami)"
 
 elasticsearchhost="$1"
@@ -34,7 +34,7 @@ docker pull docker.elastic.co/logstash/logstash:5.2.2
 
 echo "starting docker container with new image."
 
-docker run -d --restart=unless-stopped --name dockerlogstash -v $pipelinefolder:/usr/share/logstash/pipeline/ docker.elastic.co/logstash/logstash:5.2.2
+docker run --restart=unless-stopped --name dockerlogstash -v $pipelinefolder:/usr/share/logstash/pipeline/ docker.elastic.co/logstash/logstash:5.2.2
 
 echo "sleeping until docker container is up"
 until [ "`/usr/bin/docker inspect -f {{.State.Running}} dockerlogstash`"=="true" ]; do

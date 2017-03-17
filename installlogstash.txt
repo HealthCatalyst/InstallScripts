@@ -27,6 +27,15 @@ if [[ ! -d "$pipelinefolder" ]]; then
   sudo setfacl -m u:$u:rwx $pipelinefolder
 fi
 
+settingsfolder="/opt/install/logstash/config"
+
+if [[ ! -d "$settingsfolder" ]]; then
+  sudo mkdir -p $settingsfolder
+
+  sudo setfacl -m u:$u:rwx $settingsfolder
+fi
+
+
 echo "stopping existing docker container"
 docker stop dockerlogstash || echo 'no container to stop'
 echo "removing docker container"
@@ -38,7 +47,7 @@ docker pull docker.elastic.co/logstash/logstash:5.2.2
 
 echo "starting docker container with new image."
 
-docker run --add-host elasticsarch:$elasticsearchip --restart=unless-stopped --name dockerlogstash -v $pipelinefolder:/usr/share/logstash/pipeline/ docker.elastic.co/logstash/logstash:5.2.2
+docker run -d --add-host elasticsarch:$elasticsearchip --restart=unless-stopped --name dockerlogstash -v $pipelinefolder:/usr/share/logstash/pipeline/ docker.elastic.co/logstash/logstash:5.2.2
 
 echo "sleeping until docker container is up"
 until [ "`/usr/bin/docker inspect -f {{.State.Running}} dockerlogstash`"=="true" ]; do

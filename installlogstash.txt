@@ -54,4 +54,9 @@ until [ "`/usr/bin/docker inspect -f {{.State.Running}} dockerlogstash`"=="true"
     sleep 1s;
 done;
 
+docker cp $settingsfolder/logstash.yml dockerlogstash:/usr/share/logstash/config
+
+docker restart dockerlogstash
+
+
 

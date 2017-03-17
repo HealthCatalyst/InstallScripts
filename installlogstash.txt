@@ -4,7 +4,7 @@ set -e
 # This script is meant for quick & easy install via:
 #   'curl -sSL https://imranq2.github.io/InstallScripts/installlogstash.txt | sh -s <ip1 of elasticsarch>'
 
-echo "Starting script version 1.01"
+echo "Starting script version 1.02"
 u="$(whoami)"
 
 elasticsearchhost="$1"
@@ -12,6 +12,7 @@ elasticsearchhost="$1"
 # if no IP passed then use this node's IP for ElasticSearch
 if [ -z "$elasticsearchhost" ]; then
   echo "Please pass hostname or IP of ElasticSearch"
+  exit 1
 fi
 
 pipelinefolder="/opt/install/logstash/pipeline"

@@ -7,6 +7,8 @@ set -e
 echo "Starting setup..."
 u="$(whoami)"
 
+elasticsearchhost="$1"
+
 installfolder="/opt/install/logstash"
 
 if [[ ! -d "$installfolder" ]]; then
@@ -26,6 +28,6 @@ docker pull docker.elastic.co/logstash/logstash:5.2.2
 
 echo "starting docker container with new image."
 
-docker run --restart=unless-stopped --name dockerlogstash -v $installfolder:/usr/share/logstash/pipeline/ docker.elastic.co/logstash/logstash:5.2.2
+docker run --add-host elasticsearch:%elasticsearchhost% --restart=unless-stopped --name dockerlogstash -v $installfolder:/usr/share/logstash/pipeline/ docker.elastic.co/logstash/logstash:5.2.2
 
 

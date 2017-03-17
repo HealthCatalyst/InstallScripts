@@ -15,6 +15,10 @@ if [ -z "$elasticsearchhost" ]; then
   exit 1
 fi
 
+elasticsearchip=$(getent hosts $elasticsearchhost | awk '{ print $1 }')
+
+echo ElasticSearch IP: $elasticsearchip
+
 pipelinefolder="/opt/install/logstash/pipeline"
 
 if [[ ! -d "$pipelinefolder" ]]; then
@@ -34,7 +38,7 @@ docker pull docker.elastic.co/logstash/logstash:5.2.2
 
 echo "starting docker container with new image."
 
-docker run --restart=unless-stopped --name dockerlogstash -v $pipelinefolder:/usr/share/logstash/pipeline/ docker.elastic.co/logstash/logstash:5.2.2
+docker run --add-host elasticsarch:$elasticsearchip --restart=unless-stopped --name dockerlogstash -v $pipelinefolder:/usr/share/logstash/pipeline/ docker.elastic.co/logstash/logstash:5.2.2
 
 echo "sleeping until docker container is up"
 until [ "`/usr/bin/docker inspect -f {{.State.Running}} dockerlogstash`"=="true" ]; do

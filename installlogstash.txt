@@ -34,6 +34,11 @@ docker pull docker.elastic.co/logstash/logstash:5.2.2
 
 echo "starting docker container with new image."
 
-docker run --restart=unless-stopped --name dockerlogstash -v $pipelinefolder:/usr/share/logstash/pipeline/ docker.elastic.co/logstash/logstash:5.2.2
+docker run -d --restart=unless-stopped --name dockerlogstash -v $pipelinefolder:/usr/share/logstash/pipeline/ docker.elastic.co/logstash/logstash:5.2.2
+
+echo "sleeping until docker container is up"
+until [ "`/usr/bin/docker inspect -f {{.State.Running}} dockerlogstash`"=="true" ]; do
+    sleep 1s;
+done;
 
 

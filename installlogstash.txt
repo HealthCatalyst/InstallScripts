@@ -9,6 +9,11 @@ u="$(whoami)"
 
 elasticsearchhost="$1"
 
+# if no IP passed then use this node's IP for ElasticSearch
+if [ -z "$elasticsearchhost" ]; then
+  echo "Please pass hostname or IP of ElasticSearch"
+fi
+
 pipelinefolder="/opt/install/logstash/pipeline"
 
 if [[ ! -d "$pipelinefolder" ]]; then
@@ -28,6 +33,6 @@ docker pull docker.elastic.co/logstash/logstash:5.2.2
 
 echo "starting docker container with new image."
 
-docker run --add-host elasticsearch:%elasticsearchhost% --restart=unless-stopped --name dockerlogstash -v $pipelinefolder:/usr/share/logstash/pipeline/ docker.elastic.co/logstash/logstash:5.2.2
+docker run --add-host elasticsearch:$elasticsearchhost --restart=unless-stopped --name dockerlogstash -v $pipelinefolder:/usr/share/logstash/pipeline/ docker.elastic.co/logstash/logstash:5.2.2
 
 

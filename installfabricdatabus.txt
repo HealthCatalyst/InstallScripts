@@ -31,7 +31,7 @@ c=0
 
 while [ $c -lt 60 ]; do
     echo "curl -X GET http://localhost:5000 -k -verbose"
-    curl http://localhost:5000/status -k -verbose
+    curl http://localhost:5000 -k -verbose
     RETVAL=$?
     echo "RETVAL:[$RETVAL]"
     if [ $RETVAL -eq 0 ]; then 

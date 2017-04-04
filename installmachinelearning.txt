@@ -26,6 +26,6 @@ echo "sleeping until docker container is up"
 #    sleep 1s;
 #done;
 
-sleep 30s;
+sleep 180s;
 
 

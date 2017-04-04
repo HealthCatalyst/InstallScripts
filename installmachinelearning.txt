@@ -15,7 +15,7 @@ docker rm fabric.machinelearning || echo 'no container to remove'
 echo "removing docker image"
 docker rmi imranq2/fabric.machinelearning || echo 'no image to remove'
 echo "pulling latest docker image from repo"
-docker pull imranq/fabric.machinelearning
+docker pull imranq2/fabric.machinelearning
 
 echo "starting docker container with new image."
 

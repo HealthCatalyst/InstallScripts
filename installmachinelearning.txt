@@ -19,7 +19,7 @@ docker pull imranq/fabric.machinelearning
 
 echo "starting docker container with new image."
 
-docker run -d --restart=unless-stopped --name fabric.machinelearning imranq2/fabric.machinelearning
+docker run -d --restart=unless-stopped -p 8080:8080 --name fabric.machinelearning imranq2/fabric.machinelearning
 
 echo "sleeping until docker container is up"
 until [ "`/usr/bin/docker inspect -f {{.State.Running}} fabric.machinelearning`"=="true" ]; do

@@ -4,7 +4,7 @@ set -e
 # This script is meant for quick & easy install via:
 #   curl -sSL https://imranq2.github.io/InstallScripts/installmachinelearning.txt | sh -s
 
-echo "Starting script version 1.05"
+echo "Starting script version 1.06"
 u="$(whoami)"
 
 

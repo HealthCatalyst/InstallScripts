@@ -1,0 +1,20 @@
+#!/bin/sh
+set -e
+#
+# This script is meant for quick & easy install via:
+#   'curl -sSL https://imranq2.github.io/InstallScripts/setupkeytab.txt | sh -s <full useraccount> <password>'
+
+username="$1"
+password="$2"
+
+echo "User name: $username"
+
+ktutil <<EOF
+addent -password -p $username -k 1 -e RC4-HMAC
+$password
+wkt user.keytab
+list
+exit
+EOF
+
+kinit -kt user.keytab $username -V

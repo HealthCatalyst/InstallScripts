@@ -9,6 +9,6 @@ echo "Running as: $u"
 
 servername="$1"
 
-sqlcmd -S $servername -Q 'SET NOCOUNT ON; SELECT SUSER_NAME()' -h-1
+/opt/mssql-tools/bin/sqlcmd -S $servername -Q 'SET NOCOUNT ON; SELECT SUSER_NAME()' -h-1
 
-sqlcmd -S $servername -Q 'SET NOCOUNT ON;select * from sys.databases' -h-1
+/opt/mssql-tools/bin/sqlcmd -S $servername -Q 'SET NOCOUNT ON;select * from sys.databases' -h-1

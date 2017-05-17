@@ -5,11 +5,15 @@ set -e
 #   'curl -sSL https://imranq2.github.io/InstallScripts/signintoactivedirectory.txt | sh -s <username> <domain>'
 
 u="$(whoami)"
-echo "Running as: $u"
+echo "Running version 1.01 as: $u"
 
 username="$1"
 domain="$2"
 uppercasedomain=${domain^^}
 usernameplusdomain="$username@$uppercasedomain"
 
+set -x
+
 kinit -kt user.keytab $usernameplusdomain -V
+
+set +x

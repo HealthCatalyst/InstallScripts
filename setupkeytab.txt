@@ -10,14 +10,16 @@ uppercasedomain=${domain^^}
 password="$3"
 
 u="$(whoami)"
-echo "Running as: $u"
+echo "Running version 1.01 as: $u"
 
 usernameplusdomain="$username@$uppercasedomain"
 
 echo "User name: $usernameplusdomain"
 
 # sync clock with domain controller
-ntpdate $domain
+# ntpdate $domain
+
+set -x
 
 # create keytab file
 ktutil <<EOF
@@ -31,4 +33,4 @@ EOF
 # try to authenticate
 /opt/install/signintoactivedirectory.sh $username $domain
 
-
+set +x

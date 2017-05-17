@@ -13,6 +13,13 @@ password="$3"
 
 echo "User name: $username"
 
+if [ ! -z "$username" ]; then
+    if [ -z "$password" ]; then
+        echo "Please enter password for $username@$domain:"
+        read -e password < /dev/tty     
+    fi
+fi
+
 echo "stopping existing docker container"
 docker stop fabric.machinelearning || echo 'no container to stop'
 echo "removing docker container"
@@ -36,12 +43,6 @@ sleep 5s;
 # if username was passed then create a keytab file in docker container
 
 if [ ! -z "$username" ]; then
-
-    if [ -z "$password" ]; then
-        echo "Please enter password for $username@$domain:"
-        read -e password < /dev/tty     
-    fi
-
     echo "creating keytab file for username & password"
-    docker exec fabric.machinelearning /opt/install/setupkeytab.sh $username $domain $password
+    docker exec fabric.machinelearning opt/install/setupkeytab.sh $username $domain $password
 fi

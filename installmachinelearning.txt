@@ -4,8 +4,8 @@ set -e
 # This script is meant for quick & easy install via:
 #   curl -sSL https://imranq2.github.io/InstallScripts/installmachinelearning.txt | sh -s <username> <domain> <password>
 
-echo "Starting script version 1.07"
 u="$(whoami)"
+echo "Running version 1.08 as: $u"
 
 username="$1"
 domain="$2"
@@ -24,7 +24,7 @@ docker pull imranq2/fabric.machinelearning
 
 echo "starting docker container with new image."
 
-docker run -d --restart=unless-stopped -p 8080:8080 --name fabric.machinelearning imranq2/fabric.machinelearning
+docker run -d --privileged=true --restart=unless-stopped -p 8080:8080 --name fabric.machinelearning imranq2/fabric.machinelearning
 
 echo "sleeping until docker container is up"
 #until [ "`/usr/bin/docker inspect -f {{.State.Running}} fabric.machinelearning`"=="true" ]; do

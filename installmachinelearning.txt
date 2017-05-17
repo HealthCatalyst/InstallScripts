@@ -36,6 +36,12 @@ sleep 5s;
 # if username was passed then create a keytab file in docker container
 
 if [ ! -z "$username" ]; then
+
+    if [ -z "$password" ]; then
+        echo "Please enter password for $username@$domain:"
+        read -e password < /dev/tty     
+    fi
+
     echo "creating keytab file for username & password"
     docker exec fabric.machinelearning /opt/install/setupkeytab.sh $username $domain $password
 fi

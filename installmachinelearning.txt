@@ -5,7 +5,7 @@ set -e
 #   curl -sSL https://imranq2.github.io/InstallScripts/installmachinelearning.txt | sh -s <username> <domain> <password>
 
 u="$(whoami)"
-echo "Running version 1.08 as: $u"
+echo "Running version 1.09 as: $u"
 
 username="$1"
 domain="$2"

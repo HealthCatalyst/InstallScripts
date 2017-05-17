@@ -9,6 +9,9 @@ domain="$2"
 uppercasedomain=${domain^^}
 password="$3"
 
+u="$(whoami)"
+echo "Running as: $u"
+
 usernameplusdomain="$username@$uppercasedomain"
 
 echo "User name: $usernameplusdomain"

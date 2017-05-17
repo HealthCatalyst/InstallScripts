@@ -4,6 +4,9 @@ set -e
 # This script is meant for quick & easy install via:
 #   'curl -sSL https://imranq2.github.io/InstallScripts/signintoactivedirectory.txt | sh -s <username> <domain>'
 
+u="$(whoami)"
+echo "Running as: $u"
+
 username="$1"
 domain="$2"
 uppercasedomain=${domain^^}

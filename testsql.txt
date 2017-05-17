@@ -4,6 +4,9 @@ set -e
 # This script is meant for quick & easy install via:
 #   'curl -sSL https://imranq2.github.io/InstallScripts/testsql.txt | sh -s <server>'
 
+u="$(whoami)"
+echo "Running as: $u"
+
 servername="$1"
 
 sqlcmd -S $servername -Q 'SET NOCOUNT ON; SELECT SUSER_NAME()' -h-1

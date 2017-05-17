@@ -2,11 +2,16 @@
 set -e
 #
 # This script is meant for quick & easy install via:
-#   curl -sSL https://imranq2.github.io/InstallScripts/installmachinelearning.txt | sh -s
+#   curl -sSL https://imranq2.github.io/InstallScripts/installmachinelearning.txt | sh -s <username> <domain> <password>
 
-echo "Starting script version 1.06"
+echo "Starting script version 1.07"
 u="$(whoami)"
 
+username="$1"
+domain="$2"
+password="$3"
+
+echo "User name: $username"
 
 echo "stopping existing docker container"
 docker stop fabric.machinelearning || echo 'no container to stop'
@@ -28,4 +33,9 @@ echo "sleeping until docker container is up"
 
 sleep 5s;
 
+# if username was passed then create a keytab file in docker container
 
+if [ -z "$username" ]; then
+    echo "creating keytab file for username & password"
+    docker exec fabric.machinelearning /opt/install/setupkeytab.sh $username $domain $password
+fi

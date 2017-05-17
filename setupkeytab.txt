@@ -2,19 +2,30 @@
 set -e
 #
 # This script is meant for quick & easy install via:
-#   'curl -sSL https://imranq2.github.io/InstallScripts/setupkeytab.txt | sh -s <full useraccount> <password>'
+#   'curl -sSL https://imranq2.github.io/InstallScripts/setupkeytab.txt | sh -s <username> <domain> <password>'
 
 username="$1"
-password="$2"
+domain="$2"
+uppercasedomain=${domain^^}
+password="$3"
 
-echo "User name: $username"
+usernameplusdomain="$username@$uppercasedomain"
 
+echo "User name: $usernameplusdomain"
+
+# sync clock with domain controller
+ntpdate $domain
+
+# create keytab file
 ktutil <<EOF
-addent -password -p $username -k 1 -e RC4-HMAC
+addent -password -p $usernameplusdomain -k 1 -e RC4-HMAC
 $password
 wkt user.keytab
 list
 exit
 EOF
 
-kinit -kt user.keytab $username -V
+# try to authenticate
+/opt/install/signintoactivedirectory.sh $username $domain
+
+

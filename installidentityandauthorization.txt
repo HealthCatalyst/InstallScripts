@@ -24,4 +24,4 @@ docker pull healthcatalyst/fabric.authorization
 echo "starting docker containers with new image."
 
 docker run -d --name fabric.identity -p 0.0.0.0:5001:5001 healthcatalyst/fabric.identity
-docker run -d --name fabric.authorization -p 0.0.0.0:5004:5004 healthcatalyst/fabric.authorization
+docker run -d --name fabric.authorization -p 0.0.0.0:5004:5004 --link fabric.identity:localhost healthcatalyst/fabric.authorization

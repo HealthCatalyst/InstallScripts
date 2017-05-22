@@ -5,17 +5,17 @@
 #
 
 echo "stopping existing docker container"
-docker stop fabricdatabus || echo 'no container to stop'
+docker stop fabric.databus || echo 'no container to stop'
 echo "removing docker container"
-docker rm fabricdatabus || echo 'no container to remove'
+docker rm fabric.databus || echo 'no container to remove'
 echo "removing docker image"
-docker rmi healthcatalyst/fabricdatabus || echo 'no image to remove'
+docker rmi healthcatalyst/fabric.databus || echo 'no image to remove'
 echo "pulling latest docker image from repo"
-docker pull healthcatalyst/fabricdatabus
+docker pull healthcatalyst/fabric.databus
 
 echo "starting docker container with new image."
 
-docker run -d -p 5000:5000 --restart=unless-stopped -d --name fabricdatabus healthcatalyst/fabricdatabus arg1 arg2
+docker run -d -p 5000:5000 --restart=unless-stopped -d --name fabric.databus healthcatalyst/fabricdatabus arg1 arg2
 
 echo "sleeping until docker container is up"
 until [ "`/usr/bin/docker inspect -f {{.State.Running}} fabricdatabus`"=="true" ]; do

@@ -1,0 +1,27 @@
+#!/bin/sh
+set -e
+#
+# This script is meant for quick & easy install via:
+#   curl -sSL https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/installidentityandauthorization.txt | sh
+
+u="$(whoami)"
+echo "Running as: $u"
+
+
+echo "stopping existing docker containers"
+docker stop fabric.identity || echo 'no container to stop'
+docker stop fabric.authorization || echo 'no container to stop'
+echo "removing docker container"
+docker rm fabric.identity || echo 'no container to remove'
+docker rm fabric.authorization || echo 'no container to remove'
+echo "removing docker image"
+docker rmi healthcatalyst/fabric.identity || echo 'no image to remove'
+docker rmi healthcatalyst/fabric.authorization || echo 'no image to remove'
+echo "pulling latest docker image from repo"
+docker pull healthcatalyst/fabric.identity
+docker pull healthcatalyst/fabric.authorization
+
+echo "starting docker containers with new image."
+
+docker run -d --name fabric.identity -p 0.0.0.0:5001:5001 healthcatalyst/fabric.identity
+docker run -d --name fabric.authorization -p 0.0.0.0:5004:5004 healthcatalyst/fabric.authorization

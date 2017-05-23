@@ -2,10 +2,10 @@
 set -e
 #
 # This script is meant for quick & easy install via:
-#   'curl -sSL https://imranq2.github.io/InstallScripts/installelasticsearch.txt | sh -s <ip1> <ip2> <ip3>'
-#   'curl -sSL https://imranq2.github.io/InstallScripts/installelasticsearch.txt | sh -s 10.4.0.5 10.4.0.6 10.4.0.7 ssl'
+#   'curl -sSL https://healthcatalyst.github.io/InstallScripts/installelasticsearch.txt | sh -s <ip1> <ip2> <ip3>'
+#   'curl -sSL https://healthcatalyst.github.io/InstallScripts/installelasticsearch.txt | sh -s 10.4.0.5 10.4.0.6 10.4.0.7 ssl'
 # or:
-#   'wget -qO- https://imranq2.github.io/InstallScripts/installelasticsearch.txt | sh -s <ip1> <ip2> <ip3>'
+#   'wget -qO- https://healthcatalyst.github.io/InstallScripts/installelasticsearch.txt | sh -s <ip1> <ip2> <ip3>'
 #
 
 
@@ -131,7 +131,7 @@ echo "==== Creating update script ===="
 
 
 echo "#!/bin/sh" > $installscript
-echo "curl -sSL https://imranq2.github.io/InstallScripts/installelasticsearch.txt | sh -s $@" >> $installscript
+echo "curl -sSL https://healthcatalyst.github.io/InstallScripts/installelasticsearch.txt | sh -s $@" >> $installscript
 chmod +x $installscript
 
 if [[ ! -e "$HOME/bin/$installscriptfile" ]]; then 
@@ -180,22 +180,22 @@ fi
 volumeParam="-v $data1File:/usr/share/elasticsearch/data1 -v $data2File:/usr/share/elasticsearch/data2"
 
 echo "stopping existing docker container"
-docker stop dockerelasticsearch || echo 'no container to stop'
+docker stop fabric.elasticsearch || echo 'no container to stop'
 echo "removing docker container"
-docker rm dockerelasticsearch || echo 'no container to remove'
+docker rm fabric.elasticsearch || echo 'no container to remove'
 echo "removing docker image"
-docker rmi imranq2/dockerelasticsearch || echo 'no image to remove'
+docker rmi healthcatalyst/fabric.elasticsearch || echo 'no image to remove'
 echo "pulling latest docker image from repo"
-docker pull imranq2/dockerelasticsearch
+docker pull healthcatalyst/fabric.elasticsearch
 echo "starting docker container with new image"
 set -x
 # https://www.elastic.co/guide/en/elasticsearch/reference/current/docker.html
 
-docker run -d -p 9200:9200 -p 9300:9300 $volumeParam --restart=unless-stopped --cap-add=IPC_LOCK --ulimit memlock=-1:-1 --ulimit nofile=262144:262144 --security-opt seccomp=unconfined -e ES_JAVA_OPTS="$javaOpts" -e network.host=_eth0_ -e network.publish_host=$myip -e node.name=$hostname -e discovery.zen.ping.unicast.hosts="$hosts" -e cluster.name=$clustername -e xpack.security.enabled=true -e bootstrap.memory_lock=true -e path.data="/usr/share/elasticsearch/data1,/usr/share/elasticsearch/data2" -e path.logs="/usr/share/elasticsearch/data1,/usr/share/elasticsearch/data2" -e http.compression=true $paramsToES --name dockerelasticsearch imranq2/dockerelasticsearch
+docker run -d -p 9200:9200 -p 9300:9300 $volumeParam --restart=unless-stopped --cap-add=IPC_LOCK --ulimit memlock=-1:-1 --ulimit nofile=262144:262144 --security-opt seccomp=unconfined -e ES_JAVA_OPTS="$javaOpts" -e network.host=_eth0_ -e network.publish_host=$myip -e node.name=$hostname -e discovery.zen.ping.unicast.hosts="$hosts" -e cluster.name=$clustername -e xpack.security.enabled=true -e bootstrap.memory_lock=true -e path.data="/usr/share/elasticsearch/data1,/usr/share/elasticsearch/data2" -e path.logs="/usr/share/elasticsearch/data1,/usr/share/elasticsearch/data2" -e http.compression=true $paramsToES --name fabric.elasticsearch healthcatalyst/fabric.elasticsearch
 set +x
 
 echo "sleeping until docker container is up"
-until [ "`/usr/bin/docker inspect -f {{.State.Running}} dockerelasticsearch`"=="true" ]; do
+until [ "`/usr/bin/docker inspect -f {{.State.Running}} fabric.elasticsearch`"=="true" ]; do
     sleep 1s;
 done;
 
@@ -208,18 +208,18 @@ if [ ! -z "$ssl" ]; then
   echo "Checking if [$nodekeypath] exists"
   if [[ -f "$nodekeypath" ]]; then
     echo "copying ssl keys from $installfolder"
-    docker cp $installfolder/node.key dockerelasticsearch:/usr/share/elasticsearch/config
-    docker cp $installfolder/node.crt dockerelasticsearch:/usr/share/elasticsearch/config
-    docker cp $installfolder/ca.crt dockerelasticsearch:/usr/share/elasticsearch/config
+    docker cp $installfolder/node.key fabric.elasticsearch:/usr/share/elasticsearch/config
+    docker cp $installfolder/node.crt fabric.elasticsearch:/usr/share/elasticsearch/config
+    docker cp $installfolder/ca.crt fabric.elasticsearch:/usr/share/elasticsearch/config
 
     protocol="https"
   else
     echo "ERROR: No key files found in [$nodekeypath] so cannot set up SSL"
   fi
 
-  docker restart dockerelasticsearch
+  docker restart fabric.elasticsearch
   echo "sleeping until docker container is up"
-  until [ "`/usr/bin/docker inspect -f {{.State.Running}} dockerelasticsearch`"=="true" ]; do
+  until [ "`/usr/bin/docker inspect -f {{.State.Running}} fabric.elasticsearch`"=="true" ]; do
       sleep 1s;
   done;
 

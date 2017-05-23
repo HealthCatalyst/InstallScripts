@@ -1,4 +1,4 @@
-# curl -sSL https://imranq2.github.io/InstallScripts/clean.txt | sh
+# curl -sSL https://healthcatalyst.github.io/InstallScripts/clean.txt | sh
 docker stop dockerkibana
 docker rm dockerkibana
 docker stop dockerelasticsearch

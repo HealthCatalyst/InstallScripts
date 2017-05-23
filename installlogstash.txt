@@ -2,7 +2,7 @@
 set -e
 #
 # This script is meant for quick & easy install via:
-#   'curl -sSL https://imranq2.github.io/InstallScripts/installlogstash.txt | sh -s <ip1 of elasticsarch>'
+#   'curl -sSL https://healthcatalyst.github.io/InstallScripts/installlogstash.txt | sh -s <ip1 of elasticsarch>'
 
 echo "Starting script version 1.05"
 u="$(whoami)"

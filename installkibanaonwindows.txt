@@ -6,10 +6,10 @@ echo "starting kibana install v1.1"
 # docker network disconnect mynetwork dockerkibana
 # docker network rm mynetwork
 
-$cmdOutput = docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' dockerelasticsearch
+$ipForElasticSearch = docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' dockerelasticsearch
 
 echo "ElasticSearch IP:"
-echo $cmdOutput
+echo $ipForElasticSearch
 
 # docker network create -d bridge --subnet 172.25.0.0/16 mynetwork
 # docker network connect --ip 172.25.0.2 mynetwork dockerelasticsearch
@@ -18,7 +18,7 @@ docker stop dockerkibana
 docker rm dockerkibana
 docker rmi imranq2/dockerkibana
 docker pull imranq2/dockerkibana
-docker run -d -p 5601:5601 --name dockerkibana --add-host elasticsearch:$cmdOutput imranq2/dockerkibana
+docker run -d -p 5601:5601 --name dockerkibana --add-host elasticsearch:$ipForElasticSearch imranq2/dockerkibana
 
 # docker network connect mynetwork dockerkibana
 

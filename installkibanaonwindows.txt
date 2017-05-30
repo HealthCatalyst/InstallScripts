@@ -1,18 +1,18 @@
 # curl -useb https://healthcatalyst.github.io/InstallScripts/installkibanaonwindows.txt | iex; 
 
-echo "starting kibana install v1.1"
+echo "starting kibana install v1.3"
 
-# docker network disconnect mynetwork dockerelasticsearch
+# docker network disconnect mynetwork fabric.docker.elasticsearch
 # docker network disconnect mynetwork fabric.docker.kibana
 # docker network rm mynetwork
 
-$ipForElasticSearch = docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' dockerelasticsearch
+$ipForElasticSearch = docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' fabric.docker.elasticsearch
 
 echo "ElasticSearch IP:"
 echo $ipForElasticSearch
 
 # docker network create -d bridge --subnet 172.25.0.0/16 mynetwork
-# docker network connect --ip 172.25.0.2 mynetwork dockerelasticsearch
+# docker network connect --ip 172.25.0.2 mynetwork fabric.docker.elasticsearch
 
 docker stop fabric.docker.kibana
 docker rm fabric.docker.kibana

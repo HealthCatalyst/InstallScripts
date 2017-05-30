@@ -172,7 +172,7 @@ else
 
     sleep 5s
 
-    # use kibanassl.yml
+    # use kibanasecure.yml since we don't have ssl keys
     docker exec fabric.kibana /bin/cp -rf /usr/share/kibana/config/kibanasecure.yml /usr/share/kibana/config/kibana.yml
 
     docker restart fabric.kibana

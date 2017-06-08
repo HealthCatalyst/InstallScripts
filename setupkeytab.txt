@@ -2,7 +2,7 @@
 set -e
 #
 # This script is meant for quick & easy install via:
-#   'curl -sSL https://imranq2.github.io/InstallScripts/setupkeytab.txt | sh -s <username> <domain> <password>'
+#   'curl -sSL https://healthcatalyst.github.io/InstallScripts/setupkeytab.txt | sh -s <username> <domain> <password>'
 
 username="$1"
 domain="$2"

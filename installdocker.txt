@@ -2,9 +2,9 @@
 set -e
 #
 # This script is meant for quick & easy install via:
-#   'curl -sSL https://imranq2.github.io/InstallScripts/installdocker.txt | sh'
+#   'curl -sSL https://healthcatalyst.github.io/InstallScripts/installdocker.txt | sh'
 # or:
-#   'wget -qO- https://imranq2.github.io/InstallScripts/installdocker.txt | sh'
+#   'wget -qO- https://healthcatalyst.github.io/InstallScripts/installdocker.txt | sh'
 #
 #
 
@@ -42,9 +42,9 @@ curl -fsSL https://get.docker.com/ | sh
 if [ $u != "root" ]; then
     echo "giving permission to $u"
     sudo usermod -aG docker $u
-    echo "Logout and Login and run: curl -sSL https://imranq2.github.io/InstallScripts/setupdocker.txt | sh"
+    echo "Logout and Login and run: curl -sSL https://healthcatalyst.github.io/InstallScripts/setupdocker.txt | sh"
     echo 0
 fi
 
 echo "Setting up docker"
-curl -sSL https://imranq2.github.io/InstallScripts/setupdocker.txt | sh
+curl -sSL https://healthcatalyst.github.io/InstallScripts/setupdocker.txt | sh

@@ -2,7 +2,7 @@
 set -e
 #
 # This script is meant for quick & easy install via:
-#   'curl -sSL https://imranq2.github.io/InstallScripts/testsql.txt | sh -s <server>'
+#   'curl -sSL https://healthcatalyst.github.io/InstallScripts/testsql.txt | sh -s <server>'
 
 u="$(whoami)"
 echo "Running version 1.01 as: $u"

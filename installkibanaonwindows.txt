@@ -1,26 +1,26 @@
-# curl -useb https://imranq2.github.io/InstallScripts/installkibanaonwindows.txt | iex; 
+# curl -useb https://healthcatalyst.github.io/InstallScripts/installkibanaonwindows.txt | iex; 
 
-echo "starting kibana install v1.1"
+echo "starting kibana install v1.3"
 
-# docker network disconnect mynetwork dockerelasticsearch
-# docker network disconnect mynetwork dockerkibana
+# docker network disconnect mynetwork fabric.docker.elasticsearch
+# docker network disconnect mynetwork fabric.docker.kibana
 # docker network rm mynetwork
 
-$cmdOutput = docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' dockerelasticsearch
+$ipForElasticSearch = docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' fabric.docker.elasticsearch
 
 echo "ElasticSearch IP:"
-echo $cmdOutput
+echo $ipForElasticSearch
 
 # docker network create -d bridge --subnet 172.25.0.0/16 mynetwork
-# docker network connect --ip 172.25.0.2 mynetwork dockerelasticsearch
+# docker network connect --ip 172.25.0.2 mynetwork fabric.docker.elasticsearch
 
-docker stop dockerkibana
-docker rm dockerkibana
-docker rmi imranq2/dockerkibana
-docker pull imranq2/dockerkibana
-docker run -d -p 5601:5601 --name dockerkibana --add-host elasticsearch:$cmdOutput imranq2/dockerkibana
+docker stop fabric.docker.kibana
+docker rm fabric.docker.kibana
+docker rmi healthcatalyst/fabric.docker.kibana
+docker pull healthcatalyst/fabric.docker.kibana
+docker run -d -p 5601:5601 --name fabric.docker.kibana --add-host elasticsearch:$ipForElasticSearch healthcatalyst/fabric.docker.kibana
 
-# docker network connect mynetwork dockerkibana
+# docker network connect mynetwork fabric.docker.kibana
 
 echo "Sleeping"
 Start-Sleep -s 10

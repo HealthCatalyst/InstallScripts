@@ -1,21 +1,21 @@
 #!/bin/sh
 #
 # This script is meant for quick & easy install via:
-#   curl -sSL https://imranq2.github.io/InstallScripts/installfabricdatabus.txt | sh
+#   curl -sSL https://healthcatalyst.github.io/InstallScripts/installfabricdatabus.txt | sh
 #
 
 echo "stopping existing docker container"
-docker stop fabricdatabus || echo 'no container to stop'
+docker stop fabric.databus || echo 'no container to stop'
 echo "removing docker container"
-docker rm fabricdatabus || echo 'no container to remove'
+docker rm fabric.databus || echo 'no container to remove'
 echo "removing docker image"
-docker rmi imranq2/fabricdatabus || echo 'no image to remove'
+docker rmi healthcatalyst/fabric.databus || echo 'no image to remove'
 echo "pulling latest docker image from repo"
-docker pull imranq2/fabricdatabus
+docker pull healthcatalyst/fabric.databus
 
 echo "starting docker container with new image."
 
-docker run -d -p 5000:5000 --restart=unless-stopped -d --name fabricdatabus imranq2/fabricdatabus arg1 arg2
+docker run -d -p 5000:5000 --restart=unless-stopped -d --name fabric.databus healthcatalyst/fabricdatabus arg1 arg2
 
 echo "sleeping until docker container is up"
 until [ "`/usr/bin/docker inspect -f {{.State.Running}} fabricdatabus`"=="true" ]; do
@@ -30,8 +30,8 @@ declare -i c=10
 c=0
 
 while [ $c -lt 60 ]; do
-    echo "curl -X GET http://localhost:5000 -k -verbose"
-    curl http://localhost:5000 -k -verbose
+    echo "curl -X GET http://localhost:5000/jobstatus -k -verbose"
+    curl http://localhost:5000/jobstatus -k -verbose
     RETVAL=$?
     echo "RETVAL:[$RETVAL]"
     if [ $RETVAL -eq 0 ]; then 

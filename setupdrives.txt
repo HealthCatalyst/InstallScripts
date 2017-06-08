@@ -1,5 +1,5 @@
 #!/bin/bash
-# curl -sSL https://imranq2.github.io/InstallScripts/setupdrives.txt | sh
+# curl -sSL https://healthcatalyst.github.io/InstallScripts/setupdrives.txt | sh
 
 echo "Version 1.41"
 set -x

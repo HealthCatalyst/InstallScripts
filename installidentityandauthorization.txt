@@ -2,7 +2,7 @@
 set -e
 #
 # This script is meant for quick & easy install via:
-#   curl -sSL https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/installidentityandauthorization.txt | sh
+#   curl -sSL https://healthcatalyst.github.io/InstallScripts/installidentityandauthorization.txt | sh
 
 u="$(whoami)"
 echo "Running as: $u"

@@ -24,7 +24,7 @@ services:
       - couchdb1
     networks:
       - dbnet
-
+      
   couchdb2:
     image: healthcatalyst/fabric.docker.couchdb
     volumes:
@@ -59,7 +59,7 @@ services:
       - dbnet
 
 networks:
-  webnet:
+  dbnet:
 
 volumes:
   db1-data:

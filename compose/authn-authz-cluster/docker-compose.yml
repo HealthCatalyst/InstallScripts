@@ -10,7 +10,7 @@ services:
       - "80:80"
       - "443:443"
     networks:
-      - webnet
+      - idnet
 
   identity:
     image: healthcatalyst/fabric.identity
@@ -20,11 +20,10 @@ services:
       - CouchDbSettings__Username=${COUCHDB_USER}
       - CouchDbSettings__Password=${COUCHDB_PASSWORD}
       - IssuerUri
-    deploy:
-      replicas: 2
     command: ["./wait-for-couchdb.sh", "http://couchproxy:5984", "dotnet", "Fabric.Identity.API.dll"]
     networks:
-      - webnet
+      - idnet
+      - authnet
       - dbnet
   
   authorizationproxy:
@@ -35,17 +34,17 @@ services:
     ports:
       - "5004:80"
     networks:
-      - webnet
+      - authnet
 
   authorization:
     image: healthcatalyst/fabric.authorization
     environment:
       - IdentityServerConfidentialClientSettings__Authority=http://identityproxy
-    deploy:
-      replicas: 2
     command: ["dotnet", "Fabric.Authorization.API.dll"]
     networks:
-      - webnet
+      - authnet
+      - idnet
+      - dbnet
 
   couchdb1:
     image: healthcatalyst/fabric.docker.couchdb
@@ -70,6 +69,11 @@ services:
       - couchdb1
     networks:
       - dbnet
+    deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
 
   couchdb2:
     image: healthcatalyst/fabric.docker.couchdb
@@ -105,7 +109,8 @@ services:
       - dbnet
 
 networks:
-  webnet:
+  idnet:
+  authnet:
   dbnet:
 
 volumes:

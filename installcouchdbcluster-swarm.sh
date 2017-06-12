@@ -1,5 +1,25 @@
 #!/bin/bash
 
+nodelist=$(docker node ls -q)
+echo "Node list is = $nodelist"
+IFS=' ' read -r -a nodes <<< $nodelist
+numbernodes=${#nodes[@]}
+node1=${nodes[0]}
+node2=${nodes[0]}
+node3=${nodes[0]}
+
+if [ $numbernodes -eq 2 ]; then
+	node2=${nodes[1]}
+	node3=${nodes[1]}
+elif [ $numbernodes -ge 3 ]; then
+	node2=${nodes[1]}
+	node3=${nodes[2]}
+fi
+
+echo "Node1 id = $node1"
+echo "Node2 id = $node2"
+echo "Node3 id = $node3"
+
 echo "creating dbnet network"
 docker network create --driver overlay dbnet
 
@@ -10,6 +30,8 @@ docker service create --name  couchdb1 \
 	--env COUCHDB_PASSWORD=$COUCHDB_PASSWORD \
 	-p 15984:5984 \
 	--network dbnet \
+	--mount type=volume,source=db1-data,destination=//opt/couchdb/data \
+	--constraint "node.id == $node1" \
 	healthcatalyst/fabric.docker.couchdb
 
 echo "creating couchdb2 service"
@@ -19,6 +41,8 @@ docker service create --name couchdb2 \
 	--env COUCHDB_PASSWORD=$COUCHDB_PASSWORD \
 	-p 25984:5984 \
 	--network dbnet \
+	--mount type=volume,source=db2-data,destination=//opt/couchdb/data \
+	--constraint "node.id == $node2" \
 	healthcatalyst/fabric.docker.couchdb
 
 echo "creating couchdb3 service"
@@ -28,6 +52,8 @@ docker service create --name couchdb3 \
 	--env COUCHDB_PASSWORD=$COUCHDB_PASSWORD \
 	-p 35984:5984 \
 	--network dbnet \
+	--mount type=volume,source=db3-data,destination=//opt/couchdb/data \
+	--constraint "node.id == $node3" \
 	healthcatalyst/fabric.docker.couchdb
 
 echo "waiting for couchdb nodes to come up"

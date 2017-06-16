@@ -9,7 +9,7 @@ set -e
 #
 
 
-echo "starting version 2.11"
+echo "starting version 2.15"
 
 clustername=""
 defaultpassword=""
@@ -178,6 +178,14 @@ else
 fi
 
 volumeParam="-v $data1File:/usr/share/elasticsearch/data1 -v $data2File:/usr/share/elasticsearch/data2"
+
+# delete old versions
+echo "stopping existing docker container"
+docker stop dockerelasticsearch || echo 'no container to stop'
+echo "removing docker container"
+docker rm dockerelasticsearch || echo 'no container to remove'
+echo "removing docker image"
+docker rmi imranq2/dockerelasticsearch || echo 'no image to remove'
 
 echo "stopping existing docker container"
 docker stop fabric.docker.elasticsearch || echo 'no container to stop'

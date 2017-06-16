@@ -9,7 +9,7 @@ set -e
 #
 
 
-echo "starting version 2.01"
+echo "starting version 2.11"
 
 clustername=""
 defaultpassword=""
@@ -180,22 +180,22 @@ fi
 volumeParam="-v $data1File:/usr/share/elasticsearch/data1 -v $data2File:/usr/share/elasticsearch/data2"
 
 echo "stopping existing docker container"
-docker stop fabric.elasticsearch || echo 'no container to stop'
+docker stop fabric.docker.elasticsearch || echo 'no container to stop'
 echo "removing docker container"
-docker rm fabric.elasticsearch || echo 'no container to remove'
+docker rm fabric.docker.elasticsearch || echo 'no container to remove'
 echo "removing docker image"
-docker rmi healthcatalyst/fabric.elasticsearch || echo 'no image to remove'
+docker rmi healthcatalyst/fabric.docker.elasticsearch || echo 'no image to remove'
 echo "pulling latest docker image from repo"
-docker pull healthcatalyst/fabric.elasticsearch
+docker pull healthcatalyst/fabric.docker.elasticsearch
 echo "starting docker container with new image"
 set -x
 # https://www.elastic.co/guide/en/elasticsearch/reference/current/docker.html
 
-docker run -d -p 9200:9200 -p 9300:9300 $volumeParam --restart=unless-stopped --cap-add=IPC_LOCK --ulimit memlock=-1:-1 --ulimit nofile=262144:262144 --security-opt seccomp=unconfined -e ES_JAVA_OPTS="$javaOpts" -e network.host=_eth0_ -e network.publish_host=$myip -e node.name=$hostname -e discovery.zen.ping.unicast.hosts="$hosts" -e cluster.name=$clustername -e xpack.security.enabled=true -e bootstrap.memory_lock=true -e path.data="/usr/share/elasticsearch/data1,/usr/share/elasticsearch/data2" -e path.logs="/usr/share/elasticsearch/data1,/usr/share/elasticsearch/data2" -e http.compression=true $paramsToES --name fabric.elasticsearch healthcatalyst/fabric.elasticsearch
+docker run -d -p 9200:9200 -p 9300:9300 $volumeParam --restart=unless-stopped --cap-add=IPC_LOCK --ulimit memlock=-1:-1 --ulimit nofile=262144:262144 --security-opt seccomp=unconfined -e ES_JAVA_OPTS="$javaOpts" -e network.host=_eth0_ -e network.publish_host=$myip -e node.name=$hostname -e discovery.zen.ping.unicast.hosts="$hosts" -e cluster.name=$clustername -e xpack.security.enabled=true -e bootstrap.memory_lock=true -e path.data="/usr/share/elasticsearch/data1,/usr/share/elasticsearch/data2" -e path.logs="/usr/share/elasticsearch/data1,/usr/share/elasticsearch/data2" -e http.compression=true $paramsToES --name fabric.docker.elasticsearch healthcatalyst/fabric.docker.elasticsearch
 set +x
 
 echo "sleeping until docker container is up"
-until [ "`/usr/bin/docker inspect -f {{.State.Running}} fabric.elasticsearch`"=="true" ]; do
+until [ "`/usr/bin/docker inspect -f {{.State.Running}} fabric.docker.elasticsearch`"=="true" ]; do
     sleep 1s;
 done;
 
@@ -208,18 +208,18 @@ if [ ! -z "$ssl" ]; then
   echo "Checking if [$nodekeypath] exists"
   if [[ -f "$nodekeypath" ]]; then
     echo "copying ssl keys from $installfolder"
-    docker cp $installfolder/node.key fabric.elasticsearch:/usr/share/elasticsearch/config
-    docker cp $installfolder/node.crt fabric.elasticsearch:/usr/share/elasticsearch/config
-    docker cp $installfolder/ca.crt fabric.elasticsearch:/usr/share/elasticsearch/config
+    docker cp $installfolder/node.key fabric.docker.elasticsearch:/usr/share/elasticsearch/config
+    docker cp $installfolder/node.crt fabric.docker.elasticsearch:/usr/share/elasticsearch/config
+    docker cp $installfolder/ca.crt fabric.docker.elasticsearch:/usr/share/elasticsearch/config
 
     protocol="https"
   else
     echo "ERROR: No key files found in [$nodekeypath] so cannot set up SSL"
   fi
 
-  docker restart fabric.elasticsearch
+  docker restart fabric.docker.elasticsearch
   echo "sleeping until docker container is up"
-  until [ "`/usr/bin/docker inspect -f {{.State.Running}} fabric.elasticsearch`"=="true" ]; do
+  until [ "`/usr/bin/docker inspect -f {{.State.Running}} fabric.docker.elasticsearch`"=="true" ]; do
       sleep 1s;
   done;
 

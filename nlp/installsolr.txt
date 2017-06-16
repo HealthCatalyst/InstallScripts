@@ -1,0 +1,12 @@
+
+sudo yum -y install java-1.7.0-openjdk-devel
+
+sudo yum -y install tomcat
+
+curl -O http://tomcat.apache.org/download-70.cgi
+
+sudo tar -xvf apache-tomcat-7.0.62.tar.gz -C /opt
+
+# If installing it on the same server as other nlp components, rename the
+containing folder:
+sudo mv /opt/apache-tomcat-7.0.62 /opt/tomcat-nlp-solr

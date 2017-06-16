@@ -9,7 +9,7 @@ set -e
 #
 #
 
-echo "starting version 2.03"
+echo "starting version 2.11"
 defaultpassword=""
 
 echo "Starting setup..."
@@ -23,7 +23,7 @@ ssl="$3"
 paramsToES=""
 
 if [ -z "$ip1" ]; then
-  myip=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' fabric.elasticsearch)
+  myip=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' fabric.docker.elasticsearch)
 
   echo "ElasticSearch IP:"
   echo $myip
@@ -125,16 +125,16 @@ if [ -z $(docker volume ls -q --filter "name=esdata") ]; then
 fi
 
 echo "stopping existing docker container"
-docker stop fabric.kibana || echo 'no container to stop'
+docker stop fabric.docker.kibana || echo 'no container to stop'
 echo "removing docker container"
-docker rm fabric.kibana || echo 'no container to remove'
+docker rm fabric.docker.kibana || echo 'no container to remove'
 echo "removing docker image"
-docker rmi healthcatalyst/fabric.kibana || echo 'no image to remove'
+docker rmi healthcatalyst/fabric.docker.kibana || echo 'no image to remove'
 echo "pulling latest docker image from repo"
-docker pull healthcatalyst/fabric.kibana
+docker pull healthcatalyst/fabric.docker.kibana
 echo "starting docker container with new image."
 set -x
-docker create -p 5601:5601 --restart=unless-stopped --name fabric.kibana -e ELASTICSEARCH_URL=$protocol://$ip1:9200 -e SERVER_HOST=$serverhost -e ELASTICSEARCH_USERNAME=kibana -e ELASTICSEARCH_PASSWORD=$defaultpassword $paramsToES healthcatalyst/fabric.kibana 
+docker create -p 5601:5601 --restart=unless-stopped --name fabric.docker.kibana -e ELASTICSEARCH_URL=$protocol://$ip1:9200 -e SERVER_HOST=$serverhost -e ELASTICSEARCH_USERNAME=kibana -e ELASTICSEARCH_PASSWORD=$defaultpassword $paramsToES healthcatalyst/fabric.docker.kibana 
 set +x
 
 echo "sleeping for 5s so docker container is up"
@@ -147,18 +147,18 @@ if [ ! -z "$ssl" ]; then
   echo "Checking if [$nodekeypath] exists"
   if [[ -f "$nodekeypath" ]]; then
     echo "copying ssl keys from $installfolder"
-    docker cp $installfolder/node.key fabric.kibana:/usr/share/kibana/config
-    docker cp $installfolder/node.crt fabric.kibana:/usr/share/kibana/config
-    docker cp $installfolder/ca.crt fabric.kibana:/usr/share/kibana/config
+    docker cp $installfolder/node.key fabric.docker.kibana:/usr/share/kibana/config
+    docker cp $installfolder/node.crt fabric.docker.kibana:/usr/share/kibana/config
+    docker cp $installfolder/ca.crt fabric.docker.kibana:/usr/share/kibana/config
 
-    docker start fabric.kibana
+    docker start fabric.docker.kibana
 
     sleep 5s
 
     # use kibanassl.yml
-    docker exec fabric.kibana /bin/cp -rf /usr/share/kibana/config/kibanassl.yml /usr/share/kibana/config/kibana.yml
+    docker exec fabric.docker.kibana /bin/cp -rf /usr/share/kibana/config/kibanassl.yml /usr/share/kibana/config/kibana.yml
 
-    docker restart fabric.kibana
+    docker restart fabric.docker.kibana
 
     echo "kibana set up with SSL"
 
@@ -168,19 +168,19 @@ if [ ! -z "$ssl" ]; then
   fi
 
 else
-    docker start fabric.kibana
+    docker start fabric.docker.kibana
 
     sleep 5s
 
     # use kibanasecure.yml since we don't have ssl keys
-    docker exec fabric.kibana /bin/cp -rf /usr/share/kibana/config/kibanasecure.yml /usr/share/kibana/config/kibana.yml
+    docker exec fabric.docker.kibana /bin/cp -rf /usr/share/kibana/config/kibanasecure.yml /usr/share/kibana/config/kibana.yml
 
-    docker restart fabric.kibana
+    docker restart fabric.docker.kibana
 fi
 
 
   echo "sleeping until docker container is up"
-  until [ "`/usr/bin/docker inspect -f {{.State.Running}} fabric.kibana`"=="true" ]; do
+  until [ "`/usr/bin/docker inspect -f {{.State.Running}} fabric.docker.kibana`"=="true" ]; do
       sleep 1s;
   done;
 

@@ -1,0 +1,59 @@
+
+
+sudo yum -y update; yum clean all
+
+# This brings in the client too
+sudo yum -y install postgresql-server; yum clean all
+# And install the contributed libraries too (just in case)
+sudo yum -y install postgresql-contrib; yum clean all
+
+
+# Make it so it starts automatically
+sudo /sbin/service postgresql initdb
+sudo /sbin/chkconfig postgresql on
+
+# Note: depending on your network configuration, you might also have to change
+the postgres configuration files to allow certain IPs to access the database.
+# These files are:
+# /var/lib/pgsql/data/pg_hba.conf - Can be used to control which ips have
+access to the database.
+# /var/lib/pgsql/data/postgresql.conf - Can be used to control the
+connections the database listens for.
+# You also might have to edit IP tables (depending on your server and network
+configuration).
+
+# Start it up
+sudo service postgresql start
+
+
+# Log into the database as the root user
+sudo -u postgres psql
+
+# Or: psql -U postgres ... depends on how you installed it.
+# Create the omop "role" with a password you decide on.
+create role omop superuser login password 'ILoveNLP2017!';
+
+# Create the database for both user interfaces.
+create database omop owner omop;
+
+# Make the rpg user able to configure and change that database.
+grant all privileges on database omop to omop;
+
+# Exit
+\q
+
+
+# change ident to md5 in pg_hba.conf
+sudo nano /var/lib/pgsql/data/pg_hba.conf
+
+# reload config
+sudo service postgresql restart
+
+# Test that everything worked by logging in using the password you created above:
+psql -h 127.0.0.1 --username=omop --dbname=omop
+
+# When prompted, use the password you set above.
+
+curl -O https://s3.amazonaws.com/product-awsinstance-backups/pg_omop.sql
+
+psql -h 127.0.0.1 --username=omop omop < pg_omop.sql

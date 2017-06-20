@@ -5,6 +5,8 @@ set -e
 couchproxy=$1
 pfxpassword=$2
 pfxpath=$3
+identitycert=$4
+identitykey=$5
 
 docker secret create pfxpassword $pfxpassword
 docker secret create identity.pfx $pfxpath
@@ -35,6 +37,10 @@ echo "creating identity nginx proxy"
 docker service create --name identityproxy \
 	--env HOST=identity \
 	--env REMOTEPORT=5001 \
+	--env CERTIFICATE=$identitycert \
+	--env CERTIFICATE_KEY=$identitykey \
+	--secret $identitycert \
+	--secret $identitykey \
 	-p 80:80 -p 443:443 \
 	--network idnet \
 	healthcatalyst/fabric.docker.nginx

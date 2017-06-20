@@ -16,6 +16,7 @@ services:
     image: healthcatalyst/fabric.identity
     environment:
       - HostingOptions__UseInMemoryStores=false
+      - HostingOptions__UseTestUsers=false
       - CouchDbSettings__Server=http://couchproxy:5984/
       - CouchDbSettings__Username=${COUCHDB_USER}
       - CouchDbSettings__Password=${COUCHDB_PASSWORD}

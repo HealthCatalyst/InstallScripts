@@ -19,6 +19,7 @@ docker network create --driver overlay idnet
 echo "creating identity service"
 docker service create --name identity \
 	--env HostingOptions__UseInMemoryStores=false \
+	--env HostingOptions_UseTestUsers=false \
 	--env CouchDbSettings__Server=$couchproxy \
 	--env CouchDbSettings__Username=$COUCHDB_USER \
 	--env CouchDbSettings__Password=$COUCHDB_PASSWORD \

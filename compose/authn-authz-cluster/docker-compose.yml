@@ -20,7 +20,7 @@ services:
       - CouchDbSettings__Username=${COUCHDB_USER}
       - CouchDbSettings__Password=${COUCHDB_PASSWORD}
       - IssuerUri
-    command: ["./wait-for-couchdb.sh", "http://couchproxy:5984", "dotnet", "Fabric.Identity.API.dll"]
+    command: ["./scripts/wait-for-couchdb.sh", "http://couchproxy:5984", "dotnet", "Fabric.Identity.API.dll"]
     networks:
       - idnet
       - authnet

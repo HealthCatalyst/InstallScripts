@@ -19,16 +19,16 @@ docker network create --driver overlay idnet
 echo "creating identity service"
 docker service create --name identity \
 	--env HostingOptions__UseInMemoryStores=false \
-	--env HostingOptions_UseTestUsers=false \
+	--env HostingOptions__UseTestUsers=false \
 	--env CouchDbSettings__Server=$couchproxy \
-	--env CouchDbSettings__Username=$COUCHDB_USER \
-	--env CouchDbSettings__Password=$COUCHDB_PASSWORD \
 	--env SigningCertificateSettings__UseTemporarySigningCredential=false \
 	--env SigningCertificateSettings__PrimaryCertificatePath=//run/secrets/identity.pfx \
 	--env SigningCertificateSettings__PrimaryCertificatePasswordPath=//run/secrets/pfxpassword \
 	-p 5001:5001 \
 	--secret="pfxpassword" \
 	--secret="identity.pfx" \
+	--secret="CouchDbSettings__Username" \
+	--secret="CouchDbSettings__Password" \
 	--replicas 1 \
 	--network idnet \
 	--network dbnet \

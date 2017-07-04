@@ -23,11 +23,27 @@ echo "Node3 id = $node3"
 echo "creating dbnet network"
 docker network create --driver overlay dbnet
 
+cat > CouchDbSettings__Username << EOF
+$COUCHDB_USER
+EOF
+
+cat > CouchDbSettings__Password << EOF
+$COUCHDB_PASSWORD
+EOF
+
+docker secret create CouchDbSettings__Username CouchDbSettings__Username
+docker secret create CouchDbSettings__Password CouchDbSettings__Password
+
+rm CouchDbSettings__Username
+rm CouchDbSettings__Password
+
 echo "creating couchdb1 service"
 docker service create --name  couchdb1 \
 	--env NODENAME=couchdb1 \
-	--env COUCHDB_USER=$COUCHDB_USER \
-	--env COUCHDB_PASSWORD=$COUCHDB_PASSWORD \
+	--env USERNAME_SECRET=CouchDbSettings__Username \
+	--env PASSWORD_SECRET=CouchDbSettings__Password \
+	--secret CouchDbSettings__Username \
+	--secret CouchDbSettings__Password \
 	-p 15984:5984 \
 	--network dbnet \
 	--mount type=volume,source=db1-data,destination=//opt/couchdb/data \

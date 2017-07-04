@@ -1,0 +1,38 @@
+
+sudo yum -y install java-1.7.0-openjdk-devel
+
+# install tomcat
+curl -O http://www.us.apache.org/dist/tomcat/tomcat-7/v7.0.79/bin/apache-tomcat-7.0.79.tar.gz
+
+sudo tar -xvf apache-tomcat-7.0.79.tar.gz -C /opt
+
+# If installing it on the same server as other nlp components, rename the
+containing folder:
+sudo mv /opt/apache-tomcat-7.0.79 /opt/tomcat-nlp-nlpweb
+
+sudo cp nlpweb.war /opt/tomcat-nlp-nlpweb/webapps
+
+sudo mkdir -p /etc/nlp/nlpweb
+
+# Go back to your artifacts folder
+sudo cp application.properties /etc/nlp/nlpweb
+
+# Because this file contains database connection info, you should probably make
+it not world readable.
+
+sudo cp server.xml /opt/tomcat-nlp-nlpweb/conf/server.xml
+sudo cp tomcat-users.xml /opt/tomcat-nlp-nlpweb/conf/
+sudo cp setenv.sh /opt/tomcat-nlp-nlpweb/bin/setenv.sh
+
+sudo cp -r indexes /opt
+sudo cp searchConfig.json /etc/nlp/nlpweb
+
+# sudo sh /opt/tomcat-nlp-nlpweb/bin/shutdown.sh;
+sudo sh /opt/tomcat-nlp-nlpweb/bin/startup.sh
+
+# pid of tomcat: ps -ef | grep tomcat | grep java | awk ' { print $2 } '
+# list all open files: lsof -p PID
+
+# Login to the UI with ndepthuser/password
+
+# tail -n 200 /var/log/regenstrief/nlpweb/nlpweb.log

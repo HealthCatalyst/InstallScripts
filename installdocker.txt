@@ -8,7 +8,7 @@ set -e
 #
 #
 
-echo "Version 2017-07-10.1"
+echo "Version 2017-07-10.2"
 
 echo "Current OS"
 echo "$(cat /etc/*-release)"
@@ -40,7 +40,7 @@ echo "downloading and installing docker"
 # https://docs.docker.com/engine/installation/linux/docker-ce/centos/#install-from-a-package
 
 # remove older versions
-sudo yum -y remove docker-ce docker-engine-selinux.noarch docker-cimprov.x86_64 
+sudo yum -y remove docker-engine.x86_64 docker-ce docker-engine-selinux.noarch docker-cimprov.x86_64 
 sudo rm -rf /var/lib/docker
 
 sudo yum install -y yum-utils device-mapper-persistent-data lvm2

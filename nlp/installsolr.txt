@@ -34,8 +34,12 @@ sudo cp server.xml /opt/tomcat-nlp-solr/conf/server.xml
 sudo cp tomcat-users.xml /opt/tomcat-nlp-solr/conf/
 # sudo nano /opt/tomcat-nlp-solr/bin/setenv.sh
 
+sudo mkdir -p /opt/solr/collection1/conf
+sudo cp -r opt/solr/collection1/conf/* /opt/solr/collection1/conf/
+
 sudo cp setenv.sh /opt/tomcat-nlp-solr/bin/setenv.sh
 
+# sudo sh /opt/tomcat-nlp-solr/bin/shutdown.sh;
 sudo sh /opt/tomcat-nlp-solr/bin/startup.sh
 
 # give all permissions
@@ -62,3 +66,6 @@ mysql -u root --password=new-password -e "grant all privileges on nlpmt.* to 'NL
 
 # update mysql.user set host = '%' where User = 'NLP_APP_USER';
 # SELECT User, Host, Password FROM mysql.user;
+
+# sudo yum -y remove mysql mysql-server
+# sudo rm -r /var/lib/mysql

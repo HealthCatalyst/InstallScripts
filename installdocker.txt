@@ -8,7 +8,7 @@ set -e
 #
 #
 
-echo "Version 2017-07-09.1"
+echo "Version 2017-07-10.1"
 
 echo "Current OS"
 echo "$(cat /etc/*-release)"
@@ -37,6 +37,12 @@ sudo sysctl -w vm.max_map_count=262144
 echo "vm.max_map_count = 262144" | sudo tee -a /etc/sysctl.conf
 
 echo "downloading and installing docker"
+# https://docs.docker.com/engine/installation/linux/docker-ce/centos/#install-from-a-package
+
+# remove older versions
+sudo yum -y remove docker-ce docker-engine-selinux.noarch docker-cimprov.x86_64 
+sudo rm -rf /var/lib/docker
+
 sudo yum install -y yum-utils device-mapper-persistent-data lvm2
 
 # set the stable repo

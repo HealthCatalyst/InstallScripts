@@ -8,7 +8,7 @@ set -e
 #
 #
 
-echo "Version 2017-07-10.2"
+echo "Version 2017-07-10.2" 
 
 echo "Current OS"
 echo "$(cat /etc/*-release)"

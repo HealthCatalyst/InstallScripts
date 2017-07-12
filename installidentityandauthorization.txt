@@ -1,8 +1,10 @@
 #!/bin/sh
+couchdb_username=$1
+couchdb_password=$2
 set -e
 #
 # This script is meant for quick & easy install via:
-#   curl -sSL https://healthcatalyst.github.io/InstallScripts/installidentityandauthorization.txt | sh
+#   curl -sSL https://healthcatalyst.github.io/InstallScripts/installidentityandauthorization.txt | sh /dev/stdin [couchdb_username] [couchdb_password]
 
 u="$(whoami)"
 echo "Running as: $u"
@@ -11,17 +13,53 @@ echo "Running as: $u"
 echo "stopping existing docker containers"
 docker stop fabric.identity || echo 'no container to stop'
 docker stop fabric.authorization || echo 'no container to stop'
+docker stop fabric.couchdb || echo 'no container to stop'
 echo "removing docker container"
 docker rm fabric.identity || echo 'no container to remove'
 docker rm fabric.authorization || echo 'no container to remove'
+docker rm fabric.couchdb || echo 'no container to remove'
+echo "removing docker volume for couchdb"
+docker volume rm db1-data || echo 'no volume to remove'
 echo "removing docker image"
-docker rmi healthcatalyst/fabric.identity || echo 'no image to remove'
-docker rmi healthcatalyst/fabric.authorization || echo 'no image to remove'
 echo "pulling latest docker image from repo"
 docker pull healthcatalyst/fabric.identity
 docker pull healthcatalyst/fabric.authorization
+docker pull healthcatalyst/fabric.docker.couchdb
 
-echo "starting docker containers with new image."
+echo "starting couchdb."
+docker run -d --name fabric.couchdb \
+    -e "COUCHDB_USER=$couchdb_username" \
+    -e "COUCHDB_PASSWORD=$couchdb_password" \
+    -v db1-data:/opt/couchdb/data \
+    -p 0.0.0.0:5984:5984 healthcatalyst/fabric.docker.couchdb
 
-docker run -d --name fabric.identity -p 0.0.0.0:5001:5001 healthcatalyst/fabric.identity
-docker run -d --name fabric.authorization -p 0.0.0.0:5004:5004 --link fabric.identity:localhost healthcatalyst/fabric.authorization
+sleep 20 
+
+echo "starting fabric.identity"
+docker run -d --name fabric.identity \
+    -e "HostingOptions__UseInMemoryStores=false" \
+    -e "CouchDbSettings__Server=http://couchdb:5984" \
+    -e "CouchDbSettings__Username=$couchdb_username" \
+    -e "CouchDbSettings__Password=$couchdb_password" \
+    -p 5001:5001 \
+    --link fabric.couchdb:couchdb \
+    healthcatalyst/fabric.identity
+
+sleep 10
+curl -sSL -O https://raw.githubusercontent.com/HealthCatalyst/Fabric.Identity/master/Fabric.Identity.API/scripts/setup-samples.sh
+. ./setup-samples.sh
+rm setup-samples.sh
+
+echo "starting fabric.authorization"
+docker run -d --name fabric.authorization \
+    -e "CouchDbSettings__Server=http://couchdb:5984" \
+    -e "CouchDbSettings__Username=$couchdb_username" \
+    -e "CouchDbSettings__Password=$couchdb_password" \
+    -e "IdentityServerConfidentialClientSettings__ClientSecret=$authapisecret" \
+    -p 0.0.0.0:5004:5004 \
+    --link fabric.identity:localhost \
+    --link fabric.couchdb:couchdb \
+    healthcatalyst/fabric.authorization
+
+sleep 10
+curl -sSL https://raw.githubusercontent.com/HealthCatalyst/Fabric.Authorization/master/Fabric.Authorization.API/scripts/setup-samples.sh | sh /dev/stdin $installersecret

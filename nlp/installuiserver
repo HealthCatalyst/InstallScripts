@@ -1,0 +1,63 @@
+
+sudo yum -y install java-1.7.0-openjdk-devel
+
+# install tomcat
+curl -O http://www.us.apache.org/dist/tomcat/tomcat-7/v7.0.79/bin/apache-tomcat-7.0.79.tar.gz
+
+sudo tar -xvf apache-tomcat-7.0.79.tar.gz -C /opt
+
+# If installing it on the same server as other nlp components, rename the
+containing folder:
+sudo mv /opt/apache-tomcat-7.0.79 /opt/tomcat-nlp-nlpweb
+
+sudo cp nlpweb.war /opt/tomcat-nlp-nlpweb/webapps
+
+sudo mkdir -p /etc/nlp/nlpweb
+
+# Go back to your artifacts folder
+sudo cp application.properties /etc/nlp/nlpweb
+
+# Because this file contains database connection info, you should probably make
+it not world readable.
+
+
+sudo cp -r db/migration /opt/tomcat-nlp-nlpweb/webapps/nlpweb/WEB-INF/classes/db/migration
+
+sudo cp server.xml /opt/tomcat-nlp-nlpweb/conf/server.xml
+sudo cp tomcat-users.xml /opt/tomcat-nlp-nlpweb/conf/
+sudo cp setenv.sh /opt/tomcat-nlp-nlpweb/bin/setenv.sh
+
+sudo cp -r indexes /opt
+sudo cp searchConfig.json /etc/nlp/nlpweb
+
+# set up tables
+mysql -u NLP_APP_USER --password=yourpassword -h TestNLPSolr nlpmt < sql/V1__Base_version.sql
+mysql -u NLP_APP_USER --password=yourpassword -h TestNLPSolr nlpmt < sql/V2__user_roles.sql
+mysql -u NLP_APP_USER --password=yourpassword -h TestNLPSolr nlpmt < sql/V3__sample_user.sql
+mysql -u NLP_APP_USER --password=yourpassword -h TestNLPSolr nlpmt < sql/V4__source.sql
+mysql -u NLP_APP_USER --password=yourpassword -h TestNLPSolr nlpmt < sql/V5__report_types.sql
+mysql -u NLP_APP_USER --password=yourpassword -h TestNLPSolr nlpmt < sql/V6__sections.sql
+mysql -u NLP_APP_USER --password=yourpassword -h TestNLPSolr nlpmt < sql/V7__core.sql
+mysql -u NLP_APP_USER --password=yourpassword -h TestNLPSolr nlpmt < sql/V8__nlp_pipeline_template.sql
+
+# setup hostnames
+# jobserver
+# solrserver = TestNLPSolr
+# uiserver
+# hadoopserver
+
+# sudo sh /opt/tomcat-nlp-nlpweb/bin/shutdown.sh;
+sudo sh /opt/tomcat-nlp-nlpweb/bin/startup.sh
+
+# pid of tomcat: ps -ef | grep tomcat | grep java | awk ' { print $2 } '
+# list all open files: lsof -p PID
+
+# Login to the UI with ndepthuser/password
+
+# tail -n 200 /var/log/regenstrief/nlpweb/nlpweb.log
+
+# mysql -u NLP_APP_USER --password=yourpassword -h TestNLPSolr nlpmt < /opt/tomcat-nlp-nlpweb/webapps/nlpweb/WEB-INF/classes/db/migration/V1__Base_version.sql
+# mysql -u NLP_APP_USER --password=yourpassword -h TestNLPSolr nlpmt < /opt/tomcat-nlp-nlpweb/webapps/nlpweb/WEB-INF/classes/db/migration/V2__Cohorts.sql
+# mysql -u NLP_APP_USER --password=yourpassword -h TestNLPSolr nlpmt < /opt/tomcat-nlp-nlpweb/webapps/nlpweb/WEB-INF/classes/db/migration/V3__Validation_Cores.sql
+
+

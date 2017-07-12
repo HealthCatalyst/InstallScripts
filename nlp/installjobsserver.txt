@@ -1,0 +1,29 @@
+sudo yum -y install java-1.7.0-openjdk-devel
+
+# install tomcat
+curl -O http://www.us.apache.org/dist/tomcat/tomcat-7/v7.0.79/bin/apache-tomcat-7.0.79.tar.gz
+
+sudo tar -xvf apache-tomcat-7.0.79.tar.gz -C /opt
+
+# If installing it on the same server as other nlp components, rename the
+containing folder:
+sudo mv /opt/apache-tomcat-7.0.79 /opt/tomcat-nlp-nlp
+
+sudo cp nlp.war /opt/tomcat-nlp-nlp/webapps
+
+sudo mkdir -p /etc/nlp/nlp
+
+# Go back to your artifacts folder
+sudo cp application.properties /etc/nlp/nlp
+
+sudo cp server.xml /opt/tomcat-nlp-nlp/conf/server.xml
+sudo cp tomcat-users.xml /opt/tomcat-nlp-nlp/conf/
+sudo cp setenv.sh /opt/tomcat-nlp-nlp/bin/setenv.sh
+
+sudo cp -r indexes /opt
+sudo cp -r models /opt
+
+sudo sh /opt/tomcat-nlp-nlp/bin/startup.sh
+
+# tail -n 200 /var/log/regenstrief/nlp/nlp.log
+

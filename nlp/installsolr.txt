@@ -1,12 +1,71 @@
 
 sudo yum -y install java-1.7.0-openjdk-devel
 
-sudo yum -y install tomcat
+# sudo yum -y install tomcat
 
-curl -O http://tomcat.apache.org/download-70.cgi
+# install tomcat
+curl -O http://www.us.apache.org/dist/tomcat/tomcat-7/v7.0.79/bin/apache-tomcat-7.0.79.tar.gz
 
-sudo tar -xvf apache-tomcat-7.0.62.tar.gz -C /opt
+sudo tar -xvf apache-tomcat-7.0.79.tar.gz -C /opt
 
 # If installing it on the same server as other nlp components, rename the
 containing folder:
-sudo mv /opt/apache-tomcat-7.0.62 /opt/tomcat-nlp-solr
+sudo mv /opt/apache-tomcat-7.0.79 /opt/tomcat-nlp-solr
+
+sudo cp solr.war /opt/tomcat-nlp-solr/webapps
+
+sudo mkdir -p /opt/tomcat-nlp-solr/conf/Catalina/localhost/
+
+sudo cp solr/context.xml /opt/tomcat-nlp-solr/conf/Catalina/localhost/solr.xml
+
+sudo cp -r conf /opt/tomcat-nlp-solr/
+
+sudo mkdir -p /etc/nlp/solr
+
+sudo cp solr/log4j.xml /etc/nlp/solr
+
+sudo mkdir -p /var/log/nlp/solr
+
+sudo mkdir -p /opt/nlp
+
+sudo cp -r solr /opt/nlp
+
+sudo cp server.xml /opt/tomcat-nlp-solr/conf/server.xml
+sudo cp tomcat-users.xml /opt/tomcat-nlp-solr/conf/
+# sudo nano /opt/tomcat-nlp-solr/bin/setenv.sh
+
+sudo mkdir -p /opt/solr/collection1/conf
+sudo cp -r opt/solr/collection1/conf/* /opt/solr/collection1/conf/
+
+sudo cp setenv.sh /opt/tomcat-nlp-solr/bin/setenv.sh
+
+# sudo sh /opt/tomcat-nlp-solr/bin/shutdown.sh;
+sudo sh /opt/tomcat-nlp-solr/bin/startup.sh
+
+# give all permissions
+# sudo chmod ugo+rwx my_app
+
+curl "http://localhost:8085/solr/report_core/dataimport?command=full-import&entity=report&clean=false&commit=true"
+
+# installing mysql
+# https://support.rackspace.com/how-to/installing-mysql-server-on-centos/
+ sudo yum -y install mariadb-server mariadb
+
+sudo iptables -I INPUT -p tcp --dport 3306 -m state --state NEW,ESTABLISHED -j ACCEPT
+sudo iptables -I OUTPUT -p tcp --sport 3306 -m state --state ESTABLISHED -j ACCEPT
+
+sudo systemctl start mariadb.service
+sudo systemctl enable mariadb.service
+
+/usr/bin/mysqladmin -u root password 'new-password'
+
+mysql -u root --password=new-password -e "create database nlpmt;"
+mysql -u root --password=new-password -e "create user 'NLP_APP_USER'@'%' identified by 'yourpassword';"
+mysql -u root --password=new-password -e "grant all privileges on nlpmt.* to 'NLP_APP_USER'@'%';"
+
+
+# update mysql.user set host = '%' where User = 'NLP_APP_USER';
+# SELECT User, Host, Password FROM mysql.user;
+
+# sudo yum -y remove mysql mysql-server
+# sudo rm -r /var/lib/mysql

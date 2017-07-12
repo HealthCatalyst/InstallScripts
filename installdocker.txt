@@ -8,7 +8,7 @@ set -e
 #
 #
 
-echo "Version 1.21"
+echo "Version 2017-07-10.2" 
 
 echo "Current OS"
 echo "$(cat /etc/*-release)"
@@ -37,7 +37,25 @@ sudo sysctl -w vm.max_map_count=262144
 echo "vm.max_map_count = 262144" | sudo tee -a /etc/sysctl.conf
 
 echo "downloading and installing docker"
-curl -fsSL https://get.docker.com/ | sh
+# https://docs.docker.com/engine/installation/linux/docker-ce/centos/#install-from-a-package
+
+# remove older versions
+sudo yum -y remove docker-engine.x86_64 docker-ce docker-engine-selinux.noarch docker-cimprov.x86_64 
+sudo rm -rf /var/lib/docker
+
+sudo yum install -y yum-utils device-mapper-persistent-data lvm2
+
+# set the stable repo
+sudo yum-config-manager \
+    --add-repo \
+    https://download.docker.com/linux/centos/docker-ce.repo
+
+# update yum package index
+sudo yum makecache fast
+
+sudo yum -y install docker-ce
+
+# curl -fsSL https://get.docker.com/ | sh
 
 if [ $u != "root" ]; then
     echo "giving permission to $u"

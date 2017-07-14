@@ -37,6 +37,6 @@ else
 	
 	docker secret create auth.cert $authcert
 	docker secret create auth.key $authkey
-	./installauthorization-swarm.sh https://identityproxy "auth.cert" "auth.key"
+	./installauthorization-swarm.sh https://identityproxy "auth.cert" "auth.key" http://couchproxy:5984
 fi
 

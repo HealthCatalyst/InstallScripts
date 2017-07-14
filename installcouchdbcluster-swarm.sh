@@ -79,7 +79,7 @@ echo "waiting for couchdb nodes to come up"
 sleep 30
 
 echo "configuring couch cluster"
-curl -sSL https://healthcatalyst.github.io/InstallScripts/configure-couch-cluster.sh | sh /dev/stdin 127.0.0.1 15984 25984 35984
+curl -sSL https://healthcatalyst.github.io/InstallScripts/configure-couch-cluster.sh | sh /dev/stdin 127.0.0.1 15984 25984 35984 $COUCHDB_USER $COUCHDB_PASSWORD
 
 
 echo "creating couch ha proxy service"

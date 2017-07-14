@@ -6,6 +6,8 @@ couchnode=$1
 couchport=$2
 couchport2=$3
 couchport3=$4
+COUCHDB_USER=$5
+COUCHDB_PASSWORD=$6
 
 echo "enable cluster"
 curl "http://$COUCHDB_USER:$COUCHDB_PASSWORD@$couchnode:$couchport/_cluster_setup" -H 'Content-Type: application/json' -H 'Accept: application/json' \

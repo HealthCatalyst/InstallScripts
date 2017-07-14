@@ -1,5 +1,8 @@
 #!/bin/bash
 
+COUCHDB_USER=$1
+COUCHDB_PASSWORD=$2
+
 nodelist=$(docker node ls -q)
 echo "Node list is = $nodelist"
 IFS=' ' read -r -a nodes <<< $nodelist

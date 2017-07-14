@@ -6,14 +6,37 @@ authority=$1
 authcert=$2
 authkey=$3
 couchproxy=$4
+ldapHost=$5
+ldapUser=$6
+ldapPassword=$7
+groupFetcherPassword=$8
 
 echo "creating authnet network"
 docker network create --driver overlay authnet
+
+echo "creating secrets"
+cat > ldap.pwd << EOF
+$ldapPassword
+EOF
+
+cat > group-fetcher.pwd << EOF
+$groupFetcherPassword
+EOF
+
+docker secret create group-fetcher.pwd group-fetcher.pwd
+docker secret create ldap.pwd ldap.pwd
+
+rm ldap.pwd
+rm group-fetcher.pwd
 
 echo "creating authorization service"
 docker service create --name authorization \
 	--env IdentityServerConfidentialClientSettings__Authority=$authority \
 	--env CouchDbSettings__Server=$couchproxy \
+	--env LDAP_HOST=$ldapHost \
+	--env BINDING_DN=$ldapUser \
+	--env FABRIC_IDENTITY_URL=$authority \
+	--env FABRIC_AUTH_URL=https://authorizationproxy \
 	--secret="CouchDbSettings__Username" \
 	--secret="CouchDbSettings__Password" \
 	--replicas 1 \

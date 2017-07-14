@@ -13,6 +13,7 @@ groupFetcherPassword=$8
 
 echo "creating authnet network"
 docker network create --driver overlay authnet
+docker network create --driver overlay idnet
 
 echo "creating secrets"
 cat > ldap.pwd << EOF
@@ -25,6 +26,8 @@ EOF
 
 docker secret create group-fetcher.pwd group-fetcher.pwd
 docker secret create ldap.pwd ldap.pwd
+docker secret create auth.cert $authcert
+docker secret create auth.key $authkey
 
 rm ldap.pwd
 rm group-fetcher.pwd

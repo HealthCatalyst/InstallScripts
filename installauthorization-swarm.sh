@@ -14,7 +14,7 @@ echo "creating authorization service"
 docker service create --name authorization \
 	--env IdentityServerConfidentialClientSettings__Authority=$authority \
 	--env CouchDbSettings__Server=$couchproxy \
-	--secret-"CouchDbSettings__Username" \
+	--secret="CouchDbSettings__Username" \
 	--secret="CouchDbSettings__Password" \
 	--replicas 1 \
 	--network authnet \

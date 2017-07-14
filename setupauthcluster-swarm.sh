@@ -29,3 +29,4 @@ else
 	docker secret create auth.cert $authcert
 	docker secret create auth.key $authkey
 	curl -sSL https://healthcatalyst.github.io/InstallScripts/installauthorization-swarm.sh | sh /dev/stdin $authority "auth.cert" "auth.key" http://couchproxy:5984
+fi

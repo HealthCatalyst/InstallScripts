@@ -52,10 +52,10 @@ echo "creating authorization nginx proxy"
 docker service create --name authorizationproxy \
 	--env HOST=authorization \
 	--env REMOTEPORT=5004 \
-	--env CERTIFICATE=$authcert \
-	--env CERTIFICATE_KEY=$authkey \
-	--secret $authcert \
-	--secret $authkey \
+	--env CERTIFICATE="auth.cert" \
+	--env CERTIFICATE_KEY="auth.key" \
+	--secret="auth.cert" \
+	--secret="auth.key" \
 	-p 80:80 -p 443:443 \
 	--network authnet \
 	healthcatalyst/fabric.docker.nginx

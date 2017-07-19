@@ -1,7 +1,31 @@
 #!/bin/sh
 couchdb_username=$1
 couchdb_password=$2
-set -e
+
+if [ $3 ]; then
+	runsetup=$3
+fi
+
+if ! [ $runsetup ]; then
+	runsetup=true
+fi
+
+if [ $4 ]; then
+	couchport=$4
+fi
+
+if ! [ $couchport ]; then
+	couchport=5984
+fi
+
+if [ $5 ]; then
+	authzversion=$5
+fi
+
+if ! [ $authzversion ]; then
+	authzversion="latest"
+fi
+
 #
 # This script is meant for quick & easy install via:
 #   curl -sSL https://healthcatalyst.github.io/InstallScripts/installidentityandauthorization.txt | sh /dev/stdin [couchdb_username] [couchdb_password]
@@ -19,19 +43,19 @@ docker rm fabric.identity || echo 'no container to remove'
 docker rm fabric.authorization || echo 'no container to remove'
 docker rm fabric.couchdb || echo 'no container to remove'
 echo "removing docker volume for couchdb"
-docker volume rm db1-data || echo 'no volume to remove'
+docker volume rm couchdb-data || echo 'no volume to remove'
 echo "removing docker image"
 echo "pulling latest docker image from repo"
 docker pull healthcatalyst/fabric.identity
-docker pull healthcatalyst/fabric.authorization
+docker pull healthcatalyst/fabric.authorization:$authzversion
 docker pull healthcatalyst/fabric.docker.couchdb
 
 echo "starting couchdb."
 docker run -d --name fabric.couchdb \
     -e "COUCHDB_USER=$couchdb_username" \
     -e "COUCHDB_PASSWORD=$couchdb_password" \
-    -v db1-data:/opt/couchdb/data \
-    -p 0.0.0.0:5984:5984 healthcatalyst/fabric.docker.couchdb
+    -v couchdb-data:/opt/couchdb/data \
+    -p 0.0.0.0:$couchport:5984 healthcatalyst/fabric.docker.couchdb
 
 sleep 20 
 
@@ -46,9 +70,11 @@ docker run -d --name fabric.identity \
     healthcatalyst/fabric.identity
 
 sleep 10
-curl -sSL -O https://raw.githubusercontent.com/HealthCatalyst/Fabric.Identity/master/Fabric.Identity.API/scripts/setup-samples.sh
-. ./setup-samples.sh
-rm setup-samples.sh
+if [ "$runsetup" = true ]; then
+	curl -sSL -O https://raw.githubusercontent.com/HealthCatalyst/Fabric.Identity/master/Fabric.Identity.API/scripts/setup-samples.sh
+	. ./setup-samples.sh
+	rm setup-samples.sh
+fi
 
 echo "starting fabric.authorization"
 docker run -d --name fabric.authorization \
@@ -59,7 +85,9 @@ docker run -d --name fabric.authorization \
     -p 0.0.0.0:5004:5004 \
     --link fabric.identity:localhost \
     --link fabric.couchdb:couchdb \
-    healthcatalyst/fabric.authorization
+    healthcatalyst/fabric.authorization:$authzversion
 
 sleep 10
-curl -sSL https://raw.githubusercontent.com/HealthCatalyst/Fabric.Authorization/master/Fabric.Authorization.API/scripts/setup-samples.sh | sh /dev/stdin $installersecret
+if [ "$runsetup" = true ]; then
+	curl -sSL https://raw.githubusercontent.com/HealthCatalyst/Fabric.Authorization/master/Fabric.Authorization.API/scripts/setup-samples.sh | sh /dev/stdin $installersecret
+fi

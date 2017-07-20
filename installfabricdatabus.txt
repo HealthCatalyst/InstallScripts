@@ -15,7 +15,7 @@ docker pull healthcatalyst/fabric.databus
 
 echo "starting docker container with new image."
 
-docker run -d -p 5000:5000 --restart=unless-stopped -d --name fabric.databus healthcatalyst/fabricdatabus arg1 arg2
+docker run -d -p 5000:5000 --restart=unless-stopped -d --name fabric.databus healthcatalyst/fabric.databus arg1 arg2
 
 echo "sleeping until docker container is up"
 until [ "`/usr/bin/docker inspect -f {{.State.Running}} fabricdatabus`"=="true" ]; do

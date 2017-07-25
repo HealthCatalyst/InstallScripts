@@ -1,0 +1,81 @@
+#!/bin/sh
+#exit immediately if a command exists with a non-zero status
+set -e
+#
+# Usage:
+#   'curl -SSL https://healthcatalyst.github.io/InstallScripts/installmirthconnect.txt | sh -s <mirthuser>'
+#
+
+echo "Starting setup..."
+u="$(whoami)"
+echo "User name: $u"
+
+mirthuser="$1"
+
+echo "==== Creating update script ===="
+
+installfolder="/opt/install/"
+
+mkdir -p $HOME/bin
+if [[ ! -d "$installfolder" ]]; then
+  sudo mkdir -p $installfolder
+
+  sudo setfacl -m u:$u:rwx $installfolder
+fi
+
+echo "====  existing containers on this host ===="
+docker ps -a
+
+echo "==== existing images on this host ===="
+docker images
+
+echo "==== existing volumes on this host ===="
+docker volume ls
+
+# check to see if volume already exists.  if not, create it
+if [ -z $(docker volume ls -q --filter "name=mirthconnectdata") ]; then
+  echo "==== Creating persistent volume for Archive ===="
+  docker volume create --name fabric.docker.interfaceengine.data
+fi
+
+echo "stopping existing docker container"
+docker stop fabric.docker.interfaceengine || echo 'no container to stop'
+echo "removing docker container"
+docker rm fabric.docker.interfaceengine || echo 'no container to remove'
+echo "removing docker image"
+docker rmi healthcatalyst/fabric.docker.interfaceengine || echo 'no image to remove'
+echo "pulling latest docker image from repo"
+docker pull healthcatalyst/fabric.docker.interfaceengine
+echo "starting docker container with new image"
+set -x
+docker run -d -p 8080:8080 -p 8443:8443 -v fabric.docker.interfaceengine.data:/data --name fabric.docker.interfaceengine healthcatalyst/fabric.docker.interfaceengine
+set +x
+
+echo "sleeping until docker container is up"
+until [ "`/usr/bin/docker inspect -f {{.State.Running}} fabric.docker.interfaceengine.`"=="true" ]; do
+    sleep 1s;
+done;
+
+docker exec fabric.docker.interfaceengine mkdir -p /data/archive
+docker exec fabric.docker.interfaceengine mkdir -p /data/error
+
+kerberosfile="krb5.conf"
+kerberospath=$installfolder$kerberosfile
+
+echo "Checking if [$kerberospath] exists"
+if [[ -f "$kerberospath" ]]; then
+   echo "copying kerberos configuration file from $installfolder"
+   docker cp $installfolder/krb5.conf fabric.docker.interfaceengine:/etc/krb5.conf
+   docker cp $installfolder/SQLJDBCDriver.conf fabric.docker.interfaceengine:/opt/mirthconnect/conf/SQLJDBCDriver.conf
+   docker cp $installfolder/mirth.keytab fabric.docker.interfaceengine:/opt/mirthconnect/conf/mirth.keytab   
+   docker exec fabric.docker.interfaceengine sed -i "\$a-Djava.security.auth.login.config=/opt/mirthconnect/conf/SQLJDBCDriver.conf" /opt/mirthconnect/mcservice.vmoptions
+   docker exec fabric.docker.interfaceengine sed -i "\$a-Djava.security.krb5.conf=/etc/krb5.conf" /opt/mirthconnect/mcservice.vmoptions
+   docker exec fabric.docker.interfaceengine sed -i -e 's/username@domain/"$mirthuser"/g' /opt/mirthconnect/startmirthandrenewcredentials.sh
+   docker exec fabric.docker.interfaceengine kinit $mirthuser -k -t /opt/mirthconnect/conf/mirth.keytab
+   docker restart fabric.docker.interfaceengine
+else
+   echo "ERROR: No keberos configuration files found in [$kerberospath] so integrated security won't work"
+fi
+
+echo "==== Listing running docker containers ===="
+docker ps

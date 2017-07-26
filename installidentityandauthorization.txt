@@ -26,6 +26,10 @@ if ! [ $authzversion ]; then
 	authzversion="latest"
 fi
 
+if ! [ $identityversion ]; then
+	identityversion="latest"
+fi
+
 #
 # This script is meant for quick & easy install via:
 #   curl -sSL https://healthcatalyst.github.io/InstallScripts/installidentityandauthorization.txt | sh /dev/stdin [couchdb_username] [couchdb_password]
@@ -46,7 +50,7 @@ echo "removing docker volume for couchdb"
 docker volume rm couchdb-data || echo 'no volume to remove'
 echo "removing docker image"
 echo "pulling latest docker image from repo"
-docker pull healthcatalyst/fabric.identity
+docker pull healthcatalyst/fabric.identity:$identityversion
 docker pull healthcatalyst/fabric.authorization:$authzversion
 docker pull healthcatalyst/fabric.docker.couchdb
 
@@ -67,7 +71,7 @@ docker run -d --name fabric.identity \
     -e "CouchDbSettings__Password=$couchdb_password" \
     -p 5001:5001 \
     --link fabric.couchdb:couchdb \
-    healthcatalyst/fabric.identity
+    healthcatalyst/fabric.identity:$identityversion
 
 sleep 10
 if [ "$runsetup" = true ]; then

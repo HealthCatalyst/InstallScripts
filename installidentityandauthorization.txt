@@ -26,6 +26,10 @@ if ! [ $authzversion ]; then
 	authzversion="latest"
 fi
 
+if ! [ $6 ]; then
+	identityversion=$6
+fi
+
 if ! [ $identityversion ]; then
 	identityversion="latest"
 fi

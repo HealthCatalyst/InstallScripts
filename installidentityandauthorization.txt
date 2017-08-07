@@ -26,7 +26,7 @@ if ! [ $authzversion ]; then
 	authzversion="latest"
 fi
 
-if ! [ $6 ]; then
+if [ $6 ]; then
 	identityversion=$6
 fi
 
@@ -54,6 +54,8 @@ echo "removing docker volume for couchdb"
 docker volume rm couchdb-data || echo 'no volume to remove'
 echo "removing docker image"
 echo "pulling latest docker image from repo"
+echo "pulling identity version $identityversion" 
+echo "pulling authorization version $authzversion" 
 docker pull healthcatalyst/fabric.identity:$identityversion
 docker pull healthcatalyst/fabric.authorization:$authzversion
 docker pull healthcatalyst/fabric.docker.couchdb

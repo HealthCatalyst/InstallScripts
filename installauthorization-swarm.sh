@@ -10,6 +10,7 @@ ldapHost=$5
 ldapUser=$6
 ldapPassword=$7
 groupFetcherPassword=$8
+appInsightsInstrumentationKey=$9
 
 echo "creating authnet network"
 docker network create --driver overlay authnet
@@ -40,6 +41,8 @@ docker service create --name authorization \
 	--env BINDING_DN=$ldapUser \
 	--env FABRIC_IDENTITY_URL=$authority \
 	--env FABRIC_AUTH_URL=https://authorizationproxy \
+	--env ApplicationInsights__Enabled=true \
+	--env ApplicationInsights__InstrumentationKey=$appInsightsInstrumentationKey \
 	--secret="CouchDbSettings__Username" \
 	--secret="CouchDbSettings__Password" \
 	--replicas 1 \

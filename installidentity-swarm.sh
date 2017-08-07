@@ -7,6 +7,7 @@ pfxpassword=$2
 pfxpath=$3
 identitycert=$4
 identitykey=$5
+appInsightsInstrumentationKey=$6
 
 docker secret create pfxpassword $pfxpassword
 docker secret create identity.pfx $pfxpath
@@ -24,6 +25,8 @@ docker service create --name identity \
 	--env SigningCertificateSettings__UseTemporarySigningCredential=false \
 	--env SigningCertificateSettings__PrimaryCertificatePath=//run/secrets/identity.pfx \
 	--env SigningCertificateSettings__PrimaryCertificatePasswordPath=//run/secrets/pfxpassword \
+	--env ApplicationInsights__Enabled=true \
+	--env ApplicationInsights__InstrumentationKey=$appInsightsInstrumentationKey \
 	-p 5001:5001 \
 	--secret="pfxpassword" \
 	--secret="identity.pfx" \

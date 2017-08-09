@@ -55,7 +55,7 @@ docker service create --name  couchdb1 \
 	--network dbnet \
 	--mount type=volume,source=db1-data,destination=//opt/couchdb/data \
 	--constraint "node.id == $node1" \
-	--detach false \
+	--detach=false \
 	healthcatalyst/fabric.docker.couchdb
 
 echo "creating couchdb2 service"
@@ -67,7 +67,7 @@ docker service create --name couchdb2 \
 	--network dbnet \
 	--mount type=volume,source=db2-data,destination=//opt/couchdb/data \
 	--constraint "node.id == $node2" \
-	--detach false \
+	--detach=false \
 	healthcatalyst/fabric.docker.couchdb
 
 echo "creating couchdb3 service"
@@ -79,7 +79,7 @@ docker service create --name couchdb3 \
 	--network dbnet \
 	--mount type=volume,source=db3-data,destination=//opt/couchdb/data \
 	--constraint "node.id == $node3" \
-	--detach false \
+	--detach=false \
 	healthcatalyst/fabric.docker.couchdb
 
 echo "waiting for couchdb nodes to come up"
@@ -93,12 +93,12 @@ echo "creating couch ha proxy service"
 docker service create --name couchproxy \
 	-p 5984:5984 \
 	--network dbnet \
-	--detach false \
+	--detach=false \
 	healthcatalyst/fabric.docker.haproxy
 
 docker service create --name couchproxyssl \
 	-p 5985:5985 \
 	--secret couch.pem \
 	--network dbnet \
-	--detach false \
+	--detach=false \
 	healthcatalyst/fabric.docker.haproxyssl

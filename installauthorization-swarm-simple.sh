@@ -34,7 +34,7 @@ docker service create --name authorization \
 	--network authnet \
 	--network idnet \
 	--network dbnet \
-	--detach false \
+	--detach=false \
 	healthcatalyst/fabric.authorization:$authorizationversion
 
 echo "creating authorization nginx proxy"
@@ -47,5 +47,5 @@ docker service create --name authorizationproxy \
 	--secret="auth.key" \
 	-p 80:80 -p 443:443 \
 	--network authnet \
-	--detach false \
+	--detach=false \
 	healthcatalyst/fabric.docker.nginx

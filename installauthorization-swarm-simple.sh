@@ -17,6 +17,9 @@ echo "creating secrets"
 docker secret create auth.cert $authcert
 docker secret create auth.key $authkey
 
+docker pull healthcatalyst/fabric.authorization:$authorizationversion
+docker pull healthcatalyst/fabric.docker.nginx
+
 echo "creating authorization service"
 docker service create --name authorization \
 	--env IdentityServerConfidentialClientSettings__Authority=$authority \
@@ -31,6 +34,7 @@ docker service create --name authorization \
 	--network authnet \
 	--network idnet \
 	--network dbnet \
+	--detach false \
 	healthcatalyst/fabric.authorization:$authorizationversion
 
 echo "creating authorization nginx proxy"
@@ -43,4 +47,5 @@ docker service create --name authorizationproxy \
 	--secret="auth.key" \
 	-p 80:80 -p 443:443 \
 	--network authnet \
+	--detach false \
 	healthcatalyst/fabric.docker.nginx

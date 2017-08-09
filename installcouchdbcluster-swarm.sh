@@ -2,6 +2,7 @@
 
 COUCHDB_USER=$1
 COUCHDB_PASSWORD=$2
+SSL_CERT=$3
 
 nodelist=$(docker node ls -q)
 echo "Node list is = $nodelist"
@@ -36,6 +37,7 @@ EOF
 
 docker secret create CouchDbSettings__Username CouchDbSettings__Username
 docker secret create CouchDbSettings__Password CouchDbSettings__Password
+docker secret create couch.pem $SSL_CERT
 
 rm CouchDbSettings__Username
 rm CouchDbSettings__Password
@@ -85,5 +87,7 @@ curl -sSL https://healthcatalyst.github.io/InstallScripts/configure-couch-cluste
 echo "creating couch ha proxy service"
 docker service create --name couchproxy \
 	-p 5984:5984 \
+	-p 5985:5985 \
+	--secret couch.pem \
 	--network dbnet \
-	healthcatalyst/fabric.docker.haproxy
+	healthcatalyst/fabric.docker.haproxyssl

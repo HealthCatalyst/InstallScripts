@@ -81,9 +81,35 @@ docker run -d --name fabric.identity \
 
 sleep 10
 if [ "$runsetup" = true ]; then
-	curl -sSL -O https://raw.githubusercontent.com/HealthCatalyst/Fabric.Identity/master/Fabric.Identity.API/scripts/setup-samples.sh
-	. ./setup-samples.sh
-	rm setup-samples.sh
+	setupresponse=$(curl -sSL https://raw.githubusercontent.com/HealthCatalyst/Fabric.Identity/master/Fabric.Identity.API/scripts/setup-samples.sh | sh)
+    installersecret=$(echo $setupresponse | grep -oP '(?<="installerSecret":")[^"]*')
+    groupfetchersecret=$(echo $setupresponse | grep -oP '(?<="groupFetcherSecret":")[^"]*')
+    authapisecret=$(echo $setupresponse | grep -oP '(?<="authApiSecret":")[^"]*')
+    patietnapisecret=$(echo $setupresponse | grep -oP '(?<="patientApiSecret":")[^"]*')
+    mvcclientsecret=$(echo $setupresponse | grep -oP '(?<="mvcClientSecret":")[^"]*')
+    angularclientsecret=$(echo $setupresponse | grep -oP '(?<="angularClientSecret":")[^"]*')
+    
+    echo ""
+    echo "The Fabric.Installer secret is: $installersecret"
+    echo "You need this secret if you want to register additional API resources or clients."
+    echo ""
+
+    echo "The Fabric.GroupFetcher client secret is: $groupfetchersecret"
+    echo "You need this secret so the group fetcher can authenticate to get and save groups."
+    echo ""
+
+    echo "Update the Fabric.Authorization appsettings.json IdentityServerConfidentialClientSettings.ClientSecret value to:"
+    echo $authapisecret
+    echo ""
+
+    echo "Update the Fabric.Identity.Samples.API appsettings.json IdentityServerConfidentialClientSettings.ClientSecret value to:"
+    echo $patietnapisecret
+    echo ""
+
+    echo "Update the Fabric.Identity.Samples.MVC appsettings.json IdentityServerConfidentialClientSettings.ClientSecret value to:"
+    echo $mvcclientsecret
+    echo ""
+
 fi
 
 echo "starting fabric.authorization"

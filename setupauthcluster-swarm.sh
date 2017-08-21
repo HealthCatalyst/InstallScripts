@@ -24,8 +24,9 @@ else
 	export COUCHDB_USER=$couchdb_user
 	export COUCHDB_PASSWORD=$couchdb_password
 
-	./installcouchdbcluster-swarm.sh
+	curl -sSL https://healthcatalyst.github.io/InstallScripts/installcouchdbcluster-swarm.sh | sh
 	docker network create --driver overlay idnet
 	docker secret create auth.cert $authcert
 	docker secret create auth.key $authkey
-	./installauthorization-swarm.sh $authority "auth.cert" "auth.key"
+	curl -sSL https://healthcatalyst.github.io/InstallScripts/installauthorization-swarm.sh | sh /dev/stdin $authority "auth.cert" "auth.key" http://couchproxy:5984
+fi

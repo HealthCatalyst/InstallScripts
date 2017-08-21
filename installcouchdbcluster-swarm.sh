@@ -1,5 +1,9 @@
 #!/bin/bash
 
+COUCHDB_USER=$1
+COUCHDB_PASSWORD=$2
+SSL_CERT=$3
+
 nodelist=$(docker node ls -q)
 echo "Node list is = $nodelist"
 IFS=' ' read -r -a nodes <<< $nodelist
@@ -33,9 +37,12 @@ EOF
 
 docker secret create CouchDbSettings__Username CouchDbSettings__Username
 docker secret create CouchDbSettings__Password CouchDbSettings__Password
+docker secret create couch.pem $SSL_CERT
 
 rm CouchDbSettings__Username
 rm CouchDbSettings__Password
+
+docker pull healthcatalyst/fabric.docker.couchdb
 
 echo "creating couchdb1 service"
 docker service create --name  couchdb1 \
@@ -48,6 +55,7 @@ docker service create --name  couchdb1 \
 	--network dbnet \
 	--mount type=volume,source=db1-data,destination=//opt/couchdb/data \
 	--constraint "node.id == $node1" \
+	--detach=false \
 	healthcatalyst/fabric.docker.couchdb
 
 echo "creating couchdb2 service"
@@ -59,6 +67,7 @@ docker service create --name couchdb2 \
 	--network dbnet \
 	--mount type=volume,source=db2-data,destination=//opt/couchdb/data \
 	--constraint "node.id == $node2" \
+	--detach=false \
 	healthcatalyst/fabric.docker.couchdb
 
 echo "creating couchdb3 service"
@@ -70,17 +79,26 @@ docker service create --name couchdb3 \
 	--network dbnet \
 	--mount type=volume,source=db3-data,destination=//opt/couchdb/data \
 	--constraint "node.id == $node3" \
+	--detach=false \
 	healthcatalyst/fabric.docker.couchdb
 
 echo "waiting for couchdb nodes to come up"
 sleep 30
 
 echo "configuring couch cluster"
-./configure-couch-cluster.sh localhost 15984 25984 35984
+curl -sSL https://healthcatalyst.github.io/InstallScripts/configure-couch-cluster.sh | sh /dev/stdin 127.0.0.1 15984 25984 35984 $COUCHDB_USER $COUCHDB_PASSWORD
 
 
 echo "creating couch ha proxy service"
 docker service create --name couchproxy \
 	-p 5984:5984 \
 	--network dbnet \
+	--detach=false \
 	healthcatalyst/fabric.docker.haproxy
+
+docker service create --name couchproxyssl \
+	-p 5985:5985 \
+	--secret couch.pem \
+	--network dbnet \
+	--detach=false \
+	healthcatalyst/fabric.docker.haproxyssl

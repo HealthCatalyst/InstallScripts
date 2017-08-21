@@ -12,9 +12,12 @@ sudo mv /opt/apache-tomcat-7.0.79 /opt/tomcat-nlp-nlp
 sudo cp nlp.war /opt/tomcat-nlp-nlp/webapps
 
 sudo mkdir -p /etc/nlp/nlp
+sudo mkdir -p /etc/nlp/nlpweb
 
 # Go back to your artifacts folder
 sudo cp application.properties /etc/nlp/nlp
+
+sudo cp application.properties /etc/nlp/nlpweb/
 
 sudo cp server.xml /opt/tomcat-nlp-nlp/conf/server.xml
 sudo cp tomcat-users.xml /opt/tomcat-nlp-nlp/conf/

@@ -23,6 +23,7 @@ until [ "`/usr/bin/docker inspect -f {{.State.Running}} fabric.nlp.docker.mysql`
     sleep 1s;
 done;
 
+echo "Sleeping..."
 sleep 5s;
 
 docker exec fabric.nlp.docker.mysql /bin/bash ./setup_nlp_tables.sh

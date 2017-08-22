@@ -1,5 +1,8 @@
 #!/bin/sh
 set -e
+
+echo "Version 1.1"
+
 #
 # This script is meant for quick & easy install via:
 #   'curl -sSL https://healthcatalyst.github.io/InstallScripts/nlp/installmysql.txt | sh'
@@ -19,5 +22,7 @@ echo "sleeping until docker container is up"
 until [ "`/usr/bin/docker inspect -f {{.State.Running}} fabric.nlp.docker.mysql`"=="true" ]; do
     sleep 1s;
 done;
+
+sleep 5s;
 
 docker exec fabric.nlp.docker.mysql /bin/bash ./setup_nlp_tables.sh

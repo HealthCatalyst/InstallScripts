@@ -4,9 +4,15 @@ set -e
 # This script is meant for quick & easy install via:
 #   'curl -sSL https://healthcatalyst.github.io/InstallScripts/nlp/installmysql.txt | sh'
 
-docker stop fabric.nlp.docker.mysql
-docker rm fabric.nlp.docker.mysql
-docker rmi healthcatalyst/fabric.nlp.docker.mysql
+# delete old versions
+echo "stopping existing docker container"
+docker stop fabric.nlp.docker.mysql || echo 'no container to stop'
+echo "removing docker container"
+docker rm fabric.nlp.docker.mysql || echo 'no container to remove'
+echo "removing docker image"
+docker rmi healthcatalyst/fabric.nlp.docker.mysql || echo 'no image to remove'
+
+
 docker run -p 3306:3306 -d --name fabric.nlp.docker.mysql -e MYSQL_ROOT_PASSWORD=new-password -e MYSQL_DATABASE=nlpmt -e MYSQL_USER=NLP_APP_USER -e MYSQL_PASSWORD=yourpassword -t healthcatalyst/fabric.nlp.docker.mysql
 
 echo "sleeping until docker container is up"

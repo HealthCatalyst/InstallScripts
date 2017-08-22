@@ -1,0 +1,11 @@
+docker stop fabric.nlp.docker.mysql
+docker rm fabric.nlp.docker.mysql
+docker rmi healthcatalyst/fabric.nlp.docker.mysql
+docker run -p 3306:3306 -d --name fabric.nlp.docker.mysql -e MYSQL_ROOT_PASSWORD=new-password -e MYSQL_DATABASE=nlpmt -e MYSQL_USER=NLP_APP_USER -e MYSQL_PASSWORD=yourpassword -t healthcatalyst/fabric.nlp.docker.mysql
+
+echo "sleeping until docker container is up"
+until [ "`/usr/bin/docker inspect -f {{.State.Running}} fabric.nlp.docker.mysql`"=="true" ]; do
+    sleep 1s;
+done;
+
+docker exec fabric.nlp.docker.mysql ./setup_nlp_tables.sh

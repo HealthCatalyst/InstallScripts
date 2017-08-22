@@ -1,3 +1,9 @@
+#!/bin/sh
+set -e
+#
+# This script is meant for quick & easy install via:
+#   'curl -sSL https://healthcatalyst.github.io/InstallScripts/nlp/installmysql.txt | sh'
+
 docker stop fabric.nlp.docker.mysql
 docker rm fabric.nlp.docker.mysql
 docker rmi healthcatalyst/fabric.nlp.docker.mysql

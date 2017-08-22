@@ -5,7 +5,16 @@ echo "Version 1.2"
 
 #
 # This script is meant for quick & easy install via:
-#   'curl -sSL https://healthcatalyst.github.io/InstallScripts/nlp/installweb.txt | sh'
+#   'curl -sSL https://healthcatalyst.github.io/InstallScripts/nlp/installweb.txt | sh -s <mysqlserver> <solrserver> <jobserver>'
+
+# Remember: no spaces allowed in variable set commands in bash
+mysqlserver="$1"
+solrserver="$2"
+jobserver="$3"
+
+echo "mysqlserver:"$mysqlserver
+echo "solrserver:"$solrserver
+echo "jobserver:"$jobserver
 
 # delete old versions
 echo "stopping existing docker container"
@@ -16,7 +25,7 @@ echo "removing docker image"
 docker rmi healthcatalyst/fabric.nlp.docker.web || echo 'no image to remove'
 
 
-docker run -p 8083:8083 -d --name fabric.nlp.docker.web -t healthcatalyst/fabric.nlp.docker.web
+docker run -p 8083:8083 -d --name fabric.nlp.docker.web --add-host mysqlserver:$mysqlserver --add-host solrserver:$solrserver --add-host jobserver:$jobserver -t healthcatalyst/fabric.nlp.docker.web
 
 echo "sleeping until docker container is up"
 until [ "`/usr/bin/docker inspect -f {{.State.Running}} fabric.nlp.docker.web`"=="true" ]; do

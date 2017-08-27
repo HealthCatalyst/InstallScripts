@@ -1,0 +1,200 @@
+report_id,mime_type,status,report_type,report_type_stream,phys_time,patient_id,report_text,birth_date,gender,race
+1948863,text/plaintext,Signed,Initial Visit,,2016-08-22T15:30:00Z,133097,"Joseph R. Smith
+
+1234567-8
+
+4/5/2006
+
+REASON FOR VISIT:Here to get a new primary care physician.
+
+HPI: Mr. Smith is a 56-year-old gentleman formally followed at Carolina Premier who presents to obtain a new primary care physician secondary to insurance changes. He has a past medical history significant for a myocardial infarction in 1994. His cholesterol has been fine. Catheterization showed a possible ""kink"" in one of his vessels and it was thought that he had a possible ""eddy"" of current which led to a clot. He has been on Coumadin since then as well as a calcium channel blocker with the thought that there may have been a superimposed spasm. He has had several unremarkable stress tests since then. He works out on a Nordic-Track three times a week without any chest pain or shortness of breath. He has a history of possible peptic ulcer disease in 1981. He was treated with H2 blockers and his symptoms resolved. He has never had any bleeding to his knowledge. He had a hernia repair bilaterally in 1989 and surgery for a right knee cyst in 1999, all of which went well. He also has about a year long history of right buttock pain. This happens only when he is sitting for some time and does not change position. It does not happen when he is walking or exercising. He wonders if it might be pyriformis syndrome. If he changes positions frequently or stretches his legs, this seems to help. He has no acute complaints today and is here to get plugged into the system. He does wonder if there is anything else that can be done about his buttock pain.
+
+PAST MEDICAL HISTORY: As above. In addition, he had a flexible sigmoidoscopy in 2003 which was okay.
+
+MEDICATIONS: Tylenol p.r.n., baby aspirin p.o. q.d., Coumadin 3.5 mg p.o. q.d., Adalat Time Released tablets 30 mg one p.o. q.d., multivitamin, glucosamine and chondroitin sulfate.
+
+ALLERGIES: No Known Drug Allergies
+
+FAMILY HISTORY: His mother had diabetes developed at age 55 and coronary artery disease in her mid sixties. His father had CAD as well but not until his 70s. A paternal aunt had breast cancer. There is no history of colon or prostate cancer.
+
+SOCIAL HISTORY: He lives in Durham with his wife and mother. He works for a biotech company. He does not smoke. He drinks two beers per night and reports no trouble with alcohol in the past. No history of drug use.
+
+REVIEW OF SYSTEMS: As per his personal health summary and is significant only for his buttock pain as listed above, but is otherwise essentially unremarkable.
+
+PHYSICAL EXAM:
+
+VITAL SIGNS: Weight 175.2 pounds which is 79.3 kg, blood pressure 142/96 by the nurse, 140/92 by me, pulse is 64.
+
+GENERAL: A healthy-appearing middle-aged gentleman.
+
+HEENT: Pupils equal, round, reactive to light. Conjunctivaepink. Sclerae anicteric. Tympanic membranes clear. Oropharynx clear.
+
+NECK: No lymphadenopathy or thyromegaly or JVD.
+
+LUNGS: Clear to auscultation and percussion.
+
+HEART: Regular rate and rhythm without murmur, rub, or gallop.
+
+ABDOMEN: Normal bowel sounds. Soft, nontender. No hepatosplenomegaly.
+
+EXTREMITIES: No cyanosis, clubbing, or edema. 2+ peripheral pulses.
+
+NEUROLOGIC: Motor and sensation grossly intact.
+
+PSYCHIATRIC: Normal affect and behavior.
+
+DERMATOLOGIC: He has a small whitish papule at the upper borderof his mustache on the left.
+
+MUSCULOSKELETAL: Full range of motion of his legs and hips bilaterally with no tenderness to palpation over his buttocks.
+
+ASSESSMENT/PLAN:
+
+Status post myocardial infarction. No evidence for actual CAD. He will continue his aspirin and Coumadin. Unclear to exactly how long he should be on Coumadin or if this is really needed. At some point, may discuss this with cardiology. We will check an INR today and get him plugged into our Coumadin clinic. Check cholesterol.
+High blood pressure. He will continue with diet and exercise changes. At next visit, may go up on his calcium channel blocker versus add another agent. Check creatinine and potassium today.
+Buttock pain. Will try some physical therapy.
+Will send him to dermatology for the papule above his mustache.
+Possible h/o peptic ulcer disease. As he has not had any known GI bleed, do not feel a need to check H. pylori serology today.
+Health maintenance. Tetanus shot today. Flex sig as above. Will discuss prostate cancer screening next visit.
+Return to clinic in four months.
+John Student, MS3
+
+Seen with Joe Doctor, MD",1988-10-18T00:00:00Z,M,
+4254029,text/plaintext,Signed,Acute Complaint,,2016-08-21T14:15:00Z,440402,"Sally M. Smith
+
+1234567-8
+
+4/5/2006
+
+HISTORY OF PRESENT ILLNESS: Ms. Smith is a 43-year-old woman with past medical history that includes a pilonidal cyst. This was apparently removed when she was 18. Last July she presented with more pain in this area. On exam, it was apparently unclear if there was a recurrence. She was put on a course of Keflex and everything resolved. She presents to walk-in today saying that same thing has happened. She has had a couple days of increased swelling in this area. No fevers. Mild pain. Bowel movements are fine.
+
+PHYSICAL EXAMINATION: BP 122/74, pulse 82. She is afebrile. We had a female nurse chaperone in the room during the exam. In the upper aspect of her gluteal cleft there were several scars from her prior surgery. This area was mildly indurated. There was absolutely no erythema or fluctuance and it was not tender at all. No drainage.
+
+ASSESSMENT AND PLAN: Possible recurrence of pilonidal cyst. We do not see any active evidence of an infection, but given her apparent response last July, we will give her another one-week course of Keflex. She will return to clinic if things do not resolve or if they get worse.
+
+Nancy Student, MS3
+
+Seen with Joe Doctor, MD",1960-10-07T00:00:00Z,M,White or Caucasian
+3307069,text/plaintext,Signed,Chronic Issues,,2017-02-20T08:25:00Z,692573,"Samuel J. Smith
+
+1234567-8
+
+4/5/2006
+
+HISTORY OF PRESENT ILLNESS: Mr. Smith is a 63-year-old gentleman with coronary artery disease, hypertension, hypercholesterolemia, COPD and tobacco abuse. He reports doing well. He did have some more knee pain for a few weeks, but this has resolved. He is having more trouble with his sinuses. I had started him on Flonase back in December. He says this has not really helped. Over the past couple weeks he has had significant congestion and thick discharge. No fevers or headaches but does have diffuse upper right-sided teeth pain. He denies any chest pains, palpitations, PND, orthopnea, edema or syncope. His breathing is doing fine. No cough. He continues to smoke about half-a-pack per day. He plans on trying the patches again.
+
+CURRENT MEDICATIONS: Updated on CIS. They include aspirin, atenolol, Lipitor, Advair, Spiriva, albuterol and will add Singulair today.
+
+ALLERGIES: Sulfa caused a rash.
+
+SOCIAL HISTORY: Smokes as above.
+
+REVIEW OF SYSTEMS: CONSTITUTIONAL: Weight stable. GI: No abdominal pain or change in bowel habits.
+
+PHYSICAL EXAMINATION:
+
+VITAL SIGNS: Weight is 217 lbs, blood pressure 131/61, pulse 63.
+
+HEENT: TMs clear bilaterally, mild maxillary sinus tenderness on the right, nasal mucosa boggy with moderate discharge, teeth in good repair with no erythema or swelling
+
+LUNGS: Clear, even with forced expiration.
+
+HEART: Regular rate and rhythm without murmur
+
+EXTREMITIES: No edema.
+
+ASSESSMENT AND PLAN:
+
+Coronary artery disease. Doing well. Continue aspirin, beta-blocker and statin. Cholesterol pretty good with LDL 80 and ALT fine as well in December.
+Hypertension, well controlled. Continue atenolol.
+Tobacco abuse. He was again told that he needs to quit and encouraged to use the patches.
+Allergic rhinitis and possible sinusitis. We will try Singulair and a course of amoxicillin. As with my prior note, he may need to see ENT, as he is a smoker and this is a pretty new complaint for him.
+History of abdominal aortic aneurysm with endovascular repair. Continue follow up with vascular surgery.
+Health maintenance. He had multiple adenomatous polyps on colonoscopy in 2000. Form filled out for repeat colonoscopy. We reviewed the pros and cons of prostate cancer screening and he wishes not to be screened.
+Return to clinic in six months.
+Mary Student, MS3
+
+Seen with Joe Doctor, MD",1967-04-21T00:00:00Z,M,Black or African American
+6448707,text/plaintext,Signed,Post-Hospitalization Note,,2016-02-29T12:30:00Z,875470,"Zachary A. Smith
+
+1234567-8
+
+4/5/2006
+
+HPI: Mr. Smith is a 46-year-old gentleman with hypertension, hypercholesterolemia, severe hand and feet dermatitis and tobacco abuse. He presents for follow-up of hospitalization at Rex. He presented 5 days ago with 24 hours of mid epigastric pain. This did go away with nitroglycerin in an urgent care clinic. EKG showed minimal Q-waves inferiorly. He ruled out. He had an exercise treadmill test, which showed 1 mm ST depression in the lateral leads without chest pain, but the test was limited by severe leg pain/claudication. He also had a chest x-ray, which showed a small nodular density posterior to the heart on the lateral view. It was felt to be probably a vessel seen on end. He was discharged on his usual medications to follow up here. Today, he reports he continues to feel well and that his midepigastric pain has not returned. Since I saw him last, he has started using his treadmill at home. He has not gotten any chest pain or midepigastric pain or shortness of breath with this, but has felt a burning in his calves. On the plus side, his dermatitis is doing the best that it has in more than 15 years. He is not sure why this is happening. He is also tapering down his smoking. He is down to a pack and a half a day. He is hoping to eventually quit.
+
+MEDICATIONS: Include atorvastatin 20 mg a day, aspirin 325 mg a day, amlodipine 10 mg a day, enalapril 20 mg a day, triamcinolone ointment.
+
+REVIEW OF SYSTEMS: CARDIOVASCULAR: No palpitations, PND, orthopnea or edema. RESPIRATORY: No cough. GASTROINTESTINAL: No abdominal pain or change in bowel habits.
+
+PHYSICAL EXAMINATION:
+
+VITAL SIGNS: Weight is 100 kg, blood pressure is 114/75, pulse is 76. GENERAL: Looks well.
+
+LUNGS: Clear.
+
+HEART: Regular rate and rhythm without murmur, rub or gallop.
+
+ABDOMEN: Normal active bowel sounds, soft, non-tender, no hepatosplenomegaly, no masses
+
+EXTREMITIES: 1+ posterior tibialis bilaterally. Feet are warm and capillary refill a bit slow but still less than 2 seconds. Decreased hair.
+
+ASSESSMENT AND PLAN:
+
+Midepigastric pain. More likely GI in origin. Certainly with many atypical features for cardiovascular origin but he also has multiple risk factors for CAD, had tiny Q-waves, and an abnormal stress test. We will continue with his current cardiovascular medications, including aspirin, statin, ACE-inhibitor and calcium channel blocker. Will get a dobutamine echocardiogram.
+Probable peripheral vascular disease. We will get duplex scan and ankle brachial index. Same meds as above. Continue exercise.
+He was strongly encouraged to continue to pursue his efforts to quit smoking.
+Possible abnormal chest xray. Will repeat today.
+Return to clinic at his regular appointment in June. We will be in touch about his results before then.
+John Student, MS3
+
+Seen with Joe Doctor, MD",1947-04-01T00:00:00Z,F,
+5502706,text/plaintext,Signed,Initial Visit,,2016-08-19T16:30:00Z,1153054,"Richard L. Smith
+
+1234567-8
+
+4/5/2006
+
+HISTORY OF PRESENT ILLNESS: Mr. Smith is a 63-year-old gentleman new to our Clinic. He had been followed by Dr. Jones at Kernodle Clinic. Mr. Smith has a past medical history that includes hypertension for more than five years. It sounds like he has fairly severe white coat hypertension. Apparently, he has home readings consistently 30 points below what he gets in the office. He had been on Capoten in the past and gotten a cough with that. He had been on Norvasc in the past, but then stopped it for unclear reasons. More recently, he has been on Hyzaar. He also has hypercholesterolemia and has been on Lipitor. He has for the past year or so felt that his hands and feet were ""burning up"" at night. He reports that ""he can almost see the heat waves from them."" He thinks this is a medication side effect. On his own, he stopped his Lipitor three weeks ago. He has not noticed any difference in his symptoms. He otherwise feels well and has no complaints.
+
+PAST MEDICAL HISTORY: 1. Hypertension. 2. Hypercholesterolemia. 3. Status post plastic surgery after a motor vehicle collision when he was in his 20s. 4. History of depression around the time of the accident. He does report that intermittently he feels quite down, but he is able ""to pick himself back up"". More recently, however, he has been in a more prolonged period. 5. He has significant moles and he is followed by an outside dermatologist. 6. He has had normal PSA and rectal exams. He had a colonoscopy about five years ago and again one year ago, both of which showed many polyps, pathology not known.
+
+MEDICATIONS: Now only Hyzaar, a baby aspirin and a multivitamin
+
+ALLERGIES: Capoten caused a cough.
+
+SOCIAL HISTORY: He works in computer software. He does not smoke. He drinks wine and Martinis ""probably more than I need to."" No drug use.
+
+FAMILY HISTORY: The patient's father died of a brain aneurysm in his 50s. Mom had colon cancer in her 80s and also hypertension. Five older sisters all with hypertension and hypercholesterolemia. No known coronary artery disease.
+
+REVIEW OF SYSTEMS:
+
+CONSTITUTIONAL: No fevers. Weight up 15 lbs since March. HEENT: Teeth doing okay. Does not feel congested in his sinuses. CARDIOVASCULAR: No chest pains, palpitations, PND, orthopnea or edema. RESPIRATORY: No shortness of breath. He does have a chronic intermittent cough that he has had for years. He had a chest x-ray a couple of years ago to evaluate this which was apparently normal. GI: No abdominal pain. No reflux-type symptoms. No change in bowel habits. GU: No hematuria or dysuria. MUSCULOSKELETAL: No chronic joint pains. PSYCHIATRIC: Not suicidal.
+
+PHYSICAL EXAMINATION:
+
+VITAL SIGNS: Weight 86.7 kg which is 191 lbs, blood pressure 174/114, pulse 103.
+
+HEENT: Conjunctivae pink. Sclerae anicteric. Oropharynx clear.
+
+NECK: No lymphadenopathy or thyromegaly or JVD.
+
+LUNGS: Clear to auscultation and percussion.
+
+HEART: Regular rate and rhythm without murmur, rub or gallop.
+
+ABDOMEN: Normal bowel sounds. Soft, nontender. No hepatosplenomegaly.
+
+EXTREMITIES: No cyanosis, clubbing or edema.
+
+PSYCHIATRIC: Normal affect and behavior with seemingly good insight.
+
+ASSESSMENT AND PLAN:
+
+Hypertension, poor control even with supposed white coat hypertension. He again is worried about side effect of his medications. We talked about many options and decided to change him to HCTA 25 mg a day and Norvasc 10 mg a day.
+Hypercholesterolemia. We will check lipid panel today. We will hold off on Lipitor for now, but will likely restart this once we confirm he is not having drug side effects. He is also interested in possibly trying fish oil.
+Psychiatric. He was not interested in counseling at all. He was interested in medication. We will start Celexa 20 mg a day. He will titrate this up to 40 mg after three to four weeks. He will call us in a few weeks if he is having any problems.
+Health maintenance. We will hold on PSA screening for a bit as he has been screened in the past. We will repeat colonoscopy in a few years and will try to get records of prior polyp pathology. He will try to focus on drinking a bit less alcohol and getting some regular exercise and eating better. Continue baby aspirin.
+Return to clinic in two months.
+John Student, MS3
+
+Seen with Joe Doctor, MD",1928-10-02T00:00:00Z,F,

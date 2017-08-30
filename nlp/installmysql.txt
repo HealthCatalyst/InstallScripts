@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-echo "Version 1.1"
+echo "Version 1.2"
 
 #
 # This script is meant for quick & easy install via:
@@ -24,6 +24,6 @@ until [ "`/usr/bin/docker inspect -f {{.State.Running}} fabric.nlp.docker.mysql`
 done;
 
 echo "Sleeping..."
-sleep 5s;
+sleep 10s;
 
 docker exec fabric.nlp.docker.mysql bin/bash ./setup_nlp_tables.sh

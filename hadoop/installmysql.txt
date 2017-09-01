@@ -1,0 +1,56 @@
+#!/bin/sh
+set -e
+
+echo "Version 1.2"
+
+wget http://repo.mysql.com/mysql-community-release-el7-5.noarch.rpm
+sudo rpm -ivh mysql-community-release-el7-5.noarch.rpm
+sudo yum -y update; yum clean all
+sudo yum -y install mysql-server; yum clean all
+sudo systemctl start mysqld
+
+sleep 10s;
+
+sudo service mysqld stop
+
+sudo mv /var/lib/mysql/ib_logfile0 /tmp/
+
+sudo mv /var/lib/mysql/ib_logfile1 /tmp/
+
+sudo nano /etc/my.conf
+
+sudo /sbin/chkconfig mysqld on
+sudo /sbin/chkconfig --list mysqld
+
+sudo service mysqld start
+
+sudo /usr/bin/mysql_secure_installation
+
+
+mysql -u root -p
+
+
+
+# Activity Monitor
+create database amon DEFAULT CHARACTER SET utf8;
+grant all on amon.* TO 'amon'@'%' IDENTIFIED BY 'amon_password';
+
+# Reports Manager
+create database rman DEFAULT CHARACTER SET utf8;
+grant all on rman.* TO 'rman'@'%' IDENTIFIED BY 'rman_password';
+
+# Hive Metastore Server
+create database metastore DEFAULT CHARACTER SET utf8;
+grant all on metastore.* TO 'hive'@'%' IDENTIFIED BY 'hive_password';
+
+# Sentry Server
+create database sentry DEFAULT CHARACTER SET utf8;
+grant all on sentry.* TO 'sentry'@'%' IDENTIFIED BY 'sentry_password';
+
+# Cloudera Navigator Audit Server
+create database nav DEFAULT CHARACTER SET utf8;
+grant all on nav.* TO 'nav'@'%' IDENTIFIED BY 'nav_password';
+
+# Cloudera Navigator Metadata Server
+create database navms DEFAULT CHARACTER SET utf8;
+grant all on navms.* TO 'navms'@'%' IDENTIFIED BY 'navms_password';

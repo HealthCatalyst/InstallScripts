@@ -1,0 +1,36 @@
+#!/bin/sh
+set -e
+
+echo "Version 1.2"
+
+sudo yum -y update
+sudo yum -y clean all
+
+#install java
+wget --no-cookies --no-check-certificate --header "Cookie: gpw_e24=http%3A%2F%2Fwww.oracle.com%2F; oraclelicense=accept-securebackup-cookie" "http://download.oracle.com/otn-pub/java/jdk/8u144-b01/090f390dda5b47b9b721c7dfaa008135/jdk-8u144-linux-x64.rpm"
+
+sudo yum -y localinstall jdk-8u144-linux-x64.rpm
+
+wget --no-cookies --no-check-certificate "http://archive.cloudera.com/cdh5/one-click-install/redhat/6/x86_64/cloudera-cdh-5-0.x86_64.rpm"
+
+sudo yum --nogpgcheck localinstall cloudera-cdh-5-0.x86_64.rpm
+
+sudo rpm --import http://archive.cloudera.com/cdh5/redhat/6/x86_64/cdh/RPM-GPG-KEY-cloudera
+
+# https://www.cloudera.com/documentation/enterprise/5-3-x/topics/cdh_ig_zookeeper_package_install.html
+
+sudo yum -y install zookeeper-server
+
+mkdir -p /var/lib/zookeeper
+chown -R zookeeper /var/lib/zookeeper/
+
+sudo service zookeeper-server init
+sudo service zookeeper-server start
+
+sudo service zookeeper-server init --myid=1
+
+sudo service zookeeper-server init --myid=2
+sudo service zookeeper-server init --myid=3
+
+zookeeper-client -server zoo1:2181
+

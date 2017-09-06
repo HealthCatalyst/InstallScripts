@@ -26,6 +26,8 @@ sudo service mysqld start
 
 sudo /usr/bin/mysql_secure_installation
 
+sudo setfacl -m u:mysql:rwx /var/log/
+
 
 mysql -u root -p
 
@@ -54,3 +56,11 @@ grant all on nav.* TO 'nav'@'%' IDENTIFIED BY 'nav_password';
 # Cloudera Navigator Metadata Server
 create database navms DEFAULT CHARACTER SET utf8;
 grant all on navms.* TO 'navms'@'%' IDENTIFIED BY 'navms_password';
+
+
+# Cloudera Director
+grant ALL on `%`.* TO 'director'@'%' IDENTIFIED BY 'director_password';
+
+update mysql.user set Grant_priv = 'Y' where user = 'director';
+
+FLUSH PRIVILEGES;

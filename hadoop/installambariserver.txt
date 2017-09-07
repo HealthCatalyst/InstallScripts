@@ -9,9 +9,13 @@ echo "Version 1.2"
 
 
 # https://stackoverflow.com/questions/5955548/how-do-i-use-sed-to-change-my-configuration-files-with-flexible-keys-and-values
+# https://blogs.technet.microsoft.com/oliviaklose/2014/06/18/hadoop-on-linux-on-azure-step-by-step-build-the-infrastructure-2/
 
 
 # this doesn't work because it replaces only the first one
-sudo sed -i -e '/SELINUX=/ s/= .*/= disabled/' /etc/selinux/config
+# sudo sed -i -e '/SELINUX=/ s/= .*/= disabled/' /etc/selinux/config
 
 sudo setenforce 0
+
+sudo yum -y install ambari-server
+

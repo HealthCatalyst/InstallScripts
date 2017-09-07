@@ -12,8 +12,10 @@ echo "Version 1.2"
 # https://blogs.technet.microsoft.com/oliviaklose/2014/06/18/hadoop-on-linux-on-azure-step-by-step-build-the-infrastructure-2/
 
 
-# this doesn't work because it replaces only the first one
-sudo sed -i -e '/SELINUX=/ s/= .*/= disabled/g' /etc/selinux/config
+sudo sed -i -e '/SELINUX=/ s/=.*/= disabled/g' /etc/selinux/config
+
+sudo cat /etc/selinux/config
+
 
 # https://docs.hortonworks.com/HDPDocuments/Ambari-2.5.1.0/bk_ambari-installation/content/set_up_the_ambari_server.html
 sudo setenforce 0

@@ -11,9 +11,9 @@ echo "Version 1.2"
 # https://stackoverflow.com/questions/5955548/how-do-i-use-sed-to-change-my-configuration-files-with-flexible-keys-and-values
 # https://blogs.technet.microsoft.com/oliviaklose/2014/06/18/hadoop-on-linux-on-azure-step-by-step-build-the-infrastructure-2/
 
+sudo sed -i -e '/SELINUX=/ s/=.*/= disabled/g' /etc/selinux/config
 
-# this doesn't work because it replaces only the first one
-sudo sed -i -e '/SELINUX=/ s/= .*/= disabled/g' /etc/selinux/config
+sudo cat /etc/selinux/config
 
 # https://docs.hortonworks.com/HDPDocuments/Ambari-2.5.1.0/bk_ambari-installation/content/set_up_the_ambari_server.html
 sudo setenforce 0

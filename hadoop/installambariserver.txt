@@ -1,0 +1,17 @@
+#!/bin/sh
+set -e
+
+echo "Version 1.2"
+
+#
+# This script is meant for quick & easy install via:
+#   'curl -sSL https://healthcatalyst.github.io/InstallScripts/hadoop/installambariserver.txt | sh -s <mysqlserver> <solrserver> <jobserver>'
+
+
+# https://stackoverflow.com/questions/5955548/how-do-i-use-sed-to-change-my-configuration-files-with-flexible-keys-and-values
+
+
+# this doesn't work because it replaces only the first one
+sudo sed -i -e '/SELINUX=/ s/= .*/= disabled/' /etc/selinux/config
+
+sudo setenforce 0

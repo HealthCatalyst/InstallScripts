@@ -32,4 +32,6 @@ until [ "`/usr/bin/docker inspect -f {{.State.Running}} fabric.nlp.docker.web`"=
     sleep 1s;
 done;
 
+# https://askubuntu.com/questions/20414/find-and-replace-text-within-a-file-using-commands
+# sed -i 's/original/new/g' file.txt
 

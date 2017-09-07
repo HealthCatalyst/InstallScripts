@@ -5,7 +5,7 @@ echo "Version 1.2"
 
 #
 # This script is meant for quick & easy install via:
-#   'curl -sSL https://healthcatalyst.github.io/InstallScripts/hadoop/installambariserver.txt | sh -s <mysqlserver> <solrserver> <jobserver>'
+#   'curl -sSL https://healthcatalyst.github.io/InstallScripts/hadoop/installmaster.txt | sh -s <mysqlserver> <solrserver> <jobserver>'
 
 
 # https://stackoverflow.com/questions/5955548/how-do-i-use-sed-to-change-my-configuration-files-with-flexible-keys-and-values
@@ -13,21 +13,13 @@ echo "Version 1.2"
 
 
 # this doesn't work because it replaces only the first one
-# sudo sed -i -e '/SELINUX=/ s/= .*/= disabled/g' /etc/selinux/config
+sudo sed -i -e '/SELINUX=/ s/= .*/= disabled/g' /etc/selinux/config
 
 # https://docs.hortonworks.com/HDPDocuments/Ambari-2.5.1.0/bk_ambari-installation/content/set_up_the_ambari_server.html
 sudo setenforce 0
 
-sudo yum -y install java-1.7.0-openjdk-devel dos2unix; yum clean all
-
 sudo wget -nv http://public-repo-1.hortonworks.com/ambari/centos7/2.x/updates/2.5.1.0/ambari.repo -O /etc/yum.repos.d/ambari.repo
 
-sudo yum -y install ambari-server
+sudo yum -y install ambari-agent
 
-sudo ambari-server setup
-
-# The default PostgreSQL database name is ambari. The default user name and password are ambari/bigdata
-
-sudo ambari-server start
-
-sudo ambari-server status
+sudo service ambari-agent start

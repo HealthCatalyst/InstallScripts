@@ -1,0 +1,26 @@
+#!/bin/sh
+set -e
+
+echo "Version 1.2"
+
+#
+# This script is meant for quick & easy install via:
+#   'curl -sSL https://healthcatalyst.github.io/InstallScripts/hadoop/setupambariagent.txt | sh -s <mysqlserver> <solrserver> <jobserver>'
+
+sudo sed -i -e '/SELINUX=/ s/=.*/= disabled/g' /etc/selinux/config
+
+sudo cat /etc/selinux/config
+
+# https://docs.hortonworks.com/HDPDocuments/Ambari-2.5.1.0/bk_ambari-installation/content/set_up_the_ambari_server.html
+sudo setenforce 0
+
+sudo wget -nv http://public-repo-1.hortonworks.com/ambari/centos7/2.x/updates/2.5.1.0/ambari.repo -O /etc/yum.repos.d/ambari.repo
+
+sudo yum -y install ambari-agent
+
+# set hostname
+sudo sed -i -e '/hostname=/ s/=.*/=dev-bd-hadoop-ambariserver.cafe.healthcatalyst.com/g' /etc/ambari-agent/conf/ambari-agent.ini
+
+sudo cat /etc/ambari-agent/conf/ambari-agent.ini
+
+sudo service ambari-agent start

@@ -24,9 +24,9 @@ sudo cat /etc/sssd/sssd.conf
 sudo systemctl restart sssd
 sudo usermod -a -G wheel imranq
 
-echo 'search cafe.healthcatalyst.com' | sudo tee -a /etc/resolv.conf
+# echo 'search cafe.healthcatalyst.com' | sudo tee -a /etc/resolv.conf
 
-echo 'make_resolv_conf(){	:}' | sudo tee -a /etc/dhclient-enter-hooks
+# echo 'make_resolv_conf(){	:}' | sudo tee -a /etc/dhclient-enter-hooks
 
 
 

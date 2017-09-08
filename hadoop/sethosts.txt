@@ -1,0 +1,14 @@
+#!/bin/sh
+set -e
+
+echo "Version 1.2"
+
+#
+# This script is meant for quick & easy install via:
+#   'curl -sSL https://healthcatalyst.github.io/InstallScripts/hadoop/sethosts.txt | sh -s'
+
+echo '10.5.8.22 dev-bd-hadoop-ambariserver.cafe.healthcatalyst.com  dev-bd-hadoop-ambariserver' | sudo tee -a /etc/hosts
+echo '10.5.8.24 dev-bd-hadoop-master1.cafe.healthcatalyst.com  dev-bd-hadoop-master1' | sudo tee -a /etc/hosts
+echo '10.5.8.25 dev-bd-hadoop-worker1.cafe.healthcatalyst.com  dev-bd-hadoop-worker1' | sudo tee -a /etc/hosts
+echo '10.5.8.26 dev-bd-hadoop-worker2.cafe.healthcatalyst.com  dev-bd-hadoop-worker2' | sudo tee -a /etc/hosts
+echo '10.5.8.27 dev-bd-hadoop-worker3.cafe.healthcatalyst.com  dev-bd-hadoop-worker3' | sudo tee -a /etc/hosts

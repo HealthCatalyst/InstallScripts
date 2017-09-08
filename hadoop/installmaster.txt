@@ -24,4 +24,12 @@ sudo wget -nv http://public-repo-1.hortonworks.com/ambari/centos7/2.x/updates/2.
 
 sudo yum -y install ambari-agent
 
+# set hostname
+sudo sed -i -e '/hostname=/ s/=.*/=dev-bd-hadoop-ambariserver.cafe.healthcatalyst.com/g' /etc/ambari-agent/conf/ambari-agent.ini
+
+sudo cat /etc/ambari-agent/conf/ambari-agent.ini
+
 sudo service ambari-agent start
+
+
+# sudo tail /var/log/ambari-agent/ambari-agent.log

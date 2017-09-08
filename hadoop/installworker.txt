@@ -5,7 +5,7 @@ echo "Version 1.2"
 
 #
 # This script is meant for quick & easy install via:
-#   'curl -sSL https://healthcatalyst.github.io/InstallScripts/hadoop/installmaster.txt | sh -s <mysqlserver> <solrserver> <jobserver>'
+#   'curl -sSL https://healthcatalyst.github.io/InstallScripts/hadoop/installworker.txt | sh -s <mysqlserver> <solrserver> <jobserver>'
 
 
 # https://stackoverflow.com/questions/5955548/how-do-i-use-sed-to-change-my-configuration-files-with-flexible-keys-and-values
@@ -21,5 +21,10 @@ sudo setenforce 0
 sudo wget -nv http://public-repo-1.hortonworks.com/ambari/centos7/2.x/updates/2.5.1.0/ambari.repo -O /etc/yum.repos.d/ambari.repo
 
 sudo yum -y install ambari-agent
+
+# set hostname
+sudo sed -i -e '/hostname=/ s/=.*/=dev-bd-hadoop-ambariserver.cafe.healthcatalyst.com/g' /etc/ambari-agent/conf/ambari-agent.ini
+
+sudo cat /etc/ambari-agent/conf/ambari-agent.ini
 
 sudo service ambari-agent start

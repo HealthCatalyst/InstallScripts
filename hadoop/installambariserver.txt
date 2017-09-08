@@ -9,16 +9,23 @@ echo "Version 1.2"
 
 
 # https://stackoverflow.com/questions/5955548/how-do-i-use-sed-to-change-my-configuration-files-with-flexible-keys-and-values
+
 # https://blogs.technet.microsoft.com/oliviaklose/2014/06/18/hadoop-on-linux-on-azure-step-by-step-build-the-infrastructure-2/
-
-
-# this doesn't work because it replaces only the first one
-# sudo sed -i -e '/SELINUX=/ s/= .*/= disabled/g' /etc/selinux/config
 
 # https://docs.hortonworks.com/HDPDocuments/Ambari-2.5.1.0/bk_ambari-installation/content/set_up_the_ambari_server.html
 sudo setenforce 0
 
 sudo yum -y install java-1.7.0-openjdk-devel dos2unix; yum clean all
+
+# rewrite SELINUX config to disable and turn off enforcement
+sed -i.bak "s/^SELINUX=.*$/SELINUX=disabled/" /etc/selinux/config
+setenforce 0
+
+# RHEL 7.x uses firewalld
+sudo systemctl stop firewalld
+sudo systemctl disable firewalld
+
+
 
 sudo wget -nv http://public-repo-1.hortonworks.com/ambari/centos7/2.x/updates/2.5.1.0/ambari.repo -O /etc/yum.repos.d/ambari.repo
 
@@ -31,3 +38,5 @@ sudo ambari-server setup
 sudo ambari-server start
 
 sudo ambari-server status
+
+# sudo tail /var/log/ambari-server/ambari-server.log

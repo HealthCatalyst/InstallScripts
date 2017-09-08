@@ -24,3 +24,5 @@ sudo sed -i -e '/hostname=/ s/=.*/=dev-bd-hadoop-ambariserver.cafe.healthcatalys
 sudo cat /etc/ambari-agent/conf/ambari-agent.ini
 
 sudo service ambari-agent start
+
+# sudo tail -f /var/log/ambari-agent/ambari-agent.log

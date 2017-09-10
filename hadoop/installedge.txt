@@ -9,3 +9,13 @@ echo "Version 1.2"
 
 curl -sSL https://healthcatalyst.github.io/InstallScripts/hadoop/setupambariagent.txt | sh -s
 
+cd ~
+wget https://downloads.lightbend.com/scala/2.11.11/scala-2.11.11.rpm
+
+sudo yum -y install scala-2.11.11.rpm
+
+
+sudo yum install -y epel-release 
+sudo yum update -y 
+sudo yum install -y R
+

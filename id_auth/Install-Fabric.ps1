@@ -13,7 +13,7 @@ param(
 )
 #default auth and identity versions to latest
 Invoke-WebRequest -Uri https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/common/Fabric-Install-Utilities.psm1 -OutFile Fabric-Install-Utilities.psm1
-Import-Module -Name .\Fabric-Install-Utilities.psm1 -Verbose
+Import-Module -Name .\Fabric-Install-Utilities.psm1
 Add-Type -AssemblyName System.IO.Compression.FileSystem
 $workingDirectory = Split-Path $script:MyInvocation.MyCommand.Path
 
@@ -53,6 +53,41 @@ function Get-CommonArguments()
     return $installArgs
 }
 
+function Get-AccessToken($authUrl, $cliendId, $scope, $secret)
+{
+    $url = "$authUrl/connect/token"
+    $body = @{
+        client_id = $clientId
+        grant_type = "client_credentials"
+        scope = $scope
+        client_secret = $secret
+    }
+    $accessTokenResponse = Invoke-RestMethod -Method Post -Uri $url -Body $body
+    return $accessTokenResponse.access_token
+}
+
+function Create-ApiRegistration($authUrl, $body, $accessToken)
+{
+    $url = "$authUrl/api/apiresource"
+    $headers = @{ "Accept" = "application/json"}
+    if($accessToken){
+        $headers.Add("Authorization", "Bearer $accessToken")
+    }
+    $registrationResponse = Invoke-RestMethod -Method Post -Uri $url -Body $body -ContentType "application/json"
+    return $registrationResponse.apiSecret    
+}
+
+function Create-ClientRegistration($authUrl, $body, $accessToken)
+{
+    $url = "$authUrl/api/client"
+    $headers = @{ "Accept" = "application/json"}
+    if($accessToken){
+        $headers.Add("Authorization", "Bearer $accessToken")
+    }
+    $registrationResponse = Invoke-RestMethod -Method Post -Uri $url -Body $body -ContentType "application/json"
+    return $registrationResponse.clientSecret
+}
+
 if(!(Test-Prerequisite '*.NET Core*Windows Server Hosting*' 1.1.30327.81))
 {
     Write-Host "Windows Server Hosting Bundle minimum version 1.1.30327.81 not installed...installing version 1.1.30327.81"
@@ -76,6 +111,9 @@ if(!(Test-Prerequisite '*CouchDB*'))
     exit 1
 }
 
+$identityServerUrl = "$hostUrl/identity"
+$authorizationServerUrl = "$hostUrl/authorization"
+
 $identityZipPackage = Get-FabricRelease Identity $identityVersion
 $identityArgs = Get-CommonArguments
 $identityArgs += ("-zipPackage", $identityZipPackage)
@@ -87,10 +125,65 @@ cd $workingDirectory
 $authorizationZipPackage = Get-FabricRelease Authorization $authorizationVersion
 $authorizationArgs = Get-CommonArguments
 $authorizationArgs += ("-zipPackage", $authorizationZipPackage)
-$authorizationArgs += ("-identityServerUrl", "$hostUrl/identity")
+$authorizationArgs += ("-identityServerUrl", $identityServerUrl)
 Install-FabricRelease Authorization $authorizationArgs
 
 cd $workingDirectory
+
+#Register registration api
+$body = @'
+{
+    "name":"registration-api",
+    "userClaims":["name","email","role","groups"],
+    "scopes":[{"name":"fabric/identity.manageresources"}]
+}
+'@
+$registrationApiSecret = Create-ApiRegistration -authUrl $identityServerUrl -body $body
+
+#Register Fabric.Installer
+$body = @'
+{
+    "clientId":"fabric-installer", 
+    "clientName":"Fabric Installer", 
+    "requireConsent":"false", 
+    "allowedGrantTypes": ["client_credentials"], 
+    "allowedScopes": ["fabric/identity.manageresources", "fabric/authorization.read", "fabric/authorization.write", "fabric/authorization.manageclients"]
+}
+'@
+$installerClientSecret = Create-ClientRegistration -authUrl $identityServerUrl -body $body
+
+$accessToken = Get-AccessToken -authUrl $identityServerUrl -cliendId "fabric-installer" -scope "fabric/identity.manageresources" -secret $installerClientSecret
+
+#Register authorization api
+$body = @'
+{
+    "name":"authorization-api",
+    "userClaims":["name","email","role","groups"],
+    "scopes":[{"name":"fabric/authorization.read"}, {"name":"fabric/authorization.write"}, {"name":"fabric/authorization.manageclients"}]
+}
+'@
+$authorizationApiSecret = Create-ApiRegistration -authUrl $identityServerUrl -body $body -accessToken $accessToken
+
+#Register group fetcher client
+$body = @'
+{
+    "clientId":"fabric-group-fetcher", 
+    "clientName":"Fabric Group Fetcher", 
+    "requireConsent":"false", 
+    "allowedGrantTypes": ["client_credentials"], 
+    "allowedScopes": ["fabric/authorization.read", "fabric/authorization.write", "fabric/authorization.manageclients"]
+}
+'@
+$groupFetcherSecret = Create-ClientRegistration -authUrl $identityServerUrl -body $body -accessToken $accessToken
+
+Write-Host "Please keep the following secrets in a secure place:"
+Write-Host "Fabric.Installer clientSecret: $installerClientSecret"
+Write-Host "Fabric.GroupFetcher clientSecret: $groupFetcherSecret"
+Write-Host "Fabric.Authorization apiSecret: $authorizationApiSecret"
+Write-Host "Fabric.Registration apiSecret: $registrationApiSecret"
+Write-Host ""
+Write-Host "The Fabric.Installer clientSecret will be needed in subsequent installations:"
+Write-Host "Fabric.Installer clientSecret: $installerClientSecret"
 
 
 

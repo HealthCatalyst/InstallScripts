@@ -95,6 +95,43 @@ function Get-EncryptedString($signingCert, $stringToEncrypt){
 	return "!!enc!!:" + $encryptedString
 }
 
+function Get-InstalledApps
+{
+    if ([IntPtr]::Size -eq 4) {
+        $regpath = 'HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\*'
+    }
+    else {
+        $regpath = @(
+            'HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\*'
+            'HKLM:\Software\Wow6432Node\Microsoft\Windows\CurrentVersion\Uninstall\*'
+        )
+    }
+    Get-ItemProperty $regpath | .{process{if($_.DisplayName -and $_.UninstallString) { $_ } }} | Select DisplayName, Publisher, InstallDate, DisplayVersion, UninstallString |Sort DisplayName
+}
+
+function Test-Prerequisite($appName, $minVersion)
+{
+    $installedAppResults = Get-InstalledApps | where {$_.DisplayName -like $appName}
+    if($installedAppResults -eq $null){
+        return $false;
+    }
+
+    if($minVersion -eq $null)
+    {
+        return $true;
+    }
+
+    $minVersionAsSystemVersion = [System.Version]$minVersion
+    Foreach($version in $installedAppResults)
+    {
+        $installedVersion = [System.Version]$version.DisplayVersion
+        if($installedVersion -ge $minVersionAsSystemVersion)
+        {
+            return $true;
+        }
+    }
+}
+
 export-modulemember -function Add-EnvironmentVariable
 export-modulemember -function New-AppRoot
 export-modulemember -function New-AppPool
@@ -103,3 +140,4 @@ export-modulemember -function New-App
 export-modulemember -function Publish-WebSite
 export-modulemember -function Set-EnvironmentVariables
 export-modulemember -function Get-EncryptedString
+export-modulemember -function Test-Prerequisite

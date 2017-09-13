@@ -53,14 +53,14 @@ function Get-CommonArguments()
     return $installArgs
 }
 
-function Get-AccessToken($authUrl, $cliendId, $scope, $secret)
+function Get-AccessToken($authUrl, $clientId, $scope, $secret)
 {
     $url = "$authUrl/connect/token"
     $body = @{
-        client_id = $clientId
+        client_id = "$clientId"
         grant_type = "client_credentials"
-        scope = $scope
-        client_secret = $secret
+        scope = "$scope"
+        client_secret = "$secret"
     }
     $accessTokenResponse = Invoke-RestMethod -Method Post -Uri $url -Body $body
     return $accessTokenResponse.access_token
@@ -69,22 +69,22 @@ function Get-AccessToken($authUrl, $cliendId, $scope, $secret)
 function Create-ApiRegistration($authUrl, $body, $accessToken)
 {
     $url = "$authUrl/api/apiresource"
-    $headers = @{ "Accept" = "application/json"}
+    $headers = @{"Accept" = "application/json"}
     if($accessToken){
         $headers.Add("Authorization", "Bearer $accessToken")
     }
-    $registrationResponse = Invoke-RestMethod -Method Post -Uri $url -Body $body -ContentType "application/json"
+    $registrationResponse = Invoke-RestMethod -Method Post -Uri $url -Body $body -ContentType "application/json" -Headers $headers
     return $registrationResponse.apiSecret    
 }
 
 function Create-ClientRegistration($authUrl, $body, $accessToken)
 {
     $url = "$authUrl/api/client"
-    $headers = @{ "Accept" = "application/json"}
+    $headers = @{"Accept" = "application/json"}
     if($accessToken){
         $headers.Add("Authorization", "Bearer $accessToken")
     }
-    $registrationResponse = Invoke-RestMethod -Method Post -Uri $url -Body $body -ContentType "application/json"
+    $registrationResponse = Invoke-RestMethod -Method Post -Uri $url -Body $body -ContentType "application/json" -Headers $headers
     return $registrationResponse.clientSecret
 }
 
@@ -152,7 +152,7 @@ $body = @'
 '@
 $installerClientSecret = Create-ClientRegistration -authUrl $identityServerUrl -body $body
 
-$accessToken = Get-AccessToken -authUrl $identityServerUrl -cliendId "fabric-installer" -scope "fabric/identity.manageresources" -secret $installerClientSecret
+$accessToken = Get-AccessToken -authUrl $identityServerUrl -clientId "fabric-installer" -scope "fabric/identity.manageresources" -secret $installerClientSecret
 
 #Register authorization api
 $body = @'

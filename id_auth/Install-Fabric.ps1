@@ -51,7 +51,12 @@ function Get-FabricRelease($appName, $appVersion)
     }
     Invoke-WebRequest -Uri https://github.com/HealthCatalyst/Fabric.$appName/releases/download/v$appVersion/Fabric.$appName.$appVersion.zip -OutFile $outFile
     [System.IO.Compression.ZipFile]::ExtractToDirectory($outFile, $targetDirectory)
-    return "$targetDirectory\drop\Fabric.$appName.API.zip"
+    Move-Item -Path "$targetDirectory\drop\Fabric.$appName.API.zip" -Destination "$targetDirectory\Fabric.$appName.API.zip"
+    if(Test-Path "$targetDirectory\drop"){
+        Remove-Item "$targetDirectory\drop" -Force -Recurse
+    }
+    Remove-Item $outFile -Force
+    return "$targetDirectory\Fabric.$appName.API.zip"
 }
 
 function Install-FabricRelease($appName, $installArgs)
@@ -112,6 +117,26 @@ function Add-ClientRegistration($authUrl, $body, $accessToken)
     return $registrationResponse.clientSecret
 }
 
+function Test-RegistrationComplete($authUrl)
+{
+    $url = "$authUrl/api/client/fabric-installer"
+    $headers = @{"Accept" = "application/json"}
+    
+    try {
+        Invoke-RestMethod -Method Get -Uri $url -Headers $headers
+    } catch {
+        $exception = $_.Exception
+    }
+
+    if($exception -ne $null -and $exception.Response.StatusCode.value__ -eq 401)
+    {
+        Write-Host "Fabric registration is already complete."
+        return $true
+    }
+
+    return $false
+}
+
 if(!(Test-Prerequisite '*.NET Core*Windows Server Hosting*' 1.1.30327.81))
 {
     Write-Host ".NET Core Windows Server Hosting Bundle minimum version 1.1.30327.81 not installed...downloading version 1.1.30327.81"
@@ -163,6 +188,7 @@ $identityArgs = Get-CommonArguments
 $identityArgs += ("-zipPackage", $identityZipPackage)
 $identityArgs += ("-hostUrl", $hostUrl)
 Install-FabricRelease Identity $identityArgs
+Remove-Item $identityZipPackage -Force
 
 Set-Location $workingDirectory
 
@@ -171,8 +197,16 @@ $authorizationArgs = Get-CommonArguments
 $authorizationArgs += ("-zipPackage", $authorizationZipPackage)
 $authorizationArgs += ("-identityServerUrl", $identityServerUrl)
 Install-FabricRelease Authorization $authorizationArgs
+Remove-Item $authorizationZipPackage -Force
 
 Set-Location $workingDirectory
+
+if(Test-RegistrationComplete $identityServerUrl)
+{
+    Write-Host "Installation complete, exiting."
+    Remove-Item .\Fabric-Install-Utilities.psm1
+    exit 0
+}
 
 #Register registration api
 $body = @'
@@ -182,6 +216,8 @@ $body = @'
     "scopes":[{"name":"fabric/identity.manageresources"}]
 }
 '@
+
+Write-Host "Registering Fabric.Identity registration api."
 $registrationApiSecret = Add-ApiRegistration -authUrl $identityServerUrl -body $body
 
 #Register Fabric.Installer
@@ -194,6 +230,8 @@ $body = @'
     "allowedScopes": ["fabric/identity.manageresources", "fabric/authorization.read", "fabric/authorization.write", "fabric/authorization.manageclients"]
 }
 '@
+
+Write-Host "Registering Fabric.Installer."
 $installerClientSecret = Add-ClientRegistration -authUrl $identityServerUrl -body $body
 
 $accessToken = Get-AccessToken -authUrl $identityServerUrl -clientId "fabric-installer" -scope "fabric/identity.manageresources" -secret $installerClientSecret
@@ -206,6 +244,8 @@ $body = @'
     "scopes":[{"name":"fabric/authorization.read"}, {"name":"fabric/authorization.write"}, {"name":"fabric/authorization.manageclients"}]
 }
 '@
+
+Write-Host "Registering Fabric.Authorization."
 $authorizationApiSecret = Add-ApiRegistration -authUrl $identityServerUrl -body $body -accessToken $accessToken
 
 #Register group fetcher client
@@ -218,6 +258,8 @@ $body = @'
     "allowedScopes": ["fabric/authorization.read", "fabric/authorization.write", "fabric/authorization.manageclients"]
 }
 '@
+
+Write-Host "Registering Fabric.GroupFetcher."
 $groupFetcherSecret = Add-ClientRegistration -authUrl $identityServerUrl -body $body -accessToken $accessToken
 
 Write-Host "Please keep the following secrets in a secure place:"
@@ -229,6 +271,7 @@ Write-Host ""
 Write-Host "The Fabric.Installer clientSecret will be needed in subsequent installations:"
 Write-Host "Fabric.Installer clientSecret: $installerClientSecret"
 
-
+Remove-Item .\Fabric-Install-Utilities.psm1
+Write-Host "Installation complete, exiting."
 
   

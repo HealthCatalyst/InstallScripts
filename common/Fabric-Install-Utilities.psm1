@@ -2,30 +2,40 @@ Import-Module WebAdministration
 Add-Type -AssemblyName System.IO.Compression.FileSystem
 
 function Add-EnvironmentVariable($variableName, $variableValue, $config){
-	Write-Host "Writing $variableName to config"
 	$environmentVariablesNode = $config.configuration.'system.webServer'.aspNetCore.environmentVariables
-	$environmentVariable = $config.CreateElement("environmentVariable")
-	
-	$nameAttribute = $config.CreateAttribute("name")
-	$nameAttribute.Value = $variableName
-	$environmentVariable.Attributes.Append($nameAttribute)
-	
-	$valueAttribute = $config.CreateAttribute("value")
-	$valueAttribute.Value = $variableValue
-	$environmentVariable.Attributes.Append($valueAttribute)
+	$existingEnvironmentVariable = $environmentVariablesNode.environmentVariable | Where-Object {$_.name -eq $variableName}
+	if($existingEnvironmentVariable -eq $null){
+		Write-Host "Writing $variableName to config"
+		$environmentVariable = $config.CreateElement("environmentVariable")
+		
+		$nameAttribute = $config.CreateAttribute("name")
+		$nameAttribute.Value = $variableName
+		$environmentVariable.Attributes.Append($nameAttribute)
+		
+		$valueAttribute = $config.CreateAttribute("value")
+		$valueAttribute.Value = $variableValue
+		$environmentVariable.Attributes.Append($valueAttribute)
 
-	$environmentVariablesNode.AppendChild($environmentVariable)
+		$environmentVariablesNode.AppendChild($environmentVariable)
+	}else{
+		Write-Host "$variableName already exists in config, not overwriting"
+	}
 }
 
 function New-AppRoot($appDirectory, $iisUser){
 	# Create the necessary directories for the app
 	$logDirectory = "$appDirectory\logs"
 
-	Write-Host "Creating application directory: $appDirectory."
-	if(!(Test-Path $appDirectory)) {mkdir $appDirectory}
+	if(!(Test-Path $appDirectory)) {
+		Write-Host "Creating application directory: $appDirectory."
+		mkdir $appDirectory
+	}else{
+		Write-Host "Application directory: $appDirectory exists."
+	}
 
-	Write-Host "Creating applciation log directory: $logDirectory."
+	
 	if(!(Test-Path $logDirectory)) {
+		Write-Host "Creating applciation log directory: $logDirectory."
 		mkdir $logDirectory
 		Write-Host "Setting Write and Read access for $iisUser on $logDirectory."
 		$acl = (Get-Item $logDirectory).GetAccessControl('Access')
@@ -34,6 +44,8 @@ function New-AppRoot($appDirectory, $iisUser){
 		$acl.AddAccessRule($writeAccessRule)
 		$acl.AddAccessRule($readAccessRule)
 		Set-Acl -Path $logDirectory $acl
+	}else{
+		Write-Host "Log directory: $logDirectory exisits"
 	}
 }
 
@@ -46,6 +58,8 @@ function New-AppPool($appName){
 		$appPool = New-WebAppPool $appName
 		$appPool | Set-ItemProperty -Name "managedRuntimeVersion" -Value ""
 		$appPool.Start()
+	}else{
+		Write-Host "AppPool: $appName exists."
 	}
 }
 
@@ -69,15 +83,53 @@ function New-Site($appName, $portNumber, $appDirectory, $hostHeader){
 
 function New-App($appName, $siteName, $appDirectory){
 	cd IIS:\
-
-	New-WebApplication -Name $appName -Site $siteName -PhysicalPath $appDirectory -ApplicationPool $appName
+	$webApp = "IIS:\Sites\$siteName\$appName"
+	if(!(Test-Path "IIS:\Sites\$siteName\$appName" )){
+		Write-Host "Creating web application: $webApp"
+		New-WebApplication -Name $appName -Site $siteName -PhysicalPath $appDirectory -ApplicationPool $appName
+	}else{
+		Write-Host "WebApp: $webApp exists"
+	}
 }
 
 function Publish-WebSite($zipPackage, $appDirectory){
 	# Extract the app into the app directory
 	Write-Host "Extracting $zipPackage to $appDirectory."
-	[System.IO.Compression.ZipFile]::ExtractToDirectory($zipPackage, $appDirectory)
-	#Start-Sleep -Seconds 3
+	$archive = [System.IO.Compression.ZipFile]::OpenRead($zipPackage)
+	foreach($item in $archive.Entries)
+	{
+		$itemTargetFilePath = [System.IO.Path]::Combine($appDirectory, $item.FullName)
+		$itemDirectory = [System.IO.Path]::GetDirectoryName($itemTargetFilePath)
+
+		if(!(Test-Path $itemDirectory)){
+			New-Item -ItemType Directory -Path $itemDirectory
+		}
+
+		if(!(Test-IsDirectory $itemTargetFilePath)){
+			Write-Host "......Extracting $itemTargetFilePath..."
+			$overwrite = $true
+			if($itemTargetFilePath.EndsWith("web.config")){
+				$overwrite = $false
+			}
+			try{
+				[System.IO.Compression.ZipFileExtensions]::ExtractToFile($item, $itemTargetFilePath, $overwrite)
+			}catch [System.Management.Automation.MethodInvocationException]{
+				Write-Host "......$itemTargetFilePath exists, not overwriting..."
+				$errorId = $_.FullyQualifiedErrorId
+				if($errorId -ne "IOException"){
+					throw $_.Exception
+				}
+			}
+		}
+	}
+}
+
+function Test-IsDirectory($path)
+{
+	if((Get-Item $path) -is [System.IO.DirectoryInfo]){
+		return $true
+	}
+	return $false
 }
 
 function Set-EnvironmentVariables($appDirectory, $environmentVariables){

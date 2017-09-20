@@ -17,30 +17,6 @@ Import-Module -Name .\Fabric-Install-Utilities.psm1
 Add-Type -AssemblyName System.IO.Compression.FileSystem
 $workingDirectory = Split-Path $script:MyInvocation.MyCommand.Path
 
-function Get-CouchDbRemoteInstallationStatus($couchDbServer, $minVersion)
-{
-    try
-    {
-        $couchVersionResponse = Invoke-RestMethod -Method Get -Uri $couchDbServer 
-    } catch {
-        Write-Host "CouchDB not found on $couchDbServer"
-    }
-
-    if($couchVersionResponse)
-    {
-        $installedVersion = [System.Version]$couchVersionResponse.version
-        $minVersionAsSystemVersion = [System.Version]$minVersion
-        Write-Host "Found CouchDB version $installedVersion installed on $couchDbServer"
-        if($installedVersion -ge $minVersionAsSystemVersion)
-        {
-            return "Installed"
-        }else {
-            return "MinVersionNotMet"
-        }
-    }
-    return "NotInstalled"
-}
-
 function Get-FabricRelease($appName, $appVersion)
 {
     $outFile = "$env:Temp\Fabric.$appName.$appVersion.zip"
@@ -82,41 +58,6 @@ function Get-CommonArguments()
     return $installArgs
 }
 
-function Get-AccessToken($authUrl, $clientId, $scope, $secret)
-{
-    $url = "$authUrl/connect/token"
-    $body = @{
-        client_id = "$clientId"
-        grant_type = "client_credentials"
-        scope = "$scope"
-        client_secret = "$secret"
-    }
-    $accessTokenResponse = Invoke-RestMethod -Method Post -Uri $url -Body $body
-    return $accessTokenResponse.access_token
-}
-
-function Add-ApiRegistration($authUrl, $body, $accessToken)
-{
-    $url = "$authUrl/api/apiresource"
-    $headers = @{"Accept" = "application/json"}
-    if($accessToken){
-        $headers.Add("Authorization", "Bearer $accessToken")
-    }
-    $registrationResponse = Invoke-RestMethod -Method Post -Uri $url -Body $body -ContentType "application/json" -Headers $headers
-    return $registrationResponse.apiSecret    
-}
-
-function Add-ClientRegistration($authUrl, $body, $accessToken)
-{
-    $url = "$authUrl/api/client"
-    $headers = @{"Accept" = "application/json"}
-    if($accessToken){
-        $headers.Add("Authorization", "Bearer $accessToken")
-    }
-    $registrationResponse = Invoke-RestMethod -Method Post -Uri $url -Body $body -ContentType "application/json" -Headers $headers
-    return $registrationResponse.clientSecret
-}
-
 function Test-RegistrationComplete($authUrl)
 {
     $url = "$authUrl/api/client/fabric-installer"
@@ -146,6 +87,8 @@ if(!(Test-Prerequisite '*.NET Core*Windows Server Hosting*' 1.1.30327.81))
     net stop was /y
     net start w3svc
     Remove-Item $env:Temp\bundle.exe
+}else{
+    Write-Host ".NET Core Windows Server Hosting Bundle installed and meets expectations."
 }
 
 if(!(Test-Prerequisite '*CouchDB*'))

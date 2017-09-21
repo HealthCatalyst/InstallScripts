@@ -35,3 +35,5 @@ done;
 # https://askubuntu.com/questions/20414/find-and-replace-text-within-a-file-using-commands
 # sed -i 's/original/new/g' file.txt
 
+docker exec fabric.nlp.docker.web sh /etc/nlp/nlpweb/updateconfig.sh fabricnlpjobs.eastus.cloudapp.azure.com
+

@@ -16,7 +16,7 @@ echo "removing docker image"
 docker rmi healthcatalyst/fabric.nlp.docker.solr || echo 'no image to remove'
 
 
-docker run -p 8085:8085 -d --name fabric.nlp.docker.solr -t healthcatalyst/fabric.nlp.docker.solr
+docker run -p 8085:8085 --restart=unless-stopped -d --name fabric.nlp.docker.solr -t healthcatalyst/fabric.nlp.docker.solr
 
 echo "sleeping until docker container is up"
 until [ "`/usr/bin/docker inspect -f {{.State.Running}} fabric.nlp.docker.solr`"=="true" ]; do

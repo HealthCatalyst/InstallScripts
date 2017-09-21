@@ -24,7 +24,7 @@ docker rm fabric.nlp.docker.jobs || echo 'no container to remove'
 echo "removing docker image"
 docker rmi healthcatalyst/fabric.nlp.docker.jobs || echo 'no image to remove'
 
-docker run -p 8084:8084 -d --name fabric.nlp.docker.jobs --add-host mysqlserver:$mysqlserver --add-host solrserver:$solrserver  --add-host nlpwebserver:$nlpwebserver -t healthcatalyst/fabric.nlp.docker.jobs
+docker run -p 8084:8084 --restart=unless-stopped -d --name fabric.nlp.docker.jobs --add-host mysqlserver:$mysqlserver --add-host solrserver:$solrserver  --add-host nlpwebserver:$nlpwebserver -t healthcatalyst/fabric.nlp.docker.jobs
 
 echo "sleeping until docker container is up"
 until [ "`/usr/bin/docker inspect -f {{.State.Running}} fabric.nlp.docker.jobs`"=="true" ]; do

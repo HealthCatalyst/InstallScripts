@@ -35,5 +35,15 @@ done;
 # https://askubuntu.com/questions/20414/find-and-replace-text-within-a-file-using-commands
 # sed -i 's/original/new/g' file.txt
 
-# docker exec fabric.nlp.docker.web sh /etc/nlp/nlpweb/updateconfig.sh fabricnlpjobs.eastus.cloudapp.azure.com
+echo "Updating config"
 
+docker exec fabric.nlp.docker.web sh /etc/nlp/nlpweb/updateconfig.sh fabricnlpjobs.eastus.cloudapp.azure.com
+
+docker restart fabric.nlp.docker.web
+
+sleep 1s;
+
+echo "sleeping until docker container is up"
+until [ "`/usr/bin/docker inspect -f {{.State.Running}} fabric.nlp.docker.web`"=="true" ]; do
+    sleep 1s;
+done;

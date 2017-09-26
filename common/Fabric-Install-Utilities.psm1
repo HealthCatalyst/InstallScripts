@@ -243,6 +243,90 @@ function Add-ClientRegistration($authUrl, $body, $accessToken)
     return $registrationResponse.clientSecret
 }
 
+function Get-CurrentScriptDirectory()
+{
+	return Split-Path $script:MyInvocation.MyCommand.Path
+}
+
+function Get-InstallationSettings($configSection)
+{
+	$installationConfig = [xml](Get-Content install.config)
+	$sectionSettings = $installationConfig.installation.settings.scope | where {$_.name -eq $configSection}
+	$installationSettings = @{}
+
+	foreach($variable in $sectionSettings.variable){
+		if($variable.name -and $variable.value){
+			$installationSettings.Add($variable.name, $variable.value)
+		}
+	}
+
+	$commonSettings = $installationConfig.installation.settings.scope | where {$_.name -eq "common"}
+	foreach($variable in $commonSettings.variable){
+		if($variable.name -and $variable.value -and !$installationSettings.Contains($variable.name)){
+			$installationSettings.Add($variable.name, $variable.value)
+		}
+	}
+	
+	$encryptionCertificate = Get-EncryptionCertificate $installationSettings.encryptionCertificateThumbprint
+	$installationSettingsDecrypted = @{}
+	foreach($key in $installationSettings.Keys){
+		$value = $installationSettings[$key]
+		if($value.StartsWith("!!enc!!:"))
+		{
+			$value = Get-DecryptedString $encryptionCertificate $value
+		}
+		$installationSettingsDecrypted.Add($key, $value)
+	}
+	
+	return $installationSettingsDecrypted
+}
+
+function Add-InstallationSetting($configSection, $configSetting, $configValue)
+{
+	$currentDirectory = Get-CurrentScriptDirectory
+	$configFile = "install.config"
+	$installationConfig = [xml](Get-Content "$currentDirectory\$configFile")
+	$sectionSettings = $installationConfig.installation.settings.scope | where {$_.name -eq $configSection}
+	$existingSetting = $sectionSettings.variable | where {$_.name -eq $configSetting}
+	if($existingSetting -eq $null){
+		$setting = $installationConfig.CreateElement("variable")
+		
+		$nameAttribute = $installationConfig.CreateAttribute("name")
+		$nameAttribute.Value = $configSetting
+		$setting.Attributes.Append($nameAttribute)
+
+		$valueAttribute = $installationConfig.CreateAttribute("value")
+		$valueAttribute.Value = $configValue
+		$setting.Attributes.Append($valueAttribute)
+
+		$sectionSettings.AppendChild($setting)
+	}else{
+		$existingSetting.value = $configValue
+	}
+	$installationConfig.Save("$currentDirectory\$configFile")
+}
+
+function Add-SecureInstallationSetting($configSection, $configSetting, $configValue, $encryptionCertificate)
+{
+	$encryptedConfigValue = Get-EncryptedString $encryptionCertificate $configValue
+	Add-InstallationSetting $configSection $configSetting $encryptedConfigValue
+}
+
+function Get-EncryptionCertificate($encryptionCertificateThumbprint)
+{
+	return Get-Item Cert:\LocalMachine\My\$encryptionCertificateThumbprint
+}
+
+function Get-DecryptedString($encryptionCertificate, $encryptedString){
+	if($encryptedString.Contains("!!enc!!:")){
+		$cleanedEncryptedString = $encryptedString.Replace("!!enc!!:","")
+		$clearTextValue = [System.Text.Encoding]::UTF8.GetString($encryptionCertificate.PrivateKey.Decrypt([System.Convert]::FromBase64String($cleanedEncryptedString), $true))
+		return $clearTextValue
+	}else{
+		return $encryptedString
+	}
+}
+
 Export-ModuleMember -function Add-EnvironmentVariable
 Export-ModuleMember -function New-AppRoot
 Export-ModuleMember -function New-AppPool
@@ -256,3 +340,9 @@ Export-ModuleMember -function Get-CouchDbRemoteInstallationStatus
 Export-ModuleMember -function Get-AccessToken
 Export-ModuleMember -function Add-ApiRegistration
 Export-ModuleMember -function Add-ClientRegistration
+Export-ModuleMember -function Get-CurrentScriptDirectory
+Export-ModuleMember -function Get-InstallationSettings
+Export-ModuleMember -function Add-InstallationSetting
+Export-ModuleMember -function Add-SecureInstallationSetting
+Export-ModuleMember -function Get-EncryptionCertificate
+Export-ModuleMember -function Get-DecryptedString

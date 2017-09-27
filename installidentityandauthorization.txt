@@ -85,6 +85,7 @@ if [ "$runsetup" = true ]; then
     installersecret=$(echo $setupresponse | grep -oP '(?<="installerSecret":")[^"]*')
     groupfetchersecret=$(echo $setupresponse | grep -oP '(?<="groupFetcherSecret":")[^"]*')
     authapisecret=$(echo $setupresponse | grep -oP '(?<="authApiSecret":")[^"]*')
+    authclientsecret=$(echo $setupresponse | grep -oP '(?<="authClientSecret":")[^"]*')
     patietnapisecret=$(echo $setupresponse | grep -oP '(?<="patientApiSecret":")[^"]*')
     mvcclientsecret=$(echo $setupresponse | grep -oP '(?<="mvcClientSecret":")[^"]*')
     angularclientsecret=$(echo $setupresponse | grep -oP '(?<="angularClientSecret":")[^"]*')
@@ -99,7 +100,7 @@ if [ "$runsetup" = true ]; then
     echo ""
 
     echo "Update the Fabric.Authorization appsettings.json IdentityServerConfidentialClientSettings.ClientSecret value to:"
-    echo $authapisecret
+    echo $authclientsecret
     echo ""
 
     echo "Update the Fabric.Identity.Samples.API appsettings.json IdentityServerConfidentialClientSettings.ClientSecret value to:"
@@ -117,7 +118,7 @@ docker run -d --name fabric.authorization \
     -e "CouchDbSettings__Server=http://couchdb:5984" \
     -e "CouchDbSettings__Username=$couchdb_username" \
     -e "CouchDbSettings__Password=$couchdb_password" \
-    -e "IdentityServerConfidentialClientSettings__ClientSecret=$authapisecret" \
+    -e "IdentityServerConfidentialClientSettings__ClientSecret=$authclientsecret" \
     -p 0.0.0.0:5004:5004 \
     --link fabric.identity:localhost \
     --link fabric.couchdb:couchdb \

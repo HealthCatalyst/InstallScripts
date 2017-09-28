@@ -1,0 +1,64 @@
+#!/bin/sh
+couchdb_username=$1
+couchdb_password=$2
+
+if [ $3 ]; then
+	runsetup=$3
+fi
+
+if ! [ $runsetup ]; then
+	runsetup=true
+fi
+
+if [ $4 ]; then
+	couchport=$4
+fi
+
+if ! [ $couchport ]; then
+	couchport=5984
+fi
+
+if [ $5 ]; then
+	authzversion=$5
+fi
+
+if ! [ $authzversion ]; then
+	authzversion="latest"
+fi
+
+if [ $6 ]; then
+	authclientsecret=$6
+fi
+
+if ! [ $authclientsecret ]; then
+	authclientsecret=$AUTH_CLIENT_SECRET
+fi
+
+#
+# This script is meant for quick & easy install via:
+#   curl -sSL https://healthcatalyst.github.io/InstallScripts/authorization/installauthorization.txt | sh /dev/stdin [couchdb_username] [couchdb_password]
+
+
+echo "stopping existing docker containers"
+docker stop fabric.authorization || echo 'no container to stop'
+echo "removing docker container"
+docker rm fabric.authorization || echo 'no container to remove'
+echo "pulling latest docker image from repo"
+echo "pulling authorization version $authzversion" 
+docker pull healthcatalyst/fabric.authorization:$authzversion
+
+echo "starting fabric.authorization"
+docker run -d --name fabric.authorization \
+    -e "CouchDbSettings__Server=http://couchdb:5984" \
+    -e "CouchDbSettings__Username=$couchdb_username" \
+    -e "CouchDbSettings__Password=$couchdb_password" \
+    -e "IdentityServerConfidentialClientSettings__ClientSecret=$authclientsecret" \
+    -p 0.0.0.0:5004:5004 \
+    --link fabric.identity:localhost \
+    --link fabric.couchdb:couchdb \
+    healthcatalyst/fabric.authorization:$authzversion
+
+sleep 10
+if [ "$runsetup" = true ]; then
+	curl -sSL https://raw.githubusercontent.com/HealthCatalyst/Fabric.Authorization/master/Fabric.Authorization.API/scripts/setup-samples.sh | sh /dev/stdin $installersecret
+fi

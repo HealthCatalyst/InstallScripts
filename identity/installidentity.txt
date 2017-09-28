@@ -1,0 +1,98 @@
+git#!/bin/sh
+couchdb_username=$1
+couchdb_password=$2
+
+if [ $3 ]; then
+	runsetup=$3
+fi
+
+if ! [ $runsetup ]; then
+	runsetup=true
+fi
+
+if [ $4 ]; then
+	couchport=$4
+fi
+
+if ! [ $couchport ]; then
+	couchport=5984
+fi
+
+if [ $5 ]; then
+	identityversion=$5
+fi
+
+if ! [ $identityversion ]; then
+	identityversion="latest"
+fi
+
+#
+# This script is meant for quick & easy install via:
+#   curl -sSL https://healthcatalyst.github.io/InstallScripts/identity/installidentity.txt | sh /dev/stdin [couchdb_username] [couchdb_password]
+
+echo "stopping existing docker containers"
+docker stop fabric.identity || echo 'no container to stop'
+docker stop fabric.couchdb || echo 'no container to stop'
+echo "removing docker container"
+docker rm fabric.identity || echo 'no container to remove'
+docker rm fabric.couchdb || echo 'no container to remove'
+echo "removing docker volume for couchdb"
+docker volume rm couchdb-data || echo 'no volume to remove'
+echo "removing docker image"
+echo "pulling latest docker image from repo"
+echo "pulling identity version $identityversion" 
+docker pull healthcatalyst/fabric.identity:$identityversion
+docker pull healthcatalyst/fabric.docker.couchdb
+
+echo "starting couchdb."
+docker run -d --name fabric.couchdb \
+    -e "COUCHDB_USER=$couchdb_username" \
+    -e "COUCHDB_PASSWORD=$couchdb_password" \
+    -v couchdb-data:/opt/couchdb/data \
+    -p 0.0.0.0:$couchport:5984 healthcatalyst/fabric.docker.couchdb
+
+sleep 20 
+
+echo "starting fabric.identity"
+docker run -d --name fabric.identity \
+    -e "HostingOptions__UseInMemoryStores=false" \
+    -e "CouchDbSettings__Server=http://couchdb:5984" \
+    -e "CouchDbSettings__Username=$couchdb_username" \
+    -e "CouchDbSettings__Password=$couchdb_password" \
+    -p 5001:5001 \
+    --link fabric.couchdb:couchdb \
+    healthcatalyst/fabric.identity:$identityversion
+
+sleep 10
+if [ "$runsetup" = true ]; then
+	setupresponse=$(curl -sSL https://raw.githubusercontent.com/HealthCatalyst/Fabric.Identity/master/Fabric.Identity.API/scripts/setup-samples.sh | sh)
+    installersecret=$(echo $setupresponse | grep -oP '(?<="installerSecret":")[^"]*')
+    groupfetchersecret=$(echo $setupresponse | grep -oP '(?<="groupFetcherSecret":")[^"]*')
+    authapisecret=$(echo $setupresponse | grep -oP '(?<="authApiSecret":")[^"]*')
+    authclientsecret=$(echo $setupresponse | grep -oP '(?<="authClientSecret":")[^"]*')
+    patietnapisecret=$(echo $setupresponse | grep -oP '(?<="patientApiSecret":")[^"]*')
+    mvcclientsecret=$(echo $setupresponse | grep -oP '(?<="mvcClientSecret":")[^"]*')
+    angularclientsecret=$(echo $setupresponse | grep -oP '(?<="angularClientSecret":")[^"]*')
+    
+    echo ""
+    echo "The Fabric.Installer secret is: $installersecret"
+    echo "You need this secret if you want to register additional API resources or clients."
+    echo ""
+
+    echo "The Fabric.GroupFetcher client secret is: $groupfetchersecret"
+    echo "You need this secret so the group fetcher can authenticate to get and save groups."
+    echo ""
+
+    echo "Update the Fabric.Authorization appsettings.json IdentityServerConfidentialClientSettings.ClientSecret value to:"
+    echo $authclientsecret
+    echo ""
+
+    echo "Update the Fabric.Identity.Samples.API appsettings.json IdentityServerConfidentialClientSettings.ClientSecret value to:"
+    echo $patietnapisecret
+    echo ""
+
+    echo "Update the Fabric.Identity.Samples.MVC appsettings.json IdentityServerConfidentialClientSettings.ClientSecret value to:"
+    echo $mvcclientsecret
+    echo ""
+
+fi

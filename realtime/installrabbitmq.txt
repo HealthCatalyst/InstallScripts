@@ -5,8 +5,10 @@ echo "Version 1.0"
 
 #
 # This script is meant for quick & easy install via:
-#   'curl -sSL https://healthcatalyst.github.io/InstallScripts/realtime/installrabbitmq.txt | sh -s'
+#   'curl -sSL https://healthcatalyst.github.io/InstallScripts/realtime/installrabbitmq.txt | sh -s <hostname for cert>'
 
+hostname=$1
+echo "hostname="$hostname
 
 echo "stopping existing docker container"
 docker stop fabric.realtime.rabbitmq || echo 'no container to stop'
@@ -17,4 +19,14 @@ docker pull healthcatalyst/fabric.realtime.rabbitmq:latest
 
 docker run -P -d --hostname=fabric.realtime.rabbitmq --name fabric.realtime.rabbitmq -t healthcatalyst/fabric.realtime.rabbitmq:latest
 
+echo "sleeping until docker container is up"
+until [ "`/usr/bin/docker inspect -f {{.State.Running}} fabric.realtime.rabbitmq`"=="true" ]; do
+    sleep 1s;
+done;
+
+echo "generating client certificates"
+docker exec fabric.realtime.rabbitmq sh opt/healthcatalyst/scripts/generatecerts.sh $hostname
+docker cp fabric.realtime.rabbitmq:/opt/healthcatalyst/client/keycert.p12 ./
+
+echo "Wrote the client certificate to local folder"
 

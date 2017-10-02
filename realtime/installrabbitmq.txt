@@ -17,7 +17,7 @@ docker rm fabric.realtime.rabbitmq || echo 'no container to remove'
 echo "pulling latest docker image"
 docker pull healthcatalyst/fabric.realtime.rabbitmq:latest || echo 'local image is up to date'
 
-docker run -p 15672:15672 -p 5671:5671 -p 5672:5672 -d --hostname=fabric.realtime.rabbitmq --name fabric.realtime.rabbitmq -t healthcatalyst/fabric.realtime.rabbitmq:latest
+docker run -p 15672:15672 -p 5671:5671 -p 5672:5672 -15671:15671 -p 25672:25672 -d --hostname=fabric.realtime.rabbitmq --name fabric.realtime.rabbitmq -t healthcatalyst/fabric.realtime.rabbitmq:latest
 
 echo "sleeping until docker container is up"
 until [ "`/usr/bin/docker inspect -f {{.State.Running}} fabric.realtime.rabbitmq`"=="true" ]; do

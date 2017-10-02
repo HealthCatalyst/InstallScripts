@@ -2,7 +2,7 @@
 set -e
 #
 # This script is meant for quick & easy install via:
-#   curl -sSL https://healthcatalyst.github.io/InstallScripts/installmachinelearning.txt | sh -s <username> <domain> <password>
+#   curl -sSL https://healthcatalyst.github.io/InstallScripts/installmachinelearning.txt | sh -s <username> <domain>
 
 u="$(whoami)"
 echo "Running version 1.09 as: $u"

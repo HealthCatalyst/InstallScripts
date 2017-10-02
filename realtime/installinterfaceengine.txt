@@ -1,0 +1,9 @@
+#!/bin/sh
+set -e
+
+echo "Version 1.0"
+
+#
+# This script is meant for quick & easy install via:
+#   'curl -sSL https://healthcatalyst.github.io/InstallScripts/realtime/installinterfaceengine.txt | sh -s'
+

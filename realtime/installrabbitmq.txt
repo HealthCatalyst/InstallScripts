@@ -1,0 +1,19 @@
+#!/bin/sh
+set -e
+
+echo "Version 1.0"
+
+#
+# This script is meant for quick & easy install via:
+#   'curl -sSL https://healthcatalyst.github.io/InstallScripts/realtime/installrabbitmq.txt | sh -s'
+
+
+echo "stopping existing docker container"
+docker stop fabric.realtime.rabbitmq || echo 'no container to stop'
+echo "removing docker container"
+docker rm fabric.realtime.rabbitmq || echo 'no container to remove'
+echo "pulling latest docker image"
+docker pull fabric.realtime.rabbitmq:latest
+
+docker run -P -d --hostname=fabric.realtime.rabbitmq --name fabric.realtime.rabbitmq -t healthcatalyst/fabric.realtime.rabbitmq
+

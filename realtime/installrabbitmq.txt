@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-echo "Version 1.1"
+echo "Version 1.2"
 
 #
 # This script is meant for quick & easy install via:
@@ -17,7 +17,7 @@ docker rm fabric.realtime.rabbitmq || echo 'no container to remove'
 echo "pulling latest docker image"
 docker pull healthcatalyst/fabric.realtime.rabbitmq:latest || echo 'local image is up to date'
 
-docker run -P -d --hostname=fabric.realtime.rabbitmq --name fabric.realtime.rabbitmq -t healthcatalyst/fabric.realtime.rabbitmq:latest
+docker run -p 15672:15672 -p 5671:5671 -p 5672:5672 -d --hostname=fabric.realtime.rabbitmq --name fabric.realtime.rabbitmq -t healthcatalyst/fabric.realtime.rabbitmq:latest
 
 echo "sleeping until docker container is up"
 until [ "`/usr/bin/docker inspect -f {{.State.Running}} fabric.realtime.rabbitmq`"=="true" ]; do
@@ -28,5 +28,5 @@ echo "generating client certificates"
 docker exec fabric.realtime.rabbitmq sh opt/healthcatalyst/scripts/generatecerts.sh $hostname
 docker cp fabric.realtime.rabbitmq:/opt/healthcatalyst/client/keycert.p12 ./
 
-echo "Wrote the client certificate to local folder"
+echo "Wrote the client certificate to local folder as keycert.p12"
 

@@ -1,0 +1,55 @@
+#!/bin/bash
+
+set -e
+
+authority=$1
+authcert=$2
+
+
+echo "creating nlpnet network"
+docker network create --driver overlay nlpnet
+
+echo "creating mysql service"
+docker service create --name fabric.nlp.docker.mysql \
+	--env MYSQL_ROOT_PASSWORD=new-password \
+	--env MYSQL_DATABASE=nlpmt \
+	--env MYSQL_USER=NLP_APP_USER \
+	--env MYSQL_PASSWORD=yourpassword \
+	--replicas 1 \
+	--constraint "node.id == mysql" \	
+	--network nlpnet \
+    -p 3306:3306 \
+    --restart=unless-stopped \
+	healthcatalyst/fabric.nlp.docker.mysql
+
+echo "creating solr service"
+docker service create --name fabric.nlp.docker.solr \
+	--replicas 1 \
+	--network nlpnet \
+    -p 8085:8085 \
+    --restart=unless-stopped \
+	healthcatalyst/fabric.nlp.docker.solr
+
+echo "creating jobs service"
+docker service create --name fabric.nlp.docker.jobs \
+	--add-host mysqlserver:$mysqlserver 
+	--add-host solrserver:$solrserver  
+	--add-host nlpwebserver:$nlpwebserver
+	--replicas 1 \
+	--network nlpnet \
+    -p 8084:8084 \
+    --restart=unless-stopped \
+	healthcatalyst/fabric.nlp.docker.jobs
+
+echo "creating web service"
+docker service create --name fabric.nlp.docker.web \
+	--env MYSQL_ROOT_PASSWORD=new-password \
+	--env MYSQL_DATABASE=nlpmt \
+	--env MYSQL_USER=NLP_APP_USER \
+	--env MYSQL_PASSWORD=yourpassword \
+	--replicas 1 \
+	--network nlpnet \
+    -p 3306:3306 \
+    --restart=unless-stopped \
+	healthcatalyst/fabric.nlp.docker.web
+

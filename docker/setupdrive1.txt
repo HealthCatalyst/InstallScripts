@@ -1,5 +1,5 @@
 #!/bin/bash
-# curl -sSL https://healthcatalyst.github.io/InstallScripts/hadoop/setupdrives.txt | sh
+# curl -sSL https://healthcatalyst.github.io/InstallScripts/docker/setupdrive1.txt | sh
 
 echo "Version 1.41"
 set -x

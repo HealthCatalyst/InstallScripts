@@ -5,7 +5,7 @@ echo "Version 1.01"
 
 #
 # This script is meant for quick & easy install via:
-#   'curl -sSL https://healthcatalyst.github.io/InstallScripts/nlp/installnlpswarm.txt | sh -s <mysqlserver> <solrserver> <jobserver>'
+#   curl -sSL https://healthcatalyst.github.io/InstallScripts/nlp/installnlpswarm.txt | sh -s
 
 # Remember: no spaces allowed in variable set commands in bash
 
@@ -17,6 +17,9 @@ docker service rm solrserver || echo "solrserver is not already present"
 docker service rm jobserver || echo "jobserver is not already present"
 docker service rm nlpwebserver || echo "nlpwebserver is not already present"
 docker network rm nlpnet || echo "nlpnet is not already present"
+
+echo "existing services"
+docker service ls
 
 echo "creating nlpnet network"
 docker network create --driver overlay nlpnet
@@ -35,6 +38,9 @@ docker service create --name mysqlserver \
 	--detach=false \
 	healthcatalyst/fabric.nlp.docker.mysql
 
+echo "waiting for mysql to come up"
+sleep 5s;
+
 echo "creating solr service"
 
 docker service create --name solrserver \
@@ -46,6 +52,10 @@ docker service create --name solrserver \
 	--detach=false \
 	healthcatalyst/fabric.nlp.docker.solr
 
+echo "waiting for solr to come up"
+sleep 5s;
+
+
 echo "creating jobs service"
 
 docker service create --name jobserver \
@@ -55,6 +65,9 @@ docker service create --name jobserver \
     -p 8084:8084 \
 	--detach=false \
 	healthcatalyst/fabric.nlp.docker.jobs
+
+echo "waiting for jobserver to come up"
+sleep 5s;
 
 echo "creating web service"
 

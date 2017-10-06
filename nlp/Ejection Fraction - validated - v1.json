@@ -1,0 +1,243 @@
+{
+	"states": [{
+		"name": "START",
+		"regex": "(?i)(?:^|(\\n[\\n]+?))([^\\n]++|(\\n[^\\n]++))++(?=(\\n[\\n]+?)|$)",
+		"acceptStateName": "EF_WORD",
+		"rejectStateName": "END",
+		"comments": "Look for the ejection fracture word"
+	},
+	{
+		"name": "EF_WORD",
+		"regex": "(?i)($|\\b)(EF|LVEF|ejection[ \\n]fraction|ejection[ \\n]fractions|ejection[ \\n]fracture)\\b",
+		"acceptStateName": "EF_SENTENCE",
+		"rejectStateName": "END",
+		"checkWindowStateName": "START",
+		"checkWindowType": "INSIDE",
+		"expandMatchType": "CHECK_WINDOW",
+		"matchType": "SINGLE",
+		"comments": "Looks inside the chunked pieces for an ef word."
+	},
+	{
+		"name": "EF_SENTENCE",
+		"regex": "(?i)(^|(([^\\.\\!\\+\\,\\-]|(\\spt\\.)|(\\sdr\\.)|(\\sst\\.))+?))\\b(EF|LVEF|ejection[ \\n]fraction|ejection[ \\n]fractions|ejection[ \\n]fracture)\\b([^\\.\\n\\!\\+\\,]|(\\spt\\.)|(\\sdr\\.)|(\\sst\\.)|(\\.\\d))+?((?<!(\\spt|\\sdr|\\st))\\.(?!\\d)|\\z|\\n|$)",
+		"acceptStateName": "EF_SENTENCE_FILTER",
+		"rejectStateName": "END",
+		"checkWindowStateName": "EF_WORD",
+		"checkWindowType": "INSIDE",
+		"comments": "Gets the sentence around the ef word.  Looks backward until a newline or a period and forward until a newline, period or the end of the input.  Allows for periods for pt., dr. and st. (for st. francis)"
+	},
+	{
+		"name": "EF_SENTENCE_FILTER",
+		"regex": "(?i)gallbladder",
+		"acceptStateName": "EF_AFTER_SENTENCE_FILTER",
+		"rejectStateName": "END",
+		"checkWindowStateName": "EF_SENTENCE",
+		"checkWindowType": "INSIDE",
+		"matchType": "EXCLUDE",
+		"comments": "Excluded sentences with ef that also have a mention of gallbladders."
+	},
+	{
+		"name": "EF_AFTER_SENTENCE_FILTER",
+		"regex": "(?i)($|\\b)(EF|LVEF|ejection[ \\n]fraction|ejection[ \\n]fractions|ejection[ \\n]fracture)",
+		"acceptStateName": "EF_WITHIN_RANGE",
+		"rejectStateName": "END",
+		"checkWindowStateName": "EF_SENTENCE_FILTER",
+		"checkWindowType": "INSIDE",
+		"expandMatchType": "CHECK_WINDOW_END",
+		"comments": "Gets at most seven contiguous chunks of words so we can check to make sure the number is close to the ef word.  A chunk is a series of symbols before and after a space or tab."
+	},
+	{
+		"name": "EF_WITHIN_RANGE",
+		"regex": "(?i)($|\\b)(EF|LVEF|ejection[ \\n]fraction|ejection[ \\n]fractions|ejection[ \\n]fracture)[ \\t:-]*([^ \\t\\n]*([ \\t]*|$)){1,7}",
+		"acceptStateName": "NUMBER_AFTER_EF",
+		"rejectStateName": "END",
+		"checkWindowStateName": "EF_AFTER_SENTENCE_FILTER",
+		"checkWindowType": "INSIDE",
+		"comments": "Gets at most seven contiguous chunks of words so we can check to make sure the number is close to the ef word.  A chunk is a series of symbols before and after a space or tab."
+	},
+	{
+		"name": "NUMBER_AFTER_EF",
+		"regex": "(?i)($|\\b)(EF|LVEF|ejection[ \\n]fraction|ejection[ \\n]fractions|ejection[ \\n]fracture)(.|\\s)+([1-9][0-9])(\\.\\d)?",
+		"acceptStateName": "NUMBER_NOT_DATE_OR_TIME",
+		"rejectStateName": "END",
+		"checkWindowStateName": "EF_WITHIN_RANGE",
+		"checkWindowType": "INSIDE",
+		"expandMatchType": "CHECK_WINDOW",
+		"comments": "Makes sure there is a number that looks like an ef number after the ef word."
+	},
+	{
+		"name": "NUMBER_NOT_DATE_OR_TIME",
+		"regex": "(?i)([^\\/|\\d]|^)[\\d][\\d](\\.\\d)?(?=[^\\/|\\d]|(\\-|\\,|\\s|\\.|$))",
+		"acceptStateName": "EF_BEFORE_RANGE",
+		"rejectStateName": "END",
+		"checkWindowStateName": "NUMBER_AFTER_EF",
+		"checkWindowType": "INSIDE",
+		"expandMatchType": "CHECK_WINDOW",
+		"matchType": "SINGLE",
+		"comments": "Checks to make sure the first number after the ef word isnt part of a date or time.  The number must be only 2 digits between 10-99, and not have a slash before or after it.  Match type single because we want the closest number to the ef word thats not a date or time."
+	},
+	{
+		"name": "EF_BEFORE_RANGE",
+		"regex": "(?i)(^|[^\\.\\n?!]|\\n[^\\n]|(\\spt\\.)|(\\sdr\\.)|(\\sst\\.)|(\\.\\d))+?[\\.!?]*$",
+		"acceptStateName": "EF_AFTER_RANGE",
+		"rejectStateName": "END",
+		"checkWindowStateName": "NUMBER_NOT_DATE_OR_TIME",
+		"checkWindowType": "BEFORE_END",
+		"expandMatchType": "CHECK_WINDOW_END",
+		"matchType": "SINGLE",
+		"comments": "Gets the words before the ef word so that we can get the surrounding sentence of only those ef words that have numbers after them.  Is anchored to the start of the ef word by the $ at the end and the fact the check window goes up to the end of the ef word (type = BEFORE_END).  Expands to the check window end to include the ef word."
+	},
+	{
+		"name": "EF_AFTER_RANGE",
+		"regex": "(?i)($|\\b)(EF|LVEF|ejection[ \\n]fraction|ejection[ \\n]fractions|ejection[ \\n]fracture)\\b([^\\.\\n]|(\\spt\\.)|(\\sdr\\.)|(\\sst\\.))*?((?<!(\\spt|\\sdr)|(\\sst\\.))\\.|\\z|\\n)",
+		"acceptStateName": "EF_MATCH",
+		"rejectStateName": "END",
+		"checkWindowStateName": "EF_BEFORE_RANGE",
+		"checkWindowType": "AFTER_START",
+		"expandMatchType": "CHECK_WINDOW_START",
+		"matchType": "SINGLE",
+		"comments":"Looks from the start of the before words we found before until the end of the ef sentence.  This is so we can get sentence surrounding the ef word that has the ef number next to it."
+	},
+	{
+		"name": "EF_MATCH",
+		"regex": "(?i)[^\\s]{1}",
+		"acceptStateName": "CHECK_FOR_TWO_MEASUREMENTS",
+		"rejectStateName": "END",
+		"checkWindowStateName": "EF_AFTER_RANGE",
+		"checkWindowType": "INSIDE",
+		"expandMatchType": "CHECK_WINDOW_END",
+		"matchType": "SINGLE",
+		"comments": "Puts the before and after ranges together so we get a sentence with ef and an ef looking number in it.  This is so we can look at only sentences with ef and a number.  Expands to check window end so we skip newlines and spaces before the start of the match."
+	},
+	
+	{
+		"name": "CHECK_FOR_TWO_MEASUREMENTS",
+		"regex": "(?i)(EF|LVEF|ejection[ \\n]fraction|ejection[ \\n]fractions|ejection[ \\n]fracture)([^\\.\\n\\d]|(\\spt\\.)|(\\sdr\\.)|(\\sst\\.))+?([1-9][0-9])\\s*(\\-|\\s|to)\\s*([1-9][0-9])",
+		"acceptStateName": "EXTRACT_TWO_MEASUREMENTS",
+		"rejectStateName": "CHECK_FOR_ONE_MEASUREMENT_REJECT_IF_NOT_FOUND",
+		"checkWindowStateName": "NUMBER_NOT_DATE_OR_TIME",
+		"checkWindowType": "INSIDE",
+		"matchType": "SINGLE",
+		"comments": "Checks for two measurements after an ef word.  Looks only in the matches that have numbers that arent dates or times in them."
+	},
+	{
+		"name": "EXTRACT_TWO_MEASUREMENTS",
+		"regex": "(?i)([1-9][0-9])",
+		"acceptStateName": "EXTRACT_TWO_MEASUREMENTS_WITH_PHRASE",
+		"rejectStateName": "END",
+		"checkWindowStateName": "CHECK_FOR_TWO_MEASUREMENTS",
+		"checkWindowType": "INSIDE",
+		"matchType":"LIMIT",
+		"matchLimit":"2",
+		"comments":"Extracts the two EF looking numbers that were hopefully identified by the check for two measurments"
+	},
+	{
+		"name": "EXTRACT_TWO_MEASUREMENTS_WITH_PHRASE",
+		"regex": "(?i)([1-9][0-9])",
+		"acceptStateName": "EXTRACT_TWO_MEASUREMENTS_AS_SINGLE_VALUE",
+		"rejectStateName": "END",
+		"checkWindowStateName": "CHECK_FOR_TWO_MEASUREMENTS",
+		"checkWindowType": "INSIDE",
+		"matchType":"LIMIT",
+		"matchLimit":"2",
+		"expandMatchType":"CHECK_WINDOW",
+		"comments":"Once weve found the measurments, this gets the whole phrase for each measurment that we have.  If there are two measurements, it will get the phrase 2 times and we will be able to extract it two times so that the phrase and the extracted number match up."
+	},
+	{
+		"name": "EXTRACT_TWO_MEASUREMENTS_AS_SINGLE_VALUE",
+		"regex": "(?i)([1-9][0-9])\\s*(\\-|\\s|to)\\s*([1-9][0-9])",
+		"acceptStateName": "EF_PHRASE_BEFORE_TWO_MEASUREMENTS",
+		"rejectStateName": "END",
+		"checkWindowStateName": "CHECK_FOR_TWO_MEASUREMENTS",
+		"checkWindowType": "INSIDE",
+		"comments":"Extracts the two EF looking numbers that were hopefully identified by the check for two measurments"
+	},
+	{
+		"name": "EF_PHRASE_BEFORE_TWO_MEASUREMENTS",
+		"regex": "(?i)(EF|LVEF|ejection[ \\n]fraction|ejection[ \\n]fractions|ejection[ \\n]fracture)([^\\.\\n]|(\\spt\\.)|(\\sdr\\.)|(\\sst\\.))+?$",
+		"acceptStateName": "EXTRACT_EF_WORD_FOR_TWO_MEASUREMENTS",
+		"rejectStateName": "END",
+		"checkWindowStateName": "EXTRACT_TWO_MEASUREMENTS",
+		"checkWindowType": "BEFORE_END",
+		"matchType":"LIMIT",
+		"matchLimit":"2",
+		"comments": "Gets the EF phrase before each of the two measurements"
+	},
+	{
+		"name": "EXTRACT_EF_WORD_FOR_TWO_MEASUREMENTS",
+		"regex": "(?i)(EF|LVEF|ejection[ \\n]fraction|ejection[ \\n]fractions|ejection[ \\n]fracture)(?![^\\.\\n]+(EF|LVEF|ejection[ \\n]fraction|ejection[ \\n]fractions|ejection[ \\n]fracture)).*",
+		"acceptStateName": "CHECK_FOR_ONE_MEASUREMENT",
+		"rejectStateName": "END",
+		"checkWindowStateName": "EF_PHRASE_BEFORE_TWO_MEASUREMENTS",
+		"checkWindowType": "INSIDE",
+		"matchType":"LIMIT",
+		"matchLimit":"2",
+		"comments": "Gets the EF word before the two measurements.  Assumes the first ef looking word in the phrase is the one you want."
+	},
+	
+	
+	{
+		"name": "CHECK_FOR_ONE_MEASUREMENT_REJECT_IF_NOT_FOUND",
+		"regex": "(?i)(EF|LVEF|ejection[ \\n]fraction|ejection[ \\n]fractions|ejection[ \\n]fracture)([^\\.\\n]|(\\spt\\.)|(\\sdr\\.)|(\\sst\\.))+?([1-9][0-9])(\\.\\d)?\\s*",
+		"acceptStateName": "CHECK_FOR_ONE_MEASUREMENT",
+		"rejectStateName": "END",
+		"checkWindowStateName": "NUMBER_NOT_DATE_OR_TIME",
+		"checkWindowType": "INSIDE",
+		"comments": "Looks for one measurement and rejects if its not found. Used if you didnt find two measurements and want to reject if you dont find one."
+	},
+	
+	
+	{
+		"name": "CHECK_FOR_ONE_MEASUREMENT",
+		"regex": "(?i)(EF|LVEF|ejection[ \\n]fraction|ejection[ \\n]fractions|ejection[ \\n]fracture)([^\\.\\n\\d]|(\\spt\\.)|(\\sdr\\.)|(\\sst\\.))+?([1-9][0-9])(\\.\\d)?(?!\\s*(\\-|\\s|to)\\s*([1-9][0-9]))",
+		"acceptStateName": "EXTRACT_ONE_MEASUREMENT",
+		"rejectStateName": "DUMMY_ACCEPT",
+		"checkWindowStateName": "NUMBER_NOT_DATE_OR_TIME",
+		"checkWindowType": "INSIDE",
+		"comments": "Checks to see if theres a single measurement after an ef word.  Does a negative lookahead if there are two measurements, so it only hopefully matches ef phrases with one measurement."
+	},
+	
+	{
+		"name": "EXTRACT_ONE_MEASUREMENT",
+		"regex": "(?i)(<|(?<!-)>|greater than|less than)?([1-9][0-9])(\\.\\d)?",
+		"acceptStateName": "EXTRACT_EF_WORD_FOR_ONE_MEASUREMENT",
+		"rejectStateName": "END",
+		"checkWindowStateName": "CHECK_FOR_ONE_MEASUREMENT",
+		"checkWindowType": "INSIDE",
+		"matchType": "LIMIT",
+		"matchLimit": "1",
+		"comments": "Extracts the first number it finds after the check for one measurement."
+	},
+	{
+		"name": "EXTRACT_EF_WORD_FOR_ONE_MEASUREMENT",
+		"regex": "(?i)(EF|LVEF|ejection[ \\n]fraction|ejection[ \\n]fractions|ejection[ \\n]fracture)",
+		"acceptStateName": "END",
+		"rejectStateName": "END",
+		"checkWindowStateName": "CHECK_FOR_ONE_MEASUREMENT",
+		"checkWindowType": "INSIDE",
+		"matchType": "SINGLE",
+		"comments": "Extracts the ef word used for the single measurement."
+	},
+	
+	{
+		"name": "DUMMY_ACCEPT",
+		"regex": "(?i).{1}",
+		"acceptStateName": "END",
+		"rejectStateName": "END",
+		"matchType":"SINGLE",
+		"comments": "A dummy accept state so that we can accept if we look for two measurements, but only find one."
+	}],
+	"valueExtractors": [{
+		"label": "Ejection Fraction single value",
+		"stateNamesForName": ["CHECK_FOR_ONE_MEASUREMENT"],
+		"stateNamesForValue": ["EXTRACT_ONE_MEASUREMENT"]
+	},
+	{
+		"label": "Ejection Fraction range",
+		"stateNamesForName": ["EXTRACT_TWO_MEASUREMENTS_WITH_PHRASE"],
+		"stateNamesForValue": ["EXTRACT_TWO_MEASUREMENTS"]
+	}
+	],
+	"name": "Ejection Fraction v4",
+	"comments": "Looks for ejection fraction values where the ef value is on the same line as the ef word.  It will try to pull out one or two measurements for the value."
+}

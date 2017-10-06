@@ -26,9 +26,10 @@ done;
 
 echo "generating client certificates"
 # docker exec fabric.realtime.rabbitmq sh opt/healthcatalyst/scripts/generatecerts.sh $hostname
-docker cp fabric.realtime.rabbitmq:/home/client/keycert.p12 ./
+docker cp fabric.realtime.rabbitmq:/home/client/fabric_rabbitmq_client_cert.p12 ./
+docker cp fabric.realtime.rabbitmq:/home/client/fabric_rabbitmq_ca_cert.p12 ./
 
-echo "Wrote the client certificate to local folder as keycert.p12"
+echo "Wrote the client certificate to local folder as fabric_rabbitmq_client_cert.p12"
 
 # docker restart fabric.realtime.rabbitmq
 

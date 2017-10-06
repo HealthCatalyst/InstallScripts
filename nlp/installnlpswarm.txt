@@ -22,36 +22,28 @@ docker service create --name mysqlserver \
 	--env MYSQL_USER=NLP_APP_USER \
 	--env MYSQL_PASSWORD=yourpassword \
 	--replicas 1 \
-	--constraint "node.id == mysql" \	
+	--constraint "node.labels.worker == 1" \
 	--network nlpnet \
     -p 3306:3306 \
-    --restart=unless-stopped \
+	--detach=false \
 	healthcatalyst/fabric.nlp.docker.mysql
-
-echo "Sleeping..."
-sleep 10s;
-
-docker exec mysqlserver bin/bash ./setup_nlp_tables.sh
 
 echo "creating solr service"
 docker service create --name solrserver \
 	--replicas 1 \
 	--network nlpnet \
+	--constraint "node.labels.worker == 1" \
     -p 8085:8085 \
-    --restart=unless-stopped \
+	--detach=false \
 	healthcatalyst/fabric.nlp.docker.solr
-
-echo "Sleeping..."
-sleep 10s;
-
-docker exec solrserver bin/bash bin/solr create_core -c report_core
 
 echo "creating jobs service"
 docker service create --name jobserver \
 	--replicas 1 \
 	--network nlpnet \
+	--constraint "node.labels.worker == 1" \
     -p 8084:8084 \
-    --restart=unless-stopped \
+	--detach=false \
 	healthcatalyst/fabric.nlp.docker.jobs
 
 echo "creating web service"
@@ -60,22 +52,10 @@ docker service create --name nlpwebserver \
 	--env MYSQL_DATABASE=nlpmt \
 	--env MYSQL_USER=NLP_APP_USER \
 	--env MYSQL_PASSWORD=yourpassword \
+	--constraint "node.labels.worker == 1" \
 	--replicas 1 \
 	--network nlpnet \
     -p 8083:8083 \
-    --restart=unless-stopped \
+	--detach=false \
 	healthcatalyst/fabric.nlp.docker.web
 
-echo "Sleeping..."
-sleep 10s;
-
-# https://askubuntu.com/questions/20414/find-and-replace-text-within-a-file-using-commands
-# sed -i 's/original/new/g' file.txt
-
-echo "Updating config"
-
-docker exec nlpwebserver sh /etc/nlp/nlpweb/updateconfig.sh fabricnlpjobs.eastus.cloudapp.azure.com
-
-docker restart fabric.nlp.docker.web
-
-sleep 1s;

@@ -1,0 +1,14 @@
+{"states":
+
+    [{"name":"START",
+      "regex":"(?i)\\d{1,2}/\\d{1,2}/\\d{4}",
+      "acceptStateName":"END",
+      "rejectStateName":"END"}
+    ],
+
+"valueExtractors":
+
+[{"label":"A label",
+   "stateNamesForName":["START"],
+   "stateNamesForValue":["START"]}]
+}

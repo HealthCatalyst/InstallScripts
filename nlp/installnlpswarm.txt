@@ -31,7 +31,7 @@ docker service create --name mysqlserver \
 	--env MYSQL_USER=NLP_APP_USER \
 	--env MYSQL_PASSWORD=yourpassword \
 	--replicas 1 \
-	--constraint "node.labels.worker == 1" \
+	--constraint "node.labels.mysql == 1" \
 	--mount type=bind,source=/mnt/data1/mysql,destination=/var/lib/mysql \
 	--network nlpnet \
     -p 3306:3306 \
@@ -47,7 +47,7 @@ docker service create --name solrserver \
 	--replicas 1 \
 	--mount type=bind,source=/mnt/data1/solr,destination=/var/lib/solr \
 	--network nlpnet \
-	--constraint "node.labels.worker == 1" \
+	--constraint "node.labels.solr == 1" \
     -p 8085:8085 \
 	--detach=false \
 	healthcatalyst/fabric.nlp.docker.solr

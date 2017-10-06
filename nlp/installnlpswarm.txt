@@ -12,6 +12,12 @@ echo "Version 1.01"
 authority=$1
 authcert=$2
 
+docker service rm mysqlserver || echo "mysqlserver is not already present"
+docker service rm solrserver || echo "solrserver is not already present"
+docker service rm jobserver || echo "jobserver is not already present"
+docker service rm nlpwebserver || echo "nlpwebserver is not already present"
+docker network rm nlpnet || echo "nlpnet is not already present"
+
 echo "creating nlpnet network"
 docker network create --driver overlay nlpnet
 
@@ -23,14 +29,17 @@ docker service create --name mysqlserver \
 	--env MYSQL_PASSWORD=yourpassword \
 	--replicas 1 \
 	--constraint "node.labels.worker == 1" \
+	--mount type=bind,source=/mnt/data1/mysql,destination=/var/lib/mysql \
 	--network nlpnet \
     -p 3306:3306 \
 	--detach=false \
 	healthcatalyst/fabric.nlp.docker.mysql
 
 echo "creating solr service"
+
 docker service create --name solrserver \
 	--replicas 1 \
+	--mount type=bind,source=/mnt/data1/solr,destination=/var/lib/solr \
 	--network nlpnet \
 	--constraint "node.labels.worker == 1" \
     -p 8085:8085 \
@@ -38,6 +47,7 @@ docker service create --name solrserver \
 	healthcatalyst/fabric.nlp.docker.solr
 
 echo "creating jobs service"
+
 docker service create --name jobserver \
 	--replicas 1 \
 	--network nlpnet \
@@ -47,11 +57,8 @@ docker service create --name jobserver \
 	healthcatalyst/fabric.nlp.docker.jobs
 
 echo "creating web service"
+
 docker service create --name nlpwebserver \
-	--env MYSQL_ROOT_PASSWORD=new-password \
-	--env MYSQL_DATABASE=nlpmt \
-	--env MYSQL_USER=NLP_APP_USER \
-	--env MYSQL_PASSWORD=yourpassword \
 	--constraint "node.labels.worker == 1" \
 	--replicas 1 \
 	--network nlpnet \

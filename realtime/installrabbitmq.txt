@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-echo "Version 1.25"
+echo "Version 1.26"
 
 #
 # This script is meant for quick & easy install via:
@@ -40,5 +40,7 @@ docker cp fabric.realtime.rabbitmq:/opt/healthcatalyst/testca/cacert.pem ./
 
 echo "Wrote the client certificate to local folder as fabric_rabbitmq_client_cert.p12"
 
-# docker restart fabric.realtime.rabbitmq
+echo "Testing the certificates"
 
+openssl s_client -connect localhost:5671 -cert cert.pem -key key.pem -CAfile cacert.pem
+# openssl s_client -msg -debug -state -connect localhost:5671 -cert cert.pem -key key.pem -CAfile cacert.pem

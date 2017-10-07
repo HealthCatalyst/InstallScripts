@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-echo "Version 1.24"
+echo "Version 1.25"
 
 #
 # This script is meant for quick & easy install via:
@@ -17,7 +17,10 @@ docker rm fabric.realtime.rabbitmq || echo 'no container to remove'
 echo "pulling latest docker image"
 docker pull healthcatalyst/fabric.realtime.rabbitmq:latest || echo 'local image is up to date'
 
-docker run -p 15672:15672 -p 5671:5671 -p 5672:5672 -p 15671:15671 -p 25672:25672 -d --hostname=$hostname --name fabric.realtime.rabbitmq -t healthcatalyst/fabric.realtime.rabbitmq:latest
+# create the volume to store certificates
+docker volume create mycertstore || echo 'volume mycertstore already exists'
+
+docker run -v mycertstore:/opt/healthcatalyst/ -p 15672:15672 -p 5671:5671 -p 5672:5672 -p 15671:15671 -p 25672:25672 -d --hostname=$hostname --name fabric.realtime.rabbitmq -t healthcatalyst/fabric.realtime.rabbitmq:latest
 
 echo "sleeping until docker container is up"
 until [ "`/usr/bin/docker inspect -f {{.State.Running}} fabric.realtime.rabbitmq`"=="true" ]; do
@@ -29,8 +32,11 @@ sleep 10s;
 
 echo "generating client certificates"
 # docker exec fabric.realtime.rabbitmq sh opt/healthcatalyst/scripts/generatecerts.sh $hostname
-docker cp fabric.realtime.rabbitmq:/home/client/fabric_rabbitmq_client_cert.p12 ./
-docker cp fabric.realtime.rabbitmq:/home/client/fabric_rabbitmq_ca_cert.p12 ./
+docker cp fabric.realtime.rabbitmq:/opt/healthcatalyst/client/fabric_rabbitmq_client_cert.p12 ./
+docker cp fabric.realtime.rabbitmq:/opt/healthcatalyst/client/fabric_rabbitmq_ca_cert.p12 ./
+docker cp fabric.realtime.rabbitmq:/opt/healthcatalyst/client/cert.pem ./
+docker cp fabric.realtime.rabbitmq:/opt/healthcatalyst/client/key.pem ./
+docker cp fabric.realtime.rabbitmq:/opt/healthcatalyst/testca/cacert.pem ./
 
 echo "Wrote the client certificate to local folder as fabric_rabbitmq_client_cert.p12"
 

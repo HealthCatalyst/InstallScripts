@@ -24,6 +24,9 @@ until [ "`/usr/bin/docker inspect -f {{.State.Running}} fabric.realtime.rabbitmq
     sleep 1s;
 done;
 
+echo "waiting for rabbitmq container to be ready"
+sleep 10s;
+
 echo "generating client certificates"
 # docker exec fabric.realtime.rabbitmq sh opt/healthcatalyst/scripts/generatecerts.sh $hostname
 docker cp fabric.realtime.rabbitmq:/home/client/fabric_rabbitmq_client_cert.p12 ./

@@ -90,7 +90,13 @@ function New-App($appName, $siteName, $appDirectory){
 function Publish-WebSite($zipPackage, $appDirectory, $appName){
 	# Extract the app into the app directory
 	Write-Host "Extracting $zipPackage to $appDirectory."
-	Stop-WebAppPool -Name $appName
+
+	try{
+		Stop-WebAppPool -Name $appName -ErrorAction Stop
+	}catch [System.InvalidOperationException]{
+		Write-Host "AppPool $appName is already stopped, continuing."
+	}
+
 	Start-Sleep -Seconds 3
 	$archive = [System.IO.Compression.ZipFile]::OpenRead($zipPackage)
 	foreach($item in $archive.Entries)
@@ -267,7 +273,14 @@ function Get-InstallationSettings($configSection)
 		}
 	}
 	
-	$encryptionCertificate = Get-EncryptionCertificate $installationSettings.encryptionCertificateThumbprint
+	try{
+		$encryptionCertificateThumbprint = $installationSettings.encryptionCertificateThumbprint
+		$encryptionCertificate = Get-EncryptionCertificate $encryptionCertificateThumbprint
+	}catch{
+		Write-Host "Could not get encryption certificte with thumbprint $encryptionCertificateThumbprint. Please verify that the encryptionCertificateThumbprint setting in install.config contains a valid thumbprint for a certificate in the Local Machine Personal store."
+		throw $_.Exception
+	}
+	
 	$installationSettingsDecrypted = @{}
 	foreach($key in $installationSettings.Keys){
 		$value = $installationSettings[$key]
@@ -314,7 +327,13 @@ function Add-SecureInstallationSetting($configSection, $configSetting, $configVa
 
 function Get-EncryptionCertificate($encryptionCertificateThumbprint)
 {
-	return Get-Item Cert:\LocalMachine\My\$encryptionCertificateThumbprint
+	return Get-Certificate $encryptionCertificateThumbprint
+}
+
+function Get-Certificate($certificateThumbprint)
+{
+	$certificateThumbprint = $certificateThumbprint -replace '[^a-zA-Z0-9]', ''
+	return Get-Item Cert:\LocalMachine\My\$certificateThumbprint -ErrorAction Stop
 }
 
 function Get-DecryptedString($encryptionCertificate, $encryptedString){

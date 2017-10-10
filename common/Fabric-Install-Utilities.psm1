@@ -280,7 +280,7 @@ function Get-InstallationSettings($configSection)
 		Write-Host "Could not get encryption certificte with thumbprint $encryptionCertificateThumbprint. Please verify that the encryptionCertificateThumbprint setting in install.config contains a valid thumbprint for a certificate in the Local Machine Personal store."
 		throw $_.Exception
 	}
-	
+
 	$installationSettingsDecrypted = @{}
 	foreach($key in $installationSettings.Keys){
 		$value = $installationSettings[$key]
@@ -365,3 +365,4 @@ Export-ModuleMember -function Add-InstallationSetting
 Export-ModuleMember -function Add-SecureInstallationSetting
 Export-ModuleMember -function Get-EncryptionCertificate
 Export-ModuleMember -function Get-DecryptedString
+Export-ModuleMember -Function Get-Certificate

@@ -3,7 +3,7 @@ set -e
 
 #
 # This script is meant for quick & easy install via:
-#   'curl -sSL https://healthcatalyst.github.io/InstallScripts/nlp/installjobs.txt | sh -s <mysqlserver> <solrserver>'
+#   'curl -sSL https://healthcatalyst.github.io/InstallScripts/nlp/installjobs.txt | sh -s <mysqlserver> <solrserver> <nlpwebserver> <jobserverexternal> <smtpserver>'
 
 echo "Version 1.4"
 
@@ -11,10 +11,14 @@ echo "Version 1.4"
 mysqlserver="$1"
 solrserver="$2"
 nlpwebserver="$3"
+jobserverexternal="$4"
+smtpserver="$5"
 
 echo "mysqlserver:"$mysqlserver
 echo "solrserver:"$solrserver
 echo "nlpwebserver:"$nlpwebserver
+echo "jobserverexternal:"$jobserverexternal
+echo "smtpserver:"$smtpserver
 
 # delete old versions
 echo "stopping existing docker container"
@@ -24,7 +28,7 @@ docker rm fabric.nlp.docker.jobs || echo 'no container to remove'
 echo "removing docker image"
 docker rmi healthcatalyst/fabric.nlp.docker.jobs || echo 'no image to remove'
 
-docker run -p 8084:8084 --restart=unless-stopped -d --name fabric.nlp.docker.jobs --add-host mysqlserver:$mysqlserver --add-host solrserver:$solrserver  --add-host nlpwebserver:$nlpwebserver -t healthcatalyst/fabric.nlp.docker.jobs
+docker run -p 8084:8084 --restart=unless-stopped -d --name fabric.nlp.docker.jobs --env jobserverexternal=$jobserverexternal --env smtpserver=$smtpserver --add-host mysqlserver:$mysqlserver --add-host solrserver:$solrserver  --add-host nlpwebserver:$nlpwebserver -t healthcatalyst/fabric.nlp.docker.jobs
 
 echo "sleeping until docker container is up"
 until [ "`/usr/bin/docker inspect -f {{.State.Running}} fabric.nlp.docker.jobs`"=="true" ]; do

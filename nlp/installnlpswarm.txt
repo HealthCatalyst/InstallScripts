@@ -10,7 +10,8 @@ echo "Version 1.01"
 # Remember: no spaces allowed in variable set commands in bash
 
 jobserverexternal="$1"
-smtpserver="$2
+nlpwebserverexternal="$2"
+smtpserver="$3"
 
 echo "jobserverexternal:"$jobserverexternal
 echo "smtpserver:"$smtpserver"
@@ -66,7 +67,7 @@ sleep 5s;
 echo "creating jobs service"
 
 docker service create --name jobserver \
-	--env jobserverexternal=$jobserverexternal \
+	--env nlpwebserverexternal=$nlpwebserverexternal \
 	--env smtpserver=$smtpserver \
 	--replicas 1 \
 	--network nlpnet \
@@ -81,6 +82,8 @@ sleep 5s;
 echo "creating web service"
 
 docker service create --name nlpwebserver \
+	--env jobserverexternal=$jobserverexternal \
+	--env smtpserver=$smtpserver \
 	--constraint "node.labels.worker == 1" \
 	--replicas 1 \
 	--network nlpnet \

@@ -12,5 +12,9 @@ curl -L https://github.com/docker/machine/releases/download/v0.12.2/docker-machi
 chmod +x /tmp/docker-machine &&
 sudo cp /tmp/docker-machine /usr/local/bin/docker-machine
 
+curl -L https://healthcatalyst.github.io/InstallScripts/docker/swarm_bash.txt >/tmp/swarm_bash.sh \
+    && chmod +x /tmp/swarm_bash.sh \
+    && sudo cp /tmp/swarm_bash.sh /usr/local/bin/swarm_bash.sh
+
 docker swarm init --advertise-addr $1
 

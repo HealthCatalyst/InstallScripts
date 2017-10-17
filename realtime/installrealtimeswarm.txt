@@ -1,0 +1,58 @@
+#!/bin/sh
+set -e
+
+echo "Version 1.01"
+
+#
+# This script is meant for quick & easy install via:
+#   curl -sSL https://healthcatalyst.github.io/InstallScripts/nlp/installnlpswarm.txt | sh -s
+
+# Remember: no spaces allowed in variable set commands in bash
+
+jobserverexternal="$1"
+nlpwebserverexternal="$2"
+smtpserver="$3"
+
+echo "jobserverexternal:"$jobserverexternal
+echo "smtpserver:"$smtpserver"
+
+docker service rm interfaceengine || echo "interfaceengine is not already present"
+docker service rm rabbitmq || echo "rabbitmq is not already present"
+docker network rm realtimenet || echo "realtimenet is not already present"
+
+echo "existing services"
+docker service ls
+
+echo "creating realtimenet network"
+docker network create \
+	--driver overlay \
+	--subnet=172.28.0.0/16 \
+	--ip-range=172.28.5.0/24 \
+	realtimenet
+
+echo "creating mirth service"
+docker service create --name interfaceengine \
+	--replicas 1 \
+	--network realtimenet \
+    -p 8080:8080 \
+    -p 8443:8443 \
+    -p 6661:6661 \
+	--detach=false \
+	healthcatalyst/fabric.docker.interfaceengine
+
+echo "waiting for interfaceengine to come up"
+sleep 5s;
+
+echo "creating rabbitmq service"
+
+docker service create --name rabbitmq \
+	--replicas 1 \
+	--network realtimenet \
+    -p 5671:5671 \
+    -p 5672:5672 \
+	--detach=false \
+	healthcatalyst/fabric.realtime.rabbitmq
+
+echo "waiting for rabbitmq to come up"
+sleep 5s;
+

@@ -23,6 +23,9 @@ docker service rm interfaceengine || echo "interfaceengine is not already presen
 docker service rm rabbitmq || echo "rabbitmq is not already present"
 docker network rm realtimenet || echo "realtimenet is not already present"
 
+echo "sleeping to let network be removed"
+sleep 3s;
+
 echo "existing services"
 docker service ls
 

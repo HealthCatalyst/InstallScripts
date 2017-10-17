@@ -5,16 +5,9 @@ echo "Version 1.01"
 
 #
 # This script is meant for quick & easy install via:
-#   curl -sSL https://healthcatalyst.github.io/InstallScripts/nlp/installnlpswarm.txt | sh -s
+#   curl -sSL https://healthcatalyst.github.io/InstallScripts/realtime/installrealtimeswarm.txt | sh -s
 
 # Remember: no spaces allowed in variable set commands in bash
-
-jobserverexternal="$1"
-nlpwebserverexternal="$2"
-smtpserver="$3"
-
-echo "jobserverexternal:"$jobserverexternal
-echo "smtpserver:"$smtpserver"
 
 docker service rm interfaceengine || echo "interfaceengine is not already present"
 docker service rm rabbitmq || echo "rabbitmq is not already present"

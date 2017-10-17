@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-echo "Version 1.02"
+echo "Version 1.03"
 
 #
 # This script is meant for quick & easy install via:
@@ -53,7 +53,7 @@ echo "creating rabbitmq service"
 
 
 docker service create --name rabbitmq \
-	--env hostname=$myhostname \
+	--env CERT_HOSTNAME=$myhostname \
 	--env CERT_PASSWORD=$CertPassword \
 	--replicas 1 \
 	--network realtimenet \

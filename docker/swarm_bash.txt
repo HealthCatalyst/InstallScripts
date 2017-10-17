@@ -41,6 +41,6 @@ fi < <( docker service ps -f name=$exec_task.$exec_instance --no-trunc -f desire
 
 echo "Executing in $docker_node $docker_fullname" 
 
-eval `docker-machine env $docker_node`
+# eval `docker-machine env $docker_node`
 
 docker exec -ti $docker_fullname /bin/bash

@@ -1,13 +1,23 @@
 #!/bin/sh
 set -e
 
-echo "Version 1.01"
+echo "Version 1.02"
 
 #
 # This script is meant for quick & easy install via:
 #   curl -sSL https://healthcatalyst.github.io/InstallScripts/realtime/installrealtimeswarm.txt | sh -s
 
 # Remember: no spaces allowed in variable set commands in bash
+myhostname="$1"
+
+if [ -z "$myhostname" ]; then
+	echo "Please type in hostname to use for SSL certificate:"
+	read -e myhostname < /dev/tty
+fi
+
+CertPassword="roboconf"
+
+echo "Using host:"$myhostname
 
 docker service rm interfaceengine || echo "interfaceengine is not already present"
 docker service rm rabbitmq || echo "rabbitmq is not already present"
@@ -38,7 +48,10 @@ sleep 5s;
 
 echo "creating rabbitmq service"
 
+
 docker service create --name rabbitmq \
+	--env hostname=$myhostname \
+	--env CERT_PASSWORD=$CertPassword \
 	--replicas 1 \
 	--network realtimenet \
     -p 5671:5671 \

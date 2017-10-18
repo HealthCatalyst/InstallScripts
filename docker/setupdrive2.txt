@@ -24,9 +24,6 @@ fi
 sudo mkdir -p /mnt/data2
 sudo mount /dev/sdd1 /mnt/data2
 
-sudo mkdir -p /mnt/data2/db
-sudo mkdir -p /mnt/data2/log
-
 uuidDisk2=$(sudo blkid $1 | grep "^/dev/sdd1:" | awk '{ print $2 }' | tr -d '"' | cut -c 6-)
 echo "UUID=" $uuidDisk2
 

@@ -37,3 +37,10 @@ fi
 grep -v "/mnt/data1" /etc/fstab | sudo tee /etc/fstab
 
 echo "UUID=$uuidDisk1       /mnt/data1        ext4   defaults        0 0" | sudo tee -a /etc/fstab
+
+lsblk
+
+cat /etc/fstab
+
+set +x
+

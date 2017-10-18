@@ -21,10 +21,17 @@ echo "Using host:"$myhostname
 
 docker service rm interfaceengine || echo "interfaceengine is not already present"
 docker service rm rabbitmq || echo "rabbitmq is not already present"
+
+echo "sleeping to let containers be removed"
+sleep 3s;
+
 docker network rm realtimenet || echo "realtimenet is not already present"
 
 echo "sleeping to let network be removed"
 sleep 3s;
+
+# create the volume to store certificates
+docker volume create rabbitmqcertstore || echo 'volume rabbitmqcertstore already exists'
 
 echo "existing services"
 docker service ls
@@ -51,10 +58,10 @@ sleep 5s;
 
 echo "creating rabbitmq service"
 
-
 docker service create --name rabbitmq \
 	--env CERT_HOSTNAME=$myhostname \
 	--env CERT_PASSWORD=$CertPassword \
+  	--mount src=rabbitmqcertstore,dst=/opt/healthcatalyst/ \
 	--replicas 1 \
 	--network realtimenet \
     -p 5671:5671 \

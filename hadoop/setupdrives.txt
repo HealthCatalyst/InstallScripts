@@ -4,36 +4,6 @@
 echo "Version 1.41"
 set -x
 
-if [[ -z $(lsblk | grep -q sdc1) ]]; then
-echo "creating disk 1"
-sudo fdisk /dev/sdc <<EEOF
-d
-n
-p
-1
+curl -sSL https://healthcatalyst.github.io/InstallScripts/docker/setupdrive1.txt | sh
 
-
-w
-EEOF
-
-sudo mkfs -t ext4 /dev/sdc1
-else
-   echo "Disk1 already exists";
-fi
-
-sudo mkdir -p /mnt/data1
-sudo mount /dev/sdc1 /mnt/data1
-
-uuidDisk1=$(sudo blkid $1 | grep "^/dev/sdc1:" | awk '{ print $2 }' | tr -d '"' | cut -c 6-)
-
-echo "UUID=" $uuidDisk1
-
-if [ -z "$uuidDisk1" ]; then
-  echo "UUID not found"
-  exit 1
-fi
-
-# remove previous entry for this drive
-grep -v "/mnt/data1" /etc/fstab | sudo tee /etc/fstab
-
-echo "UUID=$uuidDisk1       /mnt/data1        ext4   defaults        0 0" | sudo tee -a /etc/fstab
+curl -sSL https://healthcatalyst.github.io/InstallScripts/docker/setupdrive2.txt | sh

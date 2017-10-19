@@ -88,3 +88,9 @@ healthcatalyst/fabric.docker.interfaceengine
 
 echo "waiting for interfaceengine to come up"
 sleep 5s;
+
+echo "you can download the client certificate from this url"
+echo "http://$myhostname:8081/client/fabric_rabbitmq_client_cert.p12"
+
+echo "if you want, you can download the CA (Certificate Authority) cert from this url"
+echo "http://$myhostname:8081/client/fabric_rabbitmq_ca_cert.p12"

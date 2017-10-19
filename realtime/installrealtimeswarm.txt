@@ -42,7 +42,7 @@ docker network create \
 	--driver overlay \
 	--subnet=172.28.0.0/16 \
 	--ip-range=172.28.5.0/24 \
-	realtimenet
+realtimenet
 
 echo "creating rabbitmq service"
 

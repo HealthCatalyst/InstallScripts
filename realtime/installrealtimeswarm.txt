@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-echo "Version 1.053"
+echo "Version 1.054"
 
 #
 # This script is meant for quick & easy install via:

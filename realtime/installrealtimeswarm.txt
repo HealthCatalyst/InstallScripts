@@ -16,6 +16,7 @@ if [ -z "$myhostname" ]; then
 fi
 
 CertPassword="roboconf"
+RabbitMqMgmtUiPassword="roboconf2"
 
 echo "Using host:"$myhostname
 
@@ -53,6 +54,7 @@ echo "creating rabbitmq service"
 docker service create --name rabbitmq \
 	--env CERT_HOSTNAME=$myhostname \
 	--env CERT_PASSWORD=$CertPassword \
+	--env RABBITMQ_MGMT_UI_PASSWORD=$RabbitMqMgmtUiPassword \
   	--mount src=rabbitmqcertstore,dst=/opt/healthcatalyst/ \
 	--replicas 1 \
 	--constraint "node.role == manager" \

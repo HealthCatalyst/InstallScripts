@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-echo "Version 1.04"
+echo "Version 1.05"
 
 #
 # This script is meant for quick & easy install via:
@@ -28,7 +28,7 @@ sleep 3s;
 docker network rm realtimenet || echo "realtimenet is not already present"
 
 echo "sleeping to let network be removed"
-sleep 3s;
+sleep 15s;
 
 # create the volume to store certificates
 docker volume create rabbitmqcertstore || echo 'volume rabbitmqcertstore already exists'

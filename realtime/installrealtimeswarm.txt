@@ -43,6 +43,40 @@ docker network create \
 	--ip-range=172.28.5.0/24 \
 	realtimenet
 
+echo "creating rabbitmq service"
+
+docker service create --name rabbitmq \
+	--env CERT_HOSTNAME=$myhostname \
+	--env CERT_PASSWORD=$CertPassword \
+  	--mount src=rabbitmqcertstore,dst=/opt/healthcatalyst/ \
+	--replicas 1 \
+	--constraint "node.role == manager" \
+	--network realtimenet \
+  	--label rabbitmq=1 \	
+    -p 5671:5671 \
+    -p 5672:5672 \
+    -p 15672:15672 \
+	--detach=false \
+	healthcatalyst/fabric.realtime.rabbitmq
+
+echo "waiting for rabbitmq to come up"
+sleep 15s;
+
+# affinity documentation
+# https://docs.docker.com/engine/reference/commandline/service_create/#options
+# https://docs.docker.com/v1.10/swarm/scheduler/filter/
+
+# use constraints to run the webserver on the same node as rabbitmq
+
+echo "starting mini webserver to allow access to certificate files"
+docker service create --name certdownloadserver \
+	-p 8081:3000
+  	--mount src=rabbitmqcertstore,dst=/app/public,readonly=true \
+	--constraint "node.role == manager" \
+	--detach=false \
+	tobilg/mini-webserver
+
+
 echo "creating mirth service"
 docker service create --name interfaceengine \
 	--replicas 1 \
@@ -55,21 +89,3 @@ docker service create --name interfaceengine \
 
 echo "waiting for interfaceengine to come up"
 sleep 5s;
-
-echo "creating rabbitmq service"
-
-docker service create --name rabbitmq \
-	--env CERT_HOSTNAME=$myhostname \
-	--env CERT_PASSWORD=$CertPassword \
-  	--mount src=rabbitmqcertstore,dst=/opt/healthcatalyst/ \
-	--replicas 1 \
-	--network realtimenet \
-    -p 5671:5671 \
-    -p 5672:5672 \
-    -p 15672:15672 \
-	--detach=false \
-	healthcatalyst/fabric.realtime.rabbitmq
-
-echo "waiting for rabbitmq to come up"
-sleep 5s;
-

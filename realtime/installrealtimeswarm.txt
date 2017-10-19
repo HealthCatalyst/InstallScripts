@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-echo "Version 1.05"
+echo "Version 1.051"
 
 #
 # This script is meant for quick & easy install via:
@@ -70,7 +70,7 @@ sleep 15s;
 
 echo "starting mini webserver to allow access to certificate files"
 docker service create --name certdownloadserver \
-	-p 8081:3000
+	-p 8081:3000 \
   	--mount src=rabbitmqcertstore,dst=/app/public,readonly=true \
 	--constraint "node.role == manager" \
 	--detach=false \

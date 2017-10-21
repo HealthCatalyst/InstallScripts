@@ -117,8 +117,24 @@ docker service create --name certdownloadserver \
 	-p 8081:3000 \
   	--mount src=rabbitmqcertstore,dst=/app/public,readonly=true \
 	--constraint "node.role == manager" \
+	--network realtimenet \
 	--detach=false \
 healthcatalyst/fabric.miniwebserver
+
+echo "creating mysql service"
+docker service create --name mysqlserver \
+	--env MYSQL_ROOT_PASSWORD=new-password \
+	--env MYSQL_DATABASE=mirthdatabase \
+	--env MYSQL_USER=NLP_APP_USER \
+	--env MYSQL_PASSWORD=yourpassword \
+	--replicas 1 \
+	--network realtimenet \
+    -p 3306:3306 \
+	--detach=false \
+	healthcatalyst/fabric.realtime.mysql
+
+echo "waiting for mysql to come up"
+sleep 5s;
 
 # 8080 = HTTP port
 # 8443 = HTTPS port

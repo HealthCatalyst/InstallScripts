@@ -13,6 +13,7 @@ myhostname="$1"
 # these are set in the script below
 CertPassword=""
 RabbitMqMgmtUiPassword=""
+# todo: prompt for these
 MySQLUser="mirthuser"
 MySQLPassword="ilovemirth"
 MySQLRootPassword="myrootpassword"

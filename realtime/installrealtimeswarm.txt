@@ -10,6 +10,13 @@ echo "Version 1.057"
 # Remember: no spaces allowed in variable set commands in bash
 myhostname="$1"
 
+# these are set in the script below
+CertPassword=""
+RabbitMqMgmtUiPassword""
+MySQLUser="mirthuser"
+MySQLPassword="ilovemirth"
+MySQLRootPassword="myrootpassword"
+
 # see if we already have a cert store created
 hasexistingvolume=""
 docker volume inspect --format '{{ .Mountpoint }}' rabbitmqcertstore 2> /dev/null && hasexistingvolume="yes" || echo "No existing volume found"
@@ -123,10 +130,10 @@ healthcatalyst/fabric.miniwebserver
 
 echo "creating mysql service"
 docker service create --name mysqlserver \
-	--env MYSQL_ROOT_PASSWORD=new-password \
-	--env MYSQL_DATABASE=mirthdatabase \
-	--env MYSQL_USER=NLP_APP_USER \
-	--env MYSQL_PASSWORD=yourpassword \
+	--env MYSQL_ROOT_PASSWORD=$MySQLRootPassword \
+	--env MYSQL_DATABASE=mirthdb \
+	--env MYSQL_USER=$MySQLUser \
+	--env MYSQL_PASSWORD=$MySQLPassword \
 	--replicas 1 \
 	--network realtimenet \
     -p 3306:3306 \
@@ -142,6 +149,8 @@ sleep 5s;
 
 echo "creating mirth service"
 docker service create --name interfaceengine \
+	--env MYSQL_USER=$MySQLUser \
+	--env MYSQL_PASSWORD=$MySQLPassword \
 	--replicas 1 \
 	--network realtimenet \
     -p 8080:8080 \

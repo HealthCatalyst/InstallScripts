@@ -1,12 +1,12 @@
 #!/bin/bash
-# curl -sSL https://healthcatalyst.github.io/InstallScripts/docker/setupdrive2.txt | sh
+# curl -sSL https://healthcatalyst.github.io/InstallScripts/docker/setupdrive3.txt | sh
 
 echo "Version 1.41"
 set -x
 
-if [[ -z $(lsblk | grep -q sdd1) ]]; then
+if [[ -z $(lsblk | grep -q sde1) ]]; then
 echo "creating disk 3"
-sudo fdisk /dev/sdd <<EEOF
+sudo fdisk /dev/sde <<EEOF
 d
 n
 p
@@ -16,15 +16,15 @@ p
 w
 EEOF
 
-sudo mkfs -t ext4 /dev/sdd1
+sudo mkfs -t ext4 /dev/sde1
 else
-   echo "Disk2 already exists";
+   echo "Disk 3 already exists";
 fi
 
-sudo mkdir -p /mnt/data2
-sudo mount /dev/sdd1 /mnt/data2
+sudo mkdir -p /mnt/data3
+sudo mount /dev/sde1 /mnt/data3
 
-uuidDisk2=$(sudo blkid $1 | grep "^/dev/sdd1:" | awk '{ print $2 }' | tr -d '"' | cut -c 6-)
+uuidDisk2=$(sudo blkid $1 | grep "^/dev/sde1:" | awk '{ print $2 }' | tr -d '"' | cut -c 6-)
 echo "UUID=" $uuidDisk2
 
 if [ -z "$uuidDisk2" ]; then
@@ -32,11 +32,11 @@ if [ -z "$uuidDisk2" ]; then
   exit 1
 fi
 
-grep -v "/mnt/data2" /etc/fstab | sudo tee /etc/fstab
+grep -v "/mnt/data3" /etc/fstab | sudo tee /etc/fstab
 
-echo "UUID=$uuidDisk2       /mnt/data2        ext4   defaults        0 0" | sudo tee -a /etc/fstab
+echo "UUID=$uuidDisk2       /mnt/data3        ext4   defaults        0 0" | sudo tee -a /etc/fstab
 
-# sudo chgrp -R docker /mnt/data2/
+# sudo chgrp -R docker /mnt/data3/
 
 lsblk
 

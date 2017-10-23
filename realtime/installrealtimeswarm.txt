@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-echo "Version 1.072"
+echo "Version 1.074"
 
 #
 # This script is meant for quick & easy install via:
@@ -17,6 +17,16 @@ RabbitMqMgmtUiPassword=""
 MySQLUser="mirthuser"
 MySQLPassword="ilovemirth"
 MySQLRootPassword="myrootpassword"
+
+# if wait-for-it is not installed then install it
+if [ ! -f "/usr/local/bin/wait-for-it" ]
+then
+	sudo yum -y install which dos2unix
+	curl -O /tmp/wait-for-it.sh -sSL https://healthcatalyst.github.io/InstallScripts/wait-for-it.sh \
+		&& dos2unix /tmp/wait-for-it.sh \
+		&& chmod +x /tmp/wait-for-it.sh \
+		&& sudo cp /tmp/wait-for-it.sh /usr/local/bin/wait-for-it
+fi
 
 # see if we already have a cert store created
 hasexistingvolume=""
@@ -61,6 +71,7 @@ fi
 
 echo "Using host:"$myhostname
 
+# remove any existing running containers
 docker service rm interfaceengine || echo "interfaceengine is not already present"
 docker service rm mysqlserver || echo "certificateserver is not already present"
 docker service rm rabbitmq || echo "rabbitmq is not already present"
@@ -70,6 +81,7 @@ docker service rm certdownloadserver || echo "certdownloadserver is not already 
 echo "sleeping to let containers be removed"
 sleep 3s;
 
+# remove virtual network
 docker network rm realtimenet || echo "realtimenet is not already present"
 
 echo "sleeping to let network be removed"
@@ -117,6 +129,7 @@ docker service create --name certificateserver \
 healthcatalyst/fabric.certificateserver
 
 echo "waiting for certificateserver to come up"
+wait-for-it $myhostname:8001 -t 60
 sleep 15s;
 
 echo "creating rabbitmq service"
@@ -139,6 +152,8 @@ docker service create --name rabbitmq \
 healthcatalyst/fabric.realtime.rabbitmq
 
 echo "waiting for rabbitmq to come up"
+wait-for-it $myhostname:5671 -t 60
+wait-for-it $myhostname:15672 -t 60
 sleep 15s;
 
 # affinity documentation
@@ -159,6 +174,7 @@ docker service create --name mysqlserver \
 	healthcatalyst/fabric.realtime.mysql
 
 echo "waiting for mysql to come up"
+wait-for-it $myhostname:3306 -t 60
 sleep 5s;
 
 # 8080 = HTTP port
@@ -178,6 +194,10 @@ docker service create --name interfaceengine \
 healthcatalyst/fabric.docker.interfaceengine
 
 echo "waiting for interfaceengine to come up"
+wait-for-it $myhostname:8080 -t 60
+wait-for-it $myhostname:8433 -t 60
+wait-for-it $myhostname:6661 -t 60
+wait-for-it $myhostname:5671 -t 60
 sleep 5s;
 
 echo "you can download the client certificate from this url"

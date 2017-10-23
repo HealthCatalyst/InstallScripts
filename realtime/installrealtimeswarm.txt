@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-echo "Version 1.074"
+echo "Version 1.075"
 
 #
 # This script is meant for quick & easy install via:
@@ -22,7 +22,7 @@ MySQLRootPassword="myrootpassword"
 if [ ! -f "/usr/local/bin/wait-for-it" ]
 then
 	sudo yum -y install which dos2unix
-	curl -O /tmp/wait-for-it.sh -sSL https://healthcatalyst.github.io/InstallScripts/wait-for-it.sh \
+	curl -sSL -o /tmp/wait-for-it.sh https://healthcatalyst.github.io/InstallScripts/wait-for-it.sh \
 		&& dos2unix /tmp/wait-for-it.sh \
 		&& chmod +x /tmp/wait-for-it.sh \
 		&& sudo cp /tmp/wait-for-it.sh /usr/local/bin/wait-for-it

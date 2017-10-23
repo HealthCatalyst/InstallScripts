@@ -65,6 +65,7 @@ docker service rm interfaceengine || echo "interfaceengine is not already presen
 docker service rm mysqlserver || echo "certificateserver is not already present"
 docker service rm rabbitmq || echo "rabbitmq is not already present"
 docker service rm certificateserver || echo "certificateserver is not already present"
+docker service rm certdownloadserver || echo "certdownloadserver is not already present"
 
 echo "sleeping to let containers be removed"
 sleep 3s;

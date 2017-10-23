@@ -62,9 +62,9 @@ fi
 echo "Using host:"$myhostname
 
 docker service rm interfaceengine || echo "interfaceengine is not already present"
-docker service rm mysqlserver || echo "certdownloadserver is not already present"
+docker service rm mysqlserver || echo "certificateserver is not already present"
 docker service rm rabbitmq || echo "rabbitmq is not already present"
-docker service rm certdownloadserver || echo "certdownloadserver is not already present"
+docker service rm certificateserver || echo "certificateserver is not already present"
 
 echo "sleeping to let containers be removed"
 sleep 3s;
@@ -100,6 +100,22 @@ docker network create \
 	--ip-range=172.28.5.0/24 \
 realtimenet
 
+# use constraints to run the webserver on the same node as rabbitmq
+
+# 8081 = HTTP port for downloading certificates
+
+echo "starting mini webserver to allow access to certificate files"
+docker service create --name certificateserver \
+	-p 8081:3000 \
+  	--mount src=rabbitmqcertstore,dst=/app/public,readonly=true \
+	--constraint "node.role == manager" \
+	--network realtimenet \
+	--detach=false \
+healthcatalyst/fabric.certificateserver
+
+echo "waiting for certificateserver to come up"
+sleep 15s;
+
 echo "creating rabbitmq service"
 
 # 5672 = Non SSL port (not exposed ourside of this swarm)
@@ -125,19 +141,6 @@ sleep 15s;
 # affinity documentation
 # https://docs.docker.com/engine/reference/commandline/service_create/#options
 # https://docs.docker.com/v1.10/swarm/scheduler/filter/
-
-# use constraints to run the webserver on the same node as rabbitmq
-
-# 8081 = HTTP port for downloading certificates
-
-echo "starting mini webserver to allow access to certificate files"
-docker service create --name certdownloadserver \
-	-p 8081:3000 \
-  	--mount src=rabbitmqcertstore,dst=/app/public,readonly=true \
-	--constraint "node.role == manager" \
-	--network realtimenet \
-	--detach=false \
-healthcatalyst/fabric.miniwebserver
 
 echo "creating mysql service"
 docker service create --name mysqlserver \

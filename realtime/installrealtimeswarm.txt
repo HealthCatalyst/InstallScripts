@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-echo "Version 1.075"
+echo "Version 1.076"
 
 #
 # This script is meant for quick & easy install via:
@@ -129,7 +129,7 @@ docker service create --name certificateserver \
 healthcatalyst/fabric.certificateserver
 
 echo "waiting for certificateserver to come up"
-wait-for-it $myhostname:8001 -t 60
+wait-for-it $myhostname:8081 -t 60 || docker service logs certificateserver
 sleep 15s;
 
 echo "creating rabbitmq service"
@@ -152,8 +152,8 @@ docker service create --name rabbitmq \
 healthcatalyst/fabric.realtime.rabbitmq
 
 echo "waiting for rabbitmq to come up"
-wait-for-it $myhostname:5671 -t 60
-wait-for-it $myhostname:15672 -t 60
+wait-for-it $myhostname:5671 -t 60 || docker service logs rabbitmq
+wait-for-it $myhostname:15672 -t 60 || docker service logs rabbitmq
 sleep 15s;
 
 # affinity documentation
@@ -174,7 +174,7 @@ docker service create --name mysqlserver \
 	healthcatalyst/fabric.realtime.mysql
 
 echo "waiting for mysql to come up"
-wait-for-it $myhostname:3306 -t 60
+wait-for-it $myhostname:3306 -t 60 || docker service logs mysqlserver
 sleep 5s;
 
 # 8080 = HTTP port
@@ -194,11 +194,14 @@ docker service create --name interfaceengine \
 healthcatalyst/fabric.docker.interfaceengine
 
 echo "waiting for interfaceengine to come up"
-wait-for-it $myhostname:8080 -t 60
-wait-for-it $myhostname:8433 -t 60
-wait-for-it $myhostname:6661 -t 60
-wait-for-it $myhostname:5671 -t 60
+wait-for-it $myhostname:8080 -t 60 || docker service logs interfaceengine
+wait-for-it $myhostname:8433 -t 60 || docker service logs interfaceengine
+wait-for-it $myhostname:6661 -t 60 || docker service logs interfaceengine
 sleep 5s;
+
+echo "testing rabbitmq one more time"
+wait-for-it $myhostname:5671 -t 60 || docker service logs rabbitmq
+
 
 echo "you can download the client certificate from this url"
 echo "http://$myhostname:8081/client/fabric_client_cert.p12"

@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-echo "Version 1.06"
+echo "Version 1.07"
 
 #
 # This script is meant for quick & easy install via:

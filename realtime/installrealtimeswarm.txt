@@ -186,15 +186,17 @@ sleep 15s;
 # https://docs.docker.com/engine/reference/commandline/service_create/#options
 # https://docs.docker.com/v1.10/swarm/scheduler/filter/
 
+#	--env MYSQL_ROOT_PASSWORD_FILE=/run/secrets/MySQLRootPassword \
+
 echo "creating mysql service"
 #  from https://hub.docker.com/_/mariadb/
 docker service create --name mysqlserver \
 	--secret MySQLRootPassword \
 	--secret MySQLPassword \
-	--env MYSQL_ROOT_PASSWORD_FILE=/run/secrets/MySQLRootPassword \
+	--env MYSQL_ROOT_PASSWORD="roboconf2" \
 	--env MYSQL_DATABASE=mirthdb \
 	--env MYSQL_USER=$MySQLUser \
-	--env MYSQL_PASSWORD_FILE=/run/secrets/MySQLPassword \
+	--env MYSQL_PASSWORD_FILE="/run/secrets/MySQLPassword" \
   	--mount src=mysqlstore,dst=/var/lib/mysql \
 	--replicas 1 \
 	--network realtimenet \

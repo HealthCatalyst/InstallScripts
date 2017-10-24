@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-echo "Version 1.091"
+echo "Version 1.092"
 
 #
 # This script is meant for quick & easy install via:
@@ -94,9 +94,9 @@ if [ -z "$hasexistingvolume" ]; then
 	echo $RabbitMqMgmtUiPassword | docker secret create RabbitMqMgmtUiPassword -
 
 #	read -p "Please type in password to use for MySql account (mirthuser):" MySQLPassword < /dev/tty
-#	docker secret rm MySQLPassword || echo ""
-#	echo "Password:"$MySQLPassword
-#	echo $MySQLPassword | docker secret create MySQLPassword -
+	docker secret rm MySQLPassword || echo ""
+	echo "Password:"$MySQLPassword
+	echo $MySQLPassword | docker secret create MySQLPassword -
 
 #	read -p "Please type in password to use root MySql account:" MySQLRootPassword < /dev/tty
 #	docker secret rm MySQLRootPassword || echo ""
@@ -196,7 +196,7 @@ docker service create --name mysqlserver \
 	--env MYSQL_ROOT_PASSWORD=$MySQLRootPassword \
 	--env MYSQL_DATABASE=mirthdb \
 	--env MYSQL_USER=$MySQLUser \
-	--env MYSQL_PASSWORD=$MySQLPassword \
+	--env MYSQL_PASSWORD_FILE="/run/secrets/MySQLPassword" \
   	--mount src=mysqlstore,dst=/var/lib/mysql \
 	--replicas 1 \
 	--network realtimenet \
@@ -215,7 +215,7 @@ sleep 5s;
 echo "creating mirth service"
 docker service create --name interfaceengine \
 	--secret MySQLPassword \
-	--env MYSQL_PASSWORD=$MySQLPassword \	
+	--env MYSQL_PASSWORD=$MySQLPassword \
 	--env MYSQL_USER=$MySQLUser \
 	--replicas 1 \
 	--network realtimenet \

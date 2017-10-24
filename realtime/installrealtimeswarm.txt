@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-echo "Version 1.081"
+echo "Version 1.082"
 
 #
 # This script is meant for quick & easy install via:
@@ -9,14 +9,13 @@ echo "Version 1.081"
 
 # Remember: no spaces allowed in variable set commands in bash
 myhostname="$1"
+MySQLUser="mirthuser"
 
 # these are set in the script below
 CertPassword=""
 RabbitMqMgmtUiPassword=""
-# todo: prompt for these
-MySQLUser="mirthuser"
-MySQLPassword="ilovemirth"
-MySQLRootPassword="myrootpassword"
+MySQLPassword=""
+MySQLRootPassword=""
 
 # if wait-for-it is not installed then install it
 if [ ! -f "/usr/local/bin/wait-for-it" ]
@@ -55,7 +54,7 @@ if [ ! -z "$hasexistingvolume" ]; then
 fi
 
 
-# if there is no existing volume
+# if there is no existing volume then ask for passwords
 if [ -z "$hasexistingvolume" ]; then
 	if [ -z "$myhostname" ]; then
 		echo "Please type in hostname to use for SSL certificate:"
@@ -67,6 +66,13 @@ if [ -z "$hasexistingvolume" ]; then
 
 	echo "Please type in password to use with admin user for RabbitMq Admin UI:"
 	read -e RabbitMqMgmtUiPassword < /dev/tty
+
+	echo "Please type in password to use for MySql account (mirthuser):"
+	read -e MySQLPassword < /dev/tty
+
+	echo "Please type in password to use root MySql account:"
+	read -e MySQLRootPassword < /dev/tty
+
 fi
 
 echo "Using host:"$myhostname

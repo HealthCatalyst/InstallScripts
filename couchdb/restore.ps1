@@ -13,10 +13,12 @@ param(
     [String] $databaseToRestore,
 
     [Parameter(Mandatory=$True)]
-    [String] $backupFile
+    [String] $backupFile,
+
+    [switch] $skipDecryption
 )
 
-Import-Module -Name .\couchdb-utilities.psm1 -Force
+Import-Module -Name .\utilities.psm1 -Force
 
 $encryptedPasswordFile = Get-EncryptedPasswordFile $couchDbAdminUsername
 if(!(Test-Path $encryptedPasswordFile)){
@@ -38,5 +40,9 @@ $password = Get-DecryptedFileContent $encryptedPasswordFile
 
 $couchDbUrl = Get-CouchDbUrl $couchDbHost $couchDbPort $couchDbAdminUsername $password
 
-$content = Get-DecryptedFileContent $backupFile
+if($skipDecryption){
+    $content = Get-Content $backupFile
+}else{
+    $content = Get-DecryptedFileContent $backupFile
+}
 $content | couchrestore --url $couchDbUrl --db $databaseToRestore

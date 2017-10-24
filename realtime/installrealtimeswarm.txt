@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-echo "Version 1.090"
+echo "Version 1.091"
 
 #
 # This script is meant for quick & easy install via:
@@ -14,8 +14,8 @@ MySQLUser="mirthuser"
 # these are set in the script below
 CertPassword=""
 RabbitMqMgmtUiPassword=""
-MySQLPassword=""
-MySQLRootPassword=""
+MySQLPassword="ilovemirth"
+MySQLRootPassword="myrootpassword"
 
 echo "---------------------------------------------------"
 echo "This script sets up the Fabric.Realtime cluster on Docker"
@@ -93,15 +93,15 @@ if [ -z "$hasexistingvolume" ]; then
 	docker secret rm RabbitMqMgmtUiPassword || echo ""
 	echo $RabbitMqMgmtUiPassword | docker secret create RabbitMqMgmtUiPassword -
 
-	read -p "Please type in password to use for MySql account (mirthuser):" MySQLPassword < /dev/tty
-	docker secret rm MySQLPassword || echo ""
-	echo "Password:"$MySQLPassword
-	echo $MySQLPassword | docker secret create MySQLPassword -
+#	read -p "Please type in password to use for MySql account (mirthuser):" MySQLPassword < /dev/tty
+#	docker secret rm MySQLPassword || echo ""
+#	echo "Password:"$MySQLPassword
+#	echo $MySQLPassword | docker secret create MySQLPassword -
 
-	read -p "Please type in password to use root MySql account:" MySQLRootPassword < /dev/tty
-	docker secret rm MySQLRootPassword || echo ""
-	echo "Password:"$MySQLRootPassword
-	echo $MySQLRootPassword | docker secret create MySQLRootPassword  -
+#	read -p "Please type in password to use root MySql account:" MySQLRootPassword < /dev/tty
+#	docker secret rm MySQLRootPassword || echo ""
+#	echo "Password:"$MySQLRootPassword
+#	echo $MySQLRootPassword | docker secret create MySQLRootPassword  -
 fi
 
 # delete the volume if it exists
@@ -202,7 +202,7 @@ docker service create --name mysqlserver \
 	--network realtimenet \
     -p 3306:3306 \
 	--detach=false \
-	healthcatalyst/fabric.realtime.mysql
+healthcatalyst/fabric.realtime.mysql
 
 echo "waiting for mysql to come up"
 # wait-for-it $myhostname:3306 -t 60 || docker service logs mysqlserver

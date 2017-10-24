@@ -5,7 +5,7 @@ Provided here are several PowerShell scripts to make it easier to backup and res
 ## Prerequisites
 In order to run the below scripts you need:
 
-1. PowerShell vX or later.
+1. PowerShell v5 or later.
 2. Node.js 4.8.2 or later.
 3. CouchDB 2.0.0 or later.
 4. Network Connectivity to your CouchDB server.

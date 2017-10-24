@@ -10,10 +10,12 @@ param(
     [String] $couchDbAdminUsername,
     
     [Parameter(Mandatory=$True)]
-    [String[]] $databaseNames
+    [String[]] $databaseNames,
+
+    [switch]$skipEncryption
 )
 
-Import-Module -Name .\couchdb-utilities.psm1 -Force
+Import-Module -Name .\utilities.psm1 -Force
 
 $encryptedPasswordFile = Get-EncryptedPasswordFile $couchDbAdminUsername
 if(!(Test-Path $encryptedPasswordFile)){
@@ -31,6 +33,10 @@ $couchDbUrl = Get-CouchDbUrl $couchDbHost $couchDbPort $couchDbAdminUsername $pa
 foreach($databaseName in $databaseNames)
 {
     $dateSuffix = Get-Date -Format yyyyMMddHHmmss
-    $backupFile = $databaseName + "_encrypted_" + $dateSuffix +".db"
-    couchbackup --url $couchDbUrl --db $databaseName | ConvertTo-SecureString -AsPlainText -Force | ConvertFrom-SecureString > $backupFile
+    $backupFile = $databaseName + "_" + $dateSuffix +".db"
+    if($skipEncryption){
+        couchbackup --url $couchDbUrl --db $databaseName > $backupFile
+    }else{
+        couchbackup --url $couchDbUrl --db $databaseName | ConvertTo-SecureString -AsPlainText -Force | ConvertFrom-SecureString > $backupFile
+    }
 }

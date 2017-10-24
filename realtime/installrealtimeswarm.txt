@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-echo "Version 1.087"
+echo "Version 1.088"
 
 #
 # This script is meant for quick & easy install via:
@@ -81,27 +81,23 @@ docker volume rm rabbitmqcertstore || echo 'volume rabbitmqcertstore does not ex
 # if there is no existing volume then ask for passwords
 if [ -z "$hasexistingvolume" ]; then
 	if [ -z "$myhostname" ]; then
-		echo "Please type in hostname to use for SSL certificate:"
-		read -e myhostname < /dev/tty
+		read -p "Please type in hostname to use for SSL certificate: " myhostname < /dev/tty
 	fi
 
-	echo "Please type in password to use for client certificate:"
-	read -e CertPassword < /dev/tty
+	read -p "Please type in password to use for client certificate: " CertPassword < /dev/tty
+	echo "Password:"$CertPassword
 	docker secret rm CertPassword || echo ""
 	echo $CertPassword | docker secret create CertPassword -
 
-	echo "Please type in password to use with admin user for RabbitMq Admin UI:"
-	read -e RabbitMqMgmtUiPassword < /dev/tty
+	read -p "Please type in password to use with admin user for RabbitMq Admin UI:" RabbitMqMgmtUiPassword < /dev/tty
 	docker secret rm RabbitMqMgmtUiPassword || echo ""
 	echo $RabbitMqMgmtUiPassword | docker secret create RabbitMqMgmtUiPassword -
 
-	echo "Please type in password to use for MySql account (mirthuser):"
-	read -e MySQLPassword < /dev/tty
+	read -p "Please type in password to use for MySql account (mirthuser):" MySQLPassword < /dev/tty
 	docker secret rm MySQLPassword || echo ""
 	echo $MySQLPassword | docker secret create MySQLPassword -
 
-	echo "Please type in password to use root MySql account:"
-	read -e MySQLRootPassword < /dev/tty
+	read -p "Please type in password to use root MySql account:" MySQLRootPassword < /dev/tty
 	docker secret rm MySQLRootPassword || echo ""
 	echo $MySQLRootPassword | docker secret create MySQLRootPassword  -
 fi

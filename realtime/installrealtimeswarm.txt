@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-echo "Version 1.093"
+echo "Version 1.094"
 
 #
 # This script is meant for quick & easy install via:
@@ -22,7 +22,7 @@ echo "This script sets up the Fabric.Realtime cluster on Docker"
 echo "----------------------------------------------------"
 
 # if wait-for-it is not installed then install it
-if [ ! -f "/usr/local/bin/wait-for-it" ]
+if [[ ! -f "/usr/local/bin/wait-for-it" ]]
 then
 	sudo yum -y install which dos2unix
 	curl -sSL -o /tmp/wait-for-it.sh https://healthcatalyst.github.io/InstallScripts/wait-for-it.sh \
@@ -193,6 +193,7 @@ sleep 15s;
 echo "creating mysql service"
 #  from https://hub.docker.com/_/mariadb/
 docker service create --name mysqlserver \
+	--secret MySQLPassword \
 	--env MYSQL_ROOT_PASSWORD=$MySQLRootPassword \
 	--env MYSQL_DATABASE=mirthdb \
 	--env MYSQL_USER=$MySQLUser \

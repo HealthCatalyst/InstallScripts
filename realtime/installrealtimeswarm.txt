@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-echo "Version 1.083"
+echo "Version 1.084"
 
 #
 # This script is meant for quick & easy install via:
@@ -34,6 +34,8 @@ docker volume inspect --format '{{ .Mountpoint }}' fabriccertificatestore 2> /de
 hasexistingmysqldata=""
 docker volume inspect --format '{{ .Mountpoint }}' mysqlstore 2> /dev/null && hasexistingmysqldata="yes" || echo "No existing volume for mysqlstore found"
 
+hasexistingrabbitmqdata=""
+docker volume inspect --format '{{ .Mountpoint }}' rabbitmqstore 2> /dev/null && hasexistingrabbitmqdata="yes" || echo "No existing volume for rabbitmqstore found"
 
 deleteOldSSLCertificates=""
 

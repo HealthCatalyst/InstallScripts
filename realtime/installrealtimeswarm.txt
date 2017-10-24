@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-echo "Version 1.084"
+echo "Version 1.085"
 
 #
 # This script is meant for quick & easy install via:
@@ -182,11 +182,14 @@ sleep 15s;
 # https://docs.docker.com/v1.10/swarm/scheduler/filter/
 
 echo "creating mysql service"
+#  from https://hub.docker.com/_/mariadb/
 docker service create --name mysqlserver \
-	--env MYSQL_ROOT_PASSWORD=$MySQLRootPassword \
+	--secret source=MySQLRootPassword \
+	--secret source=MySQLPassword \
+	--env MYSQL_ROOT_PASSWORD_FILE=/run/secrets/MySQLRootPassword \
 	--env MYSQL_DATABASE=mirthdb \
 	--env MYSQL_USER=$MySQLUser \
-	--env MYSQL_PASSWORD=$MySQLPassword \
+	--env MYSQL_PASSWORD_FILE=/run/secrets/MySQLPassword \
   	--mount src=mysqlstore,dst=/var/lib/mysql \
 	--replicas 1 \
 	--network realtimenet \

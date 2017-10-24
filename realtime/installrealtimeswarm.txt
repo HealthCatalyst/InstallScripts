@@ -65,19 +65,19 @@ if [ -z "$hasexistingvolume" ]; then
 
 	echo "Please type in password to use for client certificate:"
 	read -e CertPassword < /dev/tty
-	docker secret create CertPassword $CertPassword
+	echo $CertPassword | docker secret create CertPassword -
 
 	echo "Please type in password to use with admin user for RabbitMq Admin UI:"
 	read -e RabbitMqMgmtUiPassword < /dev/tty
-	docker secret create RabbitMqMgmtUiPassword $RabbitMqMgmtUiPassword
+	echo $RabbitMqMgmtUiPassword | docker secret create RabbitMqMgmtUiPassword -
 
 	echo "Please type in password to use for MySql account (mirthuser):"
 	read -e MySQLPassword < /dev/tty
-	docker secret create MySQLPassword $MySQLPassword
+	echo $MySQLPassword | docker secret create MySQLPassword -
 
 	echo "Please type in password to use root MySql account:"
 	read -e MySQLRootPassword < /dev/tty
-	docker secret create MySQLRootPassword $MySQLRootPassword
+	echo $MySQLRootPassword | docker secret create MySQLRootPassword  -
 fi
 
 echo "Using host:"$myhostname

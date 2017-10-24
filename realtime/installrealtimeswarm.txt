@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-echo "Version 1.079"
+echo "Version 1.08"
 
 #
 # This script is meant for quick & easy install via:
@@ -202,9 +202,11 @@ sleep 5s;
 echo "testing rabbitmq one more time"
 wait-for-it $myhostname:5671 -t 60 || docker service logs rabbitmq
 
-
-echo "you can download the client certificate from this url"
-echo "http://$myhostname:8081/client/fabric_client_cert.p12"
-
 echo "if you want, you can download the CA (Certificate Authority) cert from this url"
 echo "http://$myhostname:8081/client/fabric_ca_cert.p12"
+
+echo "-------------------------------"
+echo "you can download the client certificate from this url:"
+echo "http://$myhostname:8081/client/fabricrabbitmquser_client_cert.p12"
+echo "-------------------------------"
+

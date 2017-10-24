@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-echo "Version 1.082"
+echo "Version 1.083"
 
 #
 # This script is meant for quick & easy install via:
@@ -29,10 +29,10 @@ fi
 
 # see if we already have a cert store created
 hasexistingvolume=""
-docker volume inspect --format '{{ .Mountpoint }}' fabriccertificatestore 2> /dev/null && hasexistingvolume="yes" || echo "No existing volume found"
+docker volume inspect --format '{{ .Mountpoint }}' fabriccertificatestore 2> /dev/null && hasexistingvolume="yes" || echo "No existing volume for fabriccertificatestore found"
 
 hasexistingmysqldata=""
-docker volume inspect --format '{{ .Mountpoint }}' mysqlstore 2> /dev/null && hasexistingmysqldata="yes" || echo "No existing volume found"
+docker volume inspect --format '{{ .Mountpoint }}' mysqlstore 2> /dev/null && hasexistingmysqldata="yes" || echo "No existing volume for mysqlstore found"
 
 
 deleteOldSSLCertificates=""
@@ -102,6 +102,8 @@ if [ ! -z "$deleteOldSSLCertificates" ]; then
 	docker volume rm fabriccertificatestore || echo 'volume fabriccertificatestore does not exist'
 
 	docker volume rm mysqlstore || echo 'volume mysqlstore does not exist'
+
+	docker volume rm rabbitmqstore || echo 'volume rabbitmqstore does not exist'
 fi
 
 # create the volume to store certificates
@@ -110,6 +112,8 @@ docker volume create fabriccertificatestore || echo 'volume fabriccertificatesto
 # create the volume for mysql data
 docker volume create mysqlstore || echo 'volume mysqlstore already exists'
 
+# create the volume for rabbitmq data
+docker volume create rabbitmqstore || echo 'volume rabbitmqstore already exists'
 
 echo "existing services"
 docker service ls
@@ -151,6 +155,7 @@ docker service create --name rabbitmq \
 	--env CERT_PASSWORD=$CertPassword \
 	--env RABBITMQ_MGMT_UI_PASSWORD=$RabbitMqMgmtUiPassword \
   	--mount src=fabriccertificatestore,dst=/opt/healthcatalyst/ \
+  	--mount src=rabbitmqstore,dst=/var/lib/rabbitmq/ \
 	--replicas 1 \
 	--constraint "node.role == manager" \
 	--network realtimenet \

@@ -17,6 +17,10 @@ RabbitMqMgmtUiPassword=""
 MySQLPassword=""
 MySQLRootPassword=""
 
+echo "---------------------------------------------------"
+echo "This script sets up the Fabric.Realtime cluster on Docker"
+echo "----------------------------------------------------"
+
 # if wait-for-it is not installed then install it
 if [ ! -f "/usr/local/bin/wait-for-it" ]
 then

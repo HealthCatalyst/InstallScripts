@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-echo "Version 1.10"
+echo "Version 1.11"
 
 #
 # This script is meant for quick & easy install via:
@@ -102,28 +102,27 @@ fi
 if [ ! -z "$deleteOldSSLCertificates" ]; then
   	echo "Deleting old SSL certificates"
 
-	rm -r "$fabriccertificatestore"
+	sudo rm -r "$fabriccertificatestore"
 
-	rm -r "$mysqlstore"
+	sudo rm -r "$mysqlstore"
 
-	rm -r "$rabbitmqstore"
+	sudo rm -r "$rabbitmqstore"
 fi
 
 # create the volume to store certificates
-mkdir -p "$fabriccertificatestore"
+sudo mkdir -p "$fabriccertificatestore"
 
 # create the volume for mysql data
-mkdir -p "$mysqlstore"
+sudo mkdir -p "$mysqlstore"
 
 # create the volume for rabbitmq data
-mkdir -p "$rabbitmqstore"
+sudo mkdir -p "$rabbitmqstore"
 
 echo "existing services"
 docker service ls
 
 echo "Existing secrets"
 docker secret ls
-
 
 echo "creating realtimenet network"
 docker network create \

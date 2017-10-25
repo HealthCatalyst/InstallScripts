@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-echo "Version 1.0951"
+echo "Version 1.10"
 
 #
 # This script is meant for quick & easy install via:
@@ -33,18 +33,15 @@ fi
 
 # see if we already have a cert store created
 hasexistingvolume=""
-docker volume inspect --format '{{ .Mountpoint }}' fabriccertificatestore 2> /dev/null && hasexistingvolume="yes" || echo "No existing volume for fabriccertificatestore found"
 
-hasexistingmysqldata=""
-docker volume inspect --format '{{ .Mountpoint }}' mysqlstore 2> /dev/null && hasexistingmysqldata="yes" || echo "No existing volume for mysqlstore found"
-
-hasexistingrabbitmqdata=""
-docker volume inspect --format '{{ .Mountpoint }}' rabbitmqstore 2> /dev/null && hasexistingrabbitmqdata="yes" || echo "No existing volume for rabbitmqstore found"
+fabriccertificatestore="/mnt/hcshared/certs"
+mysqlstore="/mnt/hcshared/mysql"
+rabbitmqstore="/mnt/hcshared/rabbitmq"
 
 deleteOldSSLCertificates=""
 
 # if there is an existing volume then ask if user wants to delete it
-if [ ! -z "$hasexistingvolume" ]; then
+if [ -d "$fabriccertificatestore" ]; then
 	while true; do
 		read -e -p "Do you wish to delete any existing SSL certificates (this will break anyone using current client certificates)?" yn < /dev/tty
 		case $yn in
@@ -74,9 +71,6 @@ docker network rm realtimenet || echo "realtimenet is not already present"
 
 echo "sleeping to let network be removed"
 sleep 15s;
-
-docker volume rm rabbitmqcertstore || echo 'volume rabbitmqcertstore does not exist'
-
 
 # if there is no existing volume then ask for passwords
 if [ -z "$hasexistingvolume" ]; then
@@ -108,21 +102,21 @@ fi
 if [ ! -z "$deleteOldSSLCertificates" ]; then
   	echo "Deleting old SSL certificates"
 
-	docker volume rm fabriccertificatestore || echo 'volume fabriccertificatestore does not exist'
+	rm -r "$fabriccertificatestore"
 
-	docker volume rm mysqlstore || echo 'volume mysqlstore does not exist'
+	rm -r "$mysqlstore"
 
-	docker volume rm rabbitmqstore || echo 'volume rabbitmqstore does not exist'
+	rm -r "$rabbitmqstore"
 fi
 
 # create the volume to store certificates
-docker volume create fabriccertificatestore || echo 'volume fabriccertificatestore already exists'
+mkdir -p "$fabriccertificatestore"
 
 # create the volume for mysql data
-docker volume create mysqlstore || echo 'volume mysqlstore already exists'
+mkdir -p "$mysqlstore"
 
 # create the volume for rabbitmq data
-docker volume create rabbitmqstore || echo 'volume rabbitmqstore already exists'
+mkdir -p "$rabbitmqstore"
 
 echo "existing services"
 docker service ls
@@ -149,7 +143,7 @@ docker service create --name certificateserver \
 	--env CERT_HOSTNAME=$myhostname \
 	--env CERT_PASSWORD=$CertPassword \
 	-p 8081:3000 \
-  	--mount src=fabriccertificatestore,dst=/opt/healthcatalyst/ \
+  	--mount src=$fabriccertificatestore,dst=/opt/healthcatalyst/ \
 	--constraint "node.role == manager" \
 	--network realtimenet \
 	--detach=false \
@@ -169,8 +163,8 @@ docker service create --name rabbitmq \
 	--env CERT_HOSTNAME=$myhostname \
 	--env CERT_PASSWORD=$CertPassword \
 	--env RABBITMQ_MGMT_UI_PASSWORD=$RabbitMqMgmtUiPassword \
-  	--mount src=fabriccertificatestore,dst=/opt/healthcatalyst/ \
-  	--mount src=rabbitmqstore,dst=/var/lib/rabbitmq/ \
+  	--mount src=$fabriccertificatestore,dst=/opt/healthcatalyst/ \
+  	--mount src=$rabbitmqstore,dst=/var/lib/rabbitmq/ \
 	--replicas 1 \
 	--constraint "node.role == manager" \
 	--network realtimenet \
@@ -198,7 +192,7 @@ docker service create --name mysqlserver \
 	--env MYSQL_DATABASE=mirthdb \
 	--env MYSQL_USER=$MySQLUser \
 	--env MYSQL_PASSWORD_FILE="/run/secrets/MySQLPassword" \
-  	--mount src=mysqlstore,dst=/var/lib/mysql \
+  	--mount src=$mysqlstore,dst=/var/lib/mysql \
 	--replicas 1 \
 	--network realtimenet \
     -p 3306:3306 \

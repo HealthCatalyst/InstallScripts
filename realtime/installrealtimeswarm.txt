@@ -2,7 +2,7 @@
 set -e
 # set -x
 
-echo "Version 1.172"
+echo "Version 1.173"
 
 #
 # This script is meant for quick & easy install via:
@@ -15,7 +15,7 @@ MySQLUser="mirthuser"
 # these are set in the script below
 CertPassword=""
 RabbitMqMgmtUiPassword=""
-MySQLPassword="ilovemirth3"
+MySQLPassword=""
 MySQLRootPassword="myrootpassword"
 
 echo "---------------------------------------------------"
@@ -95,7 +95,7 @@ if [[ -z "$hasexistingvolume" ]]; then
 	docker secret rm RabbitMqMgmtUiPassword || echo ""
 	echo $RabbitMqMgmtUiPassword | docker secret create RabbitMqMgmtUiPassword -
 
-#	read -p "Please type in password to use for MySql account (mirthuser):" -e MySQLPassword < /dev/tty
+	read -p "Please type in password to use for MySql account (mirthuser):" -e MySQLPassword < /dev/tty
 	docker secret rm MySQLPassword || echo ""
 	echo $MySQLPassword | docker secret create MySQLPassword -
 
@@ -166,10 +166,10 @@ echo "creating rabbitmq service"
 # 15672 = SSL port for Management Web UI
 
 docker service create --name rabbitmq \
+	--secret RabbitMqMgmtUiPassword \
 	--env CERT_HOSTNAME=$myhostname \
-	--env CERT_PASSWORD=$CertPassword \
-	--env RABBITMQ_MGMT_UI_PASSWORD=$RabbitMqMgmtUiPassword \
-  	--mount type=bind,src=$fabriccertificatestore,dst=/opt/healthcatalyst/ \
+	--env RABBITMQ_MGMT_UI_PASSWORD_FILE="/run/secrets/RabbitMqMgmtUiPassword" \
+	--mount type=bind,src=$fabriccertificatestore,dst=/opt/healthcatalyst/ \
 	--replicas 1 \
 	--constraint "node.role == manager" \
 	--network realtimenet \

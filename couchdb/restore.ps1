@@ -41,8 +41,10 @@ $password = Get-DecryptedFileContent $encryptedPasswordFile
 $couchDbUrl = Get-CouchDbUrl $couchDbHost $couchDbPort $couchDbAdminUsername $password
 
 if($skipDecryption){
-    $content = Get-Content $backupFile
+    Get-Content $backupFile | couchrestore --url $couchDbUrl --db $databaseToRestore
 }else{
-    $content = Get-DecryptedFileContent $backupFile
+    Invoke-DecryptFile $backupFile $password
+    $decryptedFile = $backupFile.Replace(".aes", "")
+    Get-Content $decryptedFile | couchrestore --url $couchDbUrl --db $databaseToRestore
+    Remove-Item -Path $decryptedFile
 }
-$content | couchrestore --url $couchDbUrl --db $databaseToRestore

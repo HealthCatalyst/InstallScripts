@@ -2,7 +2,7 @@
 set -e
 set -x
 
-echo "Version 1.16"
+echo "Version 1.17"
 
 #
 # This script is meant for quick & easy install via:
@@ -88,7 +88,6 @@ if [[ -z "$hasexistingvolume" ]]; then
 	fi
 
 	read -p "Please type in password to use for client certificate: " CertPassword < /dev/tty
-	echo "Password:"$CertPassword
 	docker secret rm CertPassword || echo ""
 	echo $CertPassword | docker secret create CertPassword -
 
@@ -98,12 +97,10 @@ if [[ -z "$hasexistingvolume" ]]; then
 
 #	read -p "Please type in password to use for MySql account (mirthuser):" -e MySQLPassword < /dev/tty
 	docker secret rm MySQLPassword || echo ""
-	echo "Password:[$MySQLPassword]"
 	echo $MySQLPassword | docker secret create MySQLPassword -
 
 #	read -p "Please type in password to use root MySql account:" MySQLRootPassword < /dev/tty
 #	docker secret rm MySQLRootPassword || echo ""
-#	echo "Password:"$MySQLRootPassword
 #	echo $MySQLRootPassword | docker secret create MySQLRootPassword  -
 fi
 
@@ -151,11 +148,11 @@ docker service create --name certificateserver \
 	--env CERT_HOSTNAME=$myhostname \
 	--env CERT_PASSWORD=$CertPassword \
 	-p 8081:3000 \
-  	--mount type=bind,src=$fabriccertificatestore,dst=/opt/healthcatalyst/ \
+  	--mount type=bind,src=$fabriccertificatestore,dst=/opt/certs/ \
 	--constraint "node.role == manager" \
 	--restart-max-attempts=2 \
 	--network realtimenet \
-	--detach=true \
+	--detach=false \
 healthcatalyst/fabric.certificateserver
 
 echo "waiting for certificateserver to come up"

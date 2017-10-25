@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-echo "Version 1.04"
+echo "Version 1.05"
 
 #
 # This script is meant for quick & easy install via:
@@ -33,3 +33,5 @@ curl -sSL https://healthcatalyst.github.io/InstallScripts/docker/createglusterfs
 myip=$(hostname)
 
 sudo mount -t glusterfs $myip:/hcshared /mnt/hcshared
+
+echo "Hello from $myip" | sudo tee -a /mnt/hcshared/test.txt

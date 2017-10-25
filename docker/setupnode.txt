@@ -7,13 +7,6 @@ echo "Version 1.06"
 # This script is meant for quick & easy install via:
 #   curl -sSL https://healthcatalyst.github.io/InstallScripts/docker/setupnode.txt | sh -s
 
-swarmmanager=$(docker info --format '{{index .Swarm.RemoteManagers 0 }}' | awk -F':' '{print $1}' | awk -F ' ' '{print $2}')
-
-if [[ -z "$swarmmanager" ]]; then
-    echo "Must pass IP of swarm manager as a parameter"
-    exit 1
-fi
-
 curl -L https://healthcatalyst.github.io/InstallScripts/docker/swarm_bash.txt >/tmp/swarm_bash.sh \
     && chmod +x /tmp/swarm_bash.sh \
     && sudo cp /tmp/swarm_bash.sh /usr/local/bin/swarm_bash.sh
@@ -21,13 +14,12 @@ curl -L https://healthcatalyst.github.io/InstallScripts/docker/swarm_bash.txt >/
 curl -sSL https://healthcatalyst.github.io/InstallScripts/docker/installglusterfs.txt | sh -s 
 
 # join the gluster
-sudo gluster peer probe "$swarmmanager"
+
+read -p "Hit enter after you've finished setting up the master" -e foo < /dev/tty
 
 sudo gluster peer status
 
-read -p "Hit enter after you've set up the master" -e foo < /dev/tty
-
-myip=$(ip -4 addr show eth0 | grep -oP '(?<=inet\s)\d+(\.\d+){3}')
+myip=$(hostname)
 
 sudo mount -t glusterfs $myip:/hcshared /mnt/hcshared
 

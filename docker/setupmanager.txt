@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-echo "Version 1.03"
+echo "Version 1.04"
 
 #
 # This script is meant for quick & easy install via:
@@ -30,6 +30,6 @@ read -p "Hit enter after you've set up the nodes: " -e foo < /dev/tty
 echo "creating a glusterfs volume"
 curl -sSL https://healthcatalyst.github.io/InstallScripts/docker/createglusterfsvolume.txt | sh -s
 
-myip=$(ip -4 addr show eth0 | grep -oP '(?<=inet\s)\d+(\.\d+){3}')
+myip=$(hostname)
 
 sudo mount -t glusterfs $myip:/hcshared /mnt/hcshared

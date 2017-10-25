@@ -2,7 +2,7 @@
 set -e
 # set -x
 
-echo "Version 1.06"
+echo "Version 1.07"
 #
 # This script is meant for quick & easy install via:
 #   curl -sSL https://healthcatalyst.github.io/InstallScripts/docker/createglusterfsvolume.txt | sh -s 
@@ -17,6 +17,7 @@ while read -r line _; do
     linecount=$((linecount+1))
     echo "... $line ..."
     cmdText="$cmdText$line:/data/hcshared "
+    sudo gluster peer probe $cmdText
 done <<< "$glusternodes"
 
 echo "linecount=$linecount" 

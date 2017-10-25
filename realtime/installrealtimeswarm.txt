@@ -2,7 +2,7 @@
 set -e
 set -x
 
-echo "Version 1.17"
+echo "Version 1.171"
 
 #
 # This script is meant for quick & easy install via:
@@ -169,8 +169,9 @@ docker service create --name rabbitmq \
 	--env CERT_HOSTNAME=$myhostname \
 	--env CERT_PASSWORD=$CertPassword \
 	--env RABBITMQ_MGMT_UI_PASSWORD=$RabbitMqMgmtUiPassword \
+	--env RABBITMQ_MNESIA_BASE=/opt/rabbitmq \
   	--mount type=bind,src=$fabriccertificatestore,dst=/opt/healthcatalyst/ \
-  	--mount type=bind,src=$rabbitmqstore,dst=/var/lib/rabbitmq/ \
+  	--mount type=bind,src=$rabbitmqstore,dst=/opt/rabbitmq \
 	--replicas 1 \
 	--constraint "node.role == manager" \
 	--network realtimenet \

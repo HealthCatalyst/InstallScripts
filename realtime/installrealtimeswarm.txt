@@ -2,11 +2,11 @@
 set -e
 # set -x
 
-echo "Version 1.173"
+echo "Version 1.174"
 
 #
 # This script is meant for quick & easy install via:
-#   curl -sSL https://healthcatalyst.github.io/InstallScripts/realtime/installrealtimeswarm.txt | sh -s
+#   curl -sSL https://healthcatalyst.github.io/InstallScripts/realtime/installrealtimeswarm.txt | sudo sh -s
 
 # Remember: no spaces allowed in variable set commands in bash
 myhostname="$1"
@@ -29,6 +29,7 @@ then
 	curl -sSL -o /tmp/wait-for-it.sh https://healthcatalyst.github.io/InstallScripts/wait-for-it.sh \
 		&& dos2unix /tmp/wait-for-it.sh \
 		&& chmod +x /tmp/wait-for-it.sh \
+		&& sudo cp /tmp/wait-for-it.sh /usr/bin/wait-for-it \
 		&& sudo cp /tmp/wait-for-it.sh /usr/local/bin/wait-for-it
 fi
 

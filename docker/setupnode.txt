@@ -1,8 +1,13 @@
 #!/bin/sh
 set -e
 
-echo "Version 1.02"
-swarmmanager="$1"
+echo "Version 1.05"
+
+#
+# This script is meant for quick & easy install via:
+#   curl -sSL https://healthcatalyst.github.io/InstallScripts/docker/setupnode.txt | sh -s
+
+swarmmanager=$(docker info --format '{{index .Swarm.RemoteManagers 0 }}' | awk -F':' '{print $1}' | awk -F ' ' '{print $2}')
 
 if [[ -z "$swarmmanager" ]]; then
     echo "Must pass IP of swarm manager as a parameter"

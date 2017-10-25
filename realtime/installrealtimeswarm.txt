@@ -2,7 +2,7 @@
 set -e
 set -x
 
-echo "Version 1.13"
+echo "Version 1.14"
 
 #
 # This script is meant for quick & easy install via:
@@ -58,8 +58,10 @@ if [[ -d "$fabriccertificatestore" ]]; then
 		esac
 	done
 
-	if [ ! -z "$deleteOldSSLCertificates" ]; then
+	if [[ ! -z "$deleteOldSSLCertificates" ]]; then
 		hasexistingvolume=""
+	else
+		hasexistingvolume="yes"
 	fi
 fi
 
@@ -80,8 +82,8 @@ echo "sleeping to let network be removed"
 sleep 15s;
 
 # if there is no existing volume then ask for passwords
-if [ -z "$hasexistingvolume" ]; then
-	if [ -z "$myhostname" ]; then
+if [[ -z "$hasexistingvolume" ]]; then
+	if [[ -z "$myhostname" ]]; then
 		read -p "Please type in hostname to use for SSL certificate: " myhostname < /dev/tty
 	fi
 

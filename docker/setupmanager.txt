@@ -1,11 +1,11 @@
 #!/bin/sh
 set -e
 
-echo "Version 1.01"
+echo "Version 1.02"
 
 #
 # This script is meant for quick & easy install via:
-#   'curl -sSL https://healthcatalyst.github.io/InstallScripts/docker/setupmanager.txt | sh -s <IP of this manager node>'
+#   curl -sSL https://healthcatalyst.github.io/InstallScripts/docker/setupmanager.txt | sh -s
 
 
 curl -L https://github.com/docker/machine/releases/download/v0.12.2/docker-machine-`uname -s`-`uname -m` >/tmp/docker-machine &&
@@ -16,7 +16,9 @@ curl -L https://healthcatalyst.github.io/InstallScripts/docker/swarm_bash.txt >/
     && chmod +x /tmp/swarm_bash.sh \
     && sudo cp /tmp/swarm_bash.sh /usr/local/bin/swarm_bash.sh
 
-docker swarm init --advertise-addr $1
+myip=$(ip -4 addr show eth0 | grep -oP '(?<=inet\s)\d+(\.\d+){3}')
+
+docker swarm init --advertise-addr $myip
 
 echo "installing glusterfs"
 curl -sSL https://healthcatalyst.github.io/InstallScripts/docker/installglusterfs.txt | sh -s 

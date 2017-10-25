@@ -1,8 +1,17 @@
 #!/bin/sh
 set -e
 
+echo "Version 1.02"
 swarmmanager="$1"
-echo "Version 1.01"
+
+if [[ -z "$swarmmanager" ]]; then
+    echo "Must pass IP of swarm manager as a parameter"
+    exit 1
+fi
+
+curl -L https://healthcatalyst.github.io/InstallScripts/docker/swarm_bash.txt >/tmp/swarm_bash.sh \
+    && chmod +x /tmp/swarm_bash.sh \
+    && sudo cp /tmp/swarm_bash.sh /usr/local/bin/swarm_bash.sh
 
 curl -sSL https://healthcatalyst.github.io/InstallScripts/docker/installglusterfs.txt | sh -s 
 

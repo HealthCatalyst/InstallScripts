@@ -11,17 +11,17 @@ echo "Version 1.04"
 glusternodes=$(docker node ls --format '{{ .Hostname }}')
 
 cmdText=""
-count=0
+linecount=0
 
 while read -r line _; do
-    ((count++))
+    linecount=$((linecount+1))
     echo "... $line ..."
     cmdText="$cmdText $line:/data/hcshared"
 done <<< "$glusternodes"
 
-echo "count=$count" 
+echo "linecount=$linecount" 
 echo "cmdtext=$cmdText"
-sudo gluster volume create hcshared replica "$count" transport tcp "$cmdText" force
+sudo gluster volume create hcshared replica "$linecount" transport tcp "$cmdText" force
 
 # sudo gluster volume stop hcshared
 # sudo gluster volume delete hcshared

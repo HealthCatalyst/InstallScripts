@@ -1,0 +1,23 @@
+
+#!/bin/sh
+set -e
+#
+# This script is meant for quick & easy install via:
+#   curl -sSL https://healthcatalyst.github.io/InstallScripts/docker/joinswarm.txt | sh
+
+makeSwarmMaster=""
+
+read -e -p "Do you wish to make this machine the swarm master (otherwise it will join as a worker) ?" yn < /dev/tty
+case $yn in
+    [Yy]* ) makeSwarmMaster="yes"; break;;
+    [Nn]* ) break;;
+    * ) echo "Please answer yes or no.";;
+esac
+
+if [[ ! -z "$makeSwarmMaster" ]]; 
+then
+    curl -sSL https://healthcatalyst.github.io/InstallScripts/docker/setupmanager.txt | sh -s
+else
+    echo "first run the command to join docker swarm and then run the following command"
+    echo "curl -sSL https://healthcatalyst.github.io/InstallScripts/docker/setupnode.txt | sh -s"
+fi

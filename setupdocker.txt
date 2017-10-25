@@ -17,3 +17,16 @@ sudo systemctl start docker
 docker run --rm hello-world
 
 echo "docker is setup now"
+
+doSetupSwarm=""
+
+read -e -p "Do you wish to setup docker swarm cluster now?" yn < /dev/tty
+case $yn in
+    [Yy]* ) doSetupSwarm="yes"; break;;
+    [Nn]* ) break;;
+    * ) echo "Please answer yes or no.";;
+esac
+
+if [[ ! -z "$doSetupSwarm" ]]; then
+    curl -sSL https://healthcatalyst.github.io/InstallScripts/docker/joinswarm.txt | sh
+fi

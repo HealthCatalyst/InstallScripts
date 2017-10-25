@@ -30,8 +30,6 @@ read -p "Hit enter after you've set up the nodes: " -e foo < /dev/tty
 echo "creating a glusterfs volume"
 curl -sSL https://healthcatalyst.github.io/InstallScripts/docker/createglusterfsvolume.txt | sh -s
 
-myip=$(hostname)
-
-sudo mount -t glusterfs $myip:/hcshared /mnt/hcshared
+curl -sSL https://healthcatalyst.github.io/InstallScripts/docker/mountglusterdrive.txt | sh -s 
 
 echo "Hello from $myip" | sudo tee -a /mnt/hcshared/test.txt

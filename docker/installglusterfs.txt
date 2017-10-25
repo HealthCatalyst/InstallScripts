@@ -13,15 +13,16 @@ sudo yum -y install centos-release-gluster312
 sudo yum -y install glusterfs gluster-cli glusterfs-libs glusterfs-server
 
 sudo systemctl start glusterd.service
+
+# set it to automatically start on system startup
+sudo systemctl enable glusterd.service
+
 sudo systemctl status glusterd.service
 sudo glusterfs --version
 
 sudo mkdir -p /data/hcshared
 sudo mkdir -p /mnt/hcshared
 
-# sudo mount -t glusterfs fabricrealtime1:/hcshared /mnt/hcshared
 
-# sudo echo "Hello from Server1" >> /mnt/hcshared/test.txt
-# echo 'Hello from Server 1' | sudo tee -a /mnt/hcshared/test.txt
 
 

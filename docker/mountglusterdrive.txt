@@ -1,0 +1,23 @@
+
+#!/bin/sh
+set -e
+
+echo "Version 1.01"
+
+#
+# This script is meant for quick & easy install via:
+#   curl -sSL https://healthcatalyst.github.io/InstallScripts/docker/mountglusterdrive.txt | sh -s 
+
+
+myip=$(hostname)
+
+sudo mount -t glusterfs $myip:/hcshared /mnt/hcshared
+
+# remove any existing entries
+grep -v "/mnt/hcshared" /etc/fstab | sudo tee /etc/fstab
+
+echo "$myip:hcshared /mnt/hcshared glusterfs defaults 0 0" | sudo tee -a /etc/fstab
+
+# echo "fabricrealtime1:hcshared /mnt/hcshared glusterfs defaults 0 0" | sudo tee -a /etc/fstab
+
+echo "Hello from $(hostname)" | sudo tee -a /mnt/hcshared/$(hostname).txt

@@ -8,7 +8,7 @@ set -e
 #
 #
 
-echo "Version 2017-07-10.2" 
+echo "Version 2017-10-24.1" 
 
 echo "Current OS"
 echo "$(cat /etc/*-release)"
@@ -62,7 +62,7 @@ if [ $u != "root" ]; then
     sudo usermod -aG docker $u
     echo "Logout and Login and run: curl -sSL https://healthcatalyst.github.io/InstallScripts/setupdocker.txt | sh"
     echo 0
+else
+    echo "Setting up docker"
+    curl -sSL https://healthcatalyst.github.io/InstallScripts/setupdocker.txt | sh
 fi
-
-echo "Setting up docker"
-curl -sSL https://healthcatalyst.github.io/InstallScripts/setupdocker.txt | sh

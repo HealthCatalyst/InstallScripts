@@ -1,7 +1,8 @@
 #!/bin/sh
 set -e
+set -x
 
-echo "Version 1.12"
+echo "Version 1.13"
 
 #
 # This script is meant for quick & easy install via:
@@ -34,14 +35,20 @@ fi
 # see if we already have a cert store created
 hasexistingvolume=""
 
-fabriccertificatestore="/mnt/hcshared/certs"
-mysqlstore="/mnt/hcshared/mysql"
-rabbitmqstore="/mnt/hcshared/rabbitmq"
+glustermount="/mnt/hcshared"
+fabriccertificatestore="$glustermount/certs"
+mysqlstore="$glustermount/mysql"
+rabbitmqstore="$glustermount/rabbitmq"
+
+if [[ ! -d "$glustermount" ]]; then
+	echo "$glustermount folder is not present.  Have you setup glusterfs per instructions?"
+	exit 1
+fi
 
 deleteOldSSLCertificates=""
 
 # if there is an existing volume then ask if user wants to delete it
-if [ -d "$fabriccertificatestore" ]; then
+if [[ -d "$fabriccertificatestore" ]]; then
 	while true; do
 		read -e -p "Do you wish to delete any existing SSL certificates (this will break anyone using current client certificates)?" yn < /dev/tty
 		case $yn in

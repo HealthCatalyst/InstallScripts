@@ -9,7 +9,11 @@ echo "Version 1.01"
 
 # https://www.1and1.com/cloud-community/learn/containers/docker/using-gluster-for-a-distributed-docker-storage-volume/
 
+
 sudo yum -y install centos-release-gluster312
+
+sudo yum -y remove glusterfs gluster-cli glusterfs-libs glusterfs-server
+
 sudo yum -y install glusterfs gluster-cli glusterfs-libs glusterfs-server
 
 sudo systemctl start glusterd.service

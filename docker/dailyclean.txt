@@ -1,0 +1,8 @@
+#!/bin/bash
+# curl -sSL https://healthcatalyst.github.io/InstallScripts/docker/dailyclean.txt | sh
+
+echo "Version 1.41"
+
+docker system prune
+
+

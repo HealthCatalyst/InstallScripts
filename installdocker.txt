@@ -53,6 +53,8 @@ sudo yum-config-manager \
 # update yum package index
 sudo yum makecache fast
 
+sudo yum -y remove glusterfs gluster-cli glusterfs-libs glusterfs-server
+
 sudo yum -y install docker-ce
 
 # curl -fsSL https://get.docker.com/ | sh

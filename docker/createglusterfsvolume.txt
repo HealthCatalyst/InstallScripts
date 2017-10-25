@@ -16,7 +16,7 @@ i=0
 while read -r line; do
     echo "... $line ..."
     cmdText="$cmdText $line:/data/hcshared"
-    i=i+1
+    ((i++))
 done <<< "$glusternodes"
 
 echo sudo gluster volume create hcshared replica "$i" transport tcp "$cmdText" force

@@ -19,9 +19,9 @@ sudo glusterfs --version
 sudo mkdir -p /data/hcshared
 sudo mkdir -p /mnt/hcshared
 
-sudo mount -t glusterfs fabricrealtime1:/hcshared /mnt/hcshared
+# sudo mount -t glusterfs fabricrealtime1:/hcshared /mnt/hcshared
 
-sudo echo "Hello from Server1" >> /mnt/hcshared/test.txt
-echo 'Hello from Server 1' | sudo tee -a /mnt/hcshared/test.txt
+# sudo echo "Hello from Server1" >> /mnt/hcshared/test.txt
+# echo 'Hello from Server 1' | sudo tee -a /mnt/hcshared/test.txt
 
 

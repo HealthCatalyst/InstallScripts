@@ -1,0 +1,19 @@
+#!/bin/sh
+set -e
+
+swarmmanager="$1"
+echo "Version 1.01"
+
+curl -sSL https://healthcatalyst.github.io/InstallScripts/docker/installglusterfs.txt | sh -s 
+
+# join the gluster
+sudo gluster peer probe "$swarmmanager"
+
+sudo gluster peer status
+
+read -p "Hit enter after you've set up the master" -e foo < /dev/tty
+
+myip=$(ip -4 addr show eth0 | grep -oP '(?<=inet\s)\d+(\.\d+){3}')
+
+sudo mount -t glusterfs $myip:/hcshared /mnt/hcshared
+

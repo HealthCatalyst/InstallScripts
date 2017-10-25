@@ -1,12 +1,11 @@
 #!/bin/sh
 set -e
-set -x
+# set -x
 
 echo "Version 1.06"
 #
 # This script is meant for quick & easy install via:
 #   curl -sSL https://healthcatalyst.github.io/InstallScripts/docker/createglusterfsvolume.txt | sh -s 
-
 
 # get a list of all the nodes in this swarm
 glusternodes=$(docker node ls --format '{{ .Hostname }}')

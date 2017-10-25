@@ -62,7 +62,7 @@ if [ $u != "root" ]; then
     sudo usermod -aG docker $u
     # reload permissions without requiring a logout
     # from https://superuser.com/questions/272061/reload-a-linux-users-group-assignments-without-logging-out
-    exec su -l $USER
+    su -l $USER
     curl -sSL https://healthcatalyst.github.io/InstallScripts/setupdocker.txt | sh
     echo 0
 else

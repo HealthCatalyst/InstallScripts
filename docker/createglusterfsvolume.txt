@@ -20,6 +20,9 @@ while read -r line _; do
     sudo gluster peer probe $line
 done <<< "$glusternodes"
 
+# wait for nodes to get to ready
+sleep 10s;
+
 echo "linecount=$linecount" 
 echo "cmdtext2=$cmdText"
 sudo gluster volume create hcshared replica "$linecount" transport tcp $cmdText force

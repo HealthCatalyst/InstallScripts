@@ -1,10 +1,11 @@
 #!/bin/sh
 set -e
 
+swarmmanager="$1"
 echo "Version 1.01"
 
 # join the gluster
-sudo gluster peer probe $1
+sudo gluster peer probe "$swarmmanager"
 
 sudo gluster peer status
 

@@ -2,7 +2,7 @@
 set -e
 set -x
 
-echo "Version 1.15"
+echo "Version 1.16"
 
 #
 # This script is meant for quick & easy install via:
@@ -153,7 +153,7 @@ docker service create --name certificateserver \
 	-p 8081:3000 \
   	--mount type=bind,src=$fabriccertificatestore,dst=/opt/healthcatalyst/ \
 	--constraint "node.role == manager" \
-	--restart-max-attempts=2
+	--restart-max-attempts=2 \
 	--network realtimenet \
 	--detach=true \
 healthcatalyst/fabric.certificateserver

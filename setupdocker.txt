@@ -18,6 +18,10 @@ docker run --rm hello-world
 
 echo "docker is setup now"
 
+# echo "setting up a cleanup job"
+# echo "0 2 * * * /bin/sh backup.sh" | sudo tee -a /etc/cron.d/docker_cleanup
+
+
 doSetupSwarm=""
 
 read -e -p "Do you wish to setup docker swarm cluster now?" yn < /dev/tty

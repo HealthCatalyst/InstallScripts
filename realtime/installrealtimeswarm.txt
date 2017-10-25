@@ -169,7 +169,9 @@ docker service create --name rabbitmq \
 	--secret RabbitMqMgmtUiPassword \
 	--env CERT_HOSTNAME=$myhostname \
 	--env RABBITMQ_MGMT_UI_PASSWORD_FILE="/run/secrets/RabbitMqMgmtUiPassword" \
+	--env RABBITMQ_MNESIA_BASE=/opt/rabbitmq \
 	--mount type=bind,src=$fabriccertificatestore,dst=/opt/healthcatalyst/ \
+  	--mount type=bind,src=$rabbitmqstore,dst=/opt/rabbitmq \
 	--replicas 1 \
 	--constraint "node.role == manager" \
 	--network realtimenet \

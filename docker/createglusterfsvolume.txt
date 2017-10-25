@@ -1,0 +1,31 @@
+#!/bin/sh
+set -e
+
+echo "Version 1.01"
+#
+# This script is meant for quick & easy install via:
+#   curl -sSL https://healthcatalyst.github.io/InstallScripts/docker/createglusterfsvolume.txt | sh -s 
+
+
+# get a list of all the nodes in this swarm
+glusternodes=$(docker node ls --format '{{ .Hostname }}')
+
+cmdText=""
+i=0
+
+while read -r line; do
+    echo "... $line ..."
+    cmdText="$cmdText $line:/data/hcshared"
+    i=i+1
+done <<< "$glusternodes"
+
+sudo gluster volume create hcshared replica "$i" transport tcp "$cmdText" force
+
+# sudo gluster volume stop hcshared
+# sudo gluster volume delete hcshared
+
+sudo gluster volume start hcshared
+
+sudo gluster volume info
+
+

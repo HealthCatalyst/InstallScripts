@@ -1,0 +1,12 @@
+#!/bin/sh
+set -e
+
+echo "Version 1.01"
+
+# join the gluster
+sudo gluster peer probe $1
+
+sudo gluster peer status
+
+sudo mount -t glusterfs fabricrealtime2:/hcshared /mnt/hcshared
+

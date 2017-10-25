@@ -1,0 +1,27 @@
+#!/bin/sh
+set -e
+
+echo "Version 1.01"
+
+#
+# This script is meant for quick & easy install via:
+#   curl -sSL https://healthcatalyst.github.io/InstallScripts/docker/installglusterfs.txt | sh -s 
+
+# https://www.1and1.com/cloud-community/learn/containers/docker/using-gluster-for-a-distributed-docker-storage-volume/
+
+sudo yum -y install centos-release-gluster312
+sudo yum -y install glusterfs gluster-cli glusterfs-libs glusterfs-server
+
+sudo systemctl start glusterd.service
+sudo systemctl status glusterd.service
+sudo glusterfs --version
+
+sudo mkdir -p /data/hcshared
+sudo mkdir -p /mnt/hcshared
+
+sudo mount -t glusterfs fabricrealtime1:/hcshared /mnt/hcshared
+
+sudo echo "Hello from Server1" >> /mnt/hcshared/test.txt
+echo 'Hello from Server 1' | sudo tee -a /mnt/hcshared/test.txt
+
+

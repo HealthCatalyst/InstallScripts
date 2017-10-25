@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-echo "Version 1.03"
+echo "Version 1.04"
 #
 # This script is meant for quick & easy install via:
 #   curl -sSL https://healthcatalyst.github.io/InstallScripts/docker/createglusterfsvolume.txt | sh -s 
@@ -13,7 +13,7 @@ glusternodes=$(docker node ls --format '{{ .Hostname }}')
 cmdText=""
 count=0
 
-while read -r line; do
+while read -r line _; do
     ((count++))
     echo "... $line ..."
     cmdText="$cmdText $line:/data/hcshared"

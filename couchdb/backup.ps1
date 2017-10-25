@@ -12,6 +12,9 @@ param(
     [Parameter(Mandatory=$True)]
     [String[]] $databaseNames,
 
+    [Parameter(Mandatory=$True)]
+    [String] $backupDirectory,
+
     [switch]$skipEncryption
 )
 
@@ -33,10 +36,12 @@ $couchDbUrl = Get-CouchDbUrl $couchDbHost $couchDbPort $couchDbAdminUsername $pa
 foreach($databaseName in $databaseNames)
 {
     $dateSuffix = Get-Date -Format yyyyMMddHHmmss
-    $backupFile = $databaseName + "_" + $dateSuffix +".db"
-    if($skipEncryption){
-        couchbackup --url $couchDbUrl --db $databaseName > $backupFile
-    }else{
-        couchbackup --url $couchDbUrl --db $databaseName | ConvertTo-SecureString -AsPlainText -Force | ConvertFrom-SecureString > $backupFile
+    $backupFileName = $databaseName + "_" + $dateSuffix +".db"
+    $backupFilePath = [System.IO.Path]::Combine($backupDirectory, $backupFileName)
+    couchbackup --url $couchDbUrl --db $databaseName > $backupFilePath
+    
+    if(!$skipEncryption){
+        Invoke-EncryptFile $backupFilePath $password
+        Remove-Item -Path $backupFilePath
     }
 }

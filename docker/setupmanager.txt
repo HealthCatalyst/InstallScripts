@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-echo "Version 1.02"
+echo "Version 1.03"
 
 #
 # This script is meant for quick & easy install via:
@@ -20,10 +20,12 @@ myip=$(ip -4 addr show eth0 | grep -oP '(?<=inet\s)\d+(\.\d+){3}')
 
 docker swarm init --advertise-addr $myip
 
+read -p "Hit enter after you've joined all the nodes to this swarm: " -e foo < /dev/tty
+
 echo "installing glusterfs"
 curl -sSL https://healthcatalyst.github.io/InstallScripts/docker/installglusterfs.txt | sh -s 
 
-read -p "Hit enter after you've set up the nodes" -e foo < /dev/tty
+read -p "Hit enter after you've set up the nodes: " -e foo < /dev/tty
 
 echo "creating a glusterfs volume"
 curl -sSL https://healthcatalyst.github.io/InstallScripts/docker/createglusterfsvolume.txt | sh -s

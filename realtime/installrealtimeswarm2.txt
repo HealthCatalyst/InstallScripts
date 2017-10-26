@@ -2,7 +2,7 @@
 set -e
 # set -x
 
-echo "Version 1.182"
+echo "Version 1.183"
 
 #
 # This script is meant for quick & easy install via:
@@ -18,6 +18,14 @@ RabbitMqMgmtUiPassword=""
 MySQLPassword=""
 MySQLRootPassword=""
 
+# calculate a random number to force urls not be cached
+RANDOMNUMBER=$(cat /dev/urandom | tr -dc '0-9' | fold -w 256 | head -n 1 | sed -e 's/^0*//' | head --bytes 7)
+if [ "$RANDOMNUMBER" == "" ]; then
+  RANDOMNUMBER=0
+fi
+
+echo "Random Number:$RANDOMNUMBER"
+
 echo "---------------------------------------------------"
 echo "This script sets up the Fabric.Realtime cluster on Docker"
 echo "----------------------------------------------------"
@@ -26,7 +34,7 @@ echo "----------------------------------------------------"
 if [[ ! -f "/usr/local/bin/wait-for-it" ]]
 then
 	sudo yum -y install which dos2unix
-	curl -sSL -o /tmp/wait-for-it.sh https://healthcatalyst.github.io/InstallScripts/wait-for-it.sh \
+	curl -sSL -o /tmp/wait-for-it.sh https://healthcatalyst.github.io/InstallScripts/wait-for-it.sh?rand=$RANDOMNUMBER \
 		&& dos2unix /tmp/wait-for-it.sh \
 		&& chmod +x /tmp/wait-for-it.sh \
 		&& sudo cp /tmp/wait-for-it.sh /usr/bin/wait-for-it \
@@ -135,7 +143,7 @@ export SHARED_DRIVE_RABBITMQ=$rabbitmqstore
 export SHARED_DRIVE_MYSQL=$mysqlstore
 
 # use docker stacak deploy to start up all the services
-curl -sSL https://healthcatalyst.github.io/InstallScripts/realtime/realtime-stack.yml | docker stack deploy --compose-file - fabricrealtime
+curl -sSL https://healthcatalyst.github.io/InstallScripts/realtime/realtime-stack.yml?rand=$RANDOMNUMBER | docker stack deploy --compose-file - fabricrealtime
 
 
 echo "waiting for certificateserver to come up"

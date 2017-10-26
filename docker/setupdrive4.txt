@@ -1,0 +1,45 @@
+#!/bin/bash
+# curl -sSL https://healthcatalyst.github.io/InstallScripts/docker/setupdrive4.txt | sh
+
+echo "Version 1.41"
+set -x
+
+if [[ -z $(lsblk | grep -q sdf1) ]]; then
+echo "creating disk 4"
+sudo fdisk /dev/sdf <<EEOF
+d
+n
+p
+1
+
+
+w
+EEOF
+
+sudo mkfs -t ext4 /dev/sdf1
+else
+   echo "Disk 4 already exists";
+fi
+
+sudo mkdir -p /mnt/data4
+sudo mount /dev/sdf1 /mnt/data4
+
+uuidDisk2=$(sudo blkid $1 | grep "^/dev/sdf1:" | awk '{ print $2 }' | tr -d '"' | cut -c 6-)
+echo "UUID=" $uuidDisk2
+
+if [ -z "$uuidDisk2" ]; then
+  echo "UUID not found"
+  exit 1
+fi
+
+grep -v "/mnt/data4" /etc/fstab | sudo tee /etc/fstab
+
+echo "UUID=$uuidDisk2       /mnt/data4        ext4   defaults        0 0" | sudo tee -a /etc/fstab
+
+# sudo chgrp -R docker /mnt/data4/
+
+lsblk
+
+cat /etc/fstab
+
+set +x

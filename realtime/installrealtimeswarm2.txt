@@ -2,7 +2,7 @@
 set -e
 # set -x
 
-echo "Version 1.183"
+echo "Version 1.184"
 
 #
 # This script is meant for quick & easy install via:
@@ -162,8 +162,7 @@ echo "waiting for mysql to come up"
 echo "waiting for interfaceengine to come up"
 wait-for-it $myhostname:8080 -t 60 || docker service logs fabricrealtime_interfaceengine
 # wait-for-it $myhostname:8433 -t 60 || docker service logs fabricrealtime_interfaceengine
-wait-for-it $myhostname:6661 -t 60 || docker service logs fabricrealtime_interfaceengine
-sleep 5s;
+# wait-for-it $myhostname:6661 -t 60 || docker service logs fabricrealtime_interfaceengine
 
 echo "testing rabbitmq one more time"
 wait-for-it $myhostname:5671 -t 60 || docker service logs fabricrealtime_rabbitmq

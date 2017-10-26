@@ -2,7 +2,7 @@
 set -e
 # set -x
 
-echo "Version 1.180"
+echo "Version 1.182"
 
 #
 # This script is meant for quick & easy install via:
@@ -78,6 +78,7 @@ if [[ -z "$hasexistingvolume" ]]; then
 		read -p "Please type in hostname to use for SSL certificate: " myhostname < /dev/tty
 	fi
 
+
 	docker secret rm CertHostName || echo ""
 	echo $myhostname | docker secret create CertHostName -
 
@@ -93,9 +94,9 @@ if [[ -z "$hasexistingvolume" ]]; then
 	docker secret rm MySQLPassword || echo ""
 	echo $MySQLPassword | docker secret create MySQLPassword -
 
-#	read -p "Please type in password to use root MySql account:" MySQLRootPassword < /dev/tty
-#	docker secret rm MySQLRootPassword || echo ""
-#	echo $MySQLRootPassword | docker secret create MySQLRootPassword  -
+	read -p "Please type in password to use root MySql account:" MySQLRootPassword < /dev/tty
+	docker secret rm MySQLRootPassword || echo ""
+	echo $MySQLRootPassword | docker secret create MySQLRootPassword  -
 fi
 
 # delete the volume if it exists

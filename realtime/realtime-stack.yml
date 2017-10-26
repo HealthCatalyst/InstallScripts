@@ -96,3 +96,7 @@ secrets:
     external: true
   CertPassword:
     external: true
+  CertHostName:
+    external: true
+  MySQLRootPassword:
+    external: true

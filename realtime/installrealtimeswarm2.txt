@@ -139,9 +139,8 @@ export SHARED_DRIVE_CERTS=$fabriccertificatestore
 export SHARED_DRIVE_RABBITMQ=$rabbitmqstore
 export SHARED_DRIVE_MYSQL=$mysqlstore
 
-# docker-compose -f realtime-stack.yml up
-
-curl -sSL https://healthcatalyst.github.io/InstallScripts/realtime/installrealtimeswarm.txt | docker stack deploy --compose-file - fabricrealtime
+# use docker stacak deploy to start up all the services
+curl -sSL https://healthcatalyst.github.io/InstallScripts/realtime/realtime-stack.yml | docker stack deploy --compose-file - fabricrealtime
 
 echo "waiting for certificateserver to come up"
 wait-for-it $myhostname:8081 -t 60 || docker service logs certificateserver

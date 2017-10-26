@@ -2,7 +2,7 @@
 set -e
 # set -x
 
-echo "Version 1.178"
+echo "Version 1.179"
 
 #
 # This script is meant for quick & easy install via:
@@ -67,17 +67,7 @@ if [[ -d "$fabriccertificatestore" ]]; then
 fi
 
 # remove any existing running containers
-docker service rm interfaceengine || echo "interfaceengine is not already present"
-docker service rm mysqlserver || echo "certificateserver is not already present"
-docker service rm rabbitmq || echo "rabbitmq is not already present"
-docker service rm certificateserver || echo "certificateserver is not already present"
-docker service rm certdownloadserver || echo "certdownloadserver is not already present"
-
-echo "sleeping to let containers be removed"
-sleep 3s;
-
-# remove virtual network
-docker network rm realtimenet || echo "realtimenet is not already present"
+docker stack rm fabricrealtime
 
 echo "sleeping to let network be removed"
 sleep 15s;
@@ -145,25 +135,25 @@ curl -sSL https://healthcatalyst.github.io/InstallScripts/realtime/realtime-stac
 myhostname=${myhostname:-localhost}
 
 echo "waiting for certificateserver to come up"
-wait-for-it $myhostname:8081 -t 60 || docker service logs certificateserver
+wait-for-it $myhostname:8081 -t 60 || docker service logs fabricrealtime_certificateserver
 
 echo "waiting for rabbitmq to come up"
-wait-for-it $myhostname:5671 -t 60 || docker service logs rabbitmq
-wait-for-it $myhostname:15672 -t 60 || docker service logs rabbitmq
+wait-for-it $myhostname:5671 -t 60 || docker service logs fabricrealtime_rabbitmq
+wait-for-it $myhostname:15672 -t 60 || docker service logs fabricrealtime_rabbitmq
 
 #	--env MYSQL_ROOT_PASSWORD_FILE=/run/secrets/MySQLRootPassword \
 
 echo "waiting for mysql to come up"
-# wait-for-it $myhostname:3306 -t 60 || docker service logs mysqlserver
+# wait-for-it $myhostname:3306 -t 60 || docker service logs fabricrealtime_mysqlserver
 
 echo "waiting for interfaceengine to come up"
-wait-for-it $myhostname:8080 -t 60 || docker service logs interfaceengine
-# wait-for-it $myhostname:8433 -t 60 || docker service logs interfaceengine
-wait-for-it $myhostname:6661 -t 60 || docker service logs interfaceengine
+wait-for-it $myhostname:8080 -t 60 || docker service logs fabricrealtime_interfaceengine
+# wait-for-it $myhostname:8433 -t 60 || docker service logs fabricrealtime_interfaceengine
+wait-for-it $myhostname:6661 -t 60 || docker service logs fabricrealtime_interfaceengine
 sleep 5s;
 
 echo "testing rabbitmq one more time"
-wait-for-it $myhostname:5671 -t 60 || docker service logs rabbitmq
+wait-for-it $myhostname:5671 -t 60 || docker service logs fabricrealtime_rabbitmq
 
 echo "if you want, you can download the CA (Certificate Authority) cert from this url"
 echo "http://$myhostname:8081/client/fabric_ca_cert.p12"

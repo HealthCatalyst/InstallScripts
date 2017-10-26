@@ -2,7 +2,7 @@
 set -e
 # set -x
 
-echo "Version 1.177"
+echo "Version 1.178"
 
 #
 # This script is meant for quick & easy install via:
@@ -142,8 +142,7 @@ export SHARED_DRIVE_MYSQL=$mysqlstore
 # use docker stacak deploy to start up all the services
 curl -sSL https://healthcatalyst.github.io/InstallScripts/realtime/realtime-stack.yml | docker stack deploy --compose-file - fabricrealtime
 
-
-myhostname={$myhostname:-localhost}
+myhostname=${myhostname:-localhost}
 
 echo "waiting for certificateserver to come up"
 wait-for-it $myhostname:8081 -t 60 || docker service logs certificateserver

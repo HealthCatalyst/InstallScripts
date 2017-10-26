@@ -12,9 +12,10 @@ services:
       - realtimenet
     secrets:
       - CertPassword
+      - CertHostName
     environment: 
-      CERT_HOSTNAME: ${CERT_HOSTNAME}
-      CERT_PASSWORD: ${CERT_PASSWORD}
+      CERT_HOSTNAME_FILE: /run/secrets/CertHostName
+      CERT_PASSWORD_FILE: /run/secrets/CertPassword
     volumes: 
       - ${SHARED_DRIVE_CERTS}:/opt/certs/
     restart: unless-stopped        
@@ -32,8 +33,9 @@ services:
       - realtimenet
     secrets:
       - RabbitMqMgmtUiPassword
+      - CertHostName
     environment: 
-      CERT_HOSTNAME: ${CERT_HOSTNAME}
+      CERT_HOSTNAME_FILE: /run/secrets/CertHostName
       RABBITMQ_MGMT_UI_PASSWORD_FILE: /run/secrets/RabbitMqMgmtUiPassword
       RABBITMQ_MNESIA_BASE: /opt/rabbitmq
     volumes: 
@@ -59,8 +61,9 @@ services:
       - realtimenet
     secrets:
       - MySQLPassword
+      - MySQLRootPassword
     environment: 
-      MYSQL_ROOT_PASSWORD: ${MySQLRootPassword}
+      MYSQL_ROOT_PASSWORD_FILE: /run/secrets/MySQLRootPassword
       MYSQL_DATABASE: mirthdb
       MYSQL_USER: mirthuser
       MYSQL_PASSWORD_FILE: /run/secrets/MySQLPassword

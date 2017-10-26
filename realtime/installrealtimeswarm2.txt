@@ -2,7 +2,7 @@
 set -e
 # set -x
 
-echo "Version 1.174"
+echo "Version 1.176"
 
 #
 # This script is meant for quick & easy install via:
@@ -36,13 +36,13 @@ fi
 # see if we already have a cert store created
 hasexistingvolume=""
 
-glustermount="/mnt/hcshared"
-fabriccertificatestore="$glustermount/certs"
-mysqlstore="$glustermount/mysql"
-rabbitmqstore="$glustermount/rabbitmq"
+SHARED_DRIVE="/mnt/hcshared"
+fabriccertificatestore="$SHARED_DRIVE/certs"
+mysqlstore="$SHARED_DRIVE/mysql"
+rabbitmqstore="$SHARED_DRIVE/rabbitmq"
 
-if [[ ! -d "$glustermount" ]]; then
-	echo "$glustermount folder is not present.  Have you setup glusterfs per instructions?"
+if [[ ! -d "$SHARED_DRIVE" ]]; then
+	echo "$SHARED_DRIVE folder is not present.  Have you setup glusterfs per instructions?"
 	exit 1
 fi
 
@@ -131,13 +131,13 @@ docker service ls
 echo "Existing secrets"
 docker secret ls
 
-export CERT_HOSTNAME=IAmAHost
-export CERT_PASSWORD=roboconf2
-export MySQLRootPassword=roboconf2
-export SHARED_DRIVE=c:/tmp
-export SHARED_DRIVE_CERTS=c:/tmp/certs
-export SHARED_DRIVE_RABBITMQ=c:/tmp/rabbitmq
-export SHARED_DRIVE_MYSQL=c:/tmp/mysql
+export CERT_HOSTNAME=$CERT_HOSTNAME
+export CERT_PASSWORD=$CERT_PASSWORD
+export MySQLRootPassword=$MySQLRootPassword
+export SHARED_DRIVE=$SHARED_DRIVE
+export SHARED_DRIVE_CERTS=$fabriccertificatestore
+export SHARED_DRIVE_RABBITMQ=$rabbitmqstore
+export SHARED_DRIVE_MYSQL=$mysqlstore
 
 # docker-compose -f realtime-stack.yml up
 

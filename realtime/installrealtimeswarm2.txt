@@ -121,6 +121,10 @@ docker service ls
 echo "Existing secrets"
 docker secret ls
 
+myhostname=${myhostname:-localhost}
+
+echo "Using hostname=$myhostname"
+
 export CERT_HOSTNAME=$myhostname
 export CERT_PASSWORD=$CertPassword
 export MySQLRootPassword=$MySQLRootPassword
@@ -132,7 +136,7 @@ export SHARED_DRIVE_MYSQL=$mysqlstore
 # use docker stacak deploy to start up all the services
 curl -sSL https://healthcatalyst.github.io/InstallScripts/realtime/realtime-stack.yml | docker stack deploy --compose-file - fabricrealtime
 
-myhostname=${myhostname:-localhost}
+
 
 echo "waiting for certificateserver to come up"
 wait-for-it $myhostname:8081 -t 60 || docker service logs fabricrealtime_certificateserver

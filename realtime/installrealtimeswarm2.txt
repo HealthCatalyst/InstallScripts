@@ -1,0 +1,174 @@
+#!/bin/sh
+set -e
+# set -x
+
+echo "Version 1.174"
+
+#
+# This script is meant for quick & easy install via:
+#   curl -sSL https://healthcatalyst.github.io/InstallScripts/realtime/installrealtimeswarm.txt | sudo sh -s
+
+# Remember: no spaces allowed in variable set commands in bash
+myhostname="$1"
+MySQLUser="mirthuser"
+
+# these are set in the script below
+CertPassword=""
+RabbitMqMgmtUiPassword=""
+MySQLPassword=""
+MySQLRootPassword="myrootpassword"
+
+echo "---------------------------------------------------"
+echo "This script sets up the Fabric.Realtime cluster on Docker"
+echo "----------------------------------------------------"
+
+# if wait-for-it is not installed then install it
+if [[ ! -f "/usr/local/bin/wait-for-it" ]]
+then
+	sudo yum -y install which dos2unix
+	curl -sSL -o /tmp/wait-for-it.sh https://healthcatalyst.github.io/InstallScripts/wait-for-it.sh \
+		&& dos2unix /tmp/wait-for-it.sh \
+		&& chmod +x /tmp/wait-for-it.sh \
+		&& sudo cp /tmp/wait-for-it.sh /usr/bin/wait-for-it \
+		&& sudo cp /tmp/wait-for-it.sh /usr/local/bin/wait-for-it
+fi
+
+# see if we already have a cert store created
+hasexistingvolume=""
+
+glustermount="/mnt/hcshared"
+fabriccertificatestore="$glustermount/certs"
+mysqlstore="$glustermount/mysql"
+rabbitmqstore="$glustermount/rabbitmq"
+
+if [[ ! -d "$glustermount" ]]; then
+	echo "$glustermount folder is not present.  Have you setup glusterfs per instructions?"
+	exit 1
+fi
+
+deleteOldSSLCertificates=""
+
+# if there is an existing volume then ask if user wants to delete it
+if [[ -d "$fabriccertificatestore" ]]; then
+	while true; do
+		read -e -p "Do you wish to delete any existing SSL certificates (this will break anyone using current client certificates)?" yn < /dev/tty
+		case $yn in
+			[Yy]* ) deleteOldSSLCertificates="yes"; break;;
+			[Nn]* ) break;;
+			* ) echo "Please answer yes or no.";;
+		esac
+	done
+
+	if [[ ! -z "$deleteOldSSLCertificates" ]]; then
+		hasexistingvolume=""
+	else
+		hasexistingvolume="yes"
+	fi
+fi
+
+# remove any existing running containers
+docker service rm interfaceengine || echo "interfaceengine is not already present"
+docker service rm mysqlserver || echo "certificateserver is not already present"
+docker service rm rabbitmq || echo "rabbitmq is not already present"
+docker service rm certificateserver || echo "certificateserver is not already present"
+docker service rm certdownloadserver || echo "certdownloadserver is not already present"
+
+echo "sleeping to let containers be removed"
+sleep 3s;
+
+# remove virtual network
+docker network rm realtimenet || echo "realtimenet is not already present"
+
+echo "sleeping to let network be removed"
+sleep 15s;
+
+# if there is no existing volume then ask for passwords
+if [[ -z "$hasexistingvolume" ]]; then
+	if [[ -z "$myhostname" ]]; then
+		read -p "Please type in hostname to use for SSL certificate: " myhostname < /dev/tty
+	fi
+
+	read -p "Please type in password to use for client certificate: " CertPassword < /dev/tty
+	docker secret rm CertPassword || echo ""
+	echo $CertPassword | docker secret create CertPassword -
+
+	read -p "Please type in password to use with admin user for RabbitMq Admin UI:" RabbitMqMgmtUiPassword < /dev/tty
+	docker secret rm RabbitMqMgmtUiPassword || echo ""
+	echo $RabbitMqMgmtUiPassword | docker secret create RabbitMqMgmtUiPassword -
+
+	read -p "Please type in password to use for MySql account (mirthuser):" -e MySQLPassword < /dev/tty
+	docker secret rm MySQLPassword || echo ""
+	echo $MySQLPassword | docker secret create MySQLPassword -
+
+#	read -p "Please type in password to use root MySql account:" MySQLRootPassword < /dev/tty
+#	docker secret rm MySQLRootPassword || echo ""
+#	echo $MySQLRootPassword | docker secret create MySQLRootPassword  -
+fi
+
+# delete the volume if it exists
+if [ ! -z "$deleteOldSSLCertificates" ]; then
+  	echo "Deleting old SSL certificates"
+
+	sudo rm -r "$fabriccertificatestore"
+
+	sudo rm -r "$mysqlstore"
+
+	sudo rm -r "$rabbitmqstore"
+fi
+
+# create the volume to store certificates
+sudo mkdir -p "$fabriccertificatestore"
+
+# create the volume for mysql data
+sudo mkdir -p "$mysqlstore"
+
+# create the volume for rabbitmq data
+sudo mkdir -p "$rabbitmqstore"
+
+echo "existing services"
+docker service ls
+
+echo "Existing secrets"
+docker secret ls
+
+export CERT_HOSTNAME=IAmAHost
+export CERT_PASSWORD=roboconf2
+export MySQLRootPassword=roboconf2
+export SHARED_DRIVE=c:/tmp
+export SHARED_DRIVE_CERTS=c:/tmp/certs
+export SHARED_DRIVE_RABBITMQ=c:/tmp/rabbitmq
+export SHARED_DRIVE_MYSQL=c:/tmp/mysql
+
+# docker-compose -f realtime-stack.yml up
+
+curl -sSL https://healthcatalyst.github.io/InstallScripts/realtime/installrealtimeswarm.txt | docker stack deploy --compose-file - fabricrealtime
+
+echo "waiting for certificateserver to come up"
+wait-for-it $myhostname:8081 -t 60 || docker service logs certificateserver
+
+echo "waiting for rabbitmq to come up"
+wait-for-it $myhostname:5671 -t 60 || docker service logs rabbitmq
+wait-for-it $myhostname:15672 -t 60 || docker service logs rabbitmq
+
+#	--env MYSQL_ROOT_PASSWORD_FILE=/run/secrets/MySQLRootPassword \
+
+echo "waiting for mysql to come up"
+# wait-for-it $myhostname:3306 -t 60 || docker service logs mysqlserver
+
+echo "waiting for interfaceengine to come up"
+wait-for-it $myhostname:8080 -t 60 || docker service logs interfaceengine
+# wait-for-it $myhostname:8433 -t 60 || docker service logs interfaceengine
+wait-for-it $myhostname:6661 -t 60 || docker service logs interfaceengine
+sleep 5s;
+
+echo "testing rabbitmq one more time"
+wait-for-it $myhostname:5671 -t 60 || docker service logs rabbitmq
+
+echo "if you want, you can download the CA (Certificate Authority) cert from this url"
+echo "http://$myhostname:8081/client/fabric_ca_cert.p12"
+
+echo "-------------------------------"
+echo "you can download the client certificate from this url:"
+echo "http://$myhostname:8081/client/fabricrabbitmquser_client_cert.p12"
+echo "-------------------------------"
+

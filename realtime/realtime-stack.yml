@@ -1,0 +1,95 @@
+# docker-compose.prod.yml
+# https://docs.docker.com/compose/compose-file/#entrypoint
+version: '3.3'  
+networks:  
+  realtimenet:
+    driver: overlay
+
+services:  
+  certificateserver:
+    image: healthcatalyst/fabric.certificateserver
+    networks: 
+      - realtimenet
+    secrets:
+      - CertPassword
+    environment: 
+      CERT_HOSTNAME: ${CERT_HOSTNAME}
+      CERT_PASSWORD: ${CERT_PASSWORD}
+    volumes: 
+      - ${SHARED_DRIVE_CERTS}:/opt/certs/
+    restart: unless-stopped        
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == manager
+    ports: 
+       - 8081:3000
+    
+  rabbitmq:
+    image: healthcatalyst/fabric.realtime.rabbitmq
+    networks: 
+      - realtimenet
+    secrets:
+      - RabbitMqMgmtUiPassword
+    environment: 
+      CERT_HOSTNAME: ${CERT_HOSTNAME}
+      RABBITMQ_MGMT_UI_PASSWORD_FILE: /run/secrets/RabbitMqMgmtUiPassword
+      RABBITMQ_MNESIA_BASE: /opt/rabbitmq
+    volumes: 
+      - type: bind
+        source: ${SHARED_DRIVE_CERTS}
+        target: /opt/healthcatalyst/
+      - type: bind
+        source: ${SHARED_DRIVE_RABBITMQ}
+        target: /opt/rabbitmq
+    restart: unless-stopped        
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == manager
+    ports: 
+       - 5671:5671
+       - 15672:15672
+
+  mysqlserver:
+    image: healthcatalyst/fabric.realtime.mysql
+    networks: 
+      - realtimenet
+    secrets:
+      - MySQLPassword
+    environment: 
+      MYSQL_ROOT_PASSWORD: ${MySQLRootPassword}
+      MYSQL_DATABASE: mirthdb
+      MYSQL_USER: mirthuser
+      MYSQL_PASSWORD_FILE: /run/secrets/MySQLPassword
+    volumes:
+      - type: bind
+        source: ${SHARED_DRIVE_MYSQL}
+        target: /var/lib/mysql
+    ports:
+      - 3306:3306
+
+  interfaceengine:
+    image: healthcatalyst/fabric.docker.interfaceengine
+    networks: 
+      - realtimenet
+    secrets:
+      - MySQLPassword
+    environment: 
+      MYSQL_USER: mirthuser
+      MYSQL_PASSWORD_FILE: /run/secrets/MySQLPassword
+      MYSQL_DATABASE: mirthdb
+    ports:
+      - 8080:8080
+      - 8443:8443
+      - 6661:6661    
+
+secrets:
+  RabbitMqMgmtUiPassword:
+    external: true  
+  MySQLPassword:
+    external: true
+  CertPassword:
+    external: true

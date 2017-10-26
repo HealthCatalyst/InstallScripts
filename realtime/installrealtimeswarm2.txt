@@ -19,6 +19,7 @@ MySQLPassword=""
 MySQLRootPassword=""
 
 # calculate a random number to force urls not be cached
+# from https://gist.github.com/earthgecko/3089509
 RANDOMNUMBER=$(cat /dev/urandom | tr -dc '0-9' | fold -w 256 | head -n 1 | sed -e 's/^0*//' | head --bytes 7)
 if [ "$RANDOMNUMBER" == "" ]; then
   RANDOMNUMBER=0

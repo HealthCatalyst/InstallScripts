@@ -16,6 +16,7 @@ services:
     environment: 
       CERT_HOSTNAME_FILE: /run/secrets/CertHostName
       CERT_PASSWORD_FILE: /run/secrets/CertPassword
+      CLIENT_CERT_USERNAME: fabricrabbitmquser
     volumes: 
       - ${SHARED_DRIVE_CERTS}:/opt/certs/
     restart: unless-stopped        

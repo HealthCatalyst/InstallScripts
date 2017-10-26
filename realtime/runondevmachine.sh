@@ -18,6 +18,7 @@ echo "localrealtime" |  docker secret create CertHostName -
 docker secret rm MySQLRootPassword || echo ""
 echo "roboconf2" |  docker secret create MySQLRootPassword -
 
+export DISABLE_SSL="true"
 export SHARED_DRIVE=c:/tmp
 export SHARED_DRIVE_CERTS=c:/tmp/certs
 export SHARED_DRIVE_RABBITMQ=c:/tmp/rabbitmq

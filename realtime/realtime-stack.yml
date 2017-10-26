@@ -1,9 +1,21 @@
-# docker-compose.prod.yml
+# realtime-stack.yml
 # https://docs.docker.com/compose/compose-file/#entrypoint
 version: '3.3'  
 networks:  
   realtimenet:
     driver: overlay
+
+secrets:
+  RabbitMqMgmtUiPassword:
+    external: true  
+  MySQLPassword:
+    external: true
+  CertPassword:
+    external: true
+  CertHostName:
+    external: true
+  MySQLRootPassword:
+    external: true
 
 services:  
   certificateserver:
@@ -18,8 +30,7 @@ services:
       CERT_PASSWORD_FILE: /run/secrets/CertPassword
       CLIENT_CERT_USERNAME: fabricrabbitmquser
     volumes: 
-      - ${SHARED_DRIVE_CERTS}:/opt/certs/
-    restart: unless-stopped        
+      - ${SHARED_DRIVE_CERTS}:/opt/certs/     
     deploy:
       replicas: 1
       placement:
@@ -39,6 +50,7 @@ services:
       CERT_HOSTNAME_FILE: /run/secrets/CertHostName
       RABBITMQ_MGMT_UI_PASSWORD_FILE: /run/secrets/RabbitMqMgmtUiPassword
       RABBITMQ_MNESIA_BASE: /opt/rabbitmq
+      DISABLE_SSL: "${DISABLE_SSL}"
     volumes: 
       - type: bind
         source: ${SHARED_DRIVE_CERTS}
@@ -46,7 +58,6 @@ services:
       - type: bind
         source: ${SHARED_DRIVE_RABBITMQ}
         target: /opt/rabbitmq
-    restart: unless-stopped        
     deploy:
       replicas: 1
       placement:
@@ -90,14 +101,4 @@ services:
       - 8443:8443
       - 6661:6661    
 
-secrets:
-  RabbitMqMgmtUiPassword:
-    external: true  
-  MySQLPassword:
-    external: true
-  CertPassword:
-    external: true
-  CertHostName:
-    external: true
-  MySQLRootPassword:
-    external: true
+

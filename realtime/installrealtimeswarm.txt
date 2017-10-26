@@ -2,7 +2,7 @@
 set -e
 # set -x
 
-echo "Version 1.174"
+echo "Version 1.184"
 
 #
 # This script is meant for quick & easy install via:
@@ -16,7 +16,16 @@ MySQLUser="mirthuser"
 CertPassword=""
 RabbitMqMgmtUiPassword=""
 MySQLPassword=""
-MySQLRootPassword="myrootpassword"
+MySQLRootPassword=""
+
+# calculate a random number to force urls not be cached
+# from https://gist.github.com/earthgecko/3089509
+RANDOMNUMBER=$(cat /dev/urandom | tr -dc '0-9' | fold -w 256 | head -n 1 | sed -e 's/^0*//' | head --bytes 7)
+if [ "$RANDOMNUMBER" == "" ]; then
+  RANDOMNUMBER=0
+fi
+
+echo "Random Number:$RANDOMNUMBER"
 
 echo "---------------------------------------------------"
 echo "This script sets up the Fabric.Realtime cluster on Docker"
@@ -26,7 +35,7 @@ echo "----------------------------------------------------"
 if [[ ! -f "/usr/local/bin/wait-for-it" ]]
 then
 	sudo yum -y install which dos2unix
-	curl -sSL -o /tmp/wait-for-it.sh https://healthcatalyst.github.io/InstallScripts/wait-for-it.sh \
+	curl -sSL -o /tmp/wait-for-it.sh https://healthcatalyst.github.io/InstallScripts/wait-for-it.sh?rand=$RANDOMNUMBER \
 		&& dos2unix /tmp/wait-for-it.sh \
 		&& chmod +x /tmp/wait-for-it.sh \
 		&& sudo cp /tmp/wait-for-it.sh /usr/bin/wait-for-it \
@@ -36,13 +45,13 @@ fi
 # see if we already have a cert store created
 hasexistingvolume=""
 
-glustermount="/mnt/hcshared"
-fabriccertificatestore="$glustermount/certs"
-mysqlstore="$glustermount/mysql"
-rabbitmqstore="$glustermount/rabbitmq"
+SHARED_DRIVE="/mnt/hcshared"
+fabriccertificatestore="$SHARED_DRIVE/certs"
+mysqlstore="$SHARED_DRIVE/mysql"
+rabbitmqstore="$SHARED_DRIVE/rabbitmq"
 
-if [[ ! -d "$glustermount" ]]; then
-	echo "$glustermount folder is not present.  Have you setup glusterfs per instructions?"
+if [[ ! -d "$SHARED_DRIVE" ]]; then
+	echo "$SHARED_DRIVE folder is not present.  Have you setup glusterfs per instructions?"
 	exit 1
 fi
 
@@ -67,17 +76,7 @@ if [[ -d "$fabriccertificatestore" ]]; then
 fi
 
 # remove any existing running containers
-docker service rm interfaceengine || echo "interfaceengine is not already present"
-docker service rm mysqlserver || echo "certificateserver is not already present"
-docker service rm rabbitmq || echo "rabbitmq is not already present"
-docker service rm certificateserver || echo "certificateserver is not already present"
-docker service rm certdownloadserver || echo "certdownloadserver is not already present"
-
-echo "sleeping to let containers be removed"
-sleep 3s;
-
-# remove virtual network
-docker network rm realtimenet || echo "realtimenet is not already present"
+docker stack rm fabricrealtime
 
 echo "sleeping to let network be removed"
 sleep 15s;
@@ -87,6 +86,10 @@ if [[ -z "$hasexistingvolume" ]]; then
 	if [[ -z "$myhostname" ]]; then
 		read -p "Please type in hostname to use for SSL certificate: " myhostname < /dev/tty
 	fi
+
+
+	docker secret rm CertHostName || echo ""
+	echo $myhostname | docker secret create CertHostName -
 
 	read -p "Please type in password to use for client certificate: " CertPassword < /dev/tty
 	docker secret rm CertPassword || echo ""
@@ -100,9 +103,9 @@ if [[ -z "$hasexistingvolume" ]]; then
 	docker secret rm MySQLPassword || echo ""
 	echo $MySQLPassword | docker secret create MySQLPassword -
 
-#	read -p "Please type in password to use root MySql account:" MySQLRootPassword < /dev/tty
-#	docker secret rm MySQLRootPassword || echo ""
-#	echo $MySQLRootPassword | docker secret create MySQLRootPassword  -
+	read -p "Please type in password to use root MySql account:" MySQLRootPassword < /dev/tty
+	docker secret rm MySQLRootPassword || echo ""
+	echo $MySQLRootPassword | docker secret create MySQLRootPassword  -
 fi
 
 # delete the volume if it exists
@@ -131,112 +134,38 @@ docker service ls
 echo "Existing secrets"
 docker secret ls
 
-echo "creating realtimenet network"
-docker network create \
-	--driver overlay \
-	--subnet=172.28.0.0/16 \
-	--ip-range=172.28.5.0/24 \
-realtimenet
+myhostname=${myhostname:-localhost}
 
-echo "Using host:"$myhostname
+echo "Using hostname=$myhostname"
 
-# use constraints to run the webserver on the same node as rabbitmq
+export SHARED_DRIVE=$SHARED_DRIVE
+export SHARED_DRIVE_CERTS=$fabriccertificatestore
+export SHARED_DRIVE_RABBITMQ=$rabbitmqstore
+export SHARED_DRIVE_MYSQL=$mysqlstore
 
-# 8081 = HTTP port for downloading certificates
+# use docker stacak deploy to start up all the services
+curl -sSL https://healthcatalyst.github.io/InstallScripts/realtime/realtime-stack.yml?rand=$RANDOMNUMBER | docker stack deploy --compose-file - fabricrealtime
 
-echo "starting mini webserver to allow access to certificate files"
-docker service create --name certificateserver \
-	--env CERT_HOSTNAME=$myhostname \
-	--env CERT_PASSWORD=$CertPassword \
-	-p 8081:3000 \
-  	--mount type=bind,src=$fabriccertificatestore,dst=/opt/certs/ \
-	--constraint "node.role == manager" \
-	--restart-max-attempts=2 \
-	--network realtimenet \
-	--detach=false \
-healthcatalyst/fabric.certificateserver
 
 echo "waiting for certificateserver to come up"
-wait-for-it $myhostname:8081 -t 60 || docker service logs certificateserver
-sleep 15s;
-
-echo "creating rabbitmq service"
-
-# 5672 = Non SSL port (not exposed ourside of this swarm)
-# 5671 = SSL port
-# 15672 = SSL port for Management Web UI
-
-docker service create --name rabbitmq \
-	--secret RabbitMqMgmtUiPassword \
-	--env CERT_HOSTNAME=$myhostname \
-	--env RABBITMQ_MGMT_UI_PASSWORD_FILE="/run/secrets/RabbitMqMgmtUiPassword" \
-	--env RABBITMQ_MNESIA_BASE=/opt/rabbitmq \
-	--mount type=bind,src=$fabriccertificatestore,dst=/opt/healthcatalyst/ \
-  	--mount type=bind,src=$rabbitmqstore,dst=/opt/rabbitmq \
-	--replicas 1 \
-	--constraint "node.role == manager" \
-	--network realtimenet \
-    -p 5671:5671 \
-    -p 15672:15672 \
-	--detach=false \
-healthcatalyst/fabric.realtime.rabbitmq
+wait-for-it $myhostname:8081 -t 60 || docker service logs fabricrealtime_certificateserver
 
 echo "waiting for rabbitmq to come up"
-wait-for-it $myhostname:5671 -t 60 || docker service logs rabbitmq
-wait-for-it $myhostname:15672 -t 60 || docker service logs rabbitmq
-sleep 15s;
-
-# affinity documentation
-# https://docs.docker.com/engine/reference/commandline/service_create/#options
-# https://docs.docker.com/v1.10/swarm/scheduler/filter/
+wait-for-it $myhostname:5671 -t 60 || docker service logs fabricrealtime_rabbitmq
+wait-for-it $myhostname:15672 -t 60 || docker service logs fabricrealtime_rabbitmq
 
 #	--env MYSQL_ROOT_PASSWORD_FILE=/run/secrets/MySQLRootPassword \
 
-echo "creating mysql service"
-#  from https://hub.docker.com/_/mariadb/
-docker service create --name mysqlserver \
-	--secret MySQLPassword \
-	--env MYSQL_ROOT_PASSWORD=$MySQLRootPassword \
-	--env MYSQL_DATABASE=mirthdb \
-	--env MYSQL_USER=$MySQLUser \
-	--env MYSQL_PASSWORD_FILE="/run/secrets/MySQLPassword" \
-  	--mount type=bind,src=$mysqlstore,dst=/var/lib/mysql \
-	--replicas 1 \
-	--network realtimenet \
-    -p 3306:3306 \
-	--detach=false \
-healthcatalyst/fabric.realtime.mysql
-
 echo "waiting for mysql to come up"
-# wait-for-it $myhostname:3306 -t 60 || docker service logs mysqlserver
-sleep 5s;
-
-# 8080 = HTTP port
-# 8443 = HTTPS port
-# 6661 = Port for receiving HL7 messages
-
-echo "creating mirth service"
-docker service create --name interfaceengine \
-	--secret MySQLPassword \
-	--env MYSQL_PASSWORD=$MySQLPassword \
-    --env MYSQL_PASSWORD_FILE=/run/secrets/MySQLPassword \
-	--env MYSQL_USER=$MySQLUser \
-	--replicas 1 \
-	--network realtimenet \
-    -p 8080:8080 \
-    -p 8443:8443 \
-    -p 6661:6661 \
-	--detach=false \
-healthcatalyst/fabric.docker.interfaceengine
+# wait-for-it $myhostname:3306 -t 60 || docker service logs fabricrealtime_mysqlserver
 
 echo "waiting for interfaceengine to come up"
-wait-for-it $myhostname:8080 -t 60 || docker service logs interfaceengine
-# wait-for-it $myhostname:8433 -t 60 || docker service logs interfaceengine
-wait-for-it $myhostname:6661 -t 60 || docker service logs interfaceengine
-sleep 5s;
+wait-for-it $myhostname:8080 -t 60 || docker service logs fabricrealtime_interfaceengine
+# wait-for-it $myhostname:8433 -t 60 || docker service logs fabricrealtime_interfaceengine
+# wait-for-it $myhostname:6661 -t 60 || docker service logs fabricrealtime_interfaceengine
 
 echo "testing rabbitmq one more time"
-wait-for-it $myhostname:5671 -t 60 || docker service logs rabbitmq
+wait-for-it $myhostname:5671 -t 60 || docker service logs fabricrealtime_rabbitmq
 
 echo "if you want, you can download the CA (Certificate Authority) cert from this url"
 echo "http://$myhostname:8081/client/fabric_ca_cert.p12"

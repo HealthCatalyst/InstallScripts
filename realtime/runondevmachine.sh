@@ -1,4 +1,9 @@
 
+#
+# This script is meant for quick & easy install via:
+#   curl -sSL https://healthcatalyst.github.io/InstallScripts/realtime/runondevmachine.sh | sh
+
+
 docker stack rm fabricrealtime
 
 sleep 5s;
@@ -26,5 +31,7 @@ export SHARED_DRIVE_MYSQL=c:/tmp/mysql
 
 # docker-compose -f realtime-stack.yml up
 
-docker stack deploy -c realtime-stack.yml fabricrealtime
+# docker stack deploy -c realtime-stack.yml fabricrealtime
+
+curl -sSL https://healthcatalyst.github.io/InstallScripts/realtime/realtime-stack.yml | docker stack deploy --compose-file - fabricrealtime
 

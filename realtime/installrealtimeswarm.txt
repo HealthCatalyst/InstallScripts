@@ -110,7 +110,7 @@ if [[ -z "$hasexistingvolume" ]]; then
 
 	if [[ ! -z "$connectToSqlServer" ]]
 	then
-		read -p "Please type in username of Windows Service Account to use to connect to SQL Server:" -e sqlserverusername < /dev/tty
+		read -p "Please type in username of Windows Service Account to use to connect to SQL Server (e.g., imran.qureshi):" -e sqlserverusername < /dev/tty
 		docker secret rm SqlServerUserName || echo ""
 		echo $sqlserverusername | docker secret create SqlServerUserName -
 
@@ -118,19 +118,19 @@ if [[ -z "$hasexistingvolume" ]]; then
 		docker secret rm SqlServerPassword || echo ""
 		echo $sqlserverpassword | docker secret create SqlServerPassword -
 
-		read -p "Please type in Windows domain to use to connect to SQL Server:" -e sqlserverdomain < /dev/tty
+		read -p "Please type in Windows domain to use to connect to SQL Server (e.g., hqcatalyst.local):" -e sqlserverdomain < /dev/tty
 		docker secret rm SqlServerDomain || echo ""
 		echo $sqlserverdomain | docker secret create SqlServerDomain -
 
-		read -p "Please type in Windows Active Directory URL to use to connect to SQL Server:" -e sqlserveradurl < /dev/tty
+		read -p "Please type in Windows Active Directory URL to use to connect to SQL Server (e.g., hcsad1):" -e sqlserveradurl < /dev/tty
 		docker secret rm SqlServerADUrl || echo ""
 		echo $sqlserveradurl | docker secret create SqlServerADUrl -
 
-		read -p "Please type in SQL Server to connect to:" -e sqlserverserver < /dev/tty
+		read -p "Please type in SQL Server to connect to (e.g., hc2034):" -e sqlserverserver < /dev/tty
 		docker secret rm SqlServerName || echo ""
 		echo $sqlserverserver | docker secret create SqlServerName -
 
-		read -p "Please type in Database Name to use in SQL Server:" -e sqlserverdatabase < /dev/tty
+		read -p "Please type in Database Name to use in SQL Server (e.g., MyRealtimeDb):" -e sqlserverdatabase < /dev/tty
 		docker secret rm sqlserverdatabase || echo ""
 		echo $sqlserverdatabase | docker secret create SqlServerDatabase -
 	else

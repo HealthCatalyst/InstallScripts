@@ -88,7 +88,7 @@ services:
       - SqlServerName
       - SqlServerDatabase
     environment: 
-      SQLSERVER_USER_FILE: /run/secrets/SqlServerPassword
+      SQLSERVER_USER_FILE: /run/secrets/SqlServerUserName
       SQLSERVER_PASSWORD_FILE: /run/secrets/SqlServerPassword
       SQLSERVER_DOMAIN_FILE: /run/secrets/SqlServerDomain
       SQLSERVER_AD_URL_FILE: /run/secrets/SqlServerADUrl

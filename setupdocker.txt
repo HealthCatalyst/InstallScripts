@@ -8,7 +8,7 @@ set -e
 #
 #
 
-echo "setupdocker version 1.02"
+echo "setupdocker version 1.03"
 
 # remove the line from next run
 grep -v "curl -sSL https://healthcatalyst.github.io/InstallScripts/setupdocker.txt | sh" ~/.bashrc | sudo tee ~/.bashrc
@@ -32,7 +32,7 @@ read -p "Please enter the Application Insights key provided to you by Health Cat
 
 if [[ ! -z "$appinsightskey" ]]
 then
-    docker stop appinsights
+    docker stop appinsights || echo 'no container to stop'
     docker pull microsoft/applicationinsights
     docker run -v /var/run/docker.sock:/docker.sock -d --name appinsights microsoft/applicationinsights ikey="$appinsightskey"
 fi

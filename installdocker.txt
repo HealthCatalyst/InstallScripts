@@ -69,7 +69,6 @@ if [ $u != "root" ]; then
 
     echo "curl -sSL https://healthcatalyst.github.io/InstallScripts/setupdocker.txt | sh" | sudo tee ~/.bashrc
     echo "Please logout and login again"
-    echo 0
 else
     echo "Setting up docker"
     curl -sSL https://healthcatalyst.github.io/InstallScripts/setupdocker.txt | sh

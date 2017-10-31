@@ -30,25 +30,27 @@ done
 
 if [[ ! -z "$connectToSqlServer" ]]
 then
-    read -p "Please type in username of Windows Service Account to use to connect to SQL Server (e.g., imran.qureshi):" -e sqlserverusername < /dev/tty
+    echo "Setting username to $USERNAME"
     docker secret rm SqlServerUserName || echo ""
-    echo $sqlserverusername | docker secret create SqlServerUserName -
+    echo $USERNAME | docker secret create SqlServerUserName -
 
     read -p "Please type in password for Windows Service Account to use to connect to SQL Server:" -e sqlserverpassword < /dev/tty
     docker secret rm SqlServerPassword || echo ""
     echo $sqlserverpassword | docker secret create SqlServerPassword -
 
-    read -p "Please type in Windows domain to use to connect to SQL Server (e.g., hqcatalyst.local):" -e sqlserverdomain < /dev/tty
+    echo "Using domain $USERDNSDOMAIN"
     docker secret rm SqlServerDomain || echo ""
-    echo $sqlserverdomain | docker secret create SqlServerDomain -
+    echo $USERDNSDOMAIN | docker secret create SqlServerDomain -
 
     read -p "Please type in Windows Active Directory URL to use to connect to SQL Server (e.g., hcsad1):" -e sqlserveradurl < /dev/tty
     docker secret rm SqlServerADUrl || echo ""
     echo $sqlserveradurl | docker secret create SqlServerADUrl -
+    # HCSAD1
 
-    read -p "Please type in SQL Server to connect to (e.g., hc2034):" -e sqlserverserver < /dev/tty
+    read -p "Please type in SQL Server to connect to (e.g., $COMPUTERNAME):" -e sqlserverserver < /dev/tty
     docker secret rm SqlServerName || echo ""
     echo $sqlserverserver | docker secret create SqlServerName -
+    # COMPUTERNAME
 
     read -p "Please type in Database Name to use in SQL Server (e.g., MyRealtimeDb):" -e sqlserverdatabase < /dev/tty
     docker secret rm sqlserverdatabase || echo ""

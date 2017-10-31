@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-echo "Version 1.10"
+echo "Version 1.11"
 
 #
 # This script is meant for quick & easy install via:
@@ -23,11 +23,11 @@ echo "waiting until this host has been added to glusterfs"
 # disable set -e so the script does not break when there is an error
 set +e
 
-sudo gluster peer status | grep $(hostname)
+sudo gluster peer status | grep "Peer in Cluster"
 while [ $? -ne 0 ]; do
     sleep 5s;
     echo "."
-    sudo gluster peer status | grep $(hostname)
+    sudo gluster peer status | grep "Peer in Cluster"
 done
 
 set -e

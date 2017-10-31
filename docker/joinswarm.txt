@@ -18,6 +18,7 @@ if [[ ! -z "$makeSwarmMaster" ]];
 then
     curl -sSL https://healthcatalyst.github.io/InstallScripts/docker/setupmanager.txt | sh -s
 else
-    echo "first run the command to join docker swarm and then run the following command"
-    echo "curl -sSL https://healthcatalyst.github.io/InstallScripts/docker/setupnode.txt | sh -s"
+    echo "first run the command to join docker swarm and then logoff and log on again"
+    echo "curl -sSL https://healthcatalyst.github.io/InstallScripts/docker/setupnode.txt | sh -s" | sudo tee -a ~/.bashrc
+    echo "Please logout and login again"
 fi

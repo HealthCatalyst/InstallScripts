@@ -25,9 +25,9 @@ set +e
 
 sudo gluster peer status | grep $(hostname)
 while [ $? -ne 0 ]; do
-    sudo gluster peer status | grep $(hostname)
     sleep 5s;
     echo "."
+    sudo gluster peer status | grep $(hostname)
 done
 
 set -e

@@ -27,9 +27,9 @@ while read -r line _; do
 
     sudo gluster peer probe $line
     while [ $? -ne 0 ]; do
-        sudo gluster peer probe $line
         sleep 5s;
         echo "."
+        sudo gluster peer probe $line
     done
 
     set -e

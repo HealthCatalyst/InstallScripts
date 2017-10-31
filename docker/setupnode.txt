@@ -19,12 +19,18 @@ curl -sSL https://healthcatalyst.github.io/InstallScripts/docker/installglusterf
 # join the gluster
 
 echo "waiting until this host has been added to glusterfs"
+
+# disable set -e so the script does not break when there is an error
+set +e
+
 sudo gluster peer status | grep $(hostname)
 while [ $? -ne 0 ]; do
     sudo gluster peer status | grep $(hostname)
     sleep 5s;
     echo "."
 done
+
+set -e
 
 sudo gluster peer status
 

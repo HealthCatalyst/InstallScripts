@@ -21,12 +21,18 @@ while read -r line _; do
     cmdText="$cmdText$line:/data/hcshared "
 
     echo "waiting until the peer $line becomes available"
+
+    # disable set -e so the script does not break when there is an error
+    set +e
+
     sudo gluster peer probe $line
     while [ $? -ne 0 ]; do
         sudo gluster peer probe $line
         sleep 5s;
         echo "."
     done
+
+    set -e
 
 done <<< "$glusternodes"
 

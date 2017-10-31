@@ -21,8 +21,8 @@ services:
       GRAYLOG_WEB_ENDPOINT_URI: http://127.0.0.1:9000/api
     ports:
       - "9000:9000"
-      - "12201/udp:12201/udp"
-      - "1514/udp:1514/udp"
+      - "12201:12201/udp"
+      - "1514:1514/udp"
 
   mysqlserver:
     image: healthcatalyst/fabric.nlp.docker.mysql

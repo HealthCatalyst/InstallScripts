@@ -10,7 +10,9 @@ sleep 10s;
 
 export SHARED_DRIVE=c:/tmp
 export SHARED_DRIVE_SOLR=c:/tmp/solr
+mkdir -p c:/tmp/solr
 export SHARED_DRIVE_MYSQL=c:/tmp/mysql_nlp
+mkdir c:/tmp/mysql_nlp
 export nlpwebserverexternal="localhost"
 export smtpserver="localhost"
 export jobserverexternal="localhost"

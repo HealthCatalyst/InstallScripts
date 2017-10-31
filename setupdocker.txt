@@ -8,6 +8,11 @@ set -e
 #
 #
 
+echo "setupdocker version 1.02"
+
+# remove the line from next run
+grep -v "curl -sSL https://healthcatalyst.github.io/InstallScripts/setupdocker.txt | sh" ~/.bashrc | sudo tee ~/.bashrc
+
 sudo systemctl enable docker.service
 
 sudo systemctl enable docker
@@ -22,6 +27,15 @@ echo "docker is setup now"
 # echo "0 2 * * * /bin/sh backup.sh" | sudo tee -a /etc/cron.d/docker_cleanup
 # (crontab -l ; echo "@daily /.sh") | sort - | uniq - | crontab -
 
+appinsightskey=""
+read -p "Please enter the Application Insights key provided to you by Health Catalyst:" -e appinsightskey < /dev/tty
+
+if [[ ! -z "$appinsightskey" ]]
+then
+    docker stop appinsights
+    docker pull microsoft/applicationinsights
+    docker run -v /var/run/docker.sock:/docker.sock -d --name appinsights microsoft/applicationinsights ikey="$appinsightskey"
+fi
 
 doSetupSwarm=""
 

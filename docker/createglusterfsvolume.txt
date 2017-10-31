@@ -10,6 +10,8 @@ echo "Version 1.09"
 # get a list of all the nodes in this swarm
 glusternodes=$(docker node ls --format '{{ .Hostname }}')
 
+# LINE_COUNT=$(wc -l <<< "${glusternodes}")
+
 cmdText=""
 linecount=0
 
@@ -17,7 +19,15 @@ while read -r line _; do
     linecount=$((linecount+1))
     echo "... $line ..."
     cmdText="$cmdText$line:/data/hcshared "
+
+    echo "waiting until the peer $line becomes available"
     sudo gluster peer probe $line
+    while [ $? -ne 0 ]; do
+        sudo gluster peer probe $line
+        sleep 5s;
+        echo "."
+    done
+
 done <<< "$glusternodes"
 
 # wait for nodes to get to ready
@@ -25,11 +35,15 @@ sleep 10s;
 
 echo "linecount=$linecount" 
 echo "cmdtext2=$cmdText"
+
+# from http://docs.gluster.org/en/latest/Administrator%20Guide/Setting%20Up%20Volumes/
+echo "creating glusterfs volume: $cmdText"
 sudo gluster volume create hcshared replica "$linecount" transport tcp $cmdText force
 
 # sudo gluster volume stop hcshared
 # sudo gluster volume delete hcshared
 
+echo "starting glusterfs volume"
 sudo gluster volume start hcshared
 
 sudo gluster volume info

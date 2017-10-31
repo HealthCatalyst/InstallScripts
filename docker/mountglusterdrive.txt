@@ -11,6 +11,8 @@ echo "Version 1.01"
 
 myip=$(hostname)
 
+echo "mounting glusterfs volume at /mnt/hcshared"
+
 sudo mount -t glusterfs $myip:/hcshared /mnt/hcshared
 
 # remove any existing entries

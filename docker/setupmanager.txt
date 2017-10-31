@@ -25,7 +25,8 @@ read -p "Hit enter after you've joined all the nodes to this swarm: " -e foo < /
 echo "installing glusterfs"
 curl -sSL https://healthcatalyst.github.io/InstallScripts/docker/installglusterfs.txt | sh -s 
 
-read -p "Hit enter after you've set up the nodes: " -e foo < /dev/tty
+echo "The following nodes have been detected:"
+docker node ls
 
 echo "creating a glusterfs volume"
 curl -sSL https://healthcatalyst.github.io/InstallScripts/docker/createglusterfsvolume.txt | sh -s

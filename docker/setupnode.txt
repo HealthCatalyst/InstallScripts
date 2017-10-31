@@ -15,7 +15,13 @@ curl -sSL https://healthcatalyst.github.io/InstallScripts/docker/installglusterf
 
 # join the gluster
 
-read -p "Hit enter after you've finished setting up the master" -e foo < /dev/tty
+echo "waiting until this host has been added to glusterfs"
+sudo gluster peer status | grep $(hostname)
+while [ $? -ne 0 ]; do
+    sudo gluster peer status | grep $(hostname)
+    sleep 5s;
+    echo "."
+done
 
 sudo gluster peer status
 
@@ -25,3 +31,4 @@ curl -sSL https://healthcatalyst.github.io/InstallScripts/docker/mountglusterdri
 sudo ls /mnt/hcshared/
 
 
+# http://lzone.de/cheat-sheet/GlusterFS

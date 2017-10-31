@@ -1,0 +1,104 @@
+# realtime-stack.yml
+# https://docs.docker.com/compose/compose-file/#entrypoint
+version: '3.3'  
+networks:  
+  realtimenet:
+    driver: overlay
+
+secrets:
+  RabbitMqMgmtUiPassword:
+    external: true  
+  MySQLPassword:
+    external: true
+  CertPassword:
+    external: true
+  CertHostName:
+    external: true
+  MySQLRootPassword:
+    external: true
+
+services:  
+  certificateserver:
+    image: healthcatalyst/fabric.certificateserver
+    networks: 
+      - realtimenet
+    secrets:
+      - CertPassword
+      - CertHostName
+    environment: 
+      CERT_HOSTNAME_FILE: /run/secrets/CertHostName
+      CERT_PASSWORD_FILE: /run/secrets/CertPassword
+      CLIENT_CERT_USERNAME: fabricrabbitmquser
+    volumes: 
+      - ${SHARED_DRIVE_CERTS}:/opt/certs/     
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == manager
+    ports: 
+       - 8081:3000
+    
+  rabbitmq:
+    image: healthcatalyst/fabric.realtime.rabbitmq
+    networks: 
+      - realtimenet
+    secrets:
+      - RabbitMqMgmtUiPassword
+      - CertHostName
+    environment: 
+      CERT_HOSTNAME_FILE: /run/secrets/CertHostName
+      RABBITMQ_MGMT_UI_PASSWORD_FILE: /run/secrets/RabbitMqMgmtUiPassword
+      RABBITMQ_MNESIA_BASE: /opt/rabbitmq
+      DISABLE_SSL: "${DISABLE_SSL}"
+    volumes: 
+      - type: bind
+        source: ${SHARED_DRIVE_CERTS}
+        target: /opt/healthcatalyst/
+      - type: bind
+        source: ${SHARED_DRIVE_RABBITMQ}
+        target: /opt/rabbitmq
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == manager
+    ports: 
+       - 5671:5671
+       - 15672:15672
+
+  mysqlserver:
+    image: healthcatalyst/fabric.realtime.mysql
+    networks: 
+      - realtimenet
+    secrets:
+      - MySQLPassword
+      - MySQLRootPassword
+    environment: 
+      MYSQL_ROOT_PASSWORD_FILE: /run/secrets/MySQLRootPassword
+      MYSQL_DATABASE: mirthdb
+      MYSQL_USER: mirthuser
+      MYSQL_PASSWORD_FILE: /run/secrets/MySQLPassword
+    volumes:
+      - type: bind
+        source: ${SHARED_DRIVE_MYSQL}
+        target: /var/lib/mysql
+    ports:
+      - 3306:3306
+
+  interfaceengine:
+    image: healthcatalyst/fabric.docker.interfaceengine
+    networks: 
+      - realtimenet
+    secrets:
+      - MySQLPassword
+    environment: 
+      MYSQL_USER: mirthuser
+      MYSQL_PASSWORD_FILE: /run/secrets/MySQLPassword
+      MYSQL_DATABASE: mirthdb
+    ports:
+      - 8080:8080
+      - 8443:8443
+      - 6661:6661
+
+

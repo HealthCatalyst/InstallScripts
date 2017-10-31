@@ -84,4 +84,8 @@ then
 	stackfilename="realtime-stack-sqlserver.yml"
 fi
 
-curl -sSL "https://healthcatalyst.github.io/InstallScripts/realtime/${stackfilename}?rand=$RANDOMNUMBER" | docker stack deploy --compose-file - fabricrealtime
+echo "running stack: $stackfilename"
+
+echo "https://healthcatalyst.github.io/InstallScripts/realtime/${stackfilename}"
+
+curl -sSL "https://healthcatalyst.github.io/InstallScripts/realtime/${stackfilename}" | docker stack deploy --compose-file - fabricrealtime

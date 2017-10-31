@@ -46,7 +46,7 @@ services:
        - 8085:8085
     
   jobserver:
-    image: fabric.nlp.docker.jobs
+    image: healthcatalyst/fabric.nlp.docker.jobs
     networks: 
       - nlpnet
     environment: 
@@ -56,7 +56,7 @@ services:
       - 8084:8084
 
   nlpwebserver:
-    image: fabric.nlp.docker.web
+    image: healthcatalyst/fabric.nlp.docker.web
     networks: 
       - nlpnet
     environment: 

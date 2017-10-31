@@ -1,7 +1,7 @@
 
 #
 # This script is meant for quick & easy install via:
-#   curl -sSL https://healthcatalyst.github.io/InstallScripts/realtime/runondevmachine.sh | sh
+#   curl -sSL https://healthcatalyst.github.io/InstallScripts/nlp/runondevmachine.sh | sh
 
 
 docker stack rm fabricnlp

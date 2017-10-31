@@ -8,6 +8,12 @@ docker stack rm fabricnlp
 
 sleep 10s;
 
+docker secret rm MySQLPassword || echo ""
+echo 'yourpassword' | docker secret create MySQLPassword -
+
+docker secret rm MySQLRootPassword || echo ""
+echo "new-password" |  docker secret create MySQLRootPassword -
+
 export SHARED_DRIVE=c:/tmp
 export SHARED_DRIVE_SOLR=c:/tmp/solr
 mkdir -p c:/tmp/solr

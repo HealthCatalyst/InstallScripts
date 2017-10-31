@@ -20,11 +20,9 @@ services:
       - MySQLPassword
       - MySQLRootPassword
     environment: 
-      MYSQL_ROOT_PASSWORD: new-password
       MYSQL_ROOT_PASSWORD_FILE: /run/secrets/MySQLRootPassword
       MYSQL_DATABASE: nlpmt
       MYSQL_USER: NLP_APP_USER
-      MYSQL_PASSWORD: yourpassword
       MYSQL_PASSWORD_FILE: /run/secrets/MySQLPassword
     volumes:
       - type: bind

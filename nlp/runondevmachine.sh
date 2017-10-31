@@ -3,6 +3,7 @@
 # This script is meant for quick & easy install via:
 #   curl -sSL https://healthcatalyst.github.io/InstallScripts/nlp/runondevmachine.sh | sh
 
+echo "Version 1.01"
 
 docker stack rm fabricnlp
 
@@ -19,7 +20,7 @@ export SHARED_DRIVE=c:/tmp
 export SHARED_DRIVE_SOLR=c:/tmp/solr
 mkdir -p c:/tmp/solr
 export SHARED_DRIVE_MYSQL=c:/tmp/mysql_nlp
-mkdir c:/tmp/mysql_nlp
+mkdir -p c:/tmp/mysql_nlp
 export nlpwebserverexternal="localhost"
 export smtpserver="localhost"
 export jobserverexternal="localhost"

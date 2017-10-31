@@ -6,7 +6,8 @@
 
 docker stack rm fabricnlp
 
-sleep 10s;
+echo "sleeping for network to clean up"
+sleep 20s;
 
 docker secret rm MySQLPassword || echo ""
 echo 'yourpassword' | docker secret create MySQLPassword -

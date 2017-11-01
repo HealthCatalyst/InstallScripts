@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-echo "Version 1.01"
+echo "Version 1.02"
 
 #
 # This script is meant for quick & easy install via:
@@ -9,85 +9,74 @@ echo "Version 1.01"
 
 # Remember: no spaces allowed in variable set commands in bash
 
-jobserverexternal="$1"
-nlpwebserverexternal="$2"
-smtpserver="$3"
+echo "---------------------------------------------------"
+echo "This script sets up the Fabric.Realtime cluster on Docker"
+echo "----------------------------------------------------"
 
-echo "jobserverexternal:"$jobserverexternal
-echo "smtpserver:"$smtpserver"
+# if wait-for-it is not installed then install it
+if [[ ! -f "/usr/local/bin/wait-for-it" ]]
+then
+	sudo yum -y install which dos2unix
+	curl -sSL -o /tmp/wait-for-it.sh https://healthcatalyst.github.io/InstallScripts/wait-for-it.sh?rand=$RANDOMNUMBER \
+		&& dos2unix /tmp/wait-for-it.sh \
+		&& chmod +x /tmp/wait-for-it.sh \
+		&& sudo cp /tmp/wait-for-it.sh /usr/bin/wait-for-it \
+		&& sudo cp /tmp/wait-for-it.sh /usr/local/bin/wait-for-it
+fi
 
-docker service rm mysqlserver || echo "mysqlserver is not already present"
-docker service rm solrserver || echo "solrserver is not already present"
-docker service rm jobserver || echo "jobserver is not already present"
-docker service rm nlpwebserver || echo "nlpwebserver is not already present"
-docker network rm nlpnet || echo "nlpnet is not already present"
+myhost="$1"
+
+# docker service rm mysqlserver || echo "mysqlserver is not already present"
+# docker service rm solrserver || echo "solrserver is not already present"
+# docker service rm jobserver || echo "jobserver is not already present"
+# docker service rm nlpwebserver || echo "nlpwebserver is not already present"
+# docker network rm nlpnet || echo "nlpnet is not already present"
 
 echo "existing services"
 docker service ls
 
-echo "creating nlpnet network"
-docker network create \
-	--driver overlay \
-	--subnet=172.28.0.0/16 \
-	--ip-range=172.28.5.0/24 \
-	nlpnet
+# calculate a random number to force urls not be cached
+# from https://gist.github.com/earthgecko/3089509
+RANDOMNUMBER=$(cat /dev/urandom | tr -dc '0-9' | fold -w 256 | head -n 1 | sed -e 's/^0*//' | head --bytes 7)
+if [ "$RANDOMNUMBER" == "" ]; then
+  RANDOMNUMBER=0
+fi
 
-echo "creating mysql service"
-docker service create --name mysqlserver \
-	--env MYSQL_ROOT_PASSWORD=new-password \
-	--env MYSQL_DATABASE=nlpmt \
-	--env MYSQL_USER=NLP_APP_USER \
-	--env MYSQL_PASSWORD=yourpassword \
-	--replicas 1 \
-	--constraint "node.labels.mysql == 1" \
-	--mount type=bind,source=/mnt/data1/mysql,destination=/var/lib/mysql \
-	--network nlpnet \
-    -p 3306:3306 \
-	--detach=false \
-	healthcatalyst/fabric.nlp.docker.mysql
+echo "Random Number:$RANDOMNUMBER"
 
-echo "waiting for mysql to come up"
-sleep 5s;
+#------ ask for any parameters we need --------------
+read -p "Please type in password to use for MySql account (NLP_APP_USER):" -e MySQLPassword < /dev/tty
+docker secret rm MySQLPassword || echo ""
+echo $MySQLPassword | docker secret create MySQLPassword -
 
-echo "creating solr service"
+read -p "Please type in password to use root MySql account:" MySQLRootPassword < /dev/tty
+docker secret rm MySQLRootPassword || echo ""
+echo $MySQLRootPassword | docker secret create MySQLRootPassword  -
 
-docker service create --name solrserver \
-	--replicas 1 \
-	--mount type=bind,source=/mnt/data1/solr,destination=/var/lib/solr \
-	--network nlpnet \
-	--constraint "node.labels.solr == 1" \
-    -p 8085:8085 \
-	--detach=false \
-	healthcatalyst/fabric.nlp.docker.solr
+if [[ -z "$myhost" ]]
+then
+	read -p "Please type in hostname:" myhost < /dev/tty
+fi
 
-echo "waiting for solr to come up"
-sleep 5s;
+read -p "Please type in smt server:" smtpserver < /dev/tty
 
+# ------ set environment variables for the docker stack ----------------
+export SHARED_DRIVE_LOGS="/var/logs/fluentd/fabricrealtime"
+mkdir -p ${SHARED_DRIVE_LOGS}
 
-echo "creating jobs service"
+export SHARED_DRIVE_SOLR=/mnt/hcshared/fabricnlp/solr
+mkdir -p ${SHARED_DRIVE_SOLR}
 
-docker service create --name jobserver \
-	--env nlpwebserverexternal=$nlpwebserverexternal \
-	--env smtpserver=$smtpserver \
-	--replicas 1 \
-	--network nlpnet \
-	--constraint "node.labels.worker == 1" \
-    -p 8084:8084 \
-	--detach=false \
-	healthcatalyst/fabric.nlp.docker.jobs
+export SHARED_DRIVE_MYSQL=/mnt/hcshared/fabricnlp/mysql
+mkdir -p {SHARED_DRIVE_MYSQL}
 
-echo "waiting for jobserver to come up"
-sleep 5s;
+export nlpwebserverexternal=$myhost
+export smtpserver=$smtpserver
+export jobserverexternal=$myhost
 
-echo "creating web service"
+# ---------- use docker stack deploy to start up all the services --------
+stackfilename="nlp-stack.yml"
 
-docker service create --name nlpwebserver \
-	--env jobserverexternal=$jobserverexternal \
-	--env smtpserver=$smtpserver \
-	--constraint "node.labels.worker == 1" \
-	--replicas 1 \
-	--network nlpnet \
-    -p 8083:8083 \
-	--detach=false \
-	healthcatalyst/fabric.nlp.docker.web
+curl -sSL "https://healthcatalyst.github.io/InstallScripts/nlp/${stackfilename}?rand=$RANDOMNUMBER" | docker stack deploy --compose-file - fabricnlp
 
+echo "logs are stored at: ${SHARED_DRIVE_LOGS}"

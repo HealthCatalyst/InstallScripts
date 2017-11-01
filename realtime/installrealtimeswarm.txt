@@ -178,6 +178,8 @@ export SHARED_DRIVE=$SHARED_DRIVE
 export SHARED_DRIVE_CERTS=$fabriccertificatestore
 export SHARED_DRIVE_RABBITMQ=$rabbitmqstore
 export SHARED_DRIVE_MYSQL=$mysqlstore
+export SHARED_DRIVE_LOGS="/var/logs/fluentd/fabricrealtime"
+mkdir -p ${SHARED_DRIVE_LOGS}
 
 # use docker stack deploy to start up all the services
 stackfilename="realtime-stack.yml"
@@ -190,24 +192,24 @@ curl -sSL "https://healthcatalyst.github.io/InstallScripts/realtime/${stackfilen
 
 
 echo "waiting for certificateserver to come up"
-wait-for-it $myhostname:8081 -t 60 || docker service logs fabricrealtime_certificateserver
+wait-for-it $myhostname:8081 -t 60
 
 echo "waiting for rabbitmq to come up"
-wait-for-it $myhostname:5671 -t 60 || docker service logs fabricrealtime_rabbitmq
-wait-for-it $myhostname:15672 -t 60 || docker service logs fabricrealtime_rabbitmq
-
-#	--env MYSQL_ROOT_PASSWORD_FILE=/run/secrets/MySQLRootPassword \
+wait-for-it $myhostname:5671 -t 60
+wait-for-it $myhostname:15672 -t 60
 
 echo "waiting for mysql to come up"
-# wait-for-it $myhostname:3306 -t 60 || docker service logs fabricrealtime_mysqlserver
+# wait-for-it $myhostname:3306 -t 60
 
 echo "waiting for interfaceengine to come up"
-wait-for-it $myhostname:8080 -t 60 || docker service logs fabricrealtime_interfaceengine
-# wait-for-it $myhostname:8433 -t 60 || docker service logs fabricrealtime_interfaceengine
-# wait-for-it $myhostname:6661 -t 60 || docker service logs fabricrealtime_interfaceengine
+wait-for-it $myhostname:8080 -t 60
+# wait-for-it $myhostname:8433 -t 60
+# wait-for-it $myhostname:6661 -t 60
 
 echo "testing rabbitmq one more time"
-wait-for-it $myhostname:5671 -t 60 || docker service logs fabricrealtime_rabbitmq
+wait-for-it $myhostname:5671 -t 60
+
+echo "logs are stored at: ${SHARED_DRIVE_LOGS}"
 
 echo "if you want, you can download the CA (Certificate Authority) cert from this url"
 echo "http://$myhostname:8081/client/fabric_ca_cert.p12"

@@ -34,7 +34,7 @@ then
     docker secret rm SqlServerUserName || echo ""
     echo $USERNAME | docker secret create SqlServerUserName -
 
-    read -p "Please type in password for Windows Service Account to use to connect to SQL Server:" -e sqlserverpassword < /dev/tty
+    read -p "Please type in password for $USERNAME:" -e sqlserverpassword < /dev/tty
     docker secret rm SqlServerPassword || echo ""
     echo $sqlserverpassword | docker secret create SqlServerPassword -
 

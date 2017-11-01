@@ -13,6 +13,39 @@ secrets:
 
 services:  
 
+  # https://docs.docker.com/engine/admin/logging/fluentd/
+  fluentd:
+    image: fluent/fluentd
+    networks: 
+      - nlpnet
+    volumes:
+      - type: bind
+        source: ${SHARED_DRIVE_LOGS}
+        target: /fluentd/log
+    ports:
+      - 24224:24224
+    deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 20s
+        max_attempts: 3
+        window: 120s      
+
+  # logstash:
+  #   image: healthcatalyst/fabric.docker.logger
+  #   networks: 
+  #     - nlpnet
+  #   volumes:
+  #     - type: bind
+  #       source: c:/tmp/logstash
+  #       target: /var/log/logstash/
+  #   ports:
+  #     - 12201:12201
+  #   logging:
+  #     driver: fluentd
+  #     options:
+  #       tag: logstash
+
   mysqlserver:
     image: healthcatalyst/fabric.nlp.docker.mysql
     networks: 
@@ -31,6 +64,16 @@ services:
         target: /var/lib/mysql
     ports:
       - 3306:3306
+    logging:
+      driver: fluentd
+      options:
+        tag: mysqlserver
+        fluentd-async-connect: 1
+    # logging:
+    #   driver: fluentd
+    #   options:
+    #     tag: mysqlserver
+    #     gelf-address: udp://127.0.0.1:12201
 
   solrserver:
     image: healthcatalyst/fabric.nlp.docker.solr
@@ -42,6 +85,11 @@ services:
         target: /var/lib/solr
     ports: 
        - 8085:8085
+    logging:
+      driver: fluentd
+      options:
+        tag: solrserver
+        fluentd-async-connect: 1        
     
   jobserver:
     image: healthcatalyst/fabric.nlp.docker.jobs
@@ -52,6 +100,11 @@ services:
       smtpserver: ${smtpserver}
     ports: 
       - 8084:8084
+    logging:
+      driver: fluentd
+      options:
+        tag: jobserver
+        fluentd-async-connect: 1        
 
   nlpwebserver:
     image: healthcatalyst/fabric.nlp.docker.web
@@ -60,5 +113,10 @@ services:
     environment: 
       jobserverexternal: ${jobserverexternal}
       smtpserver: ${smtpserver}
+    logging:
+      driver: fluentd
+      options:
+        tag: nlpwebserver
+        fluentd-async-connect: 1        
     ports: 
       - 8083:8083

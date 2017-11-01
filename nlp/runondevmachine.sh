@@ -17,6 +17,10 @@ docker secret rm MySQLRootPassword || echo ""
 echo "new-password" |  docker secret create MySQLRootPassword -
 
 export SHARED_DRIVE=c:/tmp
+
+export SHARED_DRIVE_LOGS=c:/tmp/fluentd
+mkdir -p c:/tmp/fluentd
+
 export SHARED_DRIVE_SOLR=c:/tmp/solr
 mkdir -p c:/tmp/solr
 export SHARED_DRIVE_MYSQL=c:/tmp/mysql_nlp
@@ -32,4 +36,6 @@ echo "running stack: $stackfilename"
 
 echo "https://healthcatalyst.github.io/InstallScripts/nlp/${stackfilename}"
 
-curl -sSL "https://healthcatalyst.github.io/InstallScripts/nlp/${stackfilename}" | docker stack deploy --compose-file - fabricnlp
+# curl -sSL "https://healthcatalyst.github.io/InstallScripts/nlp/${stackfilename}" | docker stack deploy --compose-file - fabricnlp
+
+docker stack deploy -c $stackfilename fabricnlp

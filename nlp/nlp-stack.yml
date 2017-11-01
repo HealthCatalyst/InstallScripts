@@ -10,6 +10,8 @@ secrets:
     external: true
   MySQLRootPassword:
     external: true
+  ExternalHostName:
+    external: true
 
 services:  
 

@@ -19,7 +19,6 @@ echo "new-password" |  docker secret create MySQLRootPassword -
 docker secret rm ExternalHostName || echo ""
 echo "localhost" | docker secret create ExternalHostName  -
 
-
 export SHARED_DRIVE=c:/tmp
 
 export SHARED_DRIVE_LOGS=c:/tmp/fluentd

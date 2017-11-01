@@ -95,9 +95,11 @@ services:
     image: healthcatalyst/fabric.nlp.docker.jobs
     networks: 
       - nlpnet
+    secrets:
+      - ExternalHostName
     environment: 
-      nlpwebserverexternal: ${nlpwebserverexternal}
-      smtpserver: ${smtpserver}
+      EXTERNAL_HOSTNAME_FILE: /run/secrets/ExternalHostName
+      smtpserver: ""
     ports: 
       - 8084:8084
     logging:
@@ -110,9 +112,11 @@ services:
     image: healthcatalyst/fabric.nlp.docker.web
     networks: 
       - nlpnet
+    secrets:
+      - ExternalHostName
     environment: 
-      jobserverexternal: ${jobserverexternal}
-      smtpserver: ${smtpserver}
+      EXTERNAL_HOSTNAME_FILE: /run/secrets/ExternalHostName
+      smtpserver: ""
     logging:
       driver: fluentd
       options:

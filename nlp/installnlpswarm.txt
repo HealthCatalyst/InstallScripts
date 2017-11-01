@@ -45,20 +45,43 @@ fi
 echo "Random Number:$RANDOMNUMBER"
 
 #------ ask for any parameters we need --------------
-read -p "Please type in password to use for MySql account (NLP_APP_USER):" -e MySQLPassword < /dev/tty
-docker secret rm MySQLPassword || echo ""
-echo $MySQLPassword | docker secret create MySQLPassword -
 
-read -p "Please type in password to use root MySql account:" MySQLRootPassword < /dev/tty
-docker secret rm MySQLRootPassword || echo ""
-echo $MySQLRootPassword | docker secret create MySQLRootPassword  -
+if [[ -d "/mnt/hcshared/fabricnlp/solr" ]]; then
+	# folder exists so we assume that we've already installed
+else
 
-if [[ -z "$myhost" ]]
-then
-	read -p "Please type in hostname:" myhost < /dev/tty
 fi
 
-read -p "Please type in smt server:" smtpserver < /dev/tty
+# disable set -e so the script does not break when there is an error
+set +e
+
+
+docker secret inspect ExternalHostName
+if [ $? -ne 0 ]; then
+	read -p "Please type in hostname:" ExternalHostName < /dev/tty
+	echo $ExternalHostName | docker secret create ExternalHostName  -
+fi
+
+docker secret inspect MySQLPassword
+if [ $? -ne 0 ]; then
+	read -p "Please type in password to use for MySql account (NLP_APP_USER):" -e MySQLPassword < /dev/tty
+	echo $MySQLPassword | docker secret create MySQLPassword -
+fi
+
+docker secret inspect MySQLRootPassword
+if [ $? -ne 0 ]; then
+	read -p "Please type in password to use root MySql account:" MySQLRootPassword < /dev/tty
+	echo $MySQLRootPassword | docker secret create MySQLRootPassword  -
+fi
+
+# docker secret inspect SmtpServer
+#if [ $? -ne 0 ]; then
+#	read -p "Please type in SMTP Server:" SmtpServer < /dev/tty
+#	echo $SmtpServer | docker secret create SmtpServer  -
+#fi
+
+set -e
+
 
 # ------ set environment variables for the docker stack ----------------
 export SHARED_DRIVE_LOGS="/var/logs/fluentd/fabricrealtime"
@@ -70,9 +93,7 @@ mkdir -p ${SHARED_DRIVE_SOLR}
 export SHARED_DRIVE_MYSQL=/mnt/hcshared/fabricnlp/mysql
 mkdir -p {SHARED_DRIVE_MYSQL}
 
-export nlpwebserverexternal=$myhost
-export smtpserver=$smtpserver
-export jobserverexternal=$myhost
+export smtpserver=""
 
 # ---------- use docker stack deploy to start up all the services --------
 stackfilename="nlp-stack.yml"

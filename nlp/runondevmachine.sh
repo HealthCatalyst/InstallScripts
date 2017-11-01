@@ -16,6 +16,10 @@ echo 'yourpassword' | docker secret create MySQLPassword -
 docker secret rm MySQLRootPassword || echo ""
 echo "new-password" |  docker secret create MySQLRootPassword -
 
+docker secret rm ExternalHostName || echo ""
+echo "localhost" | docker secret create ExternalHostName  -
+
+
 export SHARED_DRIVE=c:/tmp
 
 export SHARED_DRIVE_LOGS=c:/tmp/fluentd
@@ -25,9 +29,7 @@ export SHARED_DRIVE_SOLR=c:/tmp/solr
 mkdir -p c:/tmp/solr
 export SHARED_DRIVE_MYSQL=c:/tmp/mysql_nlp
 mkdir -p c:/tmp/mysql_nlp
-export nlpwebserverexternal="localhost"
-export smtpserver="localhost"
-export jobserverexternal="localhost"
+
 
 # use docker stack deploy to start up all the services
 stackfilename="nlp-stack.yml"

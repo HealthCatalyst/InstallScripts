@@ -2,7 +2,7 @@
 set -e
 # set -x
 
-echo "Version 1.184"
+echo "Version 1.185"
 
 #
 # This script is meant for quick & easy install via:
@@ -179,7 +179,7 @@ export SHARED_DRIVE_CERTS=$fabriccertificatestore
 export SHARED_DRIVE_RABBITMQ=$rabbitmqstore
 export SHARED_DRIVE_MYSQL=$mysqlstore
 export SHARED_DRIVE_LOGS="/var/logs/fluentd/fabricrealtime"
-mkdir -p ${SHARED_DRIVE_LOGS}
+sudo mkdir -p ${SHARED_DRIVE_LOGS}
 
 # use docker stack deploy to start up all the services
 stackfilename="realtime-stack.yml"

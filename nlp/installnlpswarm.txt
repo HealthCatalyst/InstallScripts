@@ -83,10 +83,10 @@ export SHARED_DRIVE_LOGS="/var/logs/fluentd/fabricrealtime"
 sudo mkdir -p ${SHARED_DRIVE_LOGS}
 
 export SHARED_DRIVE_SOLR=/mnt/hcshared/fabricnlp/solr
-mkdir -p ${SHARED_DRIVE_SOLR}
+sudo mkdir -p ${SHARED_DRIVE_SOLR}
 
 export SHARED_DRIVE_MYSQL=/mnt/hcshared/fabricnlp/mysql
-mkdir -p {SHARED_DRIVE_MYSQL}
+sudo mkdir -p {SHARED_DRIVE_MYSQL}
 
 export smtpserver=""
 

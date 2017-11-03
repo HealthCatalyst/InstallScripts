@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-echo "Version 1.03"
+echo "Version 1.04"
 
 #
 # This script is meant for quick & easy install via:
@@ -46,12 +46,6 @@ fi
 echo "Random Number:$RANDOMNUMBER"
 
 #------ ask for any parameters we need --------------
-
-if [[ -d "/mnt/hcshared/fabricnlp/solr" ]]; then
-	# folder exists so we assume that we've already installed
-else
-
-fi
 
 # disable set -e so the script does not break when there is an error
 set +e

@@ -12,34 +12,29 @@ echo "Version 1.185"
 myhostname="$1"
 MySQLUser="mirthuser"
 
+mydatetime=$(date +%Y%m%d%H%M%S)
+
 # these are set in the script below
 CertPassword=""
 RabbitMqMgmtUiPassword=""
 MySQLPassword=""
 MySQLRootPassword=""
 
-# calculate a random number to force urls not be cached
-# from https://gist.github.com/earthgecko/3089509
-RANDOMNUMBER=$(cat /dev/urandom | tr -dc '0-9' | fold -w 256 | head -n 1 | sed -e 's/^0*//' | head --bytes 7)
-if [ "$RANDOMNUMBER" == "" ]; then
-  RANDOMNUMBER=0
-fi
-
-echo "Random Number:$RANDOMNUMBER"
-
 echo "---------------------------------------------------"
 echo "This script sets up the Fabric.Realtime cluster on Docker"
 echo "----------------------------------------------------"
 
 # if wait-for-it is not installed then install it
-if [[ ! -f "/usr/local/bin/wait-for-it" ]]
+if [[ ! -f "/usr/local/bin/updaterealtime" ]]
 then
 	sudo yum -y install which dos2unix
 	curl -sSL -o /tmp/wait-for-it.sh https://healthcatalyst.github.io/InstallScripts/wait-for-it.sh?rand=$RANDOMNUMBER \
 		&& dos2unix /tmp/wait-for-it.sh \
 		&& chmod +x /tmp/wait-for-it.sh \
 		&& sudo cp /tmp/wait-for-it.sh /usr/bin/wait-for-it \
-		&& sudo cp /tmp/wait-for-it.sh /usr/local/bin/wait-for-it
+		&& sudo cp /tmp/wait-for-it.sh /usr/local/bin/wait-for-it \
+		&& echo 'curl -sSL https://healthcatalyst.github.io/InstallScripts/realtime/installrealtimeswarm.txt?rand=$(date +%Y%m%d%H%M%S) | sh -s' | sudo tee /usr/local/bin/updaterealtime \
+		&& sudo chmod +x /usr/local/bin/updaterealtime
 fi
 
 # see if we already have a cert store created
@@ -188,7 +183,7 @@ then
 	stackfilename="realtime-stack-sqlserver.yml"
 fi
 
-curl -sSL "https://healthcatalyst.github.io/InstallScripts/realtime/${stackfilename}?rand=$RANDOMNUMBER" | docker stack deploy --compose-file - fabricrealtime
+curl -sSL "https://healthcatalyst.github.io/InstallScripts/realtime/${stackfilename}?rand=$mydatetime" | docker stack deploy --compose-file - fabricrealtime
 
 
 echo "waiting for certificateserver to come up"

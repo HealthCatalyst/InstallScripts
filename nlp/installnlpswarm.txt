@@ -58,7 +58,12 @@ docker secret inspect ExternalHostName &>/dev/null
 if [ $? -ne 0 ]; then
 	read -p "Please type in hostname:" ExternalHostName < /dev/tty
 	echo $ExternalHostName | docker secret create ExternalHostName  -
-	export NLP_HOST_NAME=$ExternalHostName	
+	export NLP_HOST_NAME="$ExternalHostName"
+fi
+
+if [ -z "${NLP_HOST_NAME:-}" ]; then
+	read -p "Please type in hostname:" ExternalHostName < /dev/tty
+	export NLP_HOST_NAME="$ExternalHostName"
 fi
 
 docker secret inspect MySQLPassword &>/dev/null

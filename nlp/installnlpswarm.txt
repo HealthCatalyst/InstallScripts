@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-echo "Version 1.061"
+echo "Version 1.062"
 
 #
 # This script is meant for quick & easy install via:
@@ -100,6 +100,9 @@ export SHARED_DRIVE_MYSQL=/mnt/hcshared/fabricnlp/mysql
 sudo mkdir -p "${SHARED_DRIVE_MYSQL}"
 
 export smtpserver=""
+
+# export DOCKER_LOGGING_DRIVER="fluentd"
+export DOCKER_LOGGING_DRIVER="json-file"
 
 # ---------- use docker stack deploy to start up all the services --------
 stackfilename="nlp-stack.yml"

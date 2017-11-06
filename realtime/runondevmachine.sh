@@ -96,6 +96,14 @@ then
 	stackfilename="realtime-stack-sqlserver.yml"
 fi
 
+docker pull healthcatalyst/fabric.realtime.rabbitmq
+docker pull healthcatalyst/fabric.realtime.mysql
+docker pull healthcatalyst/fabric.docker.interfaceengine
+docker pull healthcatalyst/fabric.certificateserver
+docker pull fluent/fluentd
+
+
+
 echo "running stack: $stackfilename"
 
 echo "https://healthcatalyst.github.io/InstallScripts/realtime/${stackfilename}"

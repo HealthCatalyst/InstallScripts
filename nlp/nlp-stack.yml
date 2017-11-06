@@ -93,9 +93,11 @@ services:
     networks: 
       - nlpnet
     secrets:
+      - MySQLPassword
       - ExternalHostName
     environment: 
       EXTERNAL_HOSTNAME_FILE: /run/secrets/ExternalHostName
+      MYSQL_PASSWORD_FILE: /run/secrets/MySQLPassword
       smtpserver: ""
     ports: 
       - 8084:8084
@@ -110,9 +112,11 @@ services:
     networks: 
       - nlpnet
     secrets:
+      - MySQLPassword
       - ExternalHostName
     environment: 
       EXTERNAL_HOSTNAME_FILE: /run/secrets/ExternalHostName
+      MYSQL_PASSWORD_FILE: /run/secrets/MySQLPassword
       smtpserver: ""
     # logging:
     #   driver: fluentd

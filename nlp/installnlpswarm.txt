@@ -107,26 +107,10 @@ stackfilename="nlp-stack.yml"
 
 curl -sSL "https://healthcatalyst.github.io/InstallScripts/nlp/${stackfilename}?rand=$mydatetime" | docker stack deploy --compose-file - fabricnlp
 
-echo "logs are stored at: ${SHARED_DRIVE_LOGS}"
+# echo "logs are stored at: ${SHARED_DRIVE_LOGS}"
 
 wait-for-it localhost:3306 -t 120 --strict -- echo "mysql is up" || docker service logs fabricnlp_mysqlserver
 
 wait-for-it localhost:8085 -t 120 --strict -- echo "solr is up" || docker service logs fabricnlp_solrserver
 
-waitcount=0
-until [ $(curl -w %{http_code} -s -f $NLP_HOST_NAME:8083/nlpweb) -eq 302 ]; do
-	echo "nlpwebserver is unavailable - sleeping"
-	(( waitcount++ ))
-	echo "$waitcount"
-	if [ "$waitcount" -gt 60 ]; then echo "nlpwebserver not found"; docker service logs fabricnlp_nlpwebserver; break; fi
-	sleep 5
-done
-
-waitcount=0
-until [ $(curl -w %{http_code} -s -f $NLP_HOST_NAME:8084/nlp) -eq 302 ]; do
-	echo "nlpjobserver is unavailable - sleeping"
-	(( waitcount++ ))
-	if [ "$waitcount" -gt 60 ]; then echo "nlpjobserver not found"; docker service logs fabricnlp_jobserver; break; fi
-	sleep 5
-done
-
+echo "$NLP_HOST_NAME"

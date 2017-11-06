@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-echo "Version 1.064"
+echo "Version 1.065"
 
 #
 # This script is meant for quick & easy install via:
@@ -109,16 +109,19 @@ wait-for-it localhost:3306 -t 120 --strict -- echo "mysql is up" || docker servi
 wait-for-it localhost:8085 -t 120 --strict -- echo "solr is up" || docker service logs fabricnlp_solrserver
 
 waitcount=0
-until curl $NLP_HOST_NAME:8083/nlpweb || [[ "$waitcount" -gt 60 ]]; do
-  echo "nlpwebserver is unavailable - sleeping"
-  (( waitcount++ ))
-  sleep 5
+until curl $NLP_HOST_NAME:8083/nlpweb; do
+	echo "nlpwebserver is unavailable - sleeping"
+	(( waitcount++ ))
+	echo "$waitcount"
+	if [ "$waitcount" -gt 60 ]; then echo "nlpwebserver not found"; docker service logs fabricnlp_nlpwebserver; break; fi
+	sleep 5
 done
 
 waitcount=0
-until curl $NLP_HOST_NAME:8084/nlp || [[ "$waitcount" -gt 60 ]]; do
-  echo "nlpjobserver is unavailable - sleeping"
-  (( waitcount++ ))
-  sleep 5
+until curl $NLP_HOST_NAME:8084/nlp; do
+	echo "nlpjobserver is unavailable - sleeping"
+	(( waitcount++ ))
+	if [ "$waitcount" -gt 60 ]; then echo "nlpjobserver not found"; docker service logs fabricnlp_jobserver; break; fi
+	sleep 5
 done
 

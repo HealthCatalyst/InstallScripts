@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-echo "Version 1.063"
+echo "Version 1.064"
 
 #
 # This script is meant for quick & easy install via:
@@ -28,8 +28,6 @@ then
 		&& echo 'curl -sSL https://healthcatalyst.github.io/InstallScripts/nlp/installnlpswarm.txt?rand=$(date +%Y%m%d%H%M%S) | sh -s' | sudo tee /usr/local/bin/updatenlp \
 		&& sudo chmod +x /usr/local/bin/updatenlp
 fi
-
-myhost="$1"
 
 # docker service rm mysqlserver || echo "mysqlserver is not already present"
 # docker service rm solrserver || echo "solrserver is not already present"
@@ -60,6 +58,7 @@ docker secret inspect ExternalHostName &>/dev/null
 if [ $? -ne 0 ]; then
 	read -p "Please type in hostname:" ExternalHostName < /dev/tty
 	echo $ExternalHostName | docker secret create ExternalHostName  -
+	export NLP_HOST_NAME=$ExternalHostName	
 fi
 
 docker secret inspect MySQLPassword &>/dev/null
@@ -109,7 +108,17 @@ wait-for-it localhost:3306 -t 120 --strict -- echo "mysql is up" || docker servi
 
 wait-for-it localhost:8085 -t 120 --strict -- echo "solr is up" || docker service logs fabricnlp_solrserver
 
-wait-for-it localhost:8083/nlpweb -t 180 --strict -- echo "nlp webserver is up" || docker service logs fabricnlp_nlpwebserver
+waitcount=0
+until curl $NLP_HOST_NAME:8083/nlpweb || [[ "$waitcount" -gt 60 ]]; do
+  echo "nlpwebserver is unavailable - sleeping"
+  (( waitcount++ ))
+  sleep 5
+done
 
-wait-for-it localhost:8084/nlp -t 180 --strict -- echo "nlp job server is up" || docker service logs fabricnlp_jobserver
+waitcount=0
+until curl $NLP_HOST_NAME:8084/nlp || [[ "$waitcount" -gt 60 ]]; do
+  echo "nlpjobserver is unavailable - sleeping"
+  (( waitcount++ ))
+  sleep 5
+done
 

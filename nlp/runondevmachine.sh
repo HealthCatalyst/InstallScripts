@@ -7,8 +7,10 @@ echo "Version 1.01"
 
 docker stack rm fabricnlp
 
-echo "sleeping for network to clean up"
-sleep 20s;
+# echo "sleeping for network to clean up"
+# sleep 20s;
+
+while docker network inspect -f "{{ .Name }}" fabricnlp_nlpnet &>/dev/null; do echo "."; sleep 1; done
 
 docker secret rm MySQLPassword || echo ""
 echo 'yourpassword' | docker secret create MySQLPassword -

@@ -13,6 +13,7 @@ echo "---------------------------------------------------"
 echo "This script sets up the Fabric.Realtime cluster on Docker"
 echo "----------------------------------------------------"
 
+doclean="$1"
 mydatetime=$(date +%Y%m%d%H%M%S)
 
 # if wait-for-it is not installed then install it
@@ -40,17 +41,10 @@ docker stack rm fabricnlp &>/dev/null
 
  echo "waiting until network is removed"
 
-# disable set -e so the script does not break when there is an error
-set +e
-
-docker network inspect -f "{{ .Name }}" fabricnlp_nlpnet &>/dev/null
-while [ $? -eq 0 ]; do
-    sleep 5s;
-    echo "."
-    docker network inspect -f "{{ .Name }}" fabricnlp_nlpnet
+while docker network inspect -f "{{ .Name }}" fabricnlp_nlpnet &>/dev/null; do 
+	echo "."; 
+	sleep 1; 
 done
-
-set -e
 
 
 echo "existing services"
@@ -111,11 +105,11 @@ curl -sSL "https://healthcatalyst.github.io/InstallScripts/nlp/${stackfilename}?
 
 echo "logs are stored at: ${SHARED_DRIVE_LOGS}"
 
-wait-for-it localhost:3306 -t 60 --strict -- echo "mysql is up"
+wait-for-it localhost:3306 -t 60 --strict -- echo "mysql is up" || docker service logs fabricnlp_mysqlserver
 
-wait-for-it localhost:8085 -t 60 --strict -- echo "solr is up"
+wait-for-it localhost:8085 -t 60 --strict -- echo "solr is up" || docker service logs fabricnlp_solrserver
 
-wait-for-it localhost:8083/nlpweb -t 60 --strict -- echo "nlp webserver is up"
+wait-for-it localhost:8083/nlpweb -t 60 --strict -- echo "nlp webserver is up" || docker service logs fabricnlp_nlpwebserver
 
-wait-for-it localhost:8084/nlp -t 60 --strict -- echo "nlp job server is up"
+wait-for-it localhost:8084/nlp -t 60 --strict -- echo "nlp job server is up" || || docker service logs fabricnlp_jobserver
 

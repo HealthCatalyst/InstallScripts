@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-echo "Version 1.059"
+echo "Version 1.060"
 
 #
 # This script is meant for quick & easy install via:
@@ -36,14 +36,14 @@ myhost="$1"
 # docker service rm nlpwebserver || echo "nlpwebserver is not already present"
 # docker network rm nlpnet || echo "nlpnet is not already present"
 
-docker stack rm fabricnlp
+docker stack rm fabricnlp &>/dev/null
 
  echo "waiting until network is removed"
 
 # disable set -e so the script does not break when there is an error
 set +e
 
-docker network inspect -f "{{ .Name }}" fabricnlp_nlpnet
+docker network inspect -f "{{ .Name }}" fabricnlp_nlpnet &>/dev/null
 while [ $? -eq 0 ]; do
     sleep 5s;
     echo "."
@@ -62,25 +62,25 @@ docker service ls
 set +e
 
 
-docker secret inspect ExternalHostName
+docker secret inspect ExternalHostName &>/dev/null
 if [ $? -ne 0 ]; then
 	read -p "Please type in hostname:" ExternalHostName < /dev/tty
 	echo $ExternalHostName | docker secret create ExternalHostName  -
 fi
 
-docker secret inspect MySQLPassword
+docker secret inspect MySQLPassword &>/dev/null
 if [ $? -ne 0 ]; then
 	read -p "Please type in password to use for MySql account (NLP_APP_USER):" -e MySQLPassword < /dev/tty
 	echo $MySQLPassword | docker secret create MySQLPassword -
 fi
 
-docker secret inspect MySQLRootPassword
+docker secret inspect MySQLRootPassword &>/dev/null
 if [ $? -ne 0 ]; then
 	read -p "Please type in password to use root MySql account:" MySQLRootPassword < /dev/tty
 	echo $MySQLRootPassword | docker secret create MySQLRootPassword  -
 fi
 
-# docker secret inspect SmtpServer
+# docker secret inspect SmtpServer &>/dev/null
 #if [ $? -ne 0 ]; then
 #	read -p "Please type in SMTP Server:" SmtpServer < /dev/tty
 #	echo $SmtpServer | docker secret create SmtpServer  -

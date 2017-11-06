@@ -67,7 +67,7 @@ services:
     ports:
       - 3306:3306
     logging:
-      driver: ${DOCKER_LOGGING_DRIVER}
+      driver: fluentd
       options:
         tag: mysqlserver
         fluentd-async-connect: 1
@@ -88,7 +88,7 @@ services:
     ports: 
        - 8085:8085
     logging:
-      driver: ${DOCKER_LOGGING_DRIVER}
+      driver: fluentd
       options:
         tag: solrserver
         fluentd-async-connect: 1        
@@ -105,7 +105,7 @@ services:
     ports: 
       - 8084:8084
     logging:
-      driver: ${DOCKER_LOGGING_DRIVER}
+      driver: fluentd
       options:
         tag: jobserver
         fluentd-async-connect: 1        
@@ -120,7 +120,7 @@ services:
       EXTERNAL_HOSTNAME_FILE: /run/secrets/ExternalHostName
       smtpserver: ""
     logging:
-      driver: ${DOCKER_LOGGING_DRIVER}
+      driver: fluentd
       options:
         tag: nlpwebserver
         fluentd-async-connect: 1        

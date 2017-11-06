@@ -111,11 +111,11 @@ curl -sSL "https://healthcatalyst.github.io/InstallScripts/nlp/${stackfilename}?
 
 echo "logs are stored at: ${SHARED_DRIVE_LOGS}"
 
-wait-for-it localhost:3306 -t 60 -- echo "mysql is up"
+wait-for-it localhost:3306 -t 60 --strict -- echo "mysql is up"
 
-wait-for-it localhost:8085 -t 60 -- echo "solr is up"
+wait-for-it localhost:8085 -t 60 --strict -- echo "solr is up"
 
-wait-for-it localhost:8083/nlpweb -t 60 -- echo "nlp webserver is up"
+wait-for-it localhost:8083/nlpweb -t 60 --strict -- echo "nlp webserver is up"
 
-wait-for-it localhost:8084/nlp -t 60 -- echo "nlp job server is up"
+wait-for-it localhost:8084/nlp -t 60 --strict -- echo "nlp job server is up"
 

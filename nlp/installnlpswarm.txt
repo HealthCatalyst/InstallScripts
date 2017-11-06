@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-echo "Version 1.056"
+echo "Version 1.057"
 
 #
 # This script is meant for quick & easy install via:
@@ -35,6 +35,21 @@ myhost="$1"
 # docker network rm nlpnet || echo "nlpnet is not already present"
 
 docker stack rm fabricnlp
+
+ echo "waiting until network is removed"
+
+# disable set -e so the script does not break when there is an error
+set +e
+
+docker network inspect -f "{{ .Name }}" fabricnlp_nlpnet
+while [ $? -eq 0 ]; do
+    sleep 5s;
+    echo "."
+    docker network inspect -f "{{ .Name }}" fabricnlp_nlpnet
+done
+
+set -e
+
 
 echo "existing services"
 docker service ls

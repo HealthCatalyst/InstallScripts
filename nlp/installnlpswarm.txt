@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-echo "Version 1.060"
+echo "Version 1.061"
 
 #
 # This script is meant for quick & easy install via:
@@ -24,7 +24,7 @@ then
 		&& chmod +x /tmp/wait-for-it.sh \
 		&& sudo cp /tmp/wait-for-it.sh /usr/bin/wait-for-it \
 		&& sudo cp /tmp/wait-for-it.sh /usr/local/bin/wait-for-it \
-		&& echo "curl -sSL https://healthcatalyst.github.io/InstallScripts/nlp/installnlpswarm.txt?rand=$mydatetime | sh -s" | sudo tee /usr/local/bin/updatenlp \
+		&& echo 'curl -sSL https://healthcatalyst.github.io/InstallScripts/nlp/installnlpswarm.txt?rand=$(date +%Y%m%d%H%M%S) | sh -s' | sudo tee /usr/local/bin/updatenlp \
 		&& sudo chmod +x /usr/local/bin/updatenlp
 fi
 

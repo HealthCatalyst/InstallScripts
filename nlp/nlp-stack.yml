@@ -66,16 +66,11 @@ services:
         target: /var/lib/mysql
     ports:
       - 3306:3306
-    logging:
-      driver: fluentd
-      options:
-        tag: mysqlserver
-        fluentd-async-connect: 1
     # logging:
     #   driver: fluentd
     #   options:
     #     tag: mysqlserver
-    #     gelf-address: udp://127.0.0.1:12201
+    #     fluentd-async-connect: 1
 
   solrserver:
     image: healthcatalyst/fabric.nlp.docker.solr
@@ -87,11 +82,11 @@ services:
         target: /var/lib/solr
     ports: 
        - 8085:8085
-    logging:
-      driver: fluentd
-      options:
-        tag: solrserver
-        fluentd-async-connect: 1        
+    # logging:
+    #   driver: fluentd
+    #   options:
+    #     tag: solrserver
+    #     fluentd-async-connect: 1        
     
   jobserver:
     image: healthcatalyst/fabric.nlp.docker.jobs
@@ -104,11 +99,11 @@ services:
       smtpserver: ""
     ports: 
       - 8084:8084
-    logging:
-      driver: fluentd
-      options:
-        tag: jobserver
-        fluentd-async-connect: 1        
+    # logging:
+    #   driver: fluentd
+    #   options:
+    #     tag: jobserver
+    #     fluentd-async-connect: 1        
 
   nlpwebserver:
     image: healthcatalyst/fabric.nlp.docker.web
@@ -119,10 +114,10 @@ services:
     environment: 
       EXTERNAL_HOSTNAME_FILE: /run/secrets/ExternalHostName
       smtpserver: ""
-    logging:
-      driver: fluentd
-      options:
-        tag: nlpwebserver
-        fluentd-async-connect: 1        
+    # logging:
+    #   driver: fluentd
+    #   options:
+    #     tag: nlpwebserver
+    #     fluentd-async-connect: 1        
     ports: 
       - 8083:8083

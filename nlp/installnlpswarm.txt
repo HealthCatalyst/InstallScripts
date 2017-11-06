@@ -61,10 +61,10 @@ if [ $? -ne 0 ]; then
 	export NLP_HOST_NAME="$ExternalHostName"
 fi
 
-if [ -z "${NLP_HOST_NAME:-}" ]; then
-	read -p "Please type in hostname:" ExternalHostName < /dev/tty
-	export NLP_HOST_NAME="$ExternalHostName"
-fi
+# if [ -z "${NLP_HOST_NAME:-}" ]; then
+#	read -p "Please type in hostname:" ExternalHostName < /dev/tty
+#	export NLP_HOST_NAME="$ExternalHostName"
+# fi
 
 docker secret inspect MySQLPassword &>/dev/null
 if [ $? -ne 0 ]; then
@@ -113,4 +113,4 @@ wait-for-it localhost:3306 -t 120 --strict -- echo "mysql is up" || docker servi
 
 wait-for-it localhost:8085 -t 120 --strict -- echo "solr is up" || docker service logs fabricnlp_solrserver
 
-echo "$NLP_HOST_NAME"
+# echo "$NLP_HOST_NAME"

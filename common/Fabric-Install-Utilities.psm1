@@ -393,6 +393,7 @@ Export-ModuleMember -function Publish-WebSite
 Export-ModuleMember -function Set-EnvironmentVariables
 Export-ModuleMember -function Get-EncryptedString
 Export-ModuleMember -function Test-Prerequisite
+Export-ModuleMember -function Test-Prerequisite-Exact
 Export-ModuleMember -function Get-CouchDbRemoteInstallationStatus
 Export-ModuleMember -function Get-AccessToken
 Export-ModuleMember -function Add-ApiRegistration

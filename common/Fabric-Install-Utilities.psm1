@@ -190,6 +190,29 @@ function Test-Prerequisite($appName, $minVersion)
     }
 }
 
+function Test-Prerequisite-Exact($appName, $supportedVersion)
+{
+    $installedAppResults = Get-InstalledApps | where {$_.DisplayName -like $appName}
+    if($installedAppResults -eq $null){
+        return $false;
+    }
+
+    if($supportedVersion -eq $null)
+    {
+        return $true;
+    }
+
+    $minVersionAsSystemVersion = [System.Version]$supportedVersion
+    Foreach($version in $installedAppResults)
+    {
+        $installedVersion = [System.Version]$version.DisplayVersion
+        if($installedVersion -eq $minVersionAsSystemVersion)
+        {
+            return $true;
+        }
+    }
+}
+
 function Get-CouchDbRemoteInstallationStatus($couchDbServer, $minVersion)
 {
     try
@@ -346,6 +369,21 @@ function Get-DecryptedString($encryptionCertificate, $encryptedString){
 	}
 }
 
+function Get-CertsFromLocation($certLocation){
+    $currentLocation = Get-Location
+    Set-Location $certLocation
+    $certs = Get-ChildItem
+    Set-Location $currentLocation
+    return $certs
+}
+
+function Get-CertThumbprint($certs, $selectionNumber){
+    $selectedCert = $certs[$selectionNumber-1]
+    $certThumbrint = $selectedCert.Thumbprint
+    return $certThumbrint
+}
+
+
 Export-ModuleMember -function Add-EnvironmentVariable
 Export-ModuleMember -function New-AppRoot
 Export-ModuleMember -function New-AppPool
@@ -366,3 +404,5 @@ Export-ModuleMember -function Add-SecureInstallationSetting
 Export-ModuleMember -function Get-EncryptionCertificate
 Export-ModuleMember -function Get-DecryptedString
 Export-ModuleMember -Function Get-Certificate
+Export-ModuleMember -Function Get-CertsFromLocation
+Export-ModuleMember -Function Get-CertThumbprint

@@ -346,6 +346,41 @@ function Get-DecryptedString($encryptionCertificate, $encryptedString){
 	}
 }
 
+function CertSelection(){
+
+Set-Location Cert:\LocalMachine\My
+     
+Write-Host "================ Select a certificate ================"
+
+$linenumber = 1
+
+$certs = Get-ChildItem 
+
+$certs |
+    ForEach-Object {New-Object PSCustomObject -Property @{
+    'Index'=$linenumber.ToString()+' : ';
+    'Subject'= $_.Subject; 
+    'Name' = $_.FriendlyName; 
+    'Thumbprint' = $_.Thumbprint; 
+    'Expiration' = $_.NotAfter
+    };
+    $linenumber ++} |
+    Format-Table Index,Name,Subject,Expiration,Thumbprint  -AutoSize;
+
+$selectionNumber = Read-Host  "Select a certificate by Index";
+
+$selectedCert = $certs[$selectionNumber-1];
+$certThumbrint = $selectedCert.Thumbprint;
+
+Write-Host 'your selection is: ' $selectionNumber;
+Write-Host 'thumbprint of selected cert' $certThumbrint;
+
+return $certThumbrint;
+}
+
+
+
+
 Export-ModuleMember -function Add-EnvironmentVariable
 Export-ModuleMember -function New-AppRoot
 Export-ModuleMember -function New-AppPool

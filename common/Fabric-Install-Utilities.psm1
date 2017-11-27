@@ -346,36 +346,30 @@ function Get-DecryptedString($encryptionCertificate, $encryptedString){
 	}
 }
 
-function CertSelection(){
+function Get-CertsFromLocation($certLocation){
 
-Set-Location Cert:\LocalMachine\My
-     
-Write-Host "================ Select a certificate ================"
+$currentLocation = Get-Location
 
-$linenumber = 1
+Set-Location $certLocation
 
-$certs = Get-ChildItem 
+$certs = Get-ChildItem
 
-$certs |
-    ForEach-Object {New-Object PSCustomObject -Property @{
-    'Index'=$linenumber.ToString()+' : ';
-    'Subject'= $_.Subject; 
-    'Name' = $_.FriendlyName; 
-    'Thumbprint' = $_.Thumbprint; 
-    'Expiration' = $_.NotAfter
-    };
-    $linenumber ++} |
-    Format-Table Index,Name,Subject,Expiration,Thumbprint  -AutoSize;
+Set-Location $currentLocation
 
-$selectionNumber = Read-Host  "Select a certificate by Index";
+return $certs
 
-$selectedCert = $certs[$selectionNumber-1];
-$certThumbrint = $selectedCert.Thumbprint;
+}
 
-Write-Host 'your selection is: ' $selectionNumber;
-Write-Host 'thumbprint of selected cert' $certThumbrint;
+function Get-CertThumbprint($certs, $selectionNumber){
 
-return $certThumbrint;
+$selectedCert = $certs[$selectionNumber-1]
+
+$certThumbrint = $selectedCert.Thumbprint
+
+Write-Host 'thumbprint of selected cert' $certThumbrint
+
+return $certThumbrint
+
 }
 
 
@@ -401,3 +395,5 @@ Export-ModuleMember -function Add-SecureInstallationSetting
 Export-ModuleMember -function Get-EncryptionCertificate
 Export-ModuleMember -function Get-DecryptedString
 Export-ModuleMember -Function Get-Certificate
+Export-ModuleMember -Function Get-CertsFromLocation
+Export-ModuleMember -Function Get-CertThumbprint

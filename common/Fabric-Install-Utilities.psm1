@@ -347,32 +347,18 @@ function Get-DecryptedString($encryptionCertificate, $encryptedString){
 }
 
 function Get-CertsFromLocation($certLocation){
-
-$currentLocation = Get-Location
-
-Set-Location $certLocation
-
-$certs = Get-ChildItem
-
-Set-Location $currentLocation
-
-return $certs
-
+    $currentLocation = Get-Location
+    Set-Location $certLocation
+    $certs = Get-ChildItem
+    Set-Location $currentLocation
+    return $certs
 }
 
 function Get-CertThumbprint($certs, $selectionNumber){
-
-$selectedCert = $certs[$selectionNumber-1]
-
-$certThumbrint = $selectedCert.Thumbprint
-
-Write-Host 'thumbprint of selected cert' $certThumbrint
-
-return $certThumbrint
-
+    $selectedCert = $certs[$selectionNumber-1]
+    $certThumbrint = $selectedCert.Thumbprint
+    return $certThumbrint
 }
-
-
 
 
 Export-ModuleMember -function Add-EnvironmentVariable

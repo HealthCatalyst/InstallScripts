@@ -28,24 +28,6 @@ secrets:
 
 services:  
 
-  # https://docs.docker.com/engine/admin/logging/fluentd/
-  fluentd:
-    image: fluent/fluentd
-    networks: 
-      - realtimenet
-    volumes:
-      - type: bind
-        source: ${SHARED_DRIVE_LOGS}
-        target: /fluentd/log
-    ports:
-      - 24224:24224
-    deploy:
-      restart_policy:
-        condition: on-failure
-        delay: 20s
-        max_attempts: 3
-        window: 120s      
-
   certificateserver:
     image: healthcatalyst/fabric.certificateserver
     networks: 
@@ -62,12 +44,7 @@ services:
     deploy:
       replicas: 1
     ports: 
-       - 8081:3000
-    logging:
-      driver: fluentd
-      options:
-        tag: certificateserver
-        fluentd-async-connect: 1       
+       - 8081:3000    
     
   rabbitmq:
     image: healthcatalyst/fabric.realtime.rabbitmq
@@ -93,11 +70,6 @@ services:
     ports: 
        - 5671:5671
        - 15672:15672
-    logging:
-      driver: fluentd
-      options:
-        tag: rabbitmq
-        fluentd-async-connect: 1
 
   interfaceengine:
     image: healthcatalyst/fabric.docker.interfaceengine
@@ -121,10 +93,5 @@ services:
       - 8080:8080
       - 8443:8443
       - 6661:6661
-    logging:
-      driver: fluentd
-      options:
-        tag: interfaceengine
-        fluentd-async-connect: 1
 
 

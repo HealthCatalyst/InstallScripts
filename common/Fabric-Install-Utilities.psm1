@@ -213,6 +213,29 @@ function Test-Prerequisite-Exact($appName, $supportedVersion)
     }
 }
 
+function Test-Prerequisite-Exact($appName, $supportedVersion)
+{
+    $installedAppResults = Get-InstalledApps | where {$_.DisplayName -like $appName}
+    if($installedAppResults -eq $null){
+        return $false;
+    }
+
+    if($supportedVersion -eq $null)
+    {
+        return $true;
+    }
+
+    $minVersionAsSystemVersion = [System.Version]$supportedVersion
+    Foreach($version in $installedAppResults)
+    {
+        $installedVersion = [System.Version]$version.DisplayVersion
+        if($installedVersion -eq $minVersionAsSystemVersion)
+        {
+            return $true;
+        }
+    }
+}
+
 function Get-CouchDbRemoteInstallationStatus($couchDbServer, $minVersion)
 {
     try

@@ -1,43 +1,48 @@
 #!/bin/sh
 set -e
 
-echo "Version 1.13"
+echo "Version 1.14"
 
 #
 # This script is meant for quick & easy install via:
 #   curl -sSL https://healthcatalyst.github.io/InstallScripts/docker/setupnode.txt | sudo sh -s
 
+if [[ ! -d "/mnt/hcshared" ]]; then
+    echo "/mnt/hcshared is not mounted.  Please mount the file share first."
+    echo "For Azure, you can run:"
+    echo "curl -sSL https://healthcatalyst.github.io/InstallScripts/docker/setupazurefileshare.txt | sh"
+    exit 1
+fi
 
-grep -v "curl -sSL https://healthcatalyst.github.io/InstallScripts/docker/setupnode.txt | sh -s" ~/.bashrc | sudo tee ~/.bashrc
+# grep -v "curl -sSL https://healthcatalyst.github.io/InstallScripts/docker/setupnode.txt | sh -s" ~/.bashrc | sudo tee ~/.bashrc
 
 curl -L https://healthcatalyst.github.io/InstallScripts/docker/swarm_bash.txt >/tmp/swarm_bash.sh \
     && chmod +x /tmp/swarm_bash.sh \
     && sudo cp /tmp/swarm_bash.sh /usr/local/bin/swarm_bash.sh
 
-curl -sSL https://healthcatalyst.github.io/InstallScripts/docker/installglusterfs.txt | sh -s 
+# curl -sSL https://healthcatalyst.github.io/InstallScripts/docker/installglusterfs.txt | sh -s 
 
 # join the gluster
 
-echo "waiting until this host has been added to glusterfs"
+# echo "waiting until this host has been added to glusterfs"
 
 # disable set -e so the script does not break when there is an error
-set +e
+# set +e
 
-sudo gluster volume info | grep $(hostname)
-while [ $? -ne 0 ]; do
-    sleep 5s;
-    echo "."
-    sudo gluster volume info | grep $(hostname)
-done
+# sudo gluster volume info | grep $(hostname)
+# while [ $? -ne 0 ]; do
+#    sleep 5s;
+#    echo "."
+#    sudo gluster volume info | grep $(hostname)
+# done
 
-set -e
+# set -e
 
-sudo gluster peer status
+# sudo gluster peer status
 
-curl -sSL https://healthcatalyst.github.io/InstallScripts/docker/mountglusterdrive.txt | sh -s 
+# curl -sSL https://healthcatalyst.github.io/InstallScripts/docker/mountglusterdrive.txt | sh -s 
 
 # echo "reading the shared test file"
-sudo ls /mnt/hcshared/
-
+# sudo ls /mnt/hcshared/
 
 # http://lzone.de/cheat-sheet/GlusterFS

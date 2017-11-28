@@ -1,11 +1,18 @@
 #!/bin/sh
 set -e
 
-echo "Version 1.05"
+echo "Version 1.14"
 
 #
 # This script is meant for quick & easy install via:
 #   curl -sSL https://healthcatalyst.github.io/InstallScripts/docker/setupmanager.txt | sh -s
+
+if [[ ! -d "/mnt/hcshared" ]]; then
+    echo "/mnt/hcshared is not mounted.  Please mount the file share first."
+    echo "For Azure, you can run:"
+    echo "curl -sSL https://healthcatalyst.github.io/InstallScripts/docker/setupazurefileshare.txt | sh"
+    exit 1
+fi
 
 
 curl -L https://github.com/docker/machine/releases/download/v0.12.2/docker-machine-`uname -s`-`uname -m` >/tmp/docker-machine &&
@@ -20,17 +27,17 @@ myip=$(ip -4 addr show eth0 | grep -oP '(?<=inet\s)\d+(\.\d+){3}')
 
 docker swarm init --advertise-addr $myip
 
-read -p "Hit enter after you've joined all the nodes to this swarm: " -e foo < /dev/tty
+# read -p "Hit enter after you've joined all the nodes to this swarm: " -e foo < /dev/tty
 
-echo "installing glusterfs"
-curl -sSL https://healthcatalyst.github.io/InstallScripts/docker/installglusterfs.txt | sh -s 
+# echo "installing glusterfs"
+# curl -sSL https://healthcatalyst.github.io/InstallScripts/docker/installglusterfs.txt | sh -s 
 
-echo "The following nodes have been detected:"
-docker node ls
+# echo "The following nodes have been detected:"
+# docker node ls
 
-echo "creating a glusterfs volume"
-curl -sSL https://healthcatalyst.github.io/InstallScripts/docker/createglusterfsvolume.txt | sh -s
+# echo "creating a glusterfs volume"
+# curl -sSL https://healthcatalyst.github.io/InstallScripts/docker/createglusterfsvolume.txt | sh -s
 
-curl -sSL https://healthcatalyst.github.io/InstallScripts/docker/mountglusterdrive.txt | sh -s 
+# curl -sSL https://healthcatalyst.github.io/InstallScripts/docker/mountglusterdrive.txt | sh -s 
 
-echo "Hello from $myip" | sudo tee -a /mnt/hcshared/test.txt
+# echo "Hello from $myip" | sudo tee -a /mnt/hcshared/test.txt

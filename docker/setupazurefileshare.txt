@@ -1,7 +1,7 @@
 #!/bin/bash
 # curl -sSL https://healthcatalyst.github.io/InstallScripts/docker/setupazurefileshare.txt | sh
 
-echo "Version 1.41"
+echo "Version 1.42"
 
 echo "for instructions on creating a file share in azure, go to:"
 echo "https://docs.microsoft.com/en-us/azure/storage/files/storage-how-to-create-file-share"
@@ -26,6 +26,6 @@ grep -v "/mnt/hcshared" /etc/fstab | sudo tee /etc/fstab
 
 fstabstring="//${azurestorageaccount}.file.core.windows.net/${azuresharename} /mnt/hcshared cifs vers=2.1,username=${azurestorageaccount},password=${azurestorageaccesskey},dir_mode=0777,file_mode=0777,serverino"
 
-echo "$connectionString" | sudo tee -a /etc/fstab
+echo "${fstabstring}" | sudo tee -a /etc/fstab
 
 cat /etc/fstab

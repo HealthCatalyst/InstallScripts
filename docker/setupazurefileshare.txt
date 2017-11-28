@@ -1,7 +1,7 @@
 #!/bin/bash
 # curl -sSL https://healthcatalyst.github.io/InstallScripts/docker/setupazurefileshare.txt | sh
 
-echo "Version 1.44"
+echo "Version 1.45"
 
 echo "for instructions on creating a file share in azure, go to:"
 echo "https://docs.microsoft.com/en-us/azure/storage/files/storage-how-to-create-file-share"
@@ -19,9 +19,11 @@ set -x
 
 sudo yum -y install samba-client samba-common cifs-utils
 
+sudo mkdir -p /mnt/hcshared
+
 connectionString="//${azurestorageaccount}.file.core.windows.net/${azuresharename} /mnt/hcshared -o vers=2.1,username=${azurestorageaccount},password=${azurestorageaccesskey},dir_mode=0777,file_mode=0777,serverino"
 
-sudo mount -t cifs "${connectionString}"
+sudo mount -t cifs ${connectionString}
 
 # remove previous entry for this drive
 grep -v "/mnt/hcshared" /etc/fstab | sudo tee /etc/fstab

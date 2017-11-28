@@ -10,7 +10,7 @@ echo "Version 1.065"
 # Remember: no spaces allowed in variable set commands in bash
 
 echo "---------------------------------------------------"
-echo "This script sets up the Fabric.Realtime cluster on Docker"
+echo "This script sets up the Fabric.NLP cluster on Docker"
 echo "----------------------------------------------------"
 
 
@@ -64,15 +64,10 @@ set +e
 
 docker secret inspect ExternalHostName &>/dev/null
 if [ $? -ne 0 ]; then
-	read -p "Please type in hostname:" ExternalHostName < /dev/tty
+	read -p "Please type in hostname (e.g., fabricnlp.eastus.cloudapp.azure.com):" ExternalHostName < /dev/tty
 	echo $ExternalHostName | docker secret create ExternalHostName  -
 	export NLP_HOST_NAME="$ExternalHostName"
 fi
-
-# if [ -z "${NLP_HOST_NAME:-}" ]; then
-#	read -p "Please type in hostname:" ExternalHostName < /dev/tty
-#	export NLP_HOST_NAME="$ExternalHostName"
-# fi
 
 docker secret inspect MySQLPassword &>/dev/null
 if [ $? -ne 0 ]; then

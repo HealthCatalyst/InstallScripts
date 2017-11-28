@@ -1,7 +1,7 @@
 #!/bin/bash
 # curl -sSL https://healthcatalyst.github.io/InstallScripts/docker/setupazurefileshare.txt | sh
 
-echo "Version 1.48"
+echo "Version 1.49"
 
 sudo yum -y install samba-client samba-common cifs-utils
 
@@ -12,13 +12,14 @@ azurestorageaccount=""
 read -p "Please type in name of storage account(e.g., fabricnlpshared):" azurestorageaccount < /dev/tty
 
 azuresharename=""
-read -p "Please type in name of share name (e.g., fabricnlpsharedfiles):" azuresharename < /dev/tty
+read -p "Please type in name of share name (e.g., fabricnlpshareddisk):" azuresharename < /dev/tty
 
 azurestorageaccesskey=""
 read -p "Please paste in access key to storage from Azure portal:" azurestorageaccesskey < /dev/tty
 
-set -x
+connectionString="//${azurestorageaccount}.file.core.windows.net/${azuresharename} /mnt/hcshared -o vers=2.1,username=${azurestorageaccount},password=${azurestorageaccesskey},dir_mode=0777,file_mode=0777,serverino"
 
+sudo mount -t cifs ${connectionString}
 
 # remove previous entry for this drive
 grep -v "/mnt/hcshared" /etc/fstab | sudo tee /etc/fstab
@@ -27,11 +28,6 @@ fstabstring="//${azurestorageaccount}.file.core.windows.net/${azuresharename} /m
 
 echo "${fstabstring}" | sudo tee -a /etc/fstab
 
-set +x
-
 cat /etc/fstab
 
-connectionString="//${azurestorageaccount}.file.core.windows.net/${azuresharename} /mnt/hcshared -o vers=2.1,username=${azurestorageaccount},password=${azurestorageaccesskey},dir_mode=0777,file_mode=0777,serverino"
-
-sudo mount -t cifs ${connectionString}
 

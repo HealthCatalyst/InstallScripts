@@ -203,10 +203,11 @@ function Test-Prerequisite-Exact($appName, $supportedVersion)
     }
 
     $supportedVersionAsSystemVersion = [System.Version]$supportedVersion
+
     Foreach($version in $installedAppResults)
     {
         $installedVersion = [System.Version]$version.DisplayVersion
-        if($installedVersion -eq $minVersionAsSystemVersion)
+        if($installedVersion -eq $supportedVersionAsSystemVersion)
         {
             return $true;
         }

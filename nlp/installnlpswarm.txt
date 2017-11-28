@@ -16,7 +16,7 @@ echo "----------------------------------------------------"
 
 if [[ ! -d "/mnt/hcshared" ]]; then
     echo "/mnt/hcshared is not mounted.  Please mount the file share first."
-    echo "For Azure, you can run:"
+    echo "For Azure, you can run this on every node:"
     echo "curl -sSL https://healthcatalyst.github.io/InstallScripts/docker/setupazurefileshare.txt | sh"
     exit 1
 fi

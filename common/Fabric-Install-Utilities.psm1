@@ -190,6 +190,7 @@ function Test-Prerequisite($appName, $minVersion)
     }
 }
 
+
 function Test-PrerequisiteExact($appName, $supportedVersion)
 {
     $installedAppResults = Get-InstalledApps | where {$_.DisplayName -like $appName}

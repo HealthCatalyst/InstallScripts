@@ -190,7 +190,7 @@ function Test-Prerequisite($appName, $minVersion)
     }
 }
 
-function Test-Prerequisite-Exact($appName, $supportedVersion)
+function Test-PrerequisiteExact($appName, $supportedVersion)
 {
     $installedAppResults = Get-InstalledApps | where {$_.DisplayName -like $appName}
     if($installedAppResults -eq $null){
@@ -203,33 +203,11 @@ function Test-Prerequisite-Exact($appName, $supportedVersion)
     }
 
     $supportedVersionAsSystemVersion = [System.Version]$supportedVersion
+
     Foreach($version in $installedAppResults)
     {
         $installedVersion = [System.Version]$version.DisplayVersion
-        if($installedVersion -eq $minVersionAsSystemVersion)
-        {
-            return $true;
-        }
-    }
-}
-
-function Test-Prerequisite-Exact($appName, $supportedVersion)
-{
-    $installedAppResults = Get-InstalledApps | where {$_.DisplayName -like $appName}
-    if($installedAppResults -eq $null){
-        return $false;
-    }
-
-    if($supportedVersion -eq $null)
-    {
-        return $true;
-    }
-
-    $minVersionAsSystemVersion = [System.Version]$supportedVersion
-    Foreach($version in $installedAppResults)
-    {
-        $installedVersion = [System.Version]$version.DisplayVersion
-        if($installedVersion -eq $minVersionAsSystemVersion)
+        if($installedVersion -eq $supportedVersionAsSystemVersion)
         {
             return $true;
         }
@@ -416,7 +394,7 @@ Export-ModuleMember -function Publish-WebSite
 Export-ModuleMember -function Set-EnvironmentVariables
 Export-ModuleMember -function Get-EncryptedString
 Export-ModuleMember -function Test-Prerequisite
-Export-ModuleMember -function Test-Prerequisite-Exact
+Export-ModuleMember -function Test-PrerequisiteExact
 Export-ModuleMember -function Get-CouchDbRemoteInstallationStatus
 Export-ModuleMember -function Get-AccessToken
 Export-ModuleMember -function Add-ApiRegistration

@@ -1,18 +1,11 @@
 #!/bin/sh
 set -e
 
-echo "Version 1.14"
+echo "Version 1.15"
 
 #
 # This script is meant for quick & easy install via:
 #   curl -sSL https://healthcatalyst.github.io/InstallScripts/docker/setupnode.txt | sudo sh -s
-
-if [[ ! -d "/mnt/hcshared" ]]; then
-    echo "/mnt/hcshared is not mounted.  Please mount the file share first."
-    echo "For Azure, you can run:"
-    echo "curl -sSL https://healthcatalyst.github.io/InstallScripts/docker/setupazurefileshare.txt | sh"
-    exit 1
-fi
 
 # grep -v "curl -sSL https://healthcatalyst.github.io/InstallScripts/docker/setupnode.txt | sh -s" ~/.bashrc | sudo tee ~/.bashrc
 

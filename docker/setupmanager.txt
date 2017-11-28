@@ -1,19 +1,11 @@
 #!/bin/sh
 set -e
 
-echo "Version 1.14"
+echo "Version 1.15"
 
 #
 # This script is meant for quick & easy install via:
 #   curl -sSL https://healthcatalyst.github.io/InstallScripts/docker/setupmanager.txt | sh -s
-
-if [[ ! -d "/mnt/hcshared" ]]; then
-    echo "/mnt/hcshared is not mounted.  Please mount the file share first."
-    echo "For Azure, you can run:"
-    echo "curl -sSL https://healthcatalyst.github.io/InstallScripts/docker/setupazurefileshare.txt | sh"
-    exit 1
-fi
-
 
 curl -L https://github.com/docker/machine/releases/download/v0.12.2/docker-machine-`uname -s`-`uname -m` >/tmp/docker-machine &&
 chmod +x /tmp/docker-machine &&

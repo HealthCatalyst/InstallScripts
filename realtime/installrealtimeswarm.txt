@@ -2,7 +2,7 @@
 set -e
 # set -x
 
-echo "Version 1.185"
+echo "Version 1.186"
 
 #
 # This script is meant for quick & easy install via:
@@ -13,6 +13,13 @@ myhostname="$1"
 MySQLUser="mirthuser"
 
 mydatetime=$(date +%Y%m%d%H%M%S)
+
+if [[ ! -d "/mnt/hcshared" ]]; then
+    echo "/mnt/hcshared is not mounted.  Please mount the file share first."
+    echo "For Azure, you can run:"
+    echo "curl -sSL https://healthcatalyst.github.io/InstallScripts/docker/setupazurefileshare.txt | sh"
+    exit 1
+fi
 
 # these are set in the script below
 CertPassword=""

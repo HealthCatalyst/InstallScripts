@@ -13,6 +13,14 @@ echo "---------------------------------------------------"
 echo "This script sets up the Fabric.Realtime cluster on Docker"
 echo "----------------------------------------------------"
 
+
+if [[ ! -d "/mnt/hcshared" ]]; then
+    echo "/mnt/hcshared is not mounted.  Please mount the file share first."
+    echo "For Azure, you can run:"
+    echo "curl -sSL https://healthcatalyst.github.io/InstallScripts/docker/setupazurefileshare.txt | sh"
+    exit 1
+fi
+
 doclean="$1"
 mydatetime=$(date +%Y%m%d%H%M%S)
 

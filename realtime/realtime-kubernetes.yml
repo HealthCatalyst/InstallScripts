@@ -15,7 +15,26 @@ spec:
         app: nginx
     spec:
       containers:
-      - name: nginx
-        image: nginx:1.7.9
+      - env:
+        - name: MYSQL_DATABASE
+          value: mirthdb
+        - name: MYSQL_PASSWORD_FILE
+          value: /run/secrets/MySQLPassword
+        - name: MYSQL_ROOT_PASSWORD_FILE
+          value: /run/secrets/MySQLRootPassword
+        - name: MYSQL_USER
+          value: mirthuser
+        image: healthcatalyst/fabric.realtime.mysql
+        name: mysqlserver
         ports:
-        - containerPort: 80
+        - containerPort: 3306
+        resources: {}
+        volumeMounts:
+        - mountPath: /var/lib/mysql
+          name: mysqlserver-claim0
+      restartPolicy: Always
+      volumes:
+      - name: mysqlserver-claim0
+        persistentVolumeClaim:
+          claimName: mysqlserver-claim0
+status: {}

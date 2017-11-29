@@ -52,9 +52,11 @@ services:
     image: healthcatalyst/fabric.smtp.agent
     networks: 
       - nlpnet
+    secrets:
+      - SmtpRelayPassword
     environment:
       SMTP_RELAY_USERNAME: apikey
-      SMTP_RELAY_PASSWORD: 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
+      SMTP_RELAY_PASSWORD_FILE: /run/secrets/SmtpRelayPassword
       SMTP_RELAY_SERVER: smtp.sendgrid.net
       SMTP_RELAY_PORT: 587
     ports:

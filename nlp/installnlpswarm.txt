@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-echo "Version 1.065"
+echo "Version 1.067"
 
 #
 # This script is meant for quick & easy install via:
@@ -75,11 +75,18 @@ if [ $? -ne 0 ]; then
 	echo $MySQLPassword | docker secret create MySQLPassword -
 fi
 
+docker secret inspect SmtpRelayPassword &>/dev/null
+if [ $? -ne 0 ]; then
+	read -p "Please type in Api key for SendGrid SMTP account:" SmtpRelayPassword < /dev/tty
+	echo $SmtpRelayPassword | docker secret create SmtpRelayPassword  -
+fi
+
 docker secret inspect MySQLRootPassword &>/dev/null
 if [ $? -ne 0 ]; then
 	read -p "Please type in password to use root MySql account:" MySQLRootPassword < /dev/tty
 	echo $MySQLRootPassword | docker secret create MySQLRootPassword  -
 fi
+
 
 # docker secret inspect SmtpServer &>/dev/null
 #if [ $? -ne 0 ]; then

@@ -12,6 +12,8 @@ secrets:
     external: true
   ExternalHostName:
     external: true
+  SmtpRelayPassword:
+    external: true
 
 services:  
 

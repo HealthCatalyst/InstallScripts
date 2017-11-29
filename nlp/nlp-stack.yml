@@ -61,8 +61,6 @@ services:
       SMTP_RELAY_PASSWORD_FILE: /run/secrets/SmtpRelayPassword
       SMTP_RELAY_SERVER: smtp.sendgrid.net
       SMTP_RELAY_PORT: 587
-    ports:
-      - 25:25
     deploy:
       restart_policy:
         condition: on-failure

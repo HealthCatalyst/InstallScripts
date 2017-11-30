@@ -15,18 +15,18 @@ spec:
         app: mysql
     spec:
       containers:
-        - image: mysql:5.6
-          name: mysql
+        - image: healthcatalyst/fabric.realtime.mysql
+          name: mysqlserver
           env:
             - name: MYSQL_ROOT_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: mysql
+                  name: mysqlrootpassword
                   key: password
-            - name: MYSQL_ROOT_PASSWORD
+            - name: MYSQL_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: mysql
+                  name: mysqlpassword
                   key: password
             - name: MYSQL_DATABASE
               value: mirthdb
@@ -41,4 +41,4 @@ spec:
       volumes:
         - name: mysql-persistent-storage
           hostPath:
-            path: /data/mysql/
+            path: /C/tmp/mysql

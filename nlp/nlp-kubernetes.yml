@@ -1,0 +1,99 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: fabric.nlp.mysqlserver
+  namespace: fabric.nlp  
+  labels:
+    app: mysql
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mysql
+  template:
+    metadata:
+      labels:
+        app: mysql
+    spec:
+      containers:
+        - name: mysqlserver
+          image: healthcatalyst/fabric.nlp.docker.mysql
+          env:
+            - name: MYSQL_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mysqlrootpassword
+                  key: password
+            - name: MYSQL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mysqlpassword
+                  key: password
+            - name: MYSQL_DATABASE
+              value: nlpmt
+            - name: MYSQL_USER
+              value: NLP_APP_USER
+          ports:
+            - containerPort: 3306
+              name: mysql
+          volumeMounts:
+            - name: mysql-persistent-storage
+              mountPath: /var/lib/mysql
+
+      volumes:
+        - name: mysql-persistent-storage
+          hostPath:
+            path: /data/mysql
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: fabric.nlp.smtpserver
+  namespace: fabric.nlp  
+  labels:
+    app: smtpserver
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: smtpserver
+  template:
+    metadata:
+      labels:
+        app: smtpserver
+    spec:
+      containers:
+        - name: smtpserver
+          image: healthcatalyst/fabric.smtp.agent
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: fabric.nlp.solrserver
+  namespace: fabric.nlp    
+  labels:
+    app: solrserver
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: solrserver
+  template:
+    metadata:
+      labels:
+        app: solrserver
+    spec:
+      containers:
+        - name: solrserver
+          image: healthcatalyst/fabric.nlp.docker.solr
+          volumeMounts:
+            - name: solr-persistent-storage
+              mountPath: /var/lib/solr
+          ports:
+            - containerPort: 8085
+              name: solr
+
+      volumes:
+        - name: solr-persistent-storage
+          hostPath:
+            path: /data/solr

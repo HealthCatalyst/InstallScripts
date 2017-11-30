@@ -56,6 +56,11 @@ services:
       - nlpnet
     secrets:
       - SmtpRelayPassword
+-    environment:		
+ -      SMTP_RELAY_USERNAME: apikey		
+ -      SMTP_RELAY_PASSWORD_FILE: /run/secrets/SmtpRelayPassword		
+ -      SMTP_RELAY_SERVER: smtp.sendgrid.net		
+ -      SMTP_RELAY_PORT: 587      
     deploy:
       restart_policy:
         condition: on-failure
@@ -113,7 +118,6 @@ services:
     environment: 
       EXTERNAL_HOSTNAME_FILE: /run/secrets/ExternalHostName
       MYSQL_PASSWORD_FILE: /run/secrets/MySQLPassword
-      smtpserver: ""
     ports: 
       - 8084:8084
     # logging:
@@ -132,7 +136,6 @@ services:
     environment: 
       EXTERNAL_HOSTNAME_FILE: /run/secrets/ExternalHostName
       MYSQL_PASSWORD_FILE: /run/secrets/MySQLPassword
-      smtpserver: ""
     # logging:
     #   driver: fluentd
     #   options:

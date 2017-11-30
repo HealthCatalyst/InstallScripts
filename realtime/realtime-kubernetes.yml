@@ -1,7 +1,7 @@
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
-  name: mysql
+  name: fabric.realtime
   labels:
     app: mysql
 spec:
@@ -15,8 +15,8 @@ spec:
         app: mysql
     spec:
       containers:
-        - image: healthcatalyst/fabric.realtime.mysql
-          name: mysqlserver
+        - name: mysqlserver
+          image: healthcatalyst/fabric.realtime.mysql
           env:
             - name: MYSQL_ROOT_PASSWORD
               valueFrom:
@@ -38,7 +38,32 @@ spec:
           volumeMounts:
             - name: mysql-persistent-storage
               mountPath: /var/lib/mysql
+        - name: certificateserver
+          image: healthcatalyst/fabric.certificateserver
+          env:
+            - name: CERT_HOSTNAME
+              valueFrom:
+                secretKeyRef:
+                  name: certhostname
+                  key: value
+            - name: CERT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: certpassword
+                  key: password
+            - name: CLIENT_CERT_USERNAME
+              value: fabricrabbitmquser
+          ports:
+          - containerPort: 3000
+          resources: {}
+          volumeMounts:
+          - mountPath: /opt/certs/
+            name: certificateserver-storage
+              
       volumes:
         - name: mysql-persistent-storage
           hostPath:
-            path: /C/tmp/mysql
+            path: /data/mysql
+        - name: certificateserver-storage
+          hostPath:
+            path: /data/mysql

@@ -118,6 +118,10 @@ services:
     environment: 
       EXTERNAL_HOSTNAME_FILE: /run/secrets/ExternalHostName
       MYSQL_PASSWORD_FILE: /run/secrets/MySQLPassword
+    volumes:
+      - type: bind
+        source: ${SHARED_DRIVE_JOBS}
+        target: /opt/jobWork/
     ports: 
       - 8084:8084
     # logging:

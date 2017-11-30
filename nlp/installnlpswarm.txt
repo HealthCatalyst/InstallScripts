@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-echo "Version 1.067"
+echo "Version 1.068"
 
 #
 # This script is meant for quick & easy install via:
@@ -107,7 +107,9 @@ sudo mkdir -p "${SHARED_DRIVE_SOLR}"
 export SHARED_DRIVE_MYSQL=/mnt/hcshared/fabricnlp/mysql
 sudo mkdir -p "${SHARED_DRIVE_MYSQL}"
 
-export smtpserver=""
+export SHARED_DRIVE_JOBS=/mnt/hcshared/fabricnlp/jobs
+sudo mkdir -p "${SHARED_DRIVE_JOBS}"
+
 
 # export DOCKER_LOGGING_DRIVER="fluentd"
 export DOCKER_LOGGING_DRIVER="json-file"

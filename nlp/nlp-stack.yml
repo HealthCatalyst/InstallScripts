@@ -56,17 +56,17 @@ services:
       - nlpnet
     secrets:
       - SmtpRelayPassword
-    environment:		
-      SMTP_RELAY_USERNAME: apikey		
-      SMTP_RELAY_PASSWORD_FILE: /run/secrets/SmtpRelayPassword		
-      SMTP_RELAY_SERVER: smtp.sendgrid.net		
-      SMTP_RELAY_PORT: 587      
+    environment:
+      SMTP_RELAY_USERNAME: apikey
+      SMTP_RELAY_PASSWORD_FILE: /run/secrets/SmtpRelayPassword
+      SMTP_RELAY_SERVER: smtp.sendgrid.net
+      SMTP_RELAY_PORT: 587
     deploy:
       restart_policy:
         condition: on-failure
         delay: 20s
         max_attempts: 3
-        window: 120s      
+        window: 120s
 
   mysqlserver:
     image: healthcatalyst/fabric.nlp.docker.mysql

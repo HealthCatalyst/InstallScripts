@@ -1,8 +1,15 @@
+kind: Namespace
+apiVersion: v1
+metadata:
+  name: fabricnlp
+  labels:
+    name: fabricnlp
+---
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
   name: fabric.nlp.mysqlserver
-  namespace: fabric.nlp  
+  namespace: fabricnlp  
   labels:
     app: mysql
 spec:
@@ -49,7 +56,7 @@ apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
   name: fabric.nlp.smtpserver
-  namespace: fabric.nlp  
+  namespace: fabricnlp  
   labels:
     app: smtpserver
 spec:
@@ -70,7 +77,7 @@ apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
   name: fabric.nlp.solrserver
-  namespace: fabric.nlp    
+  namespace: fabricnlp    
   labels:
     app: solrserver
 spec:

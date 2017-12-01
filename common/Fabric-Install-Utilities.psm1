@@ -5,7 +5,7 @@ function Add-EnvironmentVariable($variableName, $variableValue, $config){
 	$environmentVariablesNode = $config.configuration.'system.webServer'.aspNetCore.environmentVariables
 	$existingEnvironmentVariable = $environmentVariablesNode.environmentVariable | Where-Object {$_.name -eq $variableName}
 	if($existingEnvironmentVariable -eq $null){
-		Write-Host "Writing $variableName to config"
+		Write-Console "Writing $variableName to config"
 		$environmentVariable = $config.CreateElement("environmentVariable")
 		
 		$nameAttribute = $config.CreateAttribute("name")
@@ -17,8 +17,8 @@ function Add-EnvironmentVariable($variableName, $variableValue, $config){
 		$environmentVariable.Attributes.Append($valueAttribute)
 
 		$environmentVariablesNode.AppendChild($environmentVariable)
-	}else{
-		Write-Host "$variableName already exists in config, not overwriting"
+	}else {
+		Write-Console $variableName "already exists in config, not overwriting"
 	}
 }
 
@@ -27,17 +27,17 @@ function New-AppRoot($appDirectory, $iisUser){
 	$logDirectory = "$appDirectory\logs"
 
 	if(!(Test-Path $appDirectory)) {
-		Write-Host "Creating application directory: $appDirectory."
+		Write-Console "Creating application directory: $appDirectory."
 		mkdir $appDirectory
 	}else{
-		Write-Host "Application directory: $appDirectory exists."
+		Write-Console "Application directory: $appDirectory exists."
 	}
 
 	
 	if(!(Test-Path $logDirectory)) {
-		Write-Host "Creating applciation log directory: $logDirectory."
+		Write-Console "Creating applciation log directory: $logDirectory."
 		mkdir $logDirectory
-		Write-Host "Setting Write and Read access for $iisUser on $logDirectory."
+		Write-Console "Setting Write and Read access for $iisUser on $logDirectory."
 		$acl = (Get-Item $logDirectory).GetAccessControl('Access')
 		$writeAccessRule = New-Object System.Security.AccessControl.FileSystemAccessRule($iisUser, "Write", "ContainerInherit,ObjectInherit", "None", "Allow")
 		$readAccessRule = New-Object System.Security.AccessControl.FileSystemAccessRule($iisUser, "Read", "ContainerInherit,ObjectInherit", "None", "Allow")
@@ -45,7 +45,7 @@ function New-AppRoot($appDirectory, $iisUser){
 		$acl.AddAccessRule($readAccessRule)
 		Set-Acl -Path $logDirectory $acl
 	}else{
-		Write-Host "Log directory: $logDirectory exisits"
+		Write-Console "Log directory: $logDirectory exisits"
 	}
 }
 
@@ -54,12 +54,12 @@ function New-AppPool($appName){
 
 	if(!(Test-Path $appName -PathType Container))
 	{
-		Write-Host "AppPool $appName does not exist...creating."
+		Write-Console "AppPool $appName does not exist...creating."
 		$appPool = New-WebAppPool $appName
 		$appPool | Set-ItemProperty -Name "managedRuntimeVersion" -Value ""
 		$appPool.Start()
 	}else{
-		Write-Host "AppPool: $appName exists."
+		Write-Console "AppPool: $appName exists."
 	}
 }
 
@@ -68,12 +68,12 @@ function New-Site($appName, $portNumber, $appDirectory, $hostHeader){
 
 	if(!(Test-Path $appName -PathType Container))
 	{
-		Write-Host "WebSite $appName does not exist...creating."
+		Write-Console "WebSite $appName does not exist...creating."
 		$webSite = New-Website -Name $appName -Port $portNumber -Ssl -PhysicalPath $appDirectory -ApplicationPool $appName -HostHeader $hostHeader
 	
-		Write-Host "Assigning certificate..."
+		Write-Console "Assigning certificate..."
 		$cert = Get-Item Cert:\LocalMachine\My\$sslCertificateThumbprint
-		cd IIS:\SslBindings
+		Set-Location IIS:\SslBindings
 		$sslBinding = "0.0.0.0!$portNumber"
 		if(!(Test-Path $sslBinding)){
 			$cert | New-Item $sslBinding
@@ -82,19 +82,19 @@ function New-Site($appName, $portNumber, $appDirectory, $hostHeader){
 }
 
 function New-App($appName, $siteName, $appDirectory){
-	cd IIS:\
-	Write-Host "Creating web application: $webApp"
+	Set-Location IIS:\
+	Write-Console "Creating web application: $webApp"
 	New-WebApplication -Name $appName -Site $siteName -PhysicalPath $appDirectory -ApplicationPool $appName -Force
 }
 
 function Publish-WebSite($zipPackage, $appDirectory, $appName, $overwriteWebConfig){
 	# Extract the app into the app directory
-	Write-Host "Extracting $zipPackage to $appDirectory."
+	Write-Console "Extracting $zipPackage to $appDirectory."
 
 	try{
 		Stop-WebAppPool -Name $appName -ErrorAction Stop
 	}catch [System.InvalidOperationException]{
-		Write-Host "AppPool $appName is already stopped, continuing."
+		Write-Console "AppPool $appName is already stopped, continuing."
 	}
 
 	Start-Sleep -Seconds 3
@@ -114,10 +114,10 @@ function Publish-WebSite($zipPackage, $appDirectory, $appName, $overwriteWebConf
 				$overwrite = $overwriteWebConfig
 			}
 			try{
-				Write-Host "......Extracting $itemTargetFilePath..."
+				Write-Console "......Extracting $itemTargetFilePath..."
 				[System.IO.Compression.ZipFileExtensions]::ExtractToFile($item, $itemTargetFilePath, $overwrite)
 			}catch [System.Management.Automation.MethodInvocationException]{
-				Write-Host "......$itemTargetFilePath exists, not overwriting..."
+				Write-Console "......$itemTargetFilePath exists, not overwriting..."
 				$errorId = $_.FullyQualifiedErrorId
 				if($errorId -ne "IOException"){
 					throw $_.Exception
@@ -139,7 +139,7 @@ function Test-IsDirectory($path)
 }
 
 function Set-EnvironmentVariables($appDirectory, $environmentVariables){
-	Write-Host "Writing environment variables to config..."
+	Write-Console "Writing environment variables to config..."
 	$webConfig = [xml](Get-Content $appDirectory\web.config)
 	foreach ($variable in $environmentVariables.GetEnumerator()){
 		Add-EnvironmentVariable $variable.Name $variable.Value $webConfig
@@ -221,14 +221,14 @@ function Get-CouchDbRemoteInstallationStatus($couchDbServer, $minVersion)
     {
         $couchVersionResponse = Invoke-RestMethod -Method Get -Uri $couchDbServer 
     } catch {
-        Write-Host "CouchDB not found on $couchDbServer"
+        Write-Console "CouchDB not found on $couchDbServer"
     }
 
     if($couchVersionResponse)
     {
         $installedVersion = [System.Version]$couchVersionResponse.version
         $minVersionAsSystemVersion = [System.Version]$minVersion
-        Write-Host "Found CouchDB version $installedVersion installed on $couchDbServer"
+        Write-Console "Found CouchDB version $installedVersion installed on $couchDbServer"
         if($installedVersion -ge $minVersionAsSystemVersion)
         {
             return "Installed"
@@ -302,7 +302,7 @@ function Get-InstallationSettings($configSection)
 		$encryptionCertificateThumbprint = $installationSettings.encryptionCertificateThumbprint
 		$encryptionCertificate = Get-EncryptionCertificate $encryptionCertificateThumbprint
 	}catch{
-		Write-Host "Could not get encryption certificte with thumbprint $encryptionCertificateThumbprint. Please verify that the encryptionCertificateThumbprint setting in install.config contains a valid thumbprint for a certificate in the Local Machine Personal store."
+		Write-Error "Could not get encryption certificte with thumbprint $encryptionCertificateThumbprint. Please verify that the encryptionCertificateThumbprint setting in install.config contains a valid thumbprint for a certificate in the Local Machine Personal store."
 		throw $_.Exception
 	}
 
@@ -385,6 +385,14 @@ function Get-CertThumbprint($certs, $selectionNumber){
     return $certThumbrint
 }
 
+function Write-Success($message){
+	Write-Host $message -ForegroundColor Green
+}
+
+function Write-Console($message){
+	Write-Host $message -ForegroundColor Gray
+}
+
 
 Export-ModuleMember -function Add-EnvironmentVariable
 Export-ModuleMember -function New-AppRoot
@@ -409,3 +417,5 @@ Export-ModuleMember -function Get-DecryptedString
 Export-ModuleMember -Function Get-Certificate
 Export-ModuleMember -Function Get-CertsFromLocation
 Export-ModuleMember -Function Get-CertThumbprint
+Export-ModuleMember -Function Write-Success
+Export-ModuleMember -Function Write-Console

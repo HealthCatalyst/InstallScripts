@@ -49,7 +49,7 @@ function New-AppRoot($appDirectory, $iisUser){
 	}
 }
 
-function New-AppPool($appName){
+function New-AppPool($appName, $userName, $credential){
 	cd IIS:\AppPools
 
 	if(!(Test-Path $appName -PathType Container))
@@ -57,6 +57,14 @@ function New-AppPool($appName){
 		Write-Console "AppPool $appName does not exist...creating."
 		$appPool = New-WebAppPool $appName
 		$appPool | Set-ItemProperty -Name "managedRuntimeVersion" -Value ""
+		if(![string]::IsNullOrEmpty($userName) -and $credential -ne $null)
+		{
+			$appPool.processModel.userName = $userName
+			$appPool.processModel.password = $credential.GetNetworkCredential().Password
+			$appPool.processModel.identityType = 3
+			$appPool | Set-Item
+			$appPool.Stop()
+		}
 		$appPool.Start()
 	}else{
 		Write-Console "AppPool: $appName exists."

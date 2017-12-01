@@ -87,7 +87,7 @@ function New-App($appName, $siteName, $appDirectory){
 	New-WebApplication -Name $appName -Site $siteName -PhysicalPath $appDirectory -ApplicationPool $appName -Force
 }
 
-function Publish-WebSite($zipPackage, $appDirectory, $appName){
+function Publish-WebSite($zipPackage, $appDirectory, $appName, $overwriteWebConfig){
 	# Extract the app into the app directory
 	Write-Host "Extracting $zipPackage to $appDirectory."
 
@@ -111,7 +111,7 @@ function Publish-WebSite($zipPackage, $appDirectory, $appName){
 
 		if(!(Test-IsDirectory $itemTargetFilePath)){
 			if($itemTargetFilePath.EndsWith("web.config")){
-				$overwrite = $false
+				$overwrite = $overwriteWebConfig
 			}
 			try{
 				Write-Host "......Extracting $itemTargetFilePath..."

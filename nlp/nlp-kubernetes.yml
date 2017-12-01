@@ -1,10 +1,3 @@
-kind: Namespace
-apiVersion: v1
-metadata:
-  name: fabricnlp
-  labels:
-    name: fabricnlp
----
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
@@ -104,3 +97,73 @@ spec:
         - name: solr-persistent-storage
           hostPath:
             path: /data/solr
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: fabric.nlp.jobserver
+  namespace: fabricnlp    
+  labels:
+    app: jobserver
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: jobserver
+  template:
+    metadata:
+      labels:
+        app: jobserver
+    spec:
+      containers:
+        - name: jobserver
+          image: healthcatalyst/fabric.nlp.docker.jobs
+          env:
+            - name: EXTERNAL_HOSTNAME
+              valueFrom:
+                secretKeyRef:
+                  name: certhostname
+                  key: value
+            - name: MYSQL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mysqlpassword
+                  key: password
+          ports:
+            - containerPort: 8084
+              name: jobserver
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: fabric.nlp.nlpwebserver
+  namespace: fabricnlp    
+  labels:
+    app: nlpwebserver
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nlpwebserver
+  template:
+    metadata:
+      labels:
+        app: nlpwebserver
+    spec:
+      containers:
+        - name: nlpwebserver
+          image: healthcatalyst/fabric.nlp.docker.web
+          env:
+            - name: EXTERNAL_HOSTNAME
+              valueFrom:
+                secretKeyRef:
+                  name: certhostname
+                  key: value
+            - name: MYSQL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mysqlpassword
+                  key: password
+          ports:
+            - containerPort: 8083
+              name: nlpwebserver

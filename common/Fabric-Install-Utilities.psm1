@@ -396,6 +396,13 @@ function Get-CertThumbprint($certs, $selectionNumber){
     return $certThumbrint
 }
 
+function Test-IsRunAsAdministrator()
+{
+	$currentIdentity = [Security.Principal.WindowsIdentity]::GetCurrent()
+	$currentPrincipal = New-Object Security.Principal.WindowsPrincipal($currentIdentity)
+	return $currentPrincipal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+}
+
 function Write-Success($message){
 	Write-Host $message -ForegroundColor Green
 }
@@ -430,3 +437,4 @@ Export-ModuleMember -Function Get-CertsFromLocation
 Export-ModuleMember -Function Get-CertThumbprint
 Export-ModuleMember -Function Write-Success
 Export-ModuleMember -Function Write-Console
+Export-ModuleMember -Function Test-IsRunAsAdministrator

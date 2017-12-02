@@ -1,19 +1,67 @@
-apiVersion: extensions/v1beta1
+kind: Service
+apiVersion: v1
+metadata:
+  name: mysqlserver
+  namespace: fabricnlp  
+  labels:
+    app: mysqlserver
+spec:
+  ports:
+  - port: 3306
+    targetPort: 3306
+    protocol: TCP
+  selector:
+    app: mysqlserver
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: solrserver
+  namespace: fabricnlp  
+  labels:
+    app: solrserver
+spec:
+  type: LoadBalancer
+  ports:
+  - port: 8085
+    targetPort: 8085
+    protocol: TCP
+  selector:
+    app: solrserver
+status: 
+    loadBalancer: {}
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: smtpserver
+  namespace: fabricnlp  
+  labels:
+    app: smtpserver
+spec:
+  ports:
+  - port: 25
+    targetPort: 25
+    protocol: TCP
+  selector:
+    app: smtpserver
+---
 kind: Deployment
+apiVersion: extensions/v1beta1
 metadata:
   name: fabric.nlp.mysqlserver
   namespace: fabricnlp  
   labels:
-    app: mysql
+    app: mysqlserver
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: mysql
+      app: mysqlserver
   template:
     metadata:
       labels:
-        app: mysql
+        app: mysqlserver
     spec:
       containers:
         - name: mysqlserver
@@ -45,8 +93,8 @@ spec:
           hostPath:
             path: /data/mysql
 ---
-apiVersion: extensions/v1beta1
 kind: Deployment
+apiVersion: extensions/v1beta1
 metadata:
   name: fabric.nlp.smtpserver
   namespace: fabricnlp  
@@ -66,8 +114,8 @@ spec:
         - name: smtpserver
           image: healthcatalyst/fabric.smtp.agent
 ---
-apiVersion: extensions/v1beta1
 kind: Deployment
+apiVersion: extensions/v1beta1
 metadata:
   name: fabric.nlp.solrserver
   namespace: fabricnlp    
@@ -98,8 +146,8 @@ spec:
           hostPath:
             path: /data/solr
 ---
-apiVersion: extensions/v1beta1
 kind: Deployment
+apiVersion: extensions/v1beta1
 metadata:
   name: fabric.nlp.jobserver
   namespace: fabricnlp    
@@ -133,8 +181,8 @@ spec:
             - containerPort: 8084
               name: jobserver
 ---
-apiVersion: extensions/v1beta1
 kind: Deployment
+apiVersion: extensions/v1beta1
 metadata:
   name: fabric.nlp.nlpwebserver
   namespace: fabricnlp    

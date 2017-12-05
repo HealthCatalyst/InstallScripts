@@ -1,7 +1,7 @@
 
 #
 # This script is meant for quick & easy install via:
-#   curl -sSL https://github.com/HealthCatalyst/InstallScripts/blob/1/realtime/runondevmachine.sh | sh
+#   curl -sSL https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/1/realtime/runondevmachine.sh | sh
 
 myreleaseversion="1"
 
@@ -112,6 +112,6 @@ docker pull healthcatalyst/fabric.realtime.mysql:$myreleaseversion
 
 echo "running stack: $stackfilename"
 
-echo "https://github.com/HealthCatalyst/InstallScripts/blob/$myreleaseversion/realtime/${stackfilename}"
+echo "https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/$myreleaseversion/realtime/${stackfilename}"
 
-curl -sSL "https://github.com/HealthCatalyst/InstallScripts/blob/$myreleaseversion/realtime/${stackfilename}" | docker stack deploy --compose-file - fabricrealtime
+curl -sSL "https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/$myreleaseversion/realtime/${stackfilename}" | docker stack deploy --compose-file - fabricrealtime

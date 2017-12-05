@@ -21,15 +21,22 @@ echo "new-password" |  docker secret create MySQLRootPassword -
 docker secret rm ExternalHostName || echo ""
 echo "localhost" | docker secret create ExternalHostName  -
 
-export SHARED_DRIVE=c:/tmp
+docker secret inspect SmtpRelayPassword &>/dev/null
+if [ $? -ne 0 ]; then
+	echo "foo" | docker secret create SmtpRelayPassword  -
+fi
 
-export SHARED_DRIVE_LOGS=c:/tmp/fluentd
-mkdir -p c:/tmp/fluentd
+export SHARED_DRIVE=c:/tmp/fabricnlp
+mkdir -p ${SHARED_DRIVE}
 
-export SHARED_DRIVE_SOLR=c:/tmp/solr
-mkdir -p c:/tmp/solr
-export SHARED_DRIVE_MYSQL=c:/tmp/mysql_nlp
-mkdir -p c:/tmp/mysql_nlp
+export SHARED_DRIVE_LOGS=${SHARED_DRIVE}/fluentd
+mkdir -p ${SHARED_DRIVE_LOGS}
+
+export SHARED_DRIVE_SOLR=${SHARED_DRIVE}/solr
+mkdir -p ${SHARED_DRIVE_SOLR}
+
+export SHARED_DRIVE_MYSQL=${SHARED_DRIVE}/mysql
+mkdir -p ${SHARED_DRIVE_MYSQL}
 
 
 # use docker stack deploy to start up all the services
@@ -39,6 +46,6 @@ echo "running stack: $stackfilename"
 
 echo "https://healthcatalyst.github.io/InstallScripts/nlp/${stackfilename}"
 
-# curl -sSL "https://healthcatalyst.github.io/InstallScripts/nlp/${stackfilename}" | docker stack deploy --compose-file - fabricnlp
+curl -sSL "https://healthcatalyst.github.io/InstallScripts/nlp/${stackfilename}" | docker stack deploy --compose-file - fabricnlp
 
-docker stack deploy -c $stackfilename fabricnlp
+# docker stack deploy -c $stackfilename fabricnlp

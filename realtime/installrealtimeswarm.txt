@@ -91,14 +91,10 @@ if [[ -d "$fabriccertificatestore" ]]; then
 fi
 
 # remove any existing running containers
-docker stack rm fabricrealtime
-
-echo "sleeping to let network be removed"
-sleep 15s;
 
 docker stack rm fabricrealtime &>/dev/null
 
- echo "waiting until network is removed"
+echo "waiting until network is removed"
 
 while docker network inspect -f "{{ .Name }}" fabricrealtime_realtimenet &>/dev/null; do 
 	echo "."; 

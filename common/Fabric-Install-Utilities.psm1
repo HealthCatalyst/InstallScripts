@@ -70,8 +70,10 @@ function New-AppPool($appName, $userName, $credential){
 		$appPool.processModel.identityType = 3
 		$appPool | Set-Item
 		$appPool.Stop()
+		Start-Sleep -Seconds 3
 	}
 	$appPool.Start()
+	Start-Sleep -Seconds 3
 }
 
 function New-Site($appName, $portNumber, $appDirectory, $hostHeader){
@@ -103,7 +105,8 @@ function Publish-WebSite($zipPackage, $appDirectory, $appName, $overwriteWebConf
 	Write-Console "Extracting $zipPackage to $appDirectory."
 
 	try{
-		Stop-WebAppPool -Name $appName -ErrorAction Stop
+		Stop-WebAppPool -Name $appName
+		Start-Sleep -Seconds 3
 	}catch [System.InvalidOperationException]{
 		Write-Console "AppPool $appName is already stopped, continuing."
 	}

@@ -4,9 +4,14 @@
 #   curl -sSL https://healthcatalyst.github.io/InstallScripts/realtime/runondevmachine.sh | sh
 
 
-docker stack rm fabricrealtime
+docker stack rm fabricrealtime &>/dev/null
 
-sleep 10s;
+ echo "waiting until network is removed"
+
+while docker network inspect -f "{{ .Name }}" fabricrealtime_realtimenet &>/dev/null; do 
+	echo "."; 
+	sleep 1; 
+done
 
 docker secret rm CertPassword || echo ""
 echo "roboconf2" |  docker secret create CertPassword -
@@ -96,13 +101,10 @@ then
 	stackfilename="realtime-stack-sqlserver.yml"
 fi
 
-docker pull healthcatalyst/fabric.realtime.rabbitmq
-docker pull healthcatalyst/fabric.realtime.mysql
-docker pull healthcatalyst/fabric.docker.interfaceengine
-docker pull healthcatalyst/fabric.certificateserver
-docker pull fluent/fluentd
-
-
+docker pull healthcatalyst/fabric.realtime.rabbitmq:1.0.0
+docker pull healthcatalyst/fabric.realtime.mysql:1.0.0
+docker pull healthcatalyst/fabric.docker.interfaceengine:1.0.0
+docker pull healthcatalyst/fabric.certificateserver:1.0.0
 
 echo "running stack: $stackfilename"
 

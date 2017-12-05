@@ -2,11 +2,18 @@
 set -e
 # set -x
 
-echo "Version 1.186"
+myreleaseversion="1.0.0"
+
+echo "Release Version $myreleaseversion"
+
+echo "script version: 1.0.0"
 
 #
 # This script is meant for quick & easy install via:
 #   curl -sSL https://healthcatalyst.github.io/InstallScripts/realtime/installrealtimeswarm.txt | sudo sh -s
+# or to run a specific release version
+#   curl -sSL https://healthcatalyst.github.io/InstallScripts/blob/1.0.0/realtime/installrealtimeswarm.txt | sudo sh -s
+
 
 # Remember: no spaces allowed in variable set commands in bash
 myhostname="$1"
@@ -40,7 +47,7 @@ then
 		&& chmod +x /tmp/wait-for-it.sh \
 		&& sudo cp /tmp/wait-for-it.sh /usr/bin/wait-for-it \
 		&& sudo cp /tmp/wait-for-it.sh /usr/local/bin/wait-for-it \
-		&& echo 'curl -sSL https://healthcatalyst.github.io/InstallScripts/realtime/installrealtimeswarm.txt?rand=$(date +%Y%m%d%H%M%S) | sh -s' | sudo tee /usr/local/bin/updaterealtime \
+		&& echo 'curl -sSL https://healthcatalyst.github.io/InstallScripts/blob/$myreleaseversion/realtime/installrealtimeswarm.txt?rand=$(date +%Y%m%d%H%M%S) | sh -s' | sudo tee /usr/local/bin/updaterealtime \
 		&& sudo chmod +x /usr/local/bin/updaterealtime
 fi
 
@@ -53,7 +60,7 @@ mysqlstore="$SHARED_DRIVE/mysql"
 rabbitmqstore="$SHARED_DRIVE/rabbitmq"
 
 if [[ ! -d "$SHARED_DRIVE" ]]; then
-	echo "$SHARED_DRIVE folder is not present.  Have you setup glusterfs per instructions?"
+	echo "$SHARED_DRIVE folder is not present.  Have you setup the file share per instructions?"
 	exit 1
 fi
 
@@ -82,6 +89,15 @@ docker stack rm fabricrealtime
 
 echo "sleeping to let network be removed"
 sleep 15s;
+
+docker stack rm fabricrealtime &>/dev/null
+
+ echo "waiting until network is removed"
+
+while docker network inspect -f "{{ .Name }}" fabricrealtime_realtimenet &>/dev/null; do 
+	echo "."; 
+	sleep 1; 
+done
 
 # if there is no existing volume then ask for passwords
 if [[ -z "$hasexistingvolume" ]]; then
@@ -175,6 +191,9 @@ docker secret ls
 myhostname=${myhostname:-localhost}
 
 echo "Using hostname=$myhostname"
+
+# make sure we can pull an image
+docker pull healthcatalyst/fabric.docker.interfaceengine
 
 export SHARED_DRIVE=$SHARED_DRIVE
 export SHARED_DRIVE_CERTS=$fabriccertificatestore

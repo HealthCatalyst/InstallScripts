@@ -29,7 +29,7 @@ secrets:
 services:  
 
   certificateserver:
-    image: healthcatalyst/fabric.certificateserver
+    image: healthcatalyst/fabric.certificateserver:1.0.0
     networks: 
       - realtimenet
     secrets:
@@ -47,7 +47,7 @@ services:
        - 8081:3000    
     
   rabbitmq:
-    image: healthcatalyst/fabric.realtime.rabbitmq
+    image: healthcatalyst/fabric.realtime.rabbitmq:1.0.0
     networks: 
       - realtimenet
     secrets:
@@ -72,7 +72,7 @@ services:
        - 15672:15672
 
   interfaceengine:
-    image: healthcatalyst/fabric.docker.interfaceengine
+    image: healthcatalyst/fabric.docker.interfaceengine:1.0.0
     networks: 
       - realtimenet
     secrets:

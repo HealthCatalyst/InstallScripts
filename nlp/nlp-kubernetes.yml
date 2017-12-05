@@ -66,6 +66,7 @@ spec:
       containers:
         - name: mysqlserver
           image: healthcatalyst/fabric.nlp.docker.mysql
+          imagePullPolicy: Always
           env:
             - name: MYSQL_ROOT_PASSWORD
               valueFrom:
@@ -113,6 +114,7 @@ spec:
       containers:
         - name: smtpserver
           image: healthcatalyst/fabric.smtp.agent
+          imagePullPolicy: Always          
 ---
 kind: Deployment
 apiVersion: extensions/v1beta1
@@ -134,6 +136,7 @@ spec:
       containers:
         - name: solrserver
           image: healthcatalyst/fabric.nlp.docker.solr
+          imagePullPolicy: Always          
           volumeMounts:
             - name: solr-persistent-storage
               mountPath: /var/lib/solr
@@ -166,6 +169,7 @@ spec:
       containers:
         - name: jobserver
           image: healthcatalyst/fabric.nlp.docker.jobs
+          imagePullPolicy: Always          
           env:
             - name: EXTERNAL_HOSTNAME
               valueFrom:
@@ -201,6 +205,7 @@ spec:
       containers:
         - name: nlpwebserver
           image: healthcatalyst/fabric.nlp.docker.web
+          imagePullPolicy: Always          
           env:
             - name: EXTERNAL_HOSTNAME
               valueFrom:

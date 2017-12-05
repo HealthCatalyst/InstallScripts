@@ -77,17 +77,17 @@ export DISABLE_SSL="true"
 export SHARED_DRIVE=c:/tmp/fabricrealtime
 mkdir -p ${SHARED_DRIVE}
 
-export SHARED_DRIVE_CERTS=c:/tmp/certs
-mkdir -p ${SHARED_DRIVE}/certs
+export SHARED_DRIVE_CERTS=${SHARED_DRIVE}/certs
+mkdir -p ${SHARED_DRIVE_CERTS}
 
-export SHARED_DRIVE_RABBITMQ=c:/tmp/rabbitmq
-mkdir -p ${SHARED_DRIVE}/rabbitmq
+export SHARED_DRIVE_RABBITMQ=${SHARED_DRIVE}/rabbitmq
+mkdir -p ${SHARED_DRIVE_RABBITMQ}
 
-export SHARED_DRIVE_MYSQL=c:/tmp/mysql
-mkdir -p ${SHARED_DRIVE}/mysql
+export SHARED_DRIVE_MYSQL=${SHARED_DRIVE}/mysql
+mkdir -p ${SHARED_DRIVE_MYSQL}
 
-export SHARED_DRIVE_LOGS=c:/tmp/fluentd
-mkdir -p ${SHARED_DRIVE}/fluentd
+export SHARED_DRIVE_LOGS=${SHARED_DRIVE}/fluentd
+mkdir -p ${SHARED_DRIVE_LOGS}
 
 # export SQLSERVER_USER=imran.qureshi
 # export SQLSERVER_DOMAIN=hqcatalyst.local

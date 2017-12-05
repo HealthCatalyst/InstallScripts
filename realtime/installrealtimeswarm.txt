@@ -55,14 +55,20 @@ fi
 hasexistingvolume=""
 
 SHARED_DRIVE="/mnt/hcshared"
-fabriccertificatestore="$SHARED_DRIVE/certs"
-mysqlstore="$SHARED_DRIVE/mysql"
-rabbitmqstore="$SHARED_DRIVE/rabbitmq"
 
 if [[ ! -d "$SHARED_DRIVE" ]]; then
 	echo "$SHARED_DRIVE folder is not present.  Have you setup the file share per instructions?"
 	exit 1
 fi
+
+SHARED_DRIVE="${SHARED_DRIVE}/fabricrealtime"
+sudo mkdir -p ${SHARED_DRIVE}
+fabriccertificatestore="${SHARED_DRIVE}/certs"
+sudo mkdir -p ${fabriccertificatestore}
+mysqlstore="${SHARED_DRIVE}/mysql"
+sudo mkdir -p ${mysqlstore}
+rabbitmqstore="${SHARED_DRIVE}/rabbitmq"
+sudo mkdir -p ${rabbitmqstore}
 
 deleteOldSSLCertificates=""
 

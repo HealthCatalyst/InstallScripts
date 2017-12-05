@@ -1,8 +1,11 @@
 
 #
 # This script is meant for quick & easy install via:
-#   curl -sSL https://healthcatalyst.github.io/InstallScripts/realtime/runondevmachine.sh | sh
+#   curl -sSL https://github.com/HealthCatalyst/InstallScripts/blob/1/realtime/runondevmachine.sh | sh
 
+myreleaseversion="1"
+
+echo "script version: 1.0.0"
 
 docker stack rm fabricrealtime &>/dev/null
 
@@ -101,13 +104,14 @@ then
 	stackfilename="realtime-stack-sqlserver.yml"
 fi
 
-docker pull healthcatalyst/fabric.realtime.rabbitmq:1
-docker pull healthcatalyst/fabric.realtime.mysql:1
-docker pull healthcatalyst/fabric.docker.interfaceengine:1
-docker pull healthcatalyst/fabric.certificateserver:1
+# make sure we can pull an image
+docker pull healthcatalyst/fabric.docker.interfaceengine:$myreleaseversion
+docker pull healthcatalyst/fabric.certificateserver:$myreleaseversion
+docker pull healthcatalyst/fabric.realtime.rabbitmq:$myreleaseversion
+docker pull healthcatalyst/fabric.realtime.mysql:$myreleaseversion
 
 echo "running stack: $stackfilename"
 
-echo "https://healthcatalyst.github.io/InstallScripts/realtime/${stackfilename}"
+echo "https://github.com/HealthCatalyst/InstallScripts/blob/$myreleaseversion/realtime/${stackfilename}"
 
-curl -sSL "https://healthcatalyst.github.io/InstallScripts/realtime/${stackfilename}" | docker stack deploy --compose-file - fabricrealtime
+curl -sSL "https://github.com/HealthCatalyst/InstallScripts/blob/$myreleaseversion/realtime/${stackfilename}" | docker stack deploy --compose-file - fabricrealtime

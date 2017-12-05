@@ -2,7 +2,7 @@
 set -e
 # set -x
 
-myreleaseversion="1.0.0"
+myreleaseversion="1"
 
 echo "Release Version $myreleaseversion"
 
@@ -12,7 +12,7 @@ echo "script version: 1.0.0"
 # This script is meant for quick & easy install via:
 #   curl -sSL https://healthcatalyst.github.io/InstallScripts/realtime/installrealtimeswarm.txt | sudo sh -s
 # or to run a specific release version
-#   curl -sSL https://healthcatalyst.github.io/InstallScripts/blob/1.0.0/realtime/installrealtimeswarm.txt | sudo sh -s
+#   curl -sSL https://healthcatalyst.github.io/InstallScripts/blob/1/realtime/installrealtimeswarm.txt | sudo sh -s
 
 
 # Remember: no spaces allowed in variable set commands in bash
@@ -193,7 +193,11 @@ myhostname=${myhostname:-localhost}
 echo "Using hostname=$myhostname"
 
 # make sure we can pull an image
-docker pull healthcatalyst/fabric.docker.interfaceengine
+docker pull healthcatalyst/fabric.docker.interfaceengine:$myreleaseversion
+docker pull healthcatalyst/fabric.certificateserver:$myreleaseversion
+docker pull healthcatalyst/fabric.realtime.rabbitmq:$myreleaseversion
+docker pull healthcatalyst/fabric.realtime.mysql:$myreleaseversion
+
 
 export SHARED_DRIVE=$SHARED_DRIVE
 export SHARED_DRIVE_CERTS=$fabriccertificatestore

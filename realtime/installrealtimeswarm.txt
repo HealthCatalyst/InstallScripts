@@ -12,7 +12,7 @@ echo "script version: 1.0.0"
 # This script is meant for quick & easy install via:
 #   curl -sSL https://healthcatalyst.github.io/InstallScripts/realtime/installrealtimeswarm.txt | sudo sh -s
 # or to run a specific release version
-#   curl -sSL https://github.com/HealthCatalyst/InstallScripts/blob/1/realtime/installrealtimeswarm.txt | sudo sh -s
+#   curl -sSL https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/1/realtime/installrealtimeswarm.txt | sudo sh -s
 
 
 # Remember: no spaces allowed in variable set commands in bash
@@ -24,7 +24,7 @@ mydatetime=$(date +%Y%m%d%H%M%S)
 if [[ ! -d "/mnt/hcshared" ]]; then
     echo "/mnt/hcshared is not mounted.  Please mount the file share first."
     echo "For Azure, you can run:"
-    echo "curl -sSL https://github.com/HealthCatalyst/InstallScripts/blob/$myreleaseversion/docker/setupazurefileshare.txt | sh"
+    echo "curl -sSL https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/$myreleaseversion/docker/setupazurefileshare.txt | sh"
     exit 1
 fi
 
@@ -42,12 +42,12 @@ echo "----------------------------------------------------"
 if [[ ! -f "/usr/local/bin/updaterealtime" ]]
 then
 	sudo yum -y install which dos2unix
-	curl -sSL -o /tmp/wait-for-it.sh https://github.com/HealthCatalyst/InstallScripts/blob/$myreleaseversion/wait-for-it.sh?rand=$RANDOMNUMBER \
+	curl -sSL -o /tmp/wait-for-it.sh https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/$myreleaseversion/wait-for-it.sh?rand=$RANDOMNUMBER \
 		&& dos2unix /tmp/wait-for-it.sh \
 		&& chmod +x /tmp/wait-for-it.sh \
 		&& sudo cp /tmp/wait-for-it.sh /usr/bin/wait-for-it \
 		&& sudo cp /tmp/wait-for-it.sh /usr/local/bin/wait-for-it \
-		&& echo 'curl -sSL https://github.com/HealthCatalyst/InstallScripts/blob/$myreleaseversion/realtime/installrealtimeswarm.txt?rand=$(date +%Y%m%d%H%M%S) | sh -s' | sudo tee /usr/local/bin/updaterealtime \
+		&& echo 'curl -sSL https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/$myreleaseversion/realtime/installrealtimeswarm.txt?rand=$(date +%Y%m%d%H%M%S) | sh -s' | sudo tee /usr/local/bin/updaterealtime \
 		&& sudo chmod +x /usr/local/bin/updaterealtime
 fi
 
@@ -213,8 +213,7 @@ then
 	stackfilename="realtime-stack-sqlserver.yml"
 fi
 
-curl -sSL "https://github.com/HealthCatalyst/InstallScripts/blob/$myreleaseversion/realtime/${stackfilename}?rand=$mydatetime" | docker stack deploy --compose-file - fabricrealtime
-
+curl -sSL "https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/${myreleaseversion}/realtime/${stackfilename}?rand=$mydatetime" | docker stack deploy --compose-file - fabricrealtime
 
 echo "waiting for certificateserver to come up"
 wait-for-it $myhostname:8081 -t 60

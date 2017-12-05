@@ -84,10 +84,10 @@ export SHARED_DRIVE_RABBITMQ=c:/tmp/rabbitmq
 mkdir -p ${SHARED_DRIVE}/rabbitmq
 
 export SHARED_DRIVE_MYSQL=c:/tmp/mysql
-mkdir -p ${SHARED_DRIVE}mysql
+mkdir -p ${SHARED_DRIVE}/mysql
 
 export SHARED_DRIVE_LOGS=c:/tmp/fluentd
-mkdir -p ${SHARED_DRIVE}fluentd
+mkdir -p ${SHARED_DRIVE}/fluentd
 
 # export SQLSERVER_USER=imran.qureshi
 # export SQLSERVER_DOMAIN=hqcatalyst.local

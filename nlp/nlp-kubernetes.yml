@@ -1,21 +1,11 @@
+# Fabric NLP stack
+#
+# ----- Services exposed to the outside world ------
+# Solr service
 kind: Service
 apiVersion: v1
 metadata:
-  name: mysqlserver
-  namespace: fabricnlp  
-  labels:
-    app: mysqlserver
-spec:
-  ports:
-  - port: 3306
-    targetPort: 3306
-    protocol: TCP
-  selector:
-    app: mysqlserver
----
-kind: Service
-apiVersion: v1
-metadata:
+# name of this service.  other
   name: solrserver
   namespace: fabricnlp  
   labels:
@@ -31,6 +21,43 @@ spec:
 status: 
     loadBalancer: {}
 ---
+# Solr service exposed to the world
+# kind: Service
+# apiVersion: v1
+# metadata:
+#   name: solrserver
+# spec:
+#   type: NodePort
+#   ports:
+#     - port: 8085
+#       nodePort: 30000
+#   selector:
+#     app: solrserver
+# ---
+# ---- Services internal to the cluster ----
+# MySql service  
+kind: Service
+apiVersion: v1
+metadata:
+# this service shows up in the UI with this name
+  name: mysqlserver
+# namespace should match other services in this file  
+  namespace: fabricnlp  
+# labels allows you to use selectors to find this service
+  labels:
+    app: mysqlserver
+spec:
+  ports:
+# port that other services can use to connect to this service
+  - port: 3306
+# port in the pod we map to  
+    targetPort: 3306
+    protocol: TCP
+# selector says this service should use a pod that has the "app: mysqlserver" label
+  selector:
+    app: mysqlserver
+---
+# SMTP service for sending emails
 kind: Service
 apiVersion: v1
 metadata:
@@ -46,10 +73,14 @@ spec:
   selector:
     app: smtpserver
 ---
+# ----- Pods -----
+# MySql pod
 kind: Deployment
 apiVersion: extensions/v1beta1
 metadata:
+# name for this pod
   name: fabric.nlp.mysqlserver
+# namespace for this pod
   namespace: fabricnlp  
   labels:
     app: mysqlserver
@@ -64,11 +95,16 @@ spec:
         app: mysqlserver
     spec:
       containers:
+        # name of this pod
         - name: mysqlserver
-          image: healthcatalyst/fabric.nlp.docker.mysql
-          imagePullPolicy: Always
+          # image to pull
+          image: healthcatalyst/fabric.nlp.docker.mysql:latest
+          # specify to always pull a new image
+          #imagePullPolicy: Always
+          # environment variables
           env:
             - name: MYSQL_ROOT_PASSWORD
+              # set the value of this environment variable from a secret called mysqlrootpassword
               valueFrom:
                 secretKeyRef:
                   name: mysqlrootpassword
@@ -79,21 +115,27 @@ spec:
                   name: mysqlpassword
                   key: password
             - name: MYSQL_DATABASE
+              # set the value of this environment variable directly
               value: nlpmt
             - name: MYSQL_USER
               value: NLP_APP_USER
           ports:
+            # expose port 3306
             - containerPort: 3306
+              # name of the port
               name: mysql
           volumeMounts:
             - name: mysql-persistent-storage
+              # point the /var/lib/mysql folder inside the container to the volume called mysql-persistent-storage
               mountPath: /var/lib/mysql
 
       volumes:
         - name: mysql-persistent-storage
           hostPath:
+            # map mysql-persistent-storage to /data/mysql on the host
             path: /data/mysql
 ---
+# SMTP server pod
 kind: Deployment
 apiVersion: extensions/v1beta1
 metadata:
@@ -113,9 +155,10 @@ spec:
     spec:
       containers:
         - name: smtpserver
-          image: healthcatalyst/fabric.smtp.agent
-          imagePullPolicy: Always          
+          image: healthcatalyst/fabric.smtp.agent:latest
+          #imagePullPolicy: Always          
 ---
+# Solr pod
 kind: Deployment
 apiVersion: extensions/v1beta1
 metadata:
@@ -135,8 +178,8 @@ spec:
     spec:
       containers:
         - name: solrserver
-          image: healthcatalyst/fabric.nlp.docker.solr
-          imagePullPolicy: Always          
+          image: healthcatalyst/fabric.nlp.docker.solr:latest
+          #imagePullPolicy: Always          
           volumeMounts:
             - name: solr-persistent-storage
               mountPath: /var/lib/solr
@@ -149,6 +192,7 @@ spec:
           hostPath:
             path: /data/solr
 ---
+# NLP Job server pod
 kind: Deployment
 apiVersion: extensions/v1beta1
 metadata:
@@ -168,7 +212,7 @@ spec:
     spec:
       containers:
         - name: jobserver
-          image: healthcatalyst/fabric.nlp.docker.jobs
+          image: healthcatalyst/fabric.nlp.docker.jobs:latest
           imagePullPolicy: Always          
           env:
             - name: EXTERNAL_HOSTNAME
@@ -185,6 +229,7 @@ spec:
             - containerPort: 8084
               name: jobserver
 ---
+# NLP web server pod
 kind: Deployment
 apiVersion: extensions/v1beta1
 metadata:
@@ -204,7 +249,7 @@ spec:
     spec:
       containers:
         - name: nlpwebserver
-          image: healthcatalyst/fabric.nlp.docker.web
+          image: healthcatalyst/fabric.nlp.docker.web:latest
           imagePullPolicy: Always          
           env:
             - name: EXTERNAL_HOSTNAME

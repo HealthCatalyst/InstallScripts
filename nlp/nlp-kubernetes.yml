@@ -11,15 +11,15 @@ metadata:
   labels:
     app: solrserver
 spec:
-  type: LoadBalancer
+  #type: LoadBalancer
   ports:
   - port: 8085
     targetPort: 8085
     protocol: TCP
   selector:
     app: solrserver
-status: 
-    loadBalancer: {}
+# status: 
+#     loadBalancer: {}
 ---
 # Solr service exposed to the world
 # kind: Service
@@ -265,3 +265,4 @@ spec:
           ports:
             - containerPort: 8083
               name: nlpwebserver
+---

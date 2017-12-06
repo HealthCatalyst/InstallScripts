@@ -28,7 +28,7 @@ read -p "Storage File share Name: (leave empty for default):" AKS_PERS_SHARE_NAM
 
 if [[ -z  "${AKS_PERS_STORAGE_ACCOUNT_NAME}" ]]
 then
-    AKS_PERS_STORAGE_ACCOUNT_NAME=${AKS_CLUSTER_NAME}storage
+    AKS_PERS_STORAGE_ACCOUNT_NAME=${AKS_PERS_RESOURCE_GROUP}storage
     echo "Using storage account: ${AKS_PERS_STORAGE_ACCOUNT_NAME}"
 fi
 
@@ -41,38 +41,46 @@ fi
 # login
 az.cmd login
 
-# enable AKS container service
+echo "enable AKS container service"
 az.cmd provider show -n Microsoft.ContainerService
+
+echo "download kubectl"
+mkdir -p c:\kubernetes
+az.cmd aks install-cli --install-location c:\kubernetes
 
 # delete existing group
 # az.cmd group delete --name $AKS_PERS_RESOURCE_GROUP
 
-# Create the Resource Group
+echo "Create the Resource Group"
 az.cmd group create --name $AKS_PERS_RESOURCE_GROUP --location $AKS_PERS_LOCATION
 
-# create Azure Container Service cluster (AKS)
+echo create Azure Container Service cluster AKS
 az.cmd aks create --resource-group $AKS_PERS_RESOURCE_GROUP --name $AKS_CLUSTER_NAME --node-count 3 --generate-ssh-keys --kubernetes-version 1.8.1 --node-vm-size Standard_B2ms
 
-# get credentials
+echo sleeping for 10 secs
+sleep 10s;
+
+echo get credentials for AKS cluster
 az.cmd aks get-credentials --resource-group $AKS_PERS_RESOURCE_GROUP --name $AKS_CLUSTER_NAME
 
-# check nodes via kubectl
+echo check nodes via kubectl
 kubectl get nodes
 
-# Create the storage account
+echo Create the storage account
 az.cmd storage account create -n $AKS_PERS_STORAGE_ACCOUNT_NAME -g $AKS_PERS_RESOURCE_GROUP -l $AKS_PERS_LOCATION --sku Standard_LRS
 
 # Export the connection string as an environment variable, this is used when creating the Azure file share
 AZURE_STORAGE_CONNECTION_STRING=$(az.cmd storage account show-connection-string -n $AKS_PERS_STORAGE_ACCOUNT_NAME -g $AKS_PERS_RESOURCE_GROUP -o tsv)
 
-# Create the file share
+echo Create the file share
 az.cmd storage share create -n $AKS_PERS_SHARE_NAME --connection-string $AZURE_STORAGE_CONNECTION_STRING
 
-# Get storage account key
+echo Get storage account key
 STORAGE_KEY=$(az.cmd storage account keys list --resource-group $AKS_PERS_RESOURCE_GROUP --account-name $AKS_PERS_STORAGE_ACCOUNT_NAME --query "[0].value" -o tsv)
 
-echo $STORAGE_KEY
+echo storagekey: $STORAGE_KEY
 
+echo creating kubernetes secret
 kubectl create secret generic azure-secret --from-literal=azurestorageaccountname="${AKS_PERS_STORAGE_ACCOUNT_NAME}" --from-literal=azurestorageaccountkey="${STORAGE_KEY}"
 
 # kubectl apply -f testfileshare-pod.yml
@@ -80,7 +88,13 @@ kubectl create secret generic azure-secret --from-literal=azurestorageaccountnam
 # kubectl describe pod testfileshare-pod
 
 # https://docs.microsoft.com/en-us/azure/aks/kubernetes-dashboard
+echo open kubernetes dashboard in browser
 az.cmd aks browse --resource-group $AKS_PERS_RESOURCE_GROUP --name $AKS_CLUSTER_NAME &
+
+echo deploy the ingress controller
+kubectl apply -f ingress.yml
+
+kubectl get deployments,pods,services,ingress,secrets --namespace=kube-system
 
 
 

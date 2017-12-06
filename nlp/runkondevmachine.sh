@@ -16,3 +16,5 @@ kubectl create secret generic certpassword --namespace=fabricnlp --from-literal=
 kubectl create -f ./nlp-kubernetes.yml
 
 kubectl get deployments,pods,services,ingress,secrets --namespace=fabricnlp
+
+kubectl create -f ./nlp-kubernetes-public.yml

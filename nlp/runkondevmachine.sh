@@ -12,3 +12,7 @@ kubectl create secret generic mysqlpassword --namespace=fabricnlp --from-literal
 kubectl create secret generic certhostname --namespace=fabricnlp --from-literal=value=imran.com
 
 kubectl create secret generic certpassword --namespace=fabricnlp --from-literal=password=ILoveNLP2017!
+
+kubectl create -f ./nlp-kubernetes.yml
+
+kubectl get deployments,pods,services,ingress,secrets --namespace=fabricnlp

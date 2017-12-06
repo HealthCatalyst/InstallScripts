@@ -68,6 +68,7 @@ function New-AppPool($appName, $userName, $credential){
 		$appPool.processModel.userName = $userName
 		$appPool.processModel.password = $credential.GetNetworkCredential().Password
 		$appPool.processModel.identityType = 3
+		$appPool.processModel.loaduserprofile = true
 		$appPool | Set-Item
 		$appPool.Stop()
 		Start-Sleep -Seconds 3

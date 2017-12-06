@@ -45,8 +45,8 @@ echo "enable AKS container service"
 az.cmd provider show -n Microsoft.ContainerService
 
 echo "download kubectl"
-mkdir -p c:\kubernetes
-az.cmd aks install-cli --install-location c:\kubernetes
+mkdir -p c:/kubernetes
+az.cmd aks install-cli --install-location c:/kubernetes
 
 # delete existing group
 # az.cmd group delete --name $AKS_PERS_RESOURCE_GROUP
@@ -58,7 +58,9 @@ echo create Azure Container Service cluster AKS
 az.cmd aks create --resource-group $AKS_PERS_RESOURCE_GROUP --name $AKS_CLUSTER_NAME --node-count 3 --generate-ssh-keys --kubernetes-version 1.8.1 --node-vm-size Standard_B2ms
 
 echo sleeping for 10 secs
-sleep 10s;
+# sleep 30s;
+
+read -p "Press enter to continue once all the nodes are created"
 
 echo get credentials for AKS cluster
 az.cmd aks get-credentials --resource-group $AKS_PERS_RESOURCE_GROUP --name $AKS_CLUSTER_NAME

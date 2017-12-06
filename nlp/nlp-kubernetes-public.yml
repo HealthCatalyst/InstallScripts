@@ -19,7 +19,7 @@ metadata:
     kubernetes.io/ingress.class: traefik
 spec:
   rules:
-  - host: fabricnlpkubernetes.eastus.cloudapp.azure.com
+  - host: traefik-ui.minikube
     http:
       paths:
       - backend:

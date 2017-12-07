@@ -92,6 +92,8 @@ fi
 echo "Create the Resource Group"
 az.cmd group create --name $AKS_PERS_RESOURCE_GROUP --location $AKS_PERS_LOCATION
 
+set -x
+
 AKS_SERVICE_PRINCIPAL_NAME=${AKS_PERS_RESOURCE_GROUP}Kubernetes
 
 echo "checking if Service Principal already exists"
@@ -104,20 +106,29 @@ then
     az.cmd ad sp delete --id "$AKS_SERVICE_PRINCIPAL_CLIENTID"
 fi
 
+myscope="//subscriptions//${AKS_SUBSCRIPTION_ID}//resourceGroups//${AKS_PERS_RESOURCE_GROUP}"
+
+echo $myscope
+
 echo "Creating Service Principal: $AKS_SERVICE_PRINCIPAL_NAME"
-AKS_SERVICE_PRINCIPAL_CLIENTSECRET=$(az.cmd ad sp create-for-rbac --role="Contributor" --skip-assignment --name ${AKS_SERVICE_PRINCIPAL_NAME} --query "password" -o tsv)
+AKS_SERVICE_PRINCIPAL_CLIENTSECRET=$(az.cmd ad sp create-for-rbac --role="Contributor" --scopes="$myscope" --name ${AKS_SERVICE_PRINCIPAL_NAME} --query "password" -o tsv)
 # clientID == appID
 # client secret == password
 AKS_SERVICE_PRINCIPAL_CLIENTID=$(az.cmd ad sp list --display-name ${AKS_SERVICE_PRINCIPAL_NAME} --query "[].appId" -o tsv)
 
 echo created $AKS_SERVICE_PRINCIPAL_NAME clientId=$AKS_SERVICE_PRINCIPAL_CLIENTID clientsecret=$AKS_SERVICE_PRINCIPAL_CLIENTSECRET
 
-myscope="subscriptions/${AKS_SUBSCRIPTION_ID}/resourceGroups/${AKS_PERS_RESOURCE_GROUP}"
+# az.cmd role assignment create --assignee $AKS_SERVICE_PRINCIPAL_CLIENTID --role "contributor" --scope "$myscope"
 
-echo $myscope
+echo create Azure Container Service cluster
 
-set -x
-az.cmd role assignment create --assignee $AKS_SERVICE_PRINCIPAL_CLIENTID --role "contributor" --scope "$myscope"
+mysubnetid="//subscriptions//c744e4e8-3d12-48ab-8492-9a600a00ca3f//resourceGroups//Imran//providers//Microsoft.Network//virtualNetworks//kubnettest//subnets//kubsubnet"
+
+# az.cmd acs create --orchestrator-type kubernetes --resource-group $AKS_PERS_RESOURCE_GROUP --name $AKS_CLUSTER_NAME --generate-ssh-keys --agent-count=3 --agent-vm-size Standard_B2ms
+az.cmd acs create --orchestrator-type kubernetes --resource-group fabricnlpcluster --name cluster1 --service-principal="$AKS_SERVICE_PRINCIPAL_CLIENTID" --client-secret="$AKS_SERVICE_PRINCIPAL_CLIENTSECRET"  --generate-ssh-keys --agent-count=3 --agent-vm-size Standard_D2 --master-vnet-subnet-id="$mysubnetid" --agent-vnet-subnet-id="$mysubnetid"
+
+exit 0
+
 
 echo "creating SSH key"
 ssh-keygen -t rsa -b 2048 -q -N "" -C azureuser@linuxvm -f ~/.ssh/id_rsa
@@ -137,12 +148,14 @@ sed -i "s#GEN-RESOURCE-GROUP#${AKS_PERS_RESOURCE_GROUP}#g" azuredeploy.parameter
 sed -i "s#GEN-VNET#${AKS_VNET_NAME}#g" azuredeploy.parameters.real.json
 sed -i "s#GEN-SUBNET#${AKS_SUBNET_NAME}#g" azuredeploy.parameters.real.json
 
+
+
+
+
 az.cmd group deployment create --template-file "azuredeploy.json" \
     --resource-group $AKS_PERS_RESOURCE_GROUP -n $AKS_CLUSTER_NAME \
     --parameters @azuredeploy.parameters.real.json
 
-echo create Azure Container Service cluster
-# az.cmd acs create --orchestrator-type kubernetes --resource-group $AKS_PERS_RESOURCE_GROUP --name $AKS_CLUSTER_NAME --generate-ssh-keys --agent-count=3 --agent-vm-size Standard_B2ms
 
 echo sleeping for 10 secs
 # sleep 30s;

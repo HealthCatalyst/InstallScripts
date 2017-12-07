@@ -31,11 +31,11 @@ AKS_SSH_KEY=
 # AKS_PERS_SHARE_NAME=fileshare
 
 echo "checking if you're already logged in"
-loggedInUser=$(az.cmd account show --query "user.name")
+loggedInUser=$(az.cmd account show --query "user.name"  -o tsv)
 
 if [[ ! -z $loggedInUser ]]
 then
-    SUBSCRIPTION_NAME=$(az.cmd account show --query "name")
+    SUBSCRIPTION_NAME=$(az.cmd account show --query "name"  -o tsv)
     echo "You are currently logged in as $loggedInUser into subscription $SUBSCRIPTION_NAME"
     DO_RELOGIN=
     read -p "Do you want to continue or logged in again (type ENTER to continue or any key to login again):" DO_RELOGIN < /dev/tty
@@ -50,7 +50,7 @@ fi
 
 echo getting current subscription id
 az.cmd account show
-AKS_SUBSCRIPTION_ID=$(az.cmd account show --query "id")
+AKS_SUBSCRIPTION_ID=$(az.cmd account show --query "id" -o tsv)
 read -p "Using above subscription.  Check and then click enter to continue or ctrl-C to exit"
 
 read -p "Resource Group: (e.g., fabricnlp-rg):" AKS_PERS_RESOURCE_GROUP < /dev/tty
@@ -78,10 +78,6 @@ then
     echo "Using share name: ${AKS_PERS_SHARE_NAME}"
 fi
 
-echo "enable AKS container service"
-az.cmd provider show -n Microsoft.ContainerService
-
-
 echo "checking if resource group already exists"
 resourceGroupExists=$(az.cmd group exists --name ${AKS_PERS_RESOURCE_GROUP})
 if [[ ! -z $resourceGroupExists ]]
@@ -104,16 +100,24 @@ AKS_SERVICE_PRINCIPAL_CLIENTID=$(az.cmd ad sp list --display-name ${AKS_SERVICE_
 if [[ ! -z "$AKS_SERVICE_PRINCIPAL_CLIENTID" ]]
 then
     echo "Service Principal already exists with name: $AKS_SERVICE_PRINCIPAL_NAME"
-    exit 1
+    echo "deleting..."
+    az.cmd ad sp delete --id "$AKS_SERVICE_PRINCIPAL_CLIENTID"
 fi
 
-echo "Creating Service Principal"
-AKS_SERVICE_PRINCIPAL_CLIENTSECRET=$(az.cmd ad sp create-for-rbac --role="Contributor" --scopes="/subscriptions/$AKS_SUBSCRIPTION_ID/resourceGroups/$AKS_PERS_RESOURCE_GROUP" --name ${AKS_SERVICE_PRINCIPAL_NAME} --query "password")
+echo "Creating Service Principal: $AKS_SERVICE_PRINCIPAL_NAME"
+AKS_SERVICE_PRINCIPAL_CLIENTSECRET=$(az.cmd ad sp create-for-rbac --role="Contributor" --skip-assignment --name ${AKS_SERVICE_PRINCIPAL_NAME} --query "password" -o tsv)
 # clientID == appID
 # client secret == password
 AKS_SERVICE_PRINCIPAL_CLIENTID=$(az.cmd ad sp list --display-name ${AKS_SERVICE_PRINCIPAL_NAME} --query "[].appId" -o tsv)
 
-echo $AKS_SERVICE_PRINCIPAL_NAME $AKS_SERVICE_PRINCIPAL_CLIENTID $AKS_SERVICE_PRINCIPAL_CLIENTSECRET
+echo created $AKS_SERVICE_PRINCIPAL_NAME clientId=$AKS_SERVICE_PRINCIPAL_CLIENTID clientsecret=$AKS_SERVICE_PRINCIPAL_CLIENTSECRET
+
+myscope="subscriptions/${AKS_SUBSCRIPTION_ID}/resourceGroups/${AKS_PERS_RESOURCE_GROUP}"
+
+echo $myscope
+
+set -x
+az.cmd role assignment create --assignee $AKS_SERVICE_PRINCIPAL_CLIENTID --role "contributor" --scope "$myscope"
 
 echo "creating SSH key"
 ssh-keygen -t rsa -b 2048 -q -N "" -C azureuser@linuxvm -f ~/.ssh/id_rsa

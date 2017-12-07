@@ -12,22 +12,22 @@
             "value": "GEN-SSH-PUB-KEY"
         },
         "servicePrincipalClientId": {
-            "value": "GEN-UNIQUE"
+            "value": "GEN-UNIQUE-CLIENT-ID"
         },
         "servicePrincipalClientSecret": {
-            "value": "GEN-UNIQUE"
+            "value": "GEN-UNIQUE-CLIENT-SECRET"
         },
         "subscriptionId": {
-            "value": "Kubernetes"
+            "value": "GEN-SUBSCRIPTION-ID"
         },
         "resourceGroup": {
-            "value": "Kubernetes"
+            "value": "GEN-RESOURCE-GROUP"
         },
         "vNet": {
-            "value": "Kubernetes"
+            "value": "GEN-VNET"
         },
         "subNet": {
-            "value": "Kubernetes"
+            "value": "GEN-SUBNET"
         }
     }
 }

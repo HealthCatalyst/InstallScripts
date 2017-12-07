@@ -125,11 +125,23 @@ ssh-keygen -t rsa -b 2048 -q -N "" -C azureuser@linuxvm -f ~/.ssh/id_rsa
 AKS_SSH_KEY=$(cat ~/.ssh/id_rsa.pub)
 
 # create deployment so we can set vnet and subnet
+myparams="{\"sshRSAPublicKey\": {\"value\": \"${AKS_SSH_KEY}\"}"
+
+cp azuredeploy.parameters.json azuredeploy.parameters.real.json
+
+sed -i "s#GEN-SSH-PUB-KEY#${AKS_SSH_KEY}#g" azuredeploy.parameters.real.json
+sed -i "s#GEN-UNIQUE-CLIENT-ID#${AKS_SERVICE_PRINCIPAL_CLIENTID}#g" azuredeploy.parameters.real.json
+sed -i "s#GEN-UNIQUE-CLIENT-SECRET#${AKS_SERVICE_PRINCIPAL_CLIENTSECRET}#g" azuredeploy.parameters.real.json
+sed -i "s#GEN-SUBSCRIPTION-ID#${AKS_SUBSCRIPTION_ID}#g" azuredeploy.parameters.real.json
+sed -i "s#GEN-RESOURCE-GROUP#${AKS_PERS_RESOURCE_GROUP}#g" azuredeploy.parameters.real.json
+sed -i "s#GEN-VNET#${AKS_VNET_NAME}#g" azuredeploy.parameters.real.json
+sed -i "s#GEN-SUBNET#${AKS_SUBNET_NAME}#g" azuredeploy.parameters.real.json
+
 az.cmd group deployment create --template-file "azuredeploy.json" \
     --resource-group $AKS_PERS_RESOURCE_GROUP -n $AKS_CLUSTER_NAME \
-    --parameters dnsNamePrefix=kubcluster adminUsername=azureuser sshRSAPublicKey=${AKS_SSH_KEY} servicePrincipalClientId=$AKS_SERVICE_PRINCIPAL_CLIENTID servicePrincipalClientSecret=$AKS_SERVICE_PRINCIPAL_CLIENTSECRET subscriptionId=$AKS_SUBSCRIPTION_ID resourceGroup=${AKS_PERS_RESOURCE_GROUP} vNet=$AKS_VNET_NAME subNet=$AKS_SUBNET_NAME
+    --parameters @azuredeploy.parameters.real.json
 
-echo create Azure Container Service cluster AKS
+echo create Azure Container Service cluster
 # az.cmd acs create --orchestrator-type kubernetes --resource-group $AKS_PERS_RESOURCE_GROUP --name $AKS_CLUSTER_NAME --generate-ssh-keys --agent-count=3 --agent-vm-size Standard_B2ms
 
 echo sleeping for 10 secs
@@ -137,10 +149,10 @@ echo sleeping for 10 secs
 
 read -p "Press enter to continue once all the nodes are created"
 
-echo "download kubectl"
-mkdir -p c:/kubernetes
-rm c:/kubernetes/kubectl.exe
-az.cmd acs install-cli --resource-group=$AKS_PERS_RESOURCE_GROUP --name=$AKS_CLUSTER_NAME --install-location c:/kubernetes
+# echo "download kubectl"
+# mkdir -p c:/kubernetes
+# rm c:/kubernetes/kubectl.exe
+# az.cmd acs install-cli --resource-group=$AKS_PERS_RESOURCE_GROUP --name=$AKS_CLUSTER_NAME --install-location c:/kubernetes
 
 echo get credentials for AKS cluster
 az.cmd acs kubernetes get-credentials --resource-group=$AKS_PERS_RESOURCE_GROUP --name=$AKS_CLUSTER_NAME

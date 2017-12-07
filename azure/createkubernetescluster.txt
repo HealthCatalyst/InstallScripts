@@ -68,6 +68,17 @@ az.cmd aks get-credentials --resource-group $AKS_PERS_RESOURCE_GROUP --name $AKS
 echo check nodes via kubectl
 kubectl get nodes
 
+nodeCount=0
+
+while [ $nodeCount -lt 3 ]
+do
+sleep 10s;
+nodeCount=$(wc -l <<< "$(kubectl get nodes -o=name)")
+echo nodes: $nodeCount
+done
+
+
+
 echo Create the storage account
 az.cmd storage account create -n $AKS_PERS_STORAGE_ACCOUNT_NAME -g $AKS_PERS_RESOURCE_GROUP -l $AKS_PERS_LOCATION --sku Standard_LRS
 

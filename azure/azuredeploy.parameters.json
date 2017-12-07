@@ -1,0 +1,33 @@
+{
+    "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "dnsNamePrefix": {
+            "value": "kubcluster"
+        },
+        "adminUsername": {
+            "value": "azureuser"
+        },
+        "sshRSAPublicKey": {
+            "value": "GEN-SSH-PUB-KEY"
+        },
+        "servicePrincipalClientId": {
+            "value": "GEN-UNIQUE"
+        },
+        "servicePrincipalClientSecret": {
+            "value": "GEN-UNIQUE"
+        },
+        "subscriptionId": {
+            "value": "Kubernetes"
+        },
+        "resourceGroup": {
+            "value": "Kubernetes"
+        },
+        "vNet": {
+            "value": "Kubernetes"
+        },
+        "subNet": {
+            "value": "Kubernetes"
+        }
+    }
+}

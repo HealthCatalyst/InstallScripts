@@ -28,7 +28,7 @@ function New-AppRoot($appDirectory, $iisUser){
 
 	if(!(Test-Path $appDirectory)) {
 		Write-Console "Creating application directory: $appDirectory."
-		mkdir $appDirectory
+		mkdir $appDirectory | Out-Null
 	}else{
 		Write-Console "Application directory: $appDirectory exists."
 	}
@@ -36,7 +36,7 @@ function New-AppRoot($appDirectory, $iisUser){
 	
 	if(!(Test-Path $logDirectory)) {
 		Write-Console "Creating applciation log directory: $logDirectory."
-		mkdir $logDirectory
+		mkdir $logDirectory | Out-Null
 		Write-Console "Setting Write and Read access for $iisUser on $logDirectory."
 		$acl = (Get-Item $logDirectory).GetAccessControl('Access')
 		$writeAccessRule = New-Object System.Security.AccessControl.FileSystemAccessRule($iisUser, "Write", "ContainerInherit,ObjectInherit", "None", "Allow")
@@ -121,7 +121,7 @@ function Publish-WebSite($zipPackage, $appDirectory, $appName, $overwriteWebConf
 		$overwrite = $true
 
 		if(!(Test-Path $itemDirectory)){
-			New-Item -ItemType Directory -Path $itemDirectory
+			New-Item -ItemType Directory -Path $itemDirectory | Out-Null
 		}
 
 		if(!(Test-IsDirectory $itemTargetFilePath)){

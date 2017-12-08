@@ -60,7 +60,7 @@
             "value": "k8s"
         },
         "firstConsecutiveStaticIP": {
-            "value": "10.3.0.239"
+            "value": "REPLACE-FIRST-STATIC-IP"
         },
         "etcdDiskSizeGB": {
             "value": "128"

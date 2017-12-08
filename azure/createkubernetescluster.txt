@@ -124,6 +124,8 @@ echo created $AKS_SERVICE_PRINCIPAL_NAME clientId=$AKS_SERVICE_PRINCIPAL_CLIENTI
 
 AKS_SSH_KEY=$(cat ~/.ssh/id_rsa.pub)
 
+dnsNamePrefix=$AKS_PERS_RESOURCE_GROUP
+
 echo create Azure Container Service cluster AKS
 az.cmd aks create --resource-group $AKS_PERS_RESOURCE_GROUP --name $AKS_CLUSTER_NAME \
     --node-count 3 --kubernetes-version 1.8.1 \

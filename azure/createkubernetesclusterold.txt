@@ -16,6 +16,7 @@ AKS_PERS_SHARE_NAME=
 AKS_SUBSCRIPTION_ID=
 AKS_VNET_NAME=
 AKS_SUBNET_NAME=
+AKS_SUBNET_RESOURCE_GROUP=
 AKS_SSH_KEY=
 
 # AKS_PERS_RESOURCE_GROUP=fabricnlpkubernetes
@@ -63,7 +64,9 @@ read -p "Storage File share Name: (leave empty for default):" AKS_PERS_SHARE_NAM
 read -p "Virtual Network Name: (leave empty for default):" AKS_VNET_NAME < /dev/tty
 if [[ -z  "${AKS_PERS_STORAGE_ACCOUNT_NAME}" ]]
 then
-read -p "Subnet Name: " AKS_SUBNET_NAME < /dev/tty
+    read -p "Subnet Name: " AKS_SUBNET_NAME < /dev/tty
+
+    read -p "Resource Group of Subnet: " AKS_SUBNET_RESOURCE_GROUP < /dev/tty
 fi
 
 if [[ -z  "${AKS_PERS_STORAGE_ACCOUNT_NAME}" ]]
@@ -122,7 +125,7 @@ echo created $AKS_SERVICE_PRINCIPAL_NAME clientId=$AKS_SERVICE_PRINCIPAL_CLIENTI
 
 echo create Azure Container Service cluster
 
-mysubnetid="/subscriptions/c744e4e8-3d12-48ab-8492-9a600a00ca3f/resourceGroups/Imran/providers/Microsoft.Network/virtualNetworks/kubnettest/subnets/kubsubnet"
+mysubnetid="/subscriptions/${AKS_SUBSCRIPTION_ID}/resourceGroups/${AKS_SUBNET_RESOURCE_GROUP}/providers/Microsoft.Network/virtualNetworks/${AKS_VNET_NAME}/subnets/${AKS_SUBNET_NAME}"
 
 # az.cmd acs create --orchestrator-type kubernetes --resource-group $AKS_PERS_RESOURCE_GROUP --name $AKS_CLUSTER_NAME --generate-ssh-keys --agent-count=3 --agent-vm-size Standard_B2ms
 #az.cmd acs create --orchestrator-type kubernetes --resource-group fabricnlpcluster --name cluster1 --service-principal="$AKS_SERVICE_PRINCIPAL_CLIENTID" --client-secret="$AKS_SERVICE_PRINCIPAL_CLIENTSECRET"  --generate-ssh-keys --agent-count=3 --agent-vm-size Standard_D2 --master-vnet-subnet-id="$mysubnetid" --agent-vnet-subnet-id="$mysubnetid"
@@ -136,8 +139,8 @@ mysubnetid="/subscriptions/c744e4e8-3d12-48ab-8492-9a600a00ca3f/resourceGroups/I
 AKS_SSH_KEY=$(cat ~/.ssh/id_rsa.pub)
 
 # create deployment so we can set vnet and subnet
-# myparams="{\"sshRSAPublicKey\": {\"value\": \"${AKS_SSH_KEY}\"}"
 
+# cp the template parameter file so we can change some values
 cp azuredeploy.parameters.json azuredeploy.parameters.real.json
 
 dnsNamePrefix=$AKS_PERS_RESOURCE_GROUP
@@ -149,6 +152,11 @@ sed -i "s#REPLACE-CLIENTSECRET#${AKS_SERVICE_PRINCIPAL_CLIENTSECRET}#g" azuredep
 
 sed -i "s#REPLACE-SUBNET#${mysubnetid}#g" azuredeploy.parameters.real.json
 sed -i "s#REPLACE-DNS-NAME-PREFIX#${dnsNamePrefix}#g" azuredeploy.parameters.real.json
+
+firstStaticIP="10.3.0.239"
+sed -i "s#REPLACE-FIRST-STATIC-IP#${firstStaticIP}#g" azuredeploy.parameters.real.json
+
+exit 0
 
 echo "starting deployment"
 az.cmd group deployment create --template-file "azuredeploy.json" \

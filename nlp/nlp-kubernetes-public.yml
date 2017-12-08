@@ -25,3 +25,31 @@ spec:
       - backend:
           serviceName: traefik-web-ui
           servicePort: 80
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: solrserverpublic
+  namespace: fabricnlp
+spec:
+  selector:
+    app: solrserver
+  ports:
+  - port: 80
+    targetPort: 8085
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: traefik-web-ui
+  namespace: fabricnlp
+  annotations:
+    kubernetes.io/ingress.class: traefik
+spec:
+  rules:
+  - host: solr.allina.healthcatalyst.net
+    http:
+      paths:
+      - backend:
+          serviceName: solrserverpublic
+          servicePort: 80

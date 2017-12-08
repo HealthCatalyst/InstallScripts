@@ -21,19 +21,6 @@ spec:
 # status: 
 #     loadBalancer: {}
 ---
-# Solr service exposed to the world
-# kind: Service
-# apiVersion: v1
-# metadata:
-#   name: solrserver
-# spec:
-#   type: NodePort
-#   ports:
-#     - port: 8085
-#       nodePort: 30000
-#   selector:
-#     app: solrserver
-# ---
 # ---- Services internal to the cluster ----
 # MySql service  
 kind: Service

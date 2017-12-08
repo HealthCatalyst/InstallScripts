@@ -198,6 +198,7 @@ spec:
           volumeMounts:
             - name: solr-persistent-storage
               mountPath: /var/lib/solr
+              subPath: solr
           ports:
             - containerPort: 8085
               name: solr

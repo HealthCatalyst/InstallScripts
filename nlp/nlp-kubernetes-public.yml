@@ -84,6 +84,9 @@ spec:
     secretNamespace: default
     shareName: fabricnlp-mysql
     readOnly: false
+  mountOptions:
+    - dir_mode=0777
+    - file_mode=0777
   claimRef:
     namespace: fabricnlp
     name: az-files-mysql

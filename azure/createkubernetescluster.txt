@@ -84,7 +84,7 @@ then
     kubresourcegroup="MC_${AKS_PERS_RESOURCE_GROUP}_${AKS_CLUSTER_NAME}_${AKS_PERS_LOCATION}"
     echo "waiting until the corresponding kubernetes resource group [$kubresourcegroup] is also delete"
 
-    az.cmd group wait --name $kubresourcegroup
+    az.cmd group wait --name $kubresourcegroup --deleted
 fi
 
 echo "Create the Resource Group"
@@ -188,10 +188,15 @@ kubectl create secret generic azure-secret --from-literal=azurestorageaccountnam
 
 # https://docs.microsoft.com/en-us/azure/aks/kubernetes-dashboard
 echo open kubernetes dashboard in browser
-az.cmd aks browse --resource-group $AKS_PERS_RESOURCE_GROUP --name $AKS_CLUSTER_NAME &
+echo az.cmd aks browse --resource-group $AKS_PERS_RESOURCE_GROUP --name $AKS_CLUSTER_NAME
 
 echo deploy the ingress controller
 kubectl apply -f ingress.yml
 
 kubectl get deployments,pods,services,ingress,secrets,persistentvolumeclaims,persistentvolumes,nodes --namespace=kube-system
+
+echo az.cmd storage share create --name fabricnlp --account-name="${AKS_PERS_STORAGE_ACCOUNT_NAME}" --account-key="${STORAGE_KEY}"
+
+
+
 

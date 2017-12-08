@@ -80,17 +80,17 @@ fi
 
 echo "checking if resource group already exists"
 resourceGroupExists=$(az.cmd group exists --name ${AKS_PERS_RESOURCE_GROUP})
-if [[ ! -z $resourceGroupExists ]]
+if [[ "$resourceGroupExists" == "true" ]]
 then
     read -p "The resource group ${AKS_PERS_RESOURCE_GROUP} already exists.  Would you like to delete it? (type ENTER to continue or CTRL-C to exit)"
 
     echo delete existing group: $AKS_PERS_RESOURCE_GROUP
 
-    az.cmd group delete --name $AKS_PERS_RESOURCE_GROUP
+    az.cmd group delete --name $AKS_PERS_RESOURCE_GROUP --verbose
 fi
 
 echo "Create the Resource Group"
-az.cmd group create --name $AKS_PERS_RESOURCE_GROUP --location $AKS_PERS_LOCATION
+az.cmd group create --name $AKS_PERS_RESOURCE_GROUP --location $AKS_PERS_LOCATION --verbose
 
 set -x
 
@@ -103,7 +103,7 @@ if [[ ! -z "$AKS_SERVICE_PRINCIPAL_CLIENTID" ]]
 then
     echo "Service Principal already exists with name: $AKS_SERVICE_PRINCIPAL_NAME"
     echo "deleting..."
-    az.cmd ad sp delete --id "$AKS_SERVICE_PRINCIPAL_CLIENTID"
+    az.cmd ad sp delete --id "$AKS_SERVICE_PRINCIPAL_CLIENTID" --verbose
 fi
 
 myscope="//subscriptions//${AKS_SUBSCRIPTION_ID}//resourceGroups//${AKS_PERS_RESOURCE_GROUP}"
@@ -122,40 +122,39 @@ echo created $AKS_SERVICE_PRINCIPAL_NAME clientId=$AKS_SERVICE_PRINCIPAL_CLIENTI
 
 echo create Azure Container Service cluster
 
-mysubnetid="//subscriptions//c744e4e8-3d12-48ab-8492-9a600a00ca3f//resourceGroups//Imran//providers//Microsoft.Network//virtualNetworks//kubnettest//subnets//kubsubnet"
+mysubnetid="/subscriptions/c744e4e8-3d12-48ab-8492-9a600a00ca3f/resourceGroups/Imran/providers/Microsoft.Network/virtualNetworks/kubnettest/subnets/kubsubnet"
 
 # az.cmd acs create --orchestrator-type kubernetes --resource-group $AKS_PERS_RESOURCE_GROUP --name $AKS_CLUSTER_NAME --generate-ssh-keys --agent-count=3 --agent-vm-size Standard_B2ms
-az.cmd acs create --orchestrator-type kubernetes --resource-group fabricnlpcluster --name cluster1 --service-principal="$AKS_SERVICE_PRINCIPAL_CLIENTID" --client-secret="$AKS_SERVICE_PRINCIPAL_CLIENTSECRET"  --generate-ssh-keys --agent-count=3 --agent-vm-size Standard_D2 --master-vnet-subnet-id="$mysubnetid" --agent-vnet-subnet-id="$mysubnetid"
+#az.cmd acs create --orchestrator-type kubernetes --resource-group fabricnlpcluster --name cluster1 --service-principal="$AKS_SERVICE_PRINCIPAL_CLIENTID" --client-secret="$AKS_SERVICE_PRINCIPAL_CLIENTSECRET"  --generate-ssh-keys --agent-count=3 --agent-vm-size Standard_D2 --master-vnet-subnet-id="$mysubnetid" --agent-vnet-subnet-id="$mysubnetid"
 
-exit 0
-
-
-echo "creating SSH key"
-ssh-keygen -t rsa -b 2048 -q -N "" -C azureuser@linuxvm -f ~/.ssh/id_rsa
+if [[ ! -f  "~/.ssh/id_rsa.pub" ]]
+then
+    echo "creating SSH key"
+    ssh-keygen -t rsa -b 2048 -q -N "" -C azureuser@linuxvm -f ~/.ssh/id_rsa
+fi
 
 AKS_SSH_KEY=$(cat ~/.ssh/id_rsa.pub)
 
 # create deployment so we can set vnet and subnet
-myparams="{\"sshRSAPublicKey\": {\"value\": \"${AKS_SSH_KEY}\"}"
+# myparams="{\"sshRSAPublicKey\": {\"value\": \"${AKS_SSH_KEY}\"}"
 
 cp azuredeploy.parameters.json azuredeploy.parameters.real.json
 
-sed -i "s#GEN-SSH-PUB-KEY#${AKS_SSH_KEY}#g" azuredeploy.parameters.real.json
-sed -i "s#GEN-UNIQUE-CLIENT-ID#${AKS_SERVICE_PRINCIPAL_CLIENTID}#g" azuredeploy.parameters.real.json
-sed -i "s#GEN-UNIQUE-CLIENT-SECRET#${AKS_SERVICE_PRINCIPAL_CLIENTSECRET}#g" azuredeploy.parameters.real.json
-sed -i "s#GEN-SUBSCRIPTION-ID#${AKS_SUBSCRIPTION_ID}#g" azuredeploy.parameters.real.json
-sed -i "s#GEN-RESOURCE-GROUP#${AKS_PERS_RESOURCE_GROUP}#g" azuredeploy.parameters.real.json
-sed -i "s#GEN-VNET#${AKS_VNET_NAME}#g" azuredeploy.parameters.real.json
-sed -i "s#GEN-SUBNET#${AKS_SUBNET_NAME}#g" azuredeploy.parameters.real.json
+dnsNamePrefix=testImran
 
+sed -i "s#REPLACE-SSH-KEY#${AKS_SSH_KEY}#g" azuredeploy.parameters.real.json
 
+sed -i "s#REPLACE-CLIENTID#${AKS_SERVICE_PRINCIPAL_CLIENTID}#g" azuredeploy.parameters.real.json
+sed -i "s#REPLACE-CLIENTSECRET#${AKS_SERVICE_PRINCIPAL_CLIENTSECRET}#g" azuredeploy.parameters.real.json
 
+sed -i "s#REPLACE-SUBNET#${mysubnetid}#g" azuredeploy.parameters.real.json
+sed -i "s#REPLACE-DNS-NAME-PREFIX#${dnsNamePrefix}#g" azuredeploy.parameters.real.json
 
-
+echo "starting deployment"
 az.cmd group deployment create --template-file "azuredeploy.json" \
     --resource-group $AKS_PERS_RESOURCE_GROUP -n $AKS_CLUSTER_NAME \
-    --parameters @azuredeploy.parameters.real.json
-
+    --parameters @azuredeploy.parameters.real.json \
+    --verbose
 
 echo sleeping for 10 secs
 # sleep 30s;

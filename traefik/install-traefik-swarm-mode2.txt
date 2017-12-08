@@ -62,13 +62,14 @@ printf "###########################################\n\n"
 #Download config files (traefik.toml and docker-compose.yml) to /opt/traefik
 wget -P /opt/traefik/ https://github.com/HealthCatalyst/InstallScripts/blob/master/traefik/traefik.toml
 wget -P /opt/traefik/ https://github.com/HealthCatalyst/InstallScripts/blob/master/traefik/docker-compose-traefik.yml
+chmod 700 /opt/traefik/traefik.toml /opt/traefik/docker-compose-traefik.yml
 
 printf "\nSetup Complete.\n"
 printf "###########################################\n\n"
 printf "Run the following command to start the Traefik Docker service.\n"
 printf "\n  docker stack deploy -c /opt/traefik/docker-compose.yml /opt/traefik/traefik \n\n\n"
 printf "Traefik status can be monitored at http://<FQDN of Server>:8080 \n\n"
+printf "Traefik status can be monitored at http://<FQDN of Server>:8080 \n\n"
 
-printf "Traefik status can be monitored at http://<host FQDN>:8080 \n\n"
-printf "Run the following command to start the Traefik Docker service.\n"
+
 

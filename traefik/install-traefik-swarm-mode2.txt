@@ -4,24 +4,24 @@
 bold=$(tput bold)
 normal=$(tput sgr0)
 
-### Get FNDQ function
+### Get FQDN function
 
-getFNDQ () {
+getFQDN () {
    printf "\n"
    echo -n "Enter your fully qualified domain name and press [ENTER]: "
-   read fndq
+   read FQDN
    printf "\n"
 }
 
-### Verify the FNDQ meets the users expectation. 
+### Verify the FQDN meets the users expectation. 
 
-testFNDQ () {
+testFQDN () {
    printf "\n"
    while true; do
-    read -p "Is your fully qualified domain name ${bold}$fndq ${normal}correct? (Yes, No, Cancel)" ync
+    read -p "Is your fully qualified domain name ${bold}$FQDN ${normal}correct? (Yes, No, Cancel)" ync
     case $ync in
-        [Yy]* ) printf "\nGetting SSL Cert for ${bold}$fndq${normal} \n"; break;;
-        [Nn]* ) getFNDQ;;
+        [Yy]* ) printf "\nGetting SSL Cert for ${bold}$FQDN${normal} \n"; break;;
+        [Nn]* ) getFQDN;;
         [Cc]* ) exit;;
         * ) echo "Please answer yes, no or cancel.";;
     esac
@@ -31,9 +31,9 @@ done
 printf "\nThis is the second scrip in the install and configuration of Traefik in swarm mode."
 printf "#####################################################################################\n\n"
 
-### Get the FNDQ of the server and get user verification
-getFNDQ
-testFNDQ
+### Get the FQDN of the server and get user verification
+getFQDN
+testFQDN
 
 ### Create necessary directories and set permission
 printf "\nCreating necessary directories and setting permissions.\n"
@@ -50,8 +50,8 @@ sudo chmod 750 /var/lib/boot2docker/certs
 ### Move certificates so Docker can get them
 printf "\nCopying certificate info for Docker.\n"
 printf "######################################\n\n"
-sudo cp /etc/letsencrypt/live/$fndq/cert.pem /var/lib/boot2docker/certs/cert.pem
-sudo cp /etc/letsencrypt/live/$fndq/privkey.pem /var/lib/boot2docker/certs/privkey.pem
+sudo cp /etc/letsencrypt/live/$FQDN/cert.pem /var/lib/boot2docker/certs/cert.pem
+sudo cp /etc/letsencrypt/live/$FQDN/privkey.pem /var/lib/boot2docker/certs/privkey.pem
 
 printf "\nCreating Docker Traefik overlay network\n"
 printf "#########################################\n\n"
@@ -59,9 +59,16 @@ docker network create –driver=overlay traefik-net
 
 printf "\nCreating Docker and Traefik config files.\n"
 printf "###########################################\n\n"
-Download config files (traefik.toml and docker-compose.yml) to /opt/traefik
+#Download config files (traefik.toml and docker-compose.yml) to /opt/traefik
+wget -P /opt/traefik/ https://github.com/HealthCatalyst/InstallScripts/blob/master/traefik/traefik.toml
+wget -P /opt/traefik/ https://github.com/HealthCatalyst/InstallScripts/blob/master/traefik/docker-compose-traefik.yml
 
+printf "\nSetup Complete.\n"
+printf "###########################################\n\n"
+printf "Run the following command to start the Traefik Docker service.\n"
+printf "\n  docker stack deploy -c /opt/traefik/docker-compose.yml /opt/traefik/traefik \n\n\n"
+printf "Traefik status can be monitored at http://<FQDN of Server>:8080 \n\n"
 
-#docker secret create auth.cert $authcert
-#docker secret create auth.key $authkey
+printf "Traefik status can be monitored at http://<host FQDN>:8080 \n\n"
+printf "Run the following command to start the Traefik Docker service.\n"
 

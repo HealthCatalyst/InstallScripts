@@ -4,24 +4,24 @@
 bold=$(tput bold)
 normal=$(tput sgr0)
 
-### Get FNDQ function
+### Get FQDN function
 
-getFNDQ () {
+getFQDN () {
    printf "\n"
    echo -n "Enter your fully qualified domain name and press [ENTER]: "
-   read fndq
+   read FQDN
    printf "\n"
 }
 
-### Verify the FNDQ meets the users expectation. 
+### Verify the FQDN meets the users expectation. 
 
-testFNDQ () {
+testFQDN () {
    printf "\n"
    while true; do
-    read -p "Is your fully qualified domain name ${bold}$fndq ${normal}correct? (Yes, No, Cancel)" ync
+    read -p "Is your fully qualified domain name ${bold}$FQDN ${normal}correct? (Yes, No, Cancel)" ync
     case $ync in
-        [Yy]* ) printf "\nGetting SSL Cert for ${bold}$fndq${normal} \n"; break;;
-        [Nn]* ) getFNDQ;;
+        [Yy]* ) printf "\nGetting SSL Cert for ${bold}$FQDN${normal} \n"; break;;
+        [Nn]* ) getFQDN;;
         [Cc]* ) exit;;
         * ) echo "Please answer yes, no or cancel.";;
     esac
@@ -42,13 +42,13 @@ printf "############################\n\n"
 printf "\nGet Certificate from Let's Encrypt\n"
 printf "##################################\n\n"
 
-### Get the FNDQ of the server and get user verification
-getFNDQ
-testFNDQ
+### Get the FQDN of the server and get user verification
+getFQDN
+testFQDN
 
 printf "\n########### IMPORTANT ##########\n When the task of getting the SSL Certificate is complete you will need to execute another script to continue the configuration process.\n\n"
 printf "\install-traefik-swarm-mode.txt\n\n"
 printf "##################################\n\n"
 printf "\nWhen asked select 1 to spin up a temporary webserver to pull the certificate.\n\n"
-sudo certbot certonly --standalone -d $fndq
+sudo certbot certonly --standalone -d $FQDN
 

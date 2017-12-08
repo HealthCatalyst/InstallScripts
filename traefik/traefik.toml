@@ -1,0 +1,41 @@
+##############################
+# FILENAME: traefik.toml
+# DESCRIPTION: This file is used to configure the Traefik HTTP Reverse proxy service.
+# USAGE: Should be placed in /opt/traefik directory. This configuration file will be utilized by 
+#	     docker-compose.yml to start the Traefik Service.
+#						   						     
+#	     For detailed debuging change the "debug = falese" to "debug = true" and start the Traefik service.
+#	   
+#	     The certFile and keyFile directory should be defined in the docker-compose.yml file. 
+#	     Docker needs read permissions on these files.
+##############################
+
+debug = true
+checkNewVersion = true
+logLevel = "ERROR"
+defaultEntryPoints = ["https","http"]
+
+[web]
+address = ":8080"
+
+[entryPoints]
+  [entryPoints.http]
+  address = ":80"
+    [entryPoints.http.redirect]
+    entryPoint = "https"
+
+[entryPoints.https]
+  address = ":443"
+  [entryPoints.https.tls]
+  [[entryPoints.https.tls.certificates]]
+    certFile = "/var/lib/boot2docker/certs/cert.pem"
+    keyFile = "/var/lib/boot2docker/certs/privkey.pem"
+
+[retry]
+
+[docker]
+endpoint = "unix:///var/run/docker.sock"
+domain = "traefik"
+watch = true
+exposedbydefault = true
+swarmmode = true

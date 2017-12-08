@@ -1,0 +1,27 @@
+##############################
+# FILENAME: docker-compose.yml
+# DESCRIPTION: This file is used to configure the docker for Traefix HTTP Reverse Proxy Services
+# USAGE: The file should be placed in /opt/traefik directory. 
+#        It is important that the volume for the SSL Certificates be added and that they correspond with the traefik.toml file in this directory.
+#	   
+##############################
+
+version: '3.4'
+
+services:
+  traefik:
+    image: traefik:latest
+    ports:
+      - 80:80
+      - 443:443
+      - 8080:8080
+    networks:
+      - traefik-net
+    volumes:
+      - /var/lib/boot2docker/certs:/var/lib/boot2docker/certs
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /opt/traefik/traefik.toml:/traefik.toml
+
+networks:
+  traefik-net:
+    external: true

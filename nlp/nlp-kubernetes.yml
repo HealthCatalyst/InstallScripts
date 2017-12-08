@@ -1,7 +1,54 @@
 # Fabric NLP stack
 #
-# ---- Services internal to the cluster ----
-# Solr service
+# --- Solr service ---
+# Pod
+kind: Deployment
+apiVersion: extensions/v1beta1
+metadata:
+  name: fabric.nlp.solrserver
+  namespace: fabricnlp    
+  labels:
+    app: solrserver
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: solrserver
+  template:
+    metadata:
+      labels:
+        app: solrserver
+    spec:
+      containers:
+        - name: solrserver
+          image: healthcatalyst/fabric.nlp.docker.solr:latest
+          #imagePullPolicy: Always          
+          volumeMounts:
+            - name: solr-persistent-storage
+              mountPath: /var/lib/solr
+              subPath: solr
+          ports:
+            - containerPort: 8085
+              name: solr
+      volumes:
+      - name: solr-persistent-storage
+        persistentVolumeClaim:
+          claimName: az-files-solr            
+---
+# Persistent Volume Claim
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: az-files-solr
+  namespace: fabricnlp  
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 128Gi
+---
+# Service
 kind: Service
 apiVersion: v1
 metadata:
@@ -18,7 +65,51 @@ spec:
   selector:
     app: solrserver
 ---
-# NLP service
+# --- end of Solr service ---
+
+# --- NLP service ---
+# Pod
+kind: Deployment
+apiVersion: extensions/v1beta1
+metadata:
+  name: fabric.nlp.nlpwebserver
+  namespace: fabricnlp    
+  labels:
+    app: nlpwebserver
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nlpwebserver
+  template:
+    metadata:
+      labels:
+        app: nlpwebserver
+    spec:
+      containers:
+        - name: nlpwebserver
+          image: healthcatalyst/fabric.nlp.docker.web:latest
+          imagePullPolicy: Always          
+          env:
+            - name: EXTERNAL_HOSTNAME
+              valueFrom:
+                secretKeyRef:
+                  name: certhostname
+                  key: value
+            - name: MYSQL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mysqlpassword
+                  key: password
+          ports:
+            - containerPort: 8083
+              name: nlpwebserver
+---
+
+# Persistent Volume Claim
+# none
+
+# Service
 kind: Service
 apiVersion: v1
 metadata:
@@ -35,7 +126,50 @@ spec:
   selector:
     app: nlpwebserver
 ---
-# NLP Jobs service
+# -- end of NLP Service ----
+
+# --- NLP Jobs Service ---
+# Pod
+kind: Deployment
+apiVersion: extensions/v1beta1
+metadata:
+  name: fabric.nlp.jobserver
+  namespace: fabricnlp    
+  labels:
+    app: jobserver
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: jobserver
+  template:
+    metadata:
+      labels:
+        app: jobserver
+    spec:
+      containers:
+        - name: jobserver
+          image: healthcatalyst/fabric.nlp.docker.jobs:latest
+          # imagePullPolicy: Always          
+          env:
+            - name: EXTERNAL_HOSTNAME
+              valueFrom:
+                secretKeyRef:
+                  name: certhostname
+                  key: value
+            - name: MYSQL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mysqlpassword
+                  key: password
+          ports:
+            - containerPort: 8084
+              name: jobserver
+---
+# Persistent Volume Claim
+# none
+
+# Service
 kind: Service
 apiVersion: v1
 metadata:
@@ -52,46 +186,10 @@ spec:
   selector:
     app: jobserver
 ---
-# MySql service  
-kind: Service
-apiVersion: v1
-metadata:
-# this service shows up in the UI with this name
-  name: mysqlserver
-# namespace should match other services in this file  
-  namespace: fabricnlp  
-# labels allows you to use selectors to find this service
-  labels:
-    app: mysqlserver
-spec:
-  ports:
-# port that other services can use to connect to this service
-  - port: 3306
-# port in the pod we map to  
-    targetPort: 3306
-    protocol: TCP
-# selector says this service should use a pod that has the "app: mysqlserver" label
-  selector:
-    app: mysqlserver
----
-# SMTP service for sending emails
-kind: Service
-apiVersion: v1
-metadata:
-  name: smtpserver
-  namespace: fabricnlp  
-  labels:
-    app: smtpserver
-spec:
-  ports:
-  - port: 25
-    targetPort: 25
-    protocol: TCP
-  selector:
-    app: smtpserver
----
-# ----- Pods -----
-# MySql pod
+# -- end of NLP Jobs Service
+
+# --- MySql ---
+# Pod
 kind: Deployment
 apiVersion: extensions/v1beta1
 metadata:
@@ -145,12 +243,51 @@ spec:
             - name: mysql-persistent-storage
               # point the /var/lib/mysql folder inside the container to the volume called mysql-persistent-storage
               mountPath: /var/lib/mysql
+              subPath: mysql              
       volumes:
       - name: mysql-persistent-storage
         persistentVolumeClaim:
           claimName: az-files-mysql            
 ---
-# SMTP server pod
+# Persistent Volume Claim
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: az-files-mysql
+  namespace: fabricnlp  
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 128Gi
+---
+# Service
+kind: Service
+apiVersion: v1
+metadata:
+# this service shows up in the UI with this name
+  name: mysqlserver
+# namespace should match other services in this file  
+  namespace: fabricnlp  
+# labels allows you to use selectors to find this service
+  labels:
+    app: mysqlserver
+spec:
+  ports:
+# port that other services can use to connect to this service
+  - port: 3306
+# port in the pod we map to  
+    targetPort: 3306
+    protocol: TCP
+# selector says this service should use a pod that has the "app: mysqlserver" label
+  selector:
+    app: mysqlserver
+---
+# -- end of MySql ---
+
+# --- SMTP server ---
+# Pod
 kind: Deployment
 apiVersion: extensions/v1beta1
 metadata:
@@ -173,112 +310,33 @@ spec:
           image: healthcatalyst/fabric.smtp.agent:latest
           #imagePullPolicy: Always          
 ---
-# Solr pod
-kind: Deployment
-apiVersion: extensions/v1beta1
+# Persistent Volume Claim
+#   none
+# Service
+kind: Service
+apiVersion: v1
 metadata:
-  name: fabric.nlp.solrserver
-  namespace: fabricnlp    
+  name: smtpserver
+  namespace: fabricnlp  
   labels:
-    app: solrserver
+    app: smtpserver
 spec:
-  replicas: 1
+  ports:
+  - port: 25
+    targetPort: 25
+    protocol: TCP
   selector:
-    matchLabels:
-      app: solrserver
-  template:
-    metadata:
-      labels:
-        app: solrserver
-    spec:
-      containers:
-        - name: solrserver
-          image: healthcatalyst/fabric.nlp.docker.solr:latest
-          #imagePullPolicy: Always          
-          volumeMounts:
-            - name: solr-persistent-storage
-              mountPath: /var/lib/solr
-              subPath: solr
-          ports:
-            - containerPort: 8085
-              name: solr
-      volumes:
-      - name: solr-persistent-storage
-        persistentVolumeClaim:
-          claimName: az-files-solr            
-            
+    app: smtpserver
 ---
-# NLP Job server pod
-kind: Deployment
-apiVersion: extensions/v1beta1
-metadata:
-  name: fabric.nlp.jobserver
-  namespace: fabricnlp    
-  labels:
-    app: jobserver
-spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      app: jobserver
-  template:
-    metadata:
-      labels:
-        app: jobserver
-    spec:
-      containers:
-        - name: jobserver
-          image: healthcatalyst/fabric.nlp.docker.jobs:latest
-          imagePullPolicy: Always          
-          env:
-            - name: EXTERNAL_HOSTNAME
-              valueFrom:
-                secretKeyRef:
-                  name: certhostname
-                  key: value
-            - name: MYSQL_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: mysqlpassword
-                  key: password
-          ports:
-            - containerPort: 8084
-              name: jobserver
----
-# NLP web server pod
-kind: Deployment
-apiVersion: extensions/v1beta1
-metadata:
-  name: fabric.nlp.nlpwebserver
-  namespace: fabricnlp    
-  labels:
-    app: nlpwebserver
-spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      app: nlpwebserver
-  template:
-    metadata:
-      labels:
-        app: nlpwebserver
-    spec:
-      containers:
-        - name: nlpwebserver
-          image: healthcatalyst/fabric.nlp.docker.web:latest
-          imagePullPolicy: Always          
-          env:
-            - name: EXTERNAL_HOSTNAME
-              valueFrom:
-                secretKeyRef:
-                  name: certhostname
-                  key: value
-            - name: MYSQL_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: mysqlpassword
-                  key: password
-          ports:
-            - containerPort: 8083
-              name: nlpwebserver
----
+# -- end of SMTP ---
+
+# Template to use for defining new services
+# --- <Name of service> ---
+
+# Pod
+
+# Persistent Volume Claim
+
+# Service
+
+# -- end of <name of Service> ---

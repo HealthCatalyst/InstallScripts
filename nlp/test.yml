@@ -62,11 +62,11 @@ spec:
   capacity:
     storage: 5Gi
   accessModes:
-  - ReadWriteOnce
+  - ReadWriteMany
   azureFile:
     secretName: azure-secret
     secretNamespace: default
-    shareName: fabricnlp-mysql
+    shareName: fabricnlp
     readOnly: false
   mountOptions:
   # we need to set owner of this to mysql user (999) so it has permissions to this folder
@@ -97,11 +97,11 @@ spec:
   capacity:
     storage: 5Gi
   accessModes:
-  - ReadWriteOnce
+  - ReadWriteMany
   azureFile:
     secretName: azure-secret
     secretNamespace: default
-    shareName: fabricnlp-solr
+    shareName: fabricnlp
     readOnly: false
   mountOptions:
     - dir_mode=0731
@@ -119,10 +119,10 @@ metadata:
   namespace: fabricnlp  
 spec:
   accessModes:
-    - ReadWriteOnce
+    - ReadWriteMany
   resources:
     requests:
-      storage: 5Gi
+      storage: 128Gi
 ---
 kind: PersistentVolumeClaim
 apiVersion: v1
@@ -131,10 +131,10 @@ metadata:
   namespace: fabricnlp  
 spec:
   accessModes:
-    - ReadWriteOnce
+    - ReadWriteMany
   resources:
     requests:
-      storage: 5Gi
+      storage: 128Gi
 ---
 # Solr pod
 kind: Deployment

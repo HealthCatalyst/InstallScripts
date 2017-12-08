@@ -132,6 +132,7 @@ az.cmd aks create --resource-group $AKS_PERS_RESOURCE_GROUP --name $AKS_CLUSTER_
     --node-vm-size Standard_B2ms \
     --service-principal="$AKS_SERVICE_PRINCIPAL_CLIENTID" \
     --client-secret="$AKS_SERVICE_PRINCIPAL_CLIENTSECRET" \
+    -l $AKS_PERS_LOCATION \
     --verbose
 
 echo "waiting until cluster is created"

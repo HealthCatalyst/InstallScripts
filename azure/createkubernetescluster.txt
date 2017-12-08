@@ -80,6 +80,11 @@ then
     echo delete existing group: $AKS_PERS_RESOURCE_GROUP
 
     az.cmd group delete --name $AKS_PERS_RESOURCE_GROUP --verbose
+
+    kubresourcegroup="MC_${AKS_PERS_RESOURCE_GROUP}_${AKS_CLUSTER_NAME}_${AKS_PERS_LOCATION}"
+    echo "waiting until the corresponding kubernetes resource group [$kubresourcegroup] is also delete"
+
+    az.cmd group wait --name $kubresourcegroup
 fi
 
 echo "Create the Resource Group"
@@ -118,15 +123,14 @@ echo created $AKS_SERVICE_PRINCIPAL_NAME clientId=$AKS_SERVICE_PRINCIPAL_CLIENTI
 # fi
 
 AKS_SSH_KEY=$(cat ~/.ssh/id_rsa.pub)
-AKS_SSH_KEY_CLEAN=$(echo $AKS_SSH_KEY | sed -e "s#/#//#g")
 
 echo create Azure Container Service cluster AKS
-MSYS_NO_PATHCONV=1 az.cmd aks create --resource-group $AKS_PERS_RESOURCE_GROUP --name $AKS_CLUSTER_NAME \
+az.cmd aks create --resource-group $AKS_PERS_RESOURCE_GROUP --name $AKS_CLUSTER_NAME \
     --node-count 3 --kubernetes-version 1.8.1 \
     --node-vm-size Standard_B2ms \
     --service-principal="$AKS_SERVICE_PRINCIPAL_CLIENTID" \
     --client-secret="$AKS_SERVICE_PRINCIPAL_CLIENTSECRET" \
-    --verbose --ssh-key-value "${AKS_SSH_KEY}"
+    --verbose
 
 echo "waiting until cluster is created"
 az.cmd aks wait --resource-group $AKS_PERS_RESOURCE_GROUP --name $AKS_CLUSTER_NAME --created
@@ -142,7 +146,7 @@ read -p "Press enter to continue once all the nodes are created"
 # az.cmd acs install-cli --resource-group=$AKS_PERS_RESOURCE_GROUP --name=$AKS_CLUSTER_NAME --install-location c:/kubernetes
 
 echo get credentials for AKS cluster
-az.cmd acs kubernetes get-credentials --resource-group=$AKS_PERS_RESOURCE_GROUP --name=$AKS_CLUSTER_NAME
+az.cmd aks get-credentials --resource-group=$AKS_PERS_RESOURCE_GROUP --name=$AKS_CLUSTER_NAME
 
 echo check nodes via kubectl
 kubectl get nodes
@@ -181,7 +185,7 @@ kubectl create secret generic azure-secret --from-literal=azurestorageaccountnam
 
 # https://docs.microsoft.com/en-us/azure/aks/kubernetes-dashboard
 echo open kubernetes dashboard in browser
-az.cmd acs browse --resource-group $AKS_PERS_RESOURCE_GROUP --name $AKS_CLUSTER_NAME &
+az.cmd aks browse --resource-group $AKS_PERS_RESOURCE_GROUP --name $AKS_CLUSTER_NAME &
 
 echo deploy the ingress controller
 kubectl apply -f ingress.yml

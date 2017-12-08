@@ -127,11 +127,11 @@ mysubnetid="/subscriptions/c744e4e8-3d12-48ab-8492-9a600a00ca3f/resourceGroups/I
 # az.cmd acs create --orchestrator-type kubernetes --resource-group $AKS_PERS_RESOURCE_GROUP --name $AKS_CLUSTER_NAME --generate-ssh-keys --agent-count=3 --agent-vm-size Standard_B2ms
 #az.cmd acs create --orchestrator-type kubernetes --resource-group fabricnlpcluster --name cluster1 --service-principal="$AKS_SERVICE_PRINCIPAL_CLIENTID" --client-secret="$AKS_SERVICE_PRINCIPAL_CLIENTSECRET"  --generate-ssh-keys --agent-count=3 --agent-vm-size Standard_D2 --master-vnet-subnet-id="$mysubnetid" --agent-vnet-subnet-id="$mysubnetid"
 
-if [[ ! -f  "~/.ssh/id_rsa.pub" ]]
-then
-    echo "creating SSH key"
-    ssh-keygen -t rsa -b 2048 -q -N "" -C azureuser@linuxvm -f ~/.ssh/id_rsa
-fi
+# if [[ ! -f  "~/.ssh/id_rsa.pub" ]]
+# then
+#    echo "creating SSH key"
+#    ssh-keygen -t rsa -b 2048 -q -N "" -C azureuser@linuxvm -f ~/.ssh/id_rsa
+# fi
 
 AKS_SSH_KEY=$(cat ~/.ssh/id_rsa.pub)
 
@@ -140,7 +140,7 @@ AKS_SSH_KEY=$(cat ~/.ssh/id_rsa.pub)
 
 cp azuredeploy.parameters.json azuredeploy.parameters.real.json
 
-dnsNamePrefix=testImran
+dnsNamePrefix=$AKS_PERS_RESOURCE_GROUP
 
 sed -i "s#REPLACE-SSH-KEY#${AKS_SSH_KEY}#g" azuredeploy.parameters.real.json
 

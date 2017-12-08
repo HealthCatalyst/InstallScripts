@@ -7,7 +7,7 @@
         },
         "masterProfile": {
             "count": 1,
-            "dnsPrefix": "test",
+            "dnsPrefix": "fabrickubernetes",
             "vmSize": "Standard_D2_v2",
             "vnetSubnetId": "/subscriptions/f8a42a3a-8b22-4be4-8413-0b6911c77242/resourceGroups/capresourcegroup/providers/Microsoft.Network/virtualNetworks/CAPVnet/subnets/NLPSubnet",
             "storageProfile": "ManagedDisks",

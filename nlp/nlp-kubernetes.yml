@@ -145,12 +145,10 @@ spec:
             - name: mysql-persistent-storage
               # point the /var/lib/mysql folder inside the container to the volume called mysql-persistent-storage
               mountPath: /var/lib/mysql
-
       volumes:
-        - name: mysql-persistent-storage
-          hostPath:
-            # map mysql-persistent-storage to /data/mysql on the host
-            path: /data/mysql
+      - name: mysql-persistent-storage
+        persistentVolumeClaim:
+          claimName: az-files-mysql            
 ---
 # SMTP server pod
 kind: Deployment
@@ -203,11 +201,11 @@ spec:
           ports:
             - containerPort: 8085
               name: solr
-
       volumes:
-        - name: solr-persistent-storage
-          hostPath:
-            path: /data/solr
+      - name: solr-persistent-storage
+        persistentVolumeClaim:
+          claimName: az-files-solr            
+            
 ---
 # NLP Job server pod
 kind: Deployment

@@ -13,3 +13,8 @@ kubectl create -f ./nlp-kubernetes.yml
 kubectl get deployments,pods,services,ingress,secrets --namespace=fabricnlp
 
 kubectl create -f ./nlp-kubernetes-public.yml
+
+# to get a shell
+# kubectl exec -it fabric.nlp.nlpwebserver-85c8cb86b5-gkphh bash --namespace=fabricnlp
+
+# kubectl create secret generic azure-secret --namespace=fabricnlp --from-literal=azurestorageaccountname="fabricnlp7storage" --from-literal=azurestorageaccountkey="/bYhXNstTodg3MdOvTMog/vDLSFrQDpxG/Zgkp2MlnjtOWhDBNQ2xOs6zjRoZYNjmJHya34MfzqdfOwXkMDN2A=="

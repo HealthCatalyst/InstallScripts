@@ -193,5 +193,5 @@ az.cmd aks browse --resource-group $AKS_PERS_RESOURCE_GROUP --name $AKS_CLUSTER_
 echo deploy the ingress controller
 kubectl apply -f ingress.yml
 
-kubectl get deployments,pods,services,ingress,secrets --namespace=kube-system
+kubectl get deployments,pods,services,ingress,secrets,persistentvolumeclaims,persistentvolumes,nodes --namespace=kube-system
 

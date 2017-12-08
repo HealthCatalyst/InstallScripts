@@ -67,3 +67,68 @@ spec:
   ports:
   - port: 80
     targetPort: 8084
+---
+# define persistent volumes
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: azure-file-volume-mysql
+  namespace: fabricnlp    
+spec:
+  capacity:
+    storage: 5Gi
+  accessModes:
+  - ReadWriteOnce
+  azureFile:
+    secretName: azure-secret
+    secretNamespace: default
+    shareName: fabricnlp-mysql
+    readOnly: false
+  claimRef:
+    namespace: fabricnlp
+    name: az-files-mysql
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: azure-file-volume-solr
+  namespace: fabricnlp    
+spec:
+  capacity:
+    storage: 5Gi
+  accessModes:
+  - ReadWriteOnce
+  azureFile:
+    secretName: azure-secret
+    secretNamespace: default
+    shareName: fabricnlp-solr
+    readOnly: false
+  claimRef:
+    namespace: fabricnlp
+    name: az-files-solr
+---
+# define volume claims
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: az-files-mysql
+  namespace: fabricnlp  
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: az-files-solr
+  namespace: fabricnlp  
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+---

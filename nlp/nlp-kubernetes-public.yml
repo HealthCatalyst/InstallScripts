@@ -1,19 +1,8 @@
-apiVersion: v1
-kind: Service
-metadata:
-  name: solrserverpublic
-  namespace: fabricnlp
-spec:
-  selector:
-    app: solrserver
-  ports:
-  - port: 80
-    targetPort: 8085
----
+# ingress for solr web server
 apiVersion: extensions/v1beta1
 kind: Ingress
 metadata:
-  name: traefik-web-ui
+  name: nlp-ingress
   namespace: fabricnlp
   annotations:
     kubernetes.io/ingress.class: traefik
@@ -25,3 +14,56 @@ spec:
       - backend:
           serviceName: solrserverpublic
           servicePort: 80
+  - host: nlp.allina.healthcatalyst.net
+    http:
+      paths:
+      - backend:
+          serviceName: nlpserverpublic
+          servicePort: 80
+  - host: nlpjobs.allina.healthcatalyst.net
+    http:
+      paths:
+      - backend:
+          serviceName: nlpjobsserverpublic
+          servicePort: 80
+          
+---          
+# ----- Services exposed to the outside world ------
+# solr web server
+kind: Service
+apiVersion: v1
+metadata:
+  name: solrserverpublic
+  namespace: fabricnlp
+spec:
+  selector:
+    app: solrserver
+  ports:
+  - port: 80
+    targetPort: 8085
+---
+# nlp web server
+kind: Service
+apiVersion: v1
+metadata:
+  name: nlpserverpublic
+  namespace: fabricnlp
+spec:
+  selector:
+    app: nlpwebserver
+  ports:
+  - port: 80
+    targetPort: 8083
+---
+# nlp jobs web server
+kind: Service
+apiVersion: v1
+metadata:
+  name: nlpjobsserverpublic
+  namespace: fabricnlp
+spec:
+  selector:
+    app: jobserver
+  ports:
+  - port: 80
+    targetPort: 8084

@@ -1,6 +1,6 @@
 # Fabric NLP stack
 #
-# ----- Services exposed to the outside world ------
+# ---- Services internal to the cluster ----
 # Solr service
 kind: Service
 apiVersion: v1
@@ -11,17 +11,47 @@ metadata:
   labels:
     app: solrserver
 spec:
-  #type: LoadBalancer
   ports:
   - port: 8085
     targetPort: 8085
     protocol: TCP
   selector:
     app: solrserver
-# status: 
-#     loadBalancer: {}
 ---
-# ---- Services internal to the cluster ----
+# NLP service
+kind: Service
+apiVersion: v1
+metadata:
+# name of this service.  other
+  name: nlpwebserver
+  namespace: fabricnlp  
+  labels:
+    app: nlpwebserver
+spec:
+  ports:
+  - port: 8083
+    targetPort: 8083
+    protocol: TCP
+  selector:
+    app: nlpwebserver
+---
+# NLP Jobs service
+kind: Service
+apiVersion: v1
+metadata:
+# name of this service.  other
+  name: jobserver
+  namespace: fabricnlp  
+  labels:
+    app: jobserver
+spec:
+  ports:
+  - port: 8084
+    targetPort: 8084
+    protocol: TCP
+  selector:
+    app: jobserver
+---
 # MySql service  
 kind: Service
 apiVersion: v1

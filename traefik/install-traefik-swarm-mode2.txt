@@ -51,11 +51,14 @@ sudo chmod 750 /var/lib/boot2docker/certs
 printf "\nCopying certificate info for Docker.\n"
 printf "######################################\n\n"
 sudo cp /etc/letsencrypt/live/$fndq/cert.pem /var/lib/boot2docker/certs/cert.pem
-sudo cp /etc/letsencrypt/live/$fndq/key.pem /var/lib/boot2docker/certs/key.pem
+sudo cp /etc/letsencrypt/live/$fndq/privkey.pem /var/lib/boot2docker/certs/privkey.pem
 
 printf "\nCreating Docker Traefik overlay network\n"
 printf "#########################################\n\n"
 docker network create –driver=overlay traefik-net
+
+printf "\nCreating Docker and Traefik config files.\n"
+printf "###########################################\n\n"
 Download config files (traefik.toml and docker-compose.yml) to /opt/traefik
 
 

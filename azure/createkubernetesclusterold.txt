@@ -109,7 +109,7 @@ then
     az.cmd ad sp delete --id "$AKS_SERVICE_PRINCIPAL_CLIENTID" --verbose
 fi
 
-myscope="//subscriptions//${AKS_SUBSCRIPTION_ID}//resourceGroups//${AKS_PERS_RESOURCE_GROUP}"
+myscope="//subscriptions//${AKS_SUBSCRIPTION_ID}"
 
 echo $myscope
 
@@ -156,13 +156,16 @@ sed -i "s#REPLACE-DNS-NAME-PREFIX#${dnsNamePrefix}#g" azuredeploy.parameters.rea
 firstStaticIP="10.3.0.239"
 sed -i "s#REPLACE-FIRST-STATIC-IP#${firstStaticIP}#g" azuredeploy.parameters.real.json
 
+echo az.cmd group deployment create --template-file "azuredeploy.json" \
+    --resource-group $AKS_PERS_RESOURCE_GROUP -n $AKS_CLUSTER_NAME \
+    --parameters @azuredeploy.parameters.real.json
+
 exit 0
 
 echo "starting deployment"
 az.cmd group deployment create --template-file "azuredeploy.json" \
     --resource-group $AKS_PERS_RESOURCE_GROUP -n $AKS_CLUSTER_NAME \
-    --parameters @azuredeploy.parameters.real.json \
-    --verbose
+    --parameters @azuredeploy.parameters.real.json
 
 echo sleeping for 10 secs
 # sleep 30s;

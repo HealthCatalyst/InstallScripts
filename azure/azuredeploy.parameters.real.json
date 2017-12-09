@@ -39,7 +39,7 @@
             "value": "azureuser"
         },
         "masterEndpointDNSNamePrefix": {
-            "value": "fabricnlp6"
+            "value": "fabricnlp9"
         },
         "masterVMSize": {
             "value": "Standard_D2_v2"
@@ -48,10 +48,10 @@
             "value": "/subscriptions/c744e4e8-3d12-48ab-8492-9a600a00ca3f/resourceGroups/Imran/providers/Microsoft.Network/virtualNetworks/kubnettest/subnets/kubsubnet"
         },
         "servicePrincipalClientId": {
-            "value": "b7b84dd6-fb71-4318-b708-ee00eb5fac59"
+            "value": "5a53ea0c-f45a-40fa-b481-ed2734c93727"
         },
         "servicePrincipalClientSecret": {
-            "value": "35b8c0f7-4ae0-4a69-ac42-823f88b644a3"
+            "value": "7cf86474-af55-492f-a460-201d0cd3a8d7"
         },
         "sshRSAPublicKey": {
             "value": "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDQEvG8bij5/eXWZFiU9KA9DpC980e/UgoMSij7nq+8M5ODBv/G8Bd3dssMNSj0RQKbyNiPz4EngFG62coGXK3ogJZEl/ABDDJAFEPB5J4BK8VCaVcmJpfPYVXd+DLv3A5Pk95SlgPeb1vbZnoOhy8F2rfjZBRCnsF2jN6Agk96c7JsGLamAaE2iU/+Wz/Z+x2nrV+Py+IVa2XKU/veqkY6/yDBQdO/BdXl8afdMHdqhjYwd7cp0Mec9r9iYmXKy8meUr125lMiayXIqeoU9qfcgnBlIcYkJtZjQd1F58o9KgHZXkkdEUqRyuiCgnJtNgY9xNu/Bgz2naiEU6NuKzKr azureuser@linuxvm"
@@ -64,6 +64,18 @@
         },
         "etcdDiskSizeGB": {
             "value": "128"
+        },
+        "kubernetesHyperkubeSpec": {
+            "value": "gcrio.azureedge.net/google_containers/hyperkube-amd64:v1.8.4"
+        },
+        "location": {
+            "value": "eastus"
+        },
+        "vnetCidr": {
+            "value": "10.3.0.0/24"
+        },
+        "kubernetesNodeStatusUpdateFrequency": {
+            "value": "10s"
         }
     }
 }

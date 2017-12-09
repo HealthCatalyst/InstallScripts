@@ -189,6 +189,11 @@ metadata:
     app: mysqlserver
 spec:
   replicas: 1
+  revisionHistoryLimit: 3  # Clean-up old Replica Sets deployed; only keep previous 3.
+  strategy:
+    # We need to kill the existing Pod before creating an new one
+    # for the new one to be able to attach the persistent disk.
+    type: Recreate        
   selector:
     matchLabels:
       app: mysqlserver

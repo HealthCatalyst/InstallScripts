@@ -40,6 +40,8 @@ spec:
     name: az-files-mysql
 ---
 # Persistent Volume Claim
+# claims have to be defined here otherwise when we remove the pods the volume goes into Released mode
+# and we can't bind to that volume again until we delete the volume
 kind: PersistentVolumeClaim
 apiVersion: v1
 metadata:

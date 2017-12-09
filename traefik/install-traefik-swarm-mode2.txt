@@ -1,0 +1,67 @@
+#!/bin/bash
+
+## Set some variables for console bolding
+bold=$(tput bold)
+normal=$(tput sgr0)
+
+### Get FNDQ function
+
+getFNDQ () {
+   printf "\n"
+   echo -n "Enter your fully qualified domain name and press [ENTER]: "
+   read fndq
+   printf "\n"
+}
+
+### Verify the FNDQ meets the users expectation. 
+
+testFNDQ () {
+   printf "\n"
+   while true; do
+    read -p "Is your fully qualified domain name ${bold}$fndq ${normal}correct? (Yes, No, Cancel)" ync
+    case $ync in
+        [Yy]* ) printf "\nGetting SSL Cert for ${bold}$fndq${normal} \n"; break;;
+        [Nn]* ) getFNDQ;;
+        [Cc]* ) exit;;
+        * ) echo "Please answer yes, no or cancel.";;
+    esac
+done
+}
+
+printf "\nThis is the second scrip in the install and configuration of Traefik in swarm mode."
+printf "#####################################################################################\n\n"
+
+### Get the FNDQ of the server and get user verification
+getFNDQ
+testFNDQ
+
+### Create necessary directories and set permission
+printf "\nCreating necessary directories and setting permissions.\n"
+printf "#########################################################\n\n"
+sudo mkdir -p /opt/traefik
+sudo chown root:dockeradmin /opt/traefik
+sudo chmod 770 /opt/traefik
+sudo mkdir -p /var/lib/boot2docker/certs
+sudo chown root:dockeradmin /var/lib/boot2docker
+sudo chmod 750 /var/lib/boot2docker
+sudo chown root:dockeradmin /var/lib/boot2docker/certs
+sudo chmod 750 /var/lib/boot2docker/certs
+
+### Move certificates so Docker can get them
+printf "\nCopying certificate info for Docker.\n"
+printf "######################################\n\n"
+sudo cp /etc/letsencrypt/live/$fndq/cert.pem /var/lib/boot2docker/certs/cert.pem
+sudo cp /etc/letsencrypt/live/$fndq/privkey.pem /var/lib/boot2docker/certs/privkey.pem
+
+printf "\nCreating Docker Traefik overlay network\n"
+printf "#########################################\n\n"
+docker network create –driver=overlay traefik-net
+
+printf "\nCreating Docker and Traefik config files.\n"
+printf "###########################################\n\n"
+Download config files (traefik.toml and docker-compose.yml) to /opt/traefik
+
+
+#docker secret create auth.cert $authcert
+#docker secret create auth.key $authkey
+

@@ -1,0 +1,54 @@
+#!/bin/bash
+
+## Set some variables for console bolding
+bold=$(tput bold)
+normal=$(tput sgr0)
+
+### Get FNDQ function
+
+getFNDQ () {
+   printf "\n"
+   echo -n "Enter your fully qualified domain name and press [ENTER]: "
+   read fndq
+   printf "\n"
+}
+
+### Verify the FNDQ meets the users expectation. 
+
+testFNDQ () {
+   printf "\n"
+   while true; do
+    read -p "Is your fully qualified domain name ${bold}$fndq ${normal}correct? (Yes, No, Cancel)" ync
+    case $ync in
+        [Yy]* ) printf "\nGetting SSL Cert for ${bold}$fndq${normal} \n"; break;;
+        [Nn]* ) getFNDQ;;
+        [Cc]* ) exit;;
+        * ) echo "Please answer yes, no or cancel.";;
+    esac
+done
+}
+
+### Install Extra Packages for Enterprise Linux. This is needed for certbot.
+printf "Installing Extra Packages for Enterprise Linux\n"
+printf "##############################################\n\n"
+
+#sudo yum install epel-release -y
+
+printf "\nInstall certbot for nginx\n"
+printf "############################\n\n"
+
+#sudo yum install certbot-nginx -y
+
+printf "\nGet Certificate from Let's Encrypt\n"
+printf "##################################\n\n"
+
+### Get the FNDQ of the server and get user verification
+getFNDQ
+testFNDQ
+
+printf "\n########### IMPORTANT ##########\n When the task of getting the SSL Certificate is complete you will need to execute another script to continue the configuration process.\n\n"
+printf "\install-traefik-swarm-mode.txt\n\n"
+printf "##################################\n\n"
+printf "\nWhen asked select 1 to spin up a temporary webserver to pull the certificate.\n\n"
+sudo certbot certonly --standalone -d $fndq
+

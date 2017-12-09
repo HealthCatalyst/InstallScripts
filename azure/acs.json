@@ -7,30 +7,30 @@
         },
         "masterProfile": {
             "count": 1,
-            "dnsPrefix": "fabrickubernetes",
+            "dnsPrefix": "fabricnlp9",
             "vmSize": "Standard_D2_v2",
-            "vnetSubnetId": "/subscriptions/f8a42a3a-8b22-4be4-8413-0b6911c77242/resourceGroups/capresourcegroup/providers/Microsoft.Network/virtualNetworks/CAPVnet/subnets/NLPSubnet",
-            "firstConsecutiveStaticIP": "10.5.20.100",
-            "vnetCidr": "10.5.20.0/19"
+            "vnetSubnetId": "/subscriptions/c744e4e8-3d12-48ab-8492-9a600a00ca3f/resourceGroups/Imran/providers/Microsoft.Network/virtualNetworks/kubnettest/subnets/kubsubnet",
+            "firstConsecutiveStaticIP": "10.3.0.239",
+            "vnetCidr": "10.3.0.0/24"
         },
         "agentPoolProfiles": [{
             "name": "linuxagent",
             "count": 2,
             "vmSize": "Standard_D2_v2",
-            "vnetSubnetId": "/subscriptions/f8a42a3a-8b22-4be4-8413-0b6911c77242/resourceGroups/capresourcegroup/providers/Microsoft.Network/virtualNetworks/CAPVnet/subnets/NLPSubnet",
+            "vnetSubnetId": "/subscriptions/c744e4e8-3d12-48ab-8492-9a600a00ca3f/resourceGroups/Imran/providers/Microsoft.Network/virtualNetworks/kubnettest/subnets/kubsubnet",
             "availabilityProfile": "AvailabilitySet"
         }],
         "linuxProfile": {
             "adminUsername": "azureuser",
             "ssh": {
                 "publicKeys": [{
-                    "keyData": "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDYXopNbkMKLRrav4WANI6UTIBOmD4gT/cMDAknRferJov+B4Eg90avN+BxBNBt1hcouVesAEtA43SFKgOeqf3BWdF03XewvrGD2Ka2yoNSRKzOo8ncVv9Nye920Ikx5iSz5NfQzwS2L2lcj5eHeiP9rZ8M6iOcvZVlD7qRa7a+tMwne+QTwjrOE4Xw9NorIHq86EGc5zXqT7N1P2CIyCd3OSAYqD+BxhqDZNAdn76mF0YvFaUn39/fY04Nzy3ZARTlsQEPe4fGS0tcOm8wjQQlCXAvm0zbzydhbg699i0Vo2BuKEBKXr8Fyqebq5mKsJaxBKOc6BxgUOOhD78yjPxL nicholas.wender@HC2263"
+                    "keyData": "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDQEvG8bij5/eXWZFiU9KA9DpC980e/UgoMSij7nq+8M5ODBv/G8Bd3dssMNSj0RQKbyNiPz4EngFG62coGXK3ogJZEl/ABDDJAFEPB5J4BK8VCaVcmJpfPYVXd+DLv3A5Pk95SlgPeb1vbZnoOhy8F2rfjZBRCnsF2jN6Agk96c7JsGLamAaE2iU/+Wz/Z+x2nrV+Py+IVa2XKU/veqkY6/yDBQdO/BdXl8afdMHdqhjYwd7cp0Mec9r9iYmXKy8meUr125lMiayXIqeoU9qfcgnBlIcYkJtZjQd1F58o9KgHZXkkdEUqRyuiCgnJtNgY9xNu/Bgz2naiEU6NuKzKr azureuser@linuxvm"
                 }]
             }
         },
         "servicePrincipalProfile": {
-            "clientId": "9ad7097c-0a72-447f-951f-97ffa699cd92",
-            "secret": "6a86af74-16a1-4294-a64d-c1bc81b362d2"
+            "clientId": "5a53ea0c-f45a-40fa-b481-ed2734c93727",
+            "secret": "7cf86474-af55-492f-a460-201d0cd3a8d7"
         }
     }
 }

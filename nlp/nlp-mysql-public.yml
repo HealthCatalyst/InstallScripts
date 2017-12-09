@@ -1,0 +1,20 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: mysql-direct-port
+  namespace: fabricnlp
+spec:
+  selector:
+    app: mysqlserver
+  ports:
+  - name: mysqlport
+    protocol: TCP
+    port: 3306
+    targetPort: 3306
+  type: LoadBalancer  
+  # Special notes for Azure: To use user-specified public type loadBalancerIP, a static type public IP address resource needs to be created first, 
+  # and it should be in the same resource group of the cluster. 
+  # Then you could specify the assigned IP address as loadBalancerIP
+  # https://kubernetes.io/docs/concepts/services-networking/service/#type-loadbalancer
+  loadBalancerIP: 40.71.2.165
+---

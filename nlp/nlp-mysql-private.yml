@@ -1,0 +1,18 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: mysql-direct-port
+  namespace: fabricnlp
+  annotations:
+    # from https://radu-matei.com/blog/k8s-appsvc/
+    service.beta.kubernetes.io/azure-load-balancer-internal: "true"  
+spec:
+  selector:
+    app: mysqlserver
+  ports:
+  - name: mysqlport
+    protocol: TCP
+    port: 3306
+    targetPort: 3306
+  type: LoadBalancer  
+---

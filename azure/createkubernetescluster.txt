@@ -197,6 +197,6 @@ kubectl get deployments,pods,services,ingress,secrets,persistentvolumeclaims,per
 
 echo az.cmd storage share create --name fabricnlp --account-name="${AKS_PERS_STORAGE_ACCOUNT_NAME}" --account-key="${STORAGE_KEY}"
 
-
+# az network public-ip create --name TestPIP --resource-group TestRG --location centralus --allocation-method Static
 
 

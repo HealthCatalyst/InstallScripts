@@ -11,6 +11,11 @@ metadata:
     app: solrserver
 spec:
   replicas: 1
+  revisionHistoryLimit: 3  # Clean-up old Replica Sets deployed; only keep previous 3.
+  strategy:
+    # We need to kill the existing Pod before creating an new one
+    # for the new one to be able to attach the persistent disk.
+    type: Recreate        
   selector:
     matchLabels:
       app: solrserver
@@ -22,7 +27,7 @@ spec:
       containers:
         - name: solrserver
           image: healthcatalyst/fabric.nlp.docker.solr:latest
-          #imagePullPolicy: Always          
+          imagePullPolicy: Always          
           volumeMounts:
             - name: solr-persistent-storage
               mountPath: /var/lib/solr
@@ -65,6 +70,11 @@ metadata:
     app: nlpwebserver
 spec:
   replicas: 1
+  revisionHistoryLimit: 3  # Clean-up old Replica Sets deployed; only keep previous 3.
+  strategy:
+    # We need to kill the existing Pod before creating an new one
+    # for the new one to be able to attach the persistent disk.
+    type: Recreate        
   selector:
     matchLabels:
       app: nlpwebserver
@@ -121,6 +131,11 @@ metadata:
     app: jobserver
 spec:
   replicas: 1
+  revisionHistoryLimit: 3  # Clean-up old Replica Sets deployed; only keep previous 3.
+  strategy:
+    # We need to kill the existing Pod before creating an new one
+    # for the new one to be able to attach the persistent disk.
+    type: Recreate        
   selector:
     matchLabels:
       app: jobserver
@@ -132,7 +147,7 @@ spec:
       containers:
         - name: jobserver
           image: healthcatalyst/fabric.nlp.docker.jobs:latest
-          # imagePullPolicy: Always          
+          imagePullPolicy: Always          
           env:
             - name: NLPWEB_EXTERNAL_URL
               value: nlp.allina.healthcatalyst.net
@@ -206,7 +221,7 @@ spec:
           # image to pull
           image: healthcatalyst/fabric.nlp.docker.mysql:latest
           # specify to always pull a new image
-          #imagePullPolicy: Always
+          imagePullPolicy: Always
           # environment variables
           env:
             - name: MYSQL_ROOT_PASSWORD
@@ -275,6 +290,11 @@ metadata:
     app: smtpserver
 spec:
   replicas: 1
+  revisionHistoryLimit: 3  # Clean-up old Replica Sets deployed; only keep previous 3.
+  strategy:
+    # We need to kill the existing Pod before creating an new one
+    # for the new one to be able to attach the persistent disk.
+    type: Recreate        
   selector:
     matchLabels:
       app: smtpserver
@@ -286,7 +306,7 @@ spec:
       containers:
         - name: smtpserver
           image: healthcatalyst/fabric.smtp.agent:latest
-          #imagePullPolicy: Always          
+          imagePullPolicy: Always          
 ---
 # Service
 kind: Service

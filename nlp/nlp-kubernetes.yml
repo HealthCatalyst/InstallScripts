@@ -35,19 +35,6 @@ spec:
         persistentVolumeClaim:
           claimName: az-files-solr            
 ---
-# Persistent Volume Claim
-kind: PersistentVolumeClaim
-apiVersion: v1
-metadata:
-  name: az-files-solr
-  namespace: fabricnlp  
-spec:
-  accessModes:
-    - ReadWriteMany
-  resources:
-    requests:
-      storage: 128Gi
----
 # Service
 kind: Service
 apiVersion: v1
@@ -105,10 +92,6 @@ spec:
             - containerPort: 8083
               name: nlpwebserver
 ---
-
-# Persistent Volume Claim
-# none
-
 # Service
 kind: Service
 apiVersion: v1
@@ -165,10 +148,15 @@ spec:
           ports:
             - containerPort: 8084
               name: jobserver
+          volumeMounts:
+            - name: jobs-persistent-storage
+              mountPath: /opt/jobWork/
+              subPath: jobs
+      volumes:
+      - name: jobs-persistent-storage
+        persistentVolumeClaim:
+          claimName: az-files-jobs            
 ---
-# Persistent Volume Claim
-# none
-
 # Service
 kind: Service
 apiVersion: v1
@@ -248,19 +236,6 @@ spec:
       - name: mysql-persistent-storage
         persistentVolumeClaim:
           claimName: az-files-mysql            
----
-# Persistent Volume Claim
-kind: PersistentVolumeClaim
-apiVersion: v1
-metadata:
-  name: az-files-mysql
-  namespace: fabricnlp  
-spec:
-  accessModes:
-    - ReadWriteMany
-  resources:
-    requests:
-      storage: 128Gi
 ---
 # Service
 kind: Service

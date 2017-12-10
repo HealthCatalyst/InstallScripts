@@ -135,7 +135,7 @@
       "type": "string"
     },
     "firstConsecutiveStaticIP": {
-      "defaultValue": "10.3.0.239",
+      "defaultValue": "10.239.255.239",
       "metadata": {
         "description": "Sets the static IP of the first master"
       },

@@ -10,8 +10,8 @@
             "dnsPrefix": "fabricnlp9",
             "vmSize": "Standard_D2_v2",
             "vnetSubnetId": "/subscriptions/c744e4e8-3d12-48ab-8492-9a600a00ca3f/resourceGroups/Imran/providers/Microsoft.Network/virtualNetworks/kubnettest/subnets/kubsubnet",
-            "firstConsecutiveStaticIP": "10.3.0.239",
-            "vnetCidr": "10.3.0.0/24"
+            "firstConsecutiveStaticIP": "10.239.255.239",
+            "vnetCidr": "10.239.0.0/16"
         },
         "agentPoolProfiles": [{
             "name": "linuxagent",

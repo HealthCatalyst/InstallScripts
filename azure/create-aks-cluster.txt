@@ -104,7 +104,7 @@ then
     az.cmd ad sp delete --id "$AKS_SERVICE_PRINCIPAL_CLIENTID" --verbose
 fi
 
-myscope="//subscriptions//${AKS_SUBSCRIPTION_ID}//resourceGroups//${AKS_PERS_RESOURCE_GROUP}"
+myscope="//subscriptions//${AKS_SUBSCRIPTION_ID}"
 
 echo $myscope
 
@@ -126,9 +126,11 @@ AKS_SSH_KEY=$(cat ~/.ssh/id_rsa.pub)
 
 dnsNamePrefix=$AKS_PERS_RESOURCE_GROUP
 
+numNodes=1
+
 echo create Azure Container Service cluster AKS
 az.cmd aks create --resource-group $AKS_PERS_RESOURCE_GROUP --name $AKS_CLUSTER_NAME \
-    --node-count 3 --kubernetes-version 1.8.1 \
+    --node-count ${numNodes} --kubernetes-version 1.8.1 \
     --node-vm-size Standard_B2ms \
     --service-principal="$AKS_SERVICE_PRINCIPAL_CLIENTID" \
     --client-secret="$AKS_SERVICE_PRINCIPAL_CLIENTSECRET" \
@@ -156,7 +158,7 @@ kubectl get nodes
 
 nodeCount=0
 
-while [ $nodeCount -lt 3 ]
+while [ $nodeCount -lt ${numNodes} ]
 do
 sleep 10s;
 nodeCount=$(wc -l <<< "$(kubectl get nodes -o=name)")
@@ -191,7 +193,9 @@ echo open kubernetes dashboard in browser
 echo az.cmd aks browse --resource-group $AKS_PERS_RESOURCE_GROUP --name $AKS_CLUSTER_NAME
 
 echo deploy the ingress controller
-kubectl apply -f ingress.yml
+kubectl create -f ingress.yml
+
+kubectl create -f loadbalancer-public.yml
 
 kubectl get deployments,pods,services,ingress,secrets,persistentvolumeclaims,persistentvolumes,nodes --namespace=kube-system
 

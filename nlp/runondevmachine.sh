@@ -38,14 +38,21 @@ mkdir -p ${SHARED_DRIVE_SOLR}
 export SHARED_DRIVE_MYSQL=${SHARED_DRIVE}/mysql
 mkdir -p ${SHARED_DRIVE_MYSQL}
 
+myreleaseversion="latest"
+
+docker pull healthcatalyst/fabric.smtp.agent:$myreleaseversion
+docker pull healthcatalyst/fabric.nlp.docker.mysql:$myreleaseversion
+docker pull healthcatalyst/fabric.nlp.docker.solr:$myreleaseversion
+docker pull healthcatalyst/fabric.nlp.docker.jobs:$myreleaseversion
+docker pull healthcatalyst/fabric.nlp.docker.web:$myreleaseversion
 
 # use docker stack deploy to start up all the services
 stackfilename="nlp-stack.yml"
 
 echo "running stack: $stackfilename"
 
-echo "https://healthcatalyst.github.io/InstallScripts/nlp/${stackfilename}"
+# echo "https://healthcatalyst.github.io/InstallScripts/nlp/${stackfilename}"
 
-curl -sSL "https://healthcatalyst.github.io/InstallScripts/nlp/${stackfilename}" | docker stack deploy --compose-file - fabricnlp
+# curl -sSL "https://healthcatalyst.github.io/InstallScripts/nlp/${stackfilename}" | docker stack deploy --compose-file - fabricnlp
 
-# docker stack deploy -c $stackfilename fabricnlp
+docker stack deploy -c $stackfilename fabricnlp

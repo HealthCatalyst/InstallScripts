@@ -1,0 +1,18 @@
+# ------------------- Dashboard Service ------------------- #
+kind: Service
+apiVersion: v1
+metadata:
+  labels:
+    k8s-app: kubernetes-dashboard
+  name: kubernetes-dashboard
+  namespace: kube-system
+  annotations:
+    # from https://radu-matei.com/blog/k8s-appsvc/
+    service.beta.kubernetes.io/azure-load-balancer-internal: "true"  
+spec:
+  ports:
+    - port: 443
+      targetPort: 8443
+  selector:
+    k8s-app: kubernetes-dashboard
+  type: LoadBalancer  

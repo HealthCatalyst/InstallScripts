@@ -100,6 +100,8 @@ spec:
           ports:
             - containerPort: 8083
               name: nlpwebserver
+            - containerPort: 8443
+              name: https
 ---
 # Service
 kind: Service
@@ -115,6 +117,11 @@ spec:
   - port: 8083
     targetPort: 8083
     protocol: TCP
+    name: http
+  - port: 8443
+    targetPort: 8443
+    protocol: TCP
+    name: https
   selector:
     app: nlpwebserver
 ---
@@ -149,10 +156,12 @@ spec:
           image: healthcatalyst/fabric.nlp.docker.jobs:latest
           imagePullPolicy: Always          
           env:
-            - name: NLPWEB_EXTERNAL_URL
-              value: nlp.allina.healthcatalyst.net
-            - name: JOBSERVER_EXTERNAL_URL
-              value: nlpjobs.allina.healthcatalyst.net
+            # - name: NLPWEB_EXTERNAL_URL
+            #   value: nlp.allina.healthcatalyst.net
+            # - name: JOBSERVER_EXTERNAL_URL
+            #   value: nlpjobs.allina.healthcatalyst.net
+            - name: EXTERNAL_HOSTNAME
+              value: localhost
             - name: MYSQL_PASSWORD
               valueFrom:
                 secretKeyRef:

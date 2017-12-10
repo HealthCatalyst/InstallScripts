@@ -17,6 +17,8 @@ read -p "Please type in name of share name (e.g., fabricnlpshareddisk):" azuresh
 azurestorageaccesskey=""
 read -p "Please paste in access key to storage from Azure portal:" azurestorageaccesskey < /dev/tty
 
+sudo mkdir -p /mnt/hcshared
+
 connectionString="//${azurestorageaccount}.file.core.windows.net/${azuresharename} /mnt/hcshared -o vers=2.1,username=${azurestorageaccount},password=${azurestorageaccesskey},dir_mode=0777,file_mode=0777,serverino"
 
 sudo mount -t cifs ${connectionString}

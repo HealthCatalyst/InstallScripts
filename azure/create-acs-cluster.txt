@@ -167,18 +167,22 @@ az.cmd group deployment create --template-file "azuredeploy.json" \
     --resource-group $AKS_PERS_RESOURCE_GROUP -n $AKS_CLUSTER_NAME \
     --parameters @azuredeploy.parameters.real.json
 
-echo sleeping for 10 secs
+# echo sleeping for 10 secs
 # sleep 30s;
 
-read -p "Press enter to continue once all the nodes are created"
+echo "ssh -i ~/.ssh/id_rsa azureuser@fabricnlp9.eastus.cloudapp.azure.com"
+echo "cat ./.kube/config"
+echo "copy and paste into C:\Users\imran.qureshi\.kube (replace imran.qureshi with your username)"
+
+read -p "Press enter to continue once done"
 
 # echo "download kubectl"
 # mkdir -p c:/kubernetes
 # rm c:/kubernetes/kubectl.exe
 # az.cmd acs install-cli --resource-group=$AKS_PERS_RESOURCE_GROUP --name=$AKS_CLUSTER_NAME --install-location c:/kubernetes
 
-echo get credentials for AKS cluster
-az.cmd acs kubernetes get-credentials --resource-group=$AKS_PERS_RESOURCE_GROUP --name=$AKS_CLUSTER_NAME
+#echo get credentials for AKS cluster
+# az.cmd acs kubernetes get-credentials --resource-group=$AKS_PERS_RESOURCE_GROUP --name=$AKS_CLUSTER_NAME
 
 echo check nodes via kubectl
 kubectl get nodes
@@ -197,6 +201,10 @@ echo attach route table
 rt=$(az network route-table list -g ${RESOURCE_GROUP} | jq -r '.[].id')
 
 az network vnet subnet update -n ${AKS_SUBNET_NAME} -g ${RESOURCE_GROUP} --vnet-name ${AKS_VNET_NAME} --route-table $rt
+
+# echo "Making dashboard internal"
+# kubectl delete service kubernetes-dashboard -n kube-system
+
 
 echo Create the storage account
 az.cmd storage account create -n $AKS_PERS_STORAGE_ACCOUNT_NAME -g $AKS_PERS_RESOURCE_GROUP -l $AKS_PERS_LOCATION --sku Standard_LRS
@@ -219,14 +227,16 @@ kubectl create secret generic azure-secret --from-literal=azurestorageaccountnam
 
 # kubectl describe pod testfileshare-pod
 
-kubectl create -f https://raw.githubusercontent.com/kubernetes/dashboard/master/src/deploy/recommended/kubernetes-dashboard.yaml
+# kubectl create -f https://raw.githubusercontent.com/kubernetes/dashboard/master/src/deploy/recommended/kubernetes-dashboard.yaml
 
 # https://docs.microsoft.com/en-us/azure/aks/kubernetes-dashboard
-echo open kubernetes dashboard in browser
-az.cmd acs browse --resource-group $AKS_PERS_RESOURCE_GROUP --name $AKS_CLUSTER_NAME &
+# echo open kubernetes dashboard in browser
+# az.cmd acs browse --resource-group $AKS_PERS_RESOURCE_GROUP --name $AKS_CLUSTER_NAME &
 
 echo deploy the ingress controller
-kubectl apply -f ingress.yml
+kubectl create -f ingress.yml
+
+kubectl create -f loadbalancer-internal.yml
 
 kubectl get deployments,pods,services,ingress,secrets --namespace=kube-system
 

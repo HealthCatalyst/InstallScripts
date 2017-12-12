@@ -114,6 +114,14 @@ sudo mkdir -p "${SHARED_DRIVE_JOBS}"
 # export DOCKER_LOGGING_DRIVER="fluentd"
 export DOCKER_LOGGING_DRIVER="json-file"
 
+myreleaseversion="latest"
+
+docker pull healthcatalyst/fabric.smtp.agent:$myreleaseversion
+docker pull healthcatalyst/fabric.nlp.docker.mysql:$myreleaseversion
+docker pull healthcatalyst/fabric.nlp.docker.solr:$myreleaseversion
+docker pull healthcatalyst/fabric.nlp.docker.jobs:$myreleaseversion
+docker pull healthcatalyst/fabric.nlp.docker.web:$myreleaseversion
+
 # ---------- use docker stack deploy to start up all the services --------
 stackfilename="nlp-stack.yml"
 

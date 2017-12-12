@@ -115,6 +115,10 @@ $dnsNamePrefix = "$AKS_PERS_RESOURCE_GROUP"
 #az acs create --orchestrator-type kubernetes --resource-group fabricnlpcluster --name cluster1 --service-principal="$AKS_SERVICE_PRINCIPAL_CLIENTID" --client-secret="$AKS_SERVICE_PRINCIPAL_CLIENTSECRET"  --generate-ssh-keys --agent-count=3 --agent-vm-size Standard_D2 --master-vnet-subnet-id="$mysubnetid" --agent-vnet-subnet-id="$mysubnetid"
 
 $url = "https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/azure/acs.template.json"
+if (!"$AKS_VNET_NAME") {
+    $url = "https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/azure/acs.template.nosubnet.json"    
+}
+
 $output = "$env:TEMP\acs.json"
 Write-Output "Downloading parameters file from github to $output"
 if (Test-Path $output) {
@@ -125,11 +129,12 @@ if (Test-Path $output) {
 
 Invoke-WebRequest -Uri $url -OutFile $output -ContentType "text/plain; charset=utf-8"
 
+if ("$AKS_VNET_NAME") {
+    Write-Output "Looking up CIDR for Subnet: ${AKS_SUBNET_NAME}"
+    $AKS_SUBNET_CIDR = az network vnet subnet show --name ${AKS_SUBNET_NAME} --resource-group ${AKS_SUBNET_RESOURCE_GROUP} --vnet-name ${AKS_VNET_NAME} --query "addressPrefix" --output tsv
 
-Write-Output "Looking up CIDR for Subnet: ${AKS_SUBNET_NAME}"
-$AKS_SUBNET_CIDR = az network vnet subnet show --name ${AKS_SUBNET_NAME} --resource-group ${AKS_SUBNET_RESOURCE_GROUP} --vnet-name ${AKS_VNET_NAME} --query "addressPrefix" --output tsv
-
-Write-Output "Subnet CIDR=$AKS_SUBNET_CIDR"
+    Write-Output "Subnet CIDR=$AKS_SUBNET_CIDR"
+}
 
 # helper functions for subnet match
 # from https://gallery.technet.microsoft.com/scriptcenter/Start-and-End-IP-addresses-bcccc3a9
@@ -192,14 +197,18 @@ function Get-FirstIP {
     INT64-toIP -int $startaddr
 }
 
-$suggestedFirstStaticIP = Get-FirstIP -ip ${AKS_SUBNET_CIDR}
+$AKS_FIRST_STATIC_IP=""
+$AKS_SUBNET_CIDR=""
+if ("$AKS_VNET_NAME") {
+    $suggestedFirstStaticIP = Get-FirstIP -ip ${AKS_SUBNET_CIDR}
 
-$AKS_FIRST_STATIC_IP = Read-Host "First static IP: (default: $suggestedFirstStaticIP )"
-if (!"$AKS_FIRST_STATIC_IP"){
-    $AKS_FIRST_STATIC_IP="$suggestedFirstStaticIP"
+    $AKS_FIRST_STATIC_IP = Read-Host "First static IP: (default: $suggestedFirstStaticIP )"
+    if (!"$AKS_FIRST_STATIC_IP") {
+        $AKS_FIRST_STATIC_IP = "$suggestedFirstStaticIP"
+    }
+
+    Write-Output "First static IP=${AKS_FIRST_STATIC_IP}"
 }
-
-Write-Output "First static IP=${AKS_FIRST_STATIC_IP}"
 
 # subnet CIDR to mask
 # https://doc.m0n0.ch/quickstartpc/intro-CIDR.html
@@ -232,10 +241,12 @@ az group deployment create `
 
 Write-Output "Saved to $acsoutputfolder\azuredeploy.json"
 
-Write-Output "Attach route table"
-# https://github.com/Azure/acs-engine/blob/master/examples/vnet/k8s-vnet-postdeploy.sh
-$rt = az network route-table list -g "${AKS_PERS_RESOURCE_GROUP}" | jq -r '.[].id'
-az network vnet subnet update -n "${AKS_SUBNET_NAME}" -g "${AKS_SUBNET_RESOURCE_GROUP}" --vnet-name "${AKS_VNET_NAME}" --route-table "$rt"
+if ("$AKS_VNET_NAME") {
+    Write-Output "Attach route table"
+    # https://github.com/Azure/acs-engine/blob/master/examples/vnet/k8s-vnet-postdeploy.sh
+    $rt = az network route-table list -g "${AKS_PERS_RESOURCE_GROUP}" | jq -r '.[].id'
+    az network vnet subnet update -n "${AKS_SUBNET_NAME}" -g "${AKS_SUBNET_RESOURCE_GROUP}" --vnet-name "${AKS_VNET_NAME}" --route-table "$rt"
+}
 
 Write-Output "Getting kube config by ssh to the master VM"
 $MASTER_VM_NAME = "${AKS_PERS_RESOURCE_GROUP}.${AKS_PERS_LOCATION}.cloudapp.azure.com"
@@ -249,7 +260,7 @@ else {
 
 $User = "azureuser"
 $Credential = New-Object System.Management.Automation.PSCredential($User, (new-object System.Security.SecureString))
-New-SSHSession -ComputerName ${MASTER_VM_NAME} -KeyFile "${SSH_PRIVATE_KEY_FILE}" -Credential $Credential -AcceptKey -Verbose
+New-SSHSession -ComputerName ${MASTER_VM_NAME} -KeyFile "${SSH_PRIVATE_KEY_FILE}" -Credential $Credential -AcceptKey -Verbose -Force
 Invoke-SSHCommand -Command "cat ./.kube/config" -SessionId 0 | Out-File "$env:userprofile\.kube\config"
 Remove-SSHSession -SessionId 0
 # ssh -i "${SSH_PRIVATE_KEY_FILE}" "azureuser@${MASTER_VM_NAME}" cat ./.kube/config > "$env:userprofile\.kube\config"

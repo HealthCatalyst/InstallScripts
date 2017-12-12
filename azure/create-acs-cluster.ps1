@@ -16,18 +16,20 @@ $AKS_VNET_NAME = ""
 $AKS_SUBNET_NAME = ""
 $AKS_SUBNET_RESOURCE_GROUP = ""
 $AKS_SSH_KEY = ""
-$AKS_FIRST_STATIC_IP = "10.3.0.239"
+$AKS_FIRST_STATIC_IP = ""
 
-write-output "checking if you're already logged in"
+write-output "Checking if you're already logged in..."
 
 # to print out the result to screen also use: <command> | Tee-Object -Variable cmdOutput
-$loggedInUser = az account show --query "user.name"  -o tsv
+$loggedInUser = az account show --query "user.name"  --output tsv
 
-if ( !$loggedInUser ) {
-    $SUBSCRIPTION_NAME = az account show --query "name"  -o tsv
+Write-Output "user: $loggedInUser"
+
+if ( "$loggedInUser" ) {
+    $SUBSCRIPTION_NAME = az account show --query "name"  --output tsv
     Write-Output "You are currently logged in as $loggedInUser into subscription $SUBSCRIPTION_NAME"
     
-    $confirmation = Read-Host "Do you want to use this account?"
+    $confirmation = Read-Host "Do you want to use this account? (y/n)"
     if ($confirmation -eq 'n') {
         az login
     }    
@@ -37,21 +39,14 @@ else {
     az login
 }
 
-Write-Output "Getting current subscription id"
-az account show
-$AKS_SUBSCRIPTION_ID = az account show --query "id" -o tsv
-
-# Get inputs from user
-$confirmation = Read-Host "Do you want to use this subscription?"
-if ($confirmation -eq 'n') {
-    exit 0
-}    
+$AKS_SUBSCRIPTION_ID = az account show --query "id" --output tsv
 
 $AKS_PERS_RESOURCE_GROUP = Read-Host "Resource Group: (e.g., fabricnlp-rg)"
 
 $AKS_PERS_LOCATION = Read-Host "Location: (e.g., eastus)"
 
-$AKS_CLUSTER_NAME = Read-Host "Cluster Name: (e.g., fabricnlpcluster)"
+$AKS_CLUSTER_NAME = "kubcluster"
+# $AKS_CLUSTER_NAME = Read-Host "Cluster Name: (e.g., fabricnlpcluster)"
 
 $AKS_PERS_STORAGE_ACCOUNT_NAME = Read-Host "Storage Account Name: (leave empty for default)"
 
@@ -60,15 +55,17 @@ $AKS_PERS_SHARE_NAME = Read-Host "Storage File share Name: (leave empty for defa
 # see if the user wants to use a specific virtual network
 $AKS_VNET_NAME = Read-Host "Virtual Network Name: (leave empty for default)"
 
-if (!"$AKS_VNET_NAME") {
+if ("$AKS_VNET_NAME") {
     $AKS_SUBNET_NAME = Read-Host "Subnet Name"
     $AKS_SUBNET_RESOURCE_GROUP = Read-Host "Resource Group of Subnet"
 }
 
 Write-Output "checking if resource group already exists"
 $resourceGroupExists = az group exists --name ${AKS_PERS_RESOURCE_GROUP}
-if ($resourceGroupExists = = "true") {
-    $confirmation = Read-Host "The resource group ${AKS_PERS_RESOURCE_GROUP} already exists.  Would you like to delete it?"
+if ($resourceGroupExists -eq "true") {
+    Write-Host "The resource group ${AKS_PERS_RESOURCE_GROUP} already exists with these resources:"
+    az resource list --resource-group "${AKS_PERS_RESOURCE_GROUP}" --query "id"
+    $confirmation = Read-Host "Would you like to delete it (all above resources will be deleted)? (y/n)"
     if ($confirmation -eq 'n') {
         exit 0
     }    
@@ -81,51 +78,61 @@ az group create --name $AKS_PERS_RESOURCE_GROUP --location $AKS_PERS_LOCATION --
 
 Write-Output "checking if Service Principal already exists"
 $AKS_SERVICE_PRINCIPAL_NAME = "${AKS_PERS_RESOURCE_GROUP}Kubernetes"
-$AKS_SERVICE_PRINCIPAL_CLIENTID = az ad sp list --display-name ${AKS_SERVICE_PRINCIPAL_NAME} --query "[].appId" -o tsv
-
-if (!"$AKS_SERVICE_PRINCIPAL_CLIENTID") {
-    Write-Output "Service Principal already exists with name: $AKS_SERVICE_PRINCIPAL_NAME"
-    Write-Output "Deleting..."
-    az ad sp delete --id "$AKS_SERVICE_PRINCIPAL_CLIENTID" --verbose
-}
+$AKS_SERVICE_PRINCIPAL_CLIENTID = az ad sp list --display-name ${AKS_SERVICE_PRINCIPAL_NAME} --query "[].appId" --output tsv
 
 $myscope = "/subscriptions/${AKS_SUBSCRIPTION_ID}"
-Write-Output "Creating Service Principal: $AKS_SERVICE_PRINCIPAL_NAME"
-$AKS_SERVICE_PRINCIPAL_CLIENTSECRET = az ad sp create-for-rbac --role="Contributor" --scopes="$myscope" --name ${AKS_SERVICE_PRINCIPAL_NAME} --query "password" -o tsv
-# clientID == appID
-# client secret == password
-$AKS_SERVICE_PRINCIPAL_CLIENTID = az ad sp list --display-name ${AKS_SERVICE_PRINCIPAL_NAME} --query "[].appId" -o tsv
 
-Write-Output "created $AKS_SERVICE_PRINCIPAL_NAME clientId=$AKS_SERVICE_PRINCIPAL_CLIENTID clientsecret=$AKS_SERVICE_PRINCIPAL_CLIENTSECRET"
+if ("$AKS_SERVICE_PRINCIPAL_CLIENTID") {
+    Write-Host "Service Principal already exists with name: $AKS_SERVICE_PRINCIPAL_NAME"
+    Write-Output "Deleting..."
+    az ad sp delete --id "$AKS_SERVICE_PRINCIPAL_CLIENTID" --verbose
+    Write-Output "Creating Service Principal: $AKS_SERVICE_PRINCIPAL_NAME"
+    $AKS_SERVICE_PRINCIPAL_CLIENTSECRET = az ad sp create-for-rbac --role="Contributor" --scopes="$myscope" --name ${AKS_SERVICE_PRINCIPAL_NAME} --query "password" --output tsv
+    Write-Output "created $AKS_SERVICE_PRINCIPAL_NAME clientId=$AKS_SERVICE_PRINCIPAL_CLIENTID clientsecret=$AKS_SERVICE_PRINCIPAL_CLIENTSECRET"
+}
+else {
+    Write-Output "Creating Service Principal: $AKS_SERVICE_PRINCIPAL_NAME"
+    $AKS_SERVICE_PRINCIPAL_CLIENTSECRET = az ad sp create-for-rbac --role="Contributor" --scopes="$myscope" --name ${AKS_SERVICE_PRINCIPAL_NAME} --query "password" --output tsv
+    $AKS_SERVICE_PRINCIPAL_CLIENTID = az ad sp list --display-name ${AKS_SERVICE_PRINCIPAL_NAME} --query "[].appId" --output tsv
+    Write-Output "created $AKS_SERVICE_PRINCIPAL_NAME clientId=$AKS_SERVICE_PRINCIPAL_CLIENTID clientsecret=$AKS_SERVICE_PRINCIPAL_CLIENTSECRET"
+}
 
-Write-Output create Azure Container Service cluster
+Write-Output "Create Azure Container Service cluster"
 
 $mysubnetid = "/subscriptions/${AKS_SUBSCRIPTION_ID}/resourceGroups/${AKS_SUBNET_RESOURCE_GROUP}/providers/Microsoft.Network/virtualNetworks/${AKS_VNET_NAME}/subnets/${AKS_SUBNET_NAME}"
 
 $SSH_PUBLIC_KEY_FILE = "$env:userprofile/.ssh/id_rsa.pub"
 if (!(Test-Path "$SSH_PUBLIC_KEY_FILE")) {
-    Write-Output "creating SSH key"
+    Write-Output "SSH key does not exist in $SSH_PUBLIC_KEY_FILE.  Creating it..."
     ssh-keygen -t rsa -b 2048 -q -N "" -C azureuser@linuxvm -f "$SSH_PUBLIC_KEY_FILE"
 }
 
-$AKS_SSH_KEY = Get-Content "$SSH_PUBLIC_KEY_FILE" -Raw 
+$AKS_SSH_KEY = Get-Content "$SSH_PUBLIC_KEY_FILE" -First 1
 
-dnsNamePrefix=$AKS_PERS_RESOURCE_GROUP
+$dnsNamePrefix = "$AKS_PERS_RESOURCE_GROUP"
 
 # az acs create --orchestrator-type kubernetes --resource-group $AKS_PERS_RESOURCE_GROUP --name $AKS_CLUSTER_NAME --generate-ssh-keys --agent-count=3 --agent-vm-size Standard_B2ms
 #az acs create --orchestrator-type kubernetes --resource-group fabricnlpcluster --name cluster1 --service-principal="$AKS_SERVICE_PRINCIPAL_CLIENTID" --client-secret="$AKS_SERVICE_PRINCIPAL_CLIENTSECRET"  --generate-ssh-keys --agent-count=3 --agent-vm-size Standard_D2 --master-vnet-subnet-id="$mysubnetid" --agent-vnet-subnet-id="$mysubnetid"
 
-$url = "https://github.com/HealthCatalyst/InstallScripts/blob/master/azure/acs.json"
+$url = "https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/azure/acs.template.json"
 $output = "$env:TEMP\acs.json"
 Write-Output "Downloading parameters file from github to $output"
-Invoke-WebRequest -Uri $url -OutFile $output
+if (Test-Path $output) {
+    Remove-Item $output
+}
 
-Write-Output "Looking up CIDR for Subnet"
-$AKS_SUBNET_CIDR = az network vnet subnet show --name ${AKS_SUBNET_NAME} --resource-group ${AKS_SUBNET_RESOURCE_GROUP} --vnet-name ${AKS_VNET_NAME} --query "addressPrefix"
+# Write-Output "Invoke-WebRequest -Uri $url -OutFile $output -ContentType 'text/plain; charset=utf-8'"
+
+Invoke-WebRequest -Uri $url -OutFile $output -ContentType "text/plain; charset=utf-8"
+
+
+Write-Output "Looking up CIDR for Subnet: ${AKS_SUBNET_NAME}"
+$AKS_SUBNET_CIDR = az network vnet subnet show --name ${AKS_SUBNET_NAME} --resource-group ${AKS_SUBNET_RESOURCE_GROUP} --vnet-name ${AKS_VNET_NAME} --query "addressPrefix" --output tsv
 
 Write-Output "Subnet CIDR=$AKS_SUBNET_CIDR"
 
 # helper functions for subnet match
+# from https://gallery.technet.microsoft.com/scriptcenter/Start-and-End-IP-addresses-bcccc3a9
 function Get-FirstIP {
     <# 
   .SYNOPSIS  
@@ -181,10 +188,16 @@ function Get-FirstIP {
         $endaddr = IP-toINT64 -ip $end 
     } 
  
+    $startaddr = $startaddr + 10 # skip the first few since they are reserved
     INT64-toIP -int $startaddr
 }
 
-$AKS_FIRST_STATIC_IP=Get-FirstIP -ip ${AKS_SUBNET_CIDR}
+$suggestedFirstStaticIP = Get-FirstIP -ip ${AKS_SUBNET_CIDR}
+
+$AKS_FIRST_STATIC_IP = Read-Host "First static IP: (default: $suggestedFirstStaticIP )"
+if (!"$AKS_FIRST_STATIC_IP"){
+    $AKS_FIRST_STATIC_IP="$suggestedFirstStaticIP"
+}
 
 Write-Output "First static IP=${AKS_FIRST_STATIC_IP}"
 
@@ -192,35 +205,59 @@ Write-Output "First static IP=${AKS_FIRST_STATIC_IP}"
 # https://doc.m0n0.ch/quickstartpc/intro-CIDR.html
 
 Write-Output "replacing values in the acs.json file"
-(Get-Content $output) | 
+$MyFile = (Get-Content $output) | 
     Foreach-Object {$_ -replace 'REPLACE-SSH-KEY', "${AKS_SSH_KEY}"}  | 
     Foreach-Object {$_ -replace 'REPLACE-CLIENTID', "${AKS_SERVICE_PRINCIPAL_CLIENTID}"}  | 
     Foreach-Object {$_ -replace 'REPLACE-CLIENTSECRET', "${AKS_SERVICE_PRINCIPAL_CLIENTSECRET}"}  | 
     Foreach-Object {$_ -replace 'REPLACE-SUBNET', "${mysubnetid}"}  | 
     Foreach-Object {$_ -replace 'REPLACE-DNS-NAME-PREFIX', "${dnsNamePrefix}"}  | 
     Foreach-Object {$_ -replace 'REPLACE-FIRST-STATIC-IP', "${AKS_FIRST_STATIC_IP}"}  | 
-    Foreach-Object {$_ -replace 'REPLACE_VNET_CIDR', "${AKS_SUBNET_CIDR}"}  | 
-    Out-File $output
+    Foreach-Object {$_ -replace 'REPLACE_VNET_CIDR', "${AKS_SUBNET_CIDR}"}  
 
-Write-Output "Generating ACS engine template"
-acs-engine generate $output
+# have to do it this way instead of Outfile so we can get a UTF-8 file without BOM
+# from https://stackoverflow.com/questions/5596982/using-powershell-to-write-a-file-in-utf-8-without-the-bom
+$Utf8NoBomEncoding = New-Object System.Text.UTF8Encoding $False
+[System.IO.File]::WriteAllLines($output, $MyFile, $Utf8NoBomEncoding)
 
 $acsoutputfolder = "$env:TEMP\_output\$dnsNamePrefix"
+
+Write-Output "Generating ACS engine template"
+acs-engine generate "$output" --output-directory "$acsoutputfolder"
+
 az group deployment create `
     --template-file "$acsoutputfolder\azuredeploy.json" `
     --resource-group $AKS_PERS_RESOURCE_GROUP -n $AKS_CLUSTER_NAME `
     --parameters "$acsoutputfolder\azuredeploy.parameters.json" `
     --mode Complete --verbose	
 
+Write-Output "Saved to $acsoutputfolder\azuredeploy.json"
+
+Write-Output "Attach route table"
+# https://github.com/Azure/acs-engine/blob/master/examples/vnet/k8s-vnet-postdeploy.sh
+$rt = az network route-table list -g "${AKS_PERS_RESOURCE_GROUP}" | jq -r '.[].id'
+az network vnet subnet update -n "${AKS_SUBNET_NAME}" -g "${AKS_SUBNET_RESOURCE_GROUP}" --vnet-name "${AKS_VNET_NAME}" --route-table "$rt"
+
 Write-Output "Getting kube config by ssh to the master VM"
 $MASTER_VM_NAME = "${AKS_PERS_RESOURCE_GROUP}.${AKS_PERS_LOCATION}.cloudapp.azure.com"
-$SSH_PRIVATE_KEY_FILE = "$env:userprofile/.ssh/id_rsa"
-ssh -i "${SSH_PRIVATE_KEY_FILE}" "azureuser@${MASTER_VM_NAME}" cat ./.kube/config > "$env:userprofile\.kube\config"
+$SSH_PRIVATE_KEY_FILE = "$env:userprofile\.ssh\id_rsa"
+
+if (Get-Module -ListAvailable -Name Posh-SSH) {
+}
+else {
+    Install-Module Posh-SSH -Scope CurrentUser -Force
+}
+
+$User = "azureuser"
+$Credential = New-Object System.Management.Automation.PSCredential($User, (new-object System.Security.SecureString))
+New-SSHSession -ComputerName ${MASTER_VM_NAME} -KeyFile "${SSH_PRIVATE_KEY_FILE}" -Credential $Credential -AcceptKey -Verbose
+Invoke-SSHCommand -Command "cat ./.kube/config" -SessionId 0 | Out-File "$env:userprofile\.kube\config"
+Remove-SSHSession -SessionId 0
+# ssh -i "${SSH_PRIVATE_KEY_FILE}" "azureuser@${MASTER_VM_NAME}" cat ./.kube/config > "$env:userprofile\.kube\config"
 
 Write-Output "Check nodes via kubectl"
 kubectl get nodes
 
-nodeCount=0
+$nodeCount = 0
 
 while ($nodeCount -lt 3) {
     $lines = kubectl get nodes -o=name | Measure-Object -Line
@@ -228,19 +265,13 @@ while ($nodeCount -lt 3) {
     Start-Sleep -s 10
 }
 
-Write-Output "Attach route table"
-# https://github.com/Azure/acs-engine/blob/master/examples/vnet/k8s-vnet-postdeploy.sh
-$rt = az network route-table list -g ${RESOURCE_GROUP} | jq -r '.[].id'
-az network vnet subnet update -n ${AKS_SUBNET_NAME} -g ${RESOURCE_GROUP} --vnet-name ${AKS_VNET_NAME} --route-table $rt
-
-
 Write-Output "Create the storage account"
 if (!"$AKS_PERS_STORAGE_ACCOUNT_NAME") {
     $AKS_PERS_STORAGE_ACCOUNT_NAME = "${AKS_PERS_RESOURCE_GROUP}storage"
     Write-Output "Checking to see if storage account exists"
-    $storageaccountexists=az storage account check-name --name $AKS_PERS_STORAGE_ACCOUNT_NAME --query "nameAvailable" --output tsv
+    $storageaccountexists = az storage account check-name --name $AKS_PERS_STORAGE_ACCOUNT_NAME --query "nameAvailable" --output tsv
 
-    if ($storageaccountexists -ne "True" ){
+    if ($storageaccountexists -ne "True" ) {
         az storage account check-name --name $AKS_PERS_STORAGE_ACCOUNT_NAME   
         Write-Error "Storage account, $AKS_PERS_STORAGE_ACCOUNT_NAME, already exists.  Please check and delete first"
         exit 0
@@ -251,9 +282,9 @@ if (!"$AKS_PERS_STORAGE_ACCOUNT_NAME") {
 }
 else {
     Write-Output "Checking to see if storage account exists"
-    $storageaccountexists=az storage account check-name --name $AKS_PERS_STORAGE_ACCOUNT_NAME --query "nameAvailable" --output tsv
+    $storageaccountexists = az storage account check-name --name $AKS_PERS_STORAGE_ACCOUNT_NAME --query "nameAvailable" --output tsv
 
-    if ($storageaccountexists -ne "True" ){
+    if ($storageaccountexists -ne "True" ) {
         Write-Error "Storage account, $AKS_PERS_STORAGE_ACCOUNT_NAME, does not exist."
         exit 0
     }
@@ -271,7 +302,7 @@ if (!"${AKS_PERS_SHARE_NAME}") {
 # az storage share create -n $AKS_PERS_SHARE_NAME --connection-string $AZURE_STORAGE_CONNECTION_STRING
 
 Write-Output "Get storage account key"
-$STORAGE_KEY = az storage account keys list --resource-group $AKS_PERS_RESOURCE_GROUP --account-name $AKS_PERS_STORAGE_ACCOUNT_NAME --query "[0].value" -o tsv
+$STORAGE_KEY = az storage account keys list --resource-group $AKS_PERS_RESOURCE_GROUP --account-name $AKS_PERS_STORAGE_ACCOUNT_NAME --query "[0].value" --output tsv
 
 Write-Output "Storagekey: $STORAGE_KEY"
 

@@ -1,18 +1,22 @@
+
+#   curl -useb https://healthcatalyst.github.io/InstallScripts/nlp/installnlpkubernetes.txt | iex; install
+
+
 kubectl create namespace fabricnlp
 
 kubectl create secret generic mysqlrootpassword --namespace=fabricnlp --from-literal=password=ILoveNLP2017!
 
 kubectl create secret generic mysqlpassword --namespace=fabricnlp --from-literal=password=ILoveNLP2017!
 
-kubectl create -f ./nlp-kubernetes-storage.yml
+kubectl create -f https://healthcatalyst.github.io/InstallScripts/nlp/nlp-kubernetes-storage.yml
 
-kubectl create -f ./nlp-kubernetes.yml
+kubectl create -f https://healthcatalyst.github.io/InstallScripts/nlp/nlp-kubernetes.yml
 
-kubectl create -f ./nlp-kubernetes-public.yml
+kubectl create -f https://healthcatalyst.github.io/InstallScripts/nlp/nlp-kubernetes-public.yml
 
-kubectl create -f ./nlp-mysql-private.yml
+kubectl create -f https://healthcatalyst.github.io/InstallScripts/nlp/nlp-mysql-private.yml
 
-kubectl get deployments,pods,services,ingress,secrets --namespace=fabricnlp
+kubectl get "deployments,pods,services,ingress,secrets" --namespace=fabricnlp
 
 
 

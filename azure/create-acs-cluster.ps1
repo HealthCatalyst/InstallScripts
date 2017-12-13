@@ -2,8 +2,7 @@ write-output "Version 1.068"
 
 #
 # This script is meant for quick & easy install via:
-#   curl -sSL https://healthcatalyst.github.io/InstallScripts/azure/createkubernetescluster.txt | sh -s
-
+#   curl -useb https://healthcatalyst.github.io/InstallScripts/azure/create-acs-cluster.ps1 | iex; install
 # Remember: no spaces allowed in variable set commands in bash
 
 $AKS_PERS_RESOURCE_GROUP = ""
@@ -17,6 +16,7 @@ $AKS_SUBNET_NAME = ""
 $AKS_SUBNET_RESOURCE_GROUP = ""
 $AKS_SSH_KEY = ""
 $AKS_FIRST_STATIC_IP = ""
+$AKS_OPEN_TO_PUBLIC = ""
 
 write-output "Checking if you're already logged in..."
 
@@ -59,6 +59,9 @@ if ("$AKS_VNET_NAME") {
     $AKS_SUBNET_NAME = Read-Host "Subnet Name"
     $AKS_SUBNET_RESOURCE_GROUP = Read-Host "Resource Group of Subnet"
 }
+
+$AKS_OPEN_TO_PUBLIC = Read-Host "Do you want this cluster open to public? (y/n)"
+
 
 Write-Output "checking if resource group already exists"
 $resourceGroupExists = az group exists --name ${AKS_PERS_RESOURCE_GROUP}
@@ -197,8 +200,8 @@ function Get-FirstIP {
     INT64-toIP -int $startaddr
 }
 
-$AKS_FIRST_STATIC_IP=""
-$AKS_SUBNET_CIDR=""
+$AKS_FIRST_STATIC_IP = ""
+$AKS_SUBNET_CIDR = ""
 if ("$AKS_VNET_NAME") {
     $suggestedFirstStaticIP = Get-FirstIP -ip ${AKS_SUBNET_CIDR}
 
@@ -327,9 +330,16 @@ Write-Output "Creating kubernetes secret"
 kubectl create secret generic azure-secret --from-literal=azurestorageaccountname="${AKS_PERS_STORAGE_ACCOUNT_NAME}" --from-literal=azurestorageaccountkey="${STORAGE_KEY}"
 
 Write-Output "Deploy the ingress controller"
-kubectl create -f ingress.yml
+kubectl create -f https://healthcatalyst.github.io/InstallScripts/azure/ingress.yml
 
-kubectl create -f loadbalancer-internal.yml
+if ("$AKS_OPEN_TO_PUBLIC" -eq "y") {
+    Write-Output "Setting up a public load balancer"
+    kubectl create -f https://healthcatalyst.github.io/InstallScripts/azure/loadbalancer-public.yml     
+}
+else {
+    Write-Output "Setting up a private load balancer"
+    kubectl create -f https://healthcatalyst.github.io/InstallScripts/azure/loadbalancer-internal.yml 
+}
 
-kubectl get deployments, pods, services, ingress, secrets --namespace=kube-system
+kubectl get "deployments,pods,services,ingress,secrets" --namespace=kube-system
 

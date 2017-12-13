@@ -258,11 +258,14 @@ else {
     Install-Module Posh-SSH -Scope CurrentUser -Force
 }
 
+# from http://www.powershellmagazine.com/2014/07/03/posh-ssh-open-source-ssh-powershell-module/
 $User = "azureuser"
 $Credential = New-Object System.Management.Automation.PSCredential($User, (new-object System.Security.SecureString))
-New-SSHSession -ComputerName ${MASTER_VM_NAME} -KeyFile "${SSH_PRIVATE_KEY_FILE}" -Credential $Credential -AcceptKey -Verbose -Force
-Invoke-SSHCommand -Command "cat ./.kube/config" -SessionId 0 | Out-File "$env:userprofile\.kube\config"
-Remove-SSHSession -SessionId 0
+# New-SSHSession -ComputerName ${MASTER_VM_NAME} -KeyFile "${SSH_PRIVATE_KEY_FILE}" -Credential $Credential -AcceptKey -Verbose -Force
+# Invoke-SSHCommand -Command "cat ./.kube/config" -SessionId 0 
+Get-SCPFile -LocalFile "$env:userprofile\.kube\config" -RemoteFile "./.kube/config" -ComputerName ${MASTER_VM_NAME} -KeyFile "${SSH_PRIVATE_KEY_FILE}" -Credential $Credential -AcceptKey -Verbose -Force
+# Remove-SSHSession -SessionId 0
+
 # ssh -i "${SSH_PRIVATE_KEY_FILE}" "azureuser@${MASTER_VM_NAME}" cat ./.kube/config > "$env:userprofile\.kube\config"
 
 Write-Output "Check nodes via kubectl"
@@ -284,15 +287,18 @@ if (!"$AKS_PERS_STORAGE_ACCOUNT_NAME") {
 
     if ($storageaccountexists -ne "True" ) {
         az storage account check-name --name $AKS_PERS_STORAGE_ACCOUNT_NAME   
-        Write-Error "Storage account, $AKS_PERS_STORAGE_ACCOUNT_NAME, already exists.  Please check and delete first"
-        exit 0
+        $confirmation = Read-Host "Storage account, $AKS_PERS_STORAGE_ACCOUNT_NAME, already exists.  Delete it?  (Warning: deletes data) (y/n)"
+        if ($confirmation -eq 'y') {
+            az storage account delete -n $AKS_PERS_STORAGE_ACCOUNT_NAME -g $AKS_PERS_RESOURCE_GROUP
+        }    
     }
-
-    Write-Output "Using storage account: ${AKS_PERS_STORAGE_ACCOUNT_NAME}"
-    az storage account create -n $AKS_PERS_STORAGE_ACCOUNT_NAME -g $AKS_PERS_RESOURCE_GROUP -l $AKS_PERS_LOCATION --sku Standard_LRS
+    else {
+        Write-Output "Using storage account: ${AKS_PERS_STORAGE_ACCOUNT_NAME}"
+        az storage account create -n $AKS_PERS_STORAGE_ACCOUNT_NAME -g $AKS_PERS_RESOURCE_GROUP -l $AKS_PERS_LOCATION --sku Standard_LRS            
+    }
 }
 else {
-    Write-Output "Checking to see if storage account exists"
+    Write-Output "Checking to see if storage account $AKS_PERS_STORAGE_ACCOUNT_NAME exists"
     $storageaccountexists = az storage account check-name --name $AKS_PERS_STORAGE_ACCOUNT_NAME --query "nameAvailable" --output tsv
 
     if ($storageaccountexists -ne "True" ) {

@@ -5,6 +5,9 @@ write-output "Version 1.068"
 #   curl -useb https://healthcatalyst.github.io/InstallScripts/azure/create-acs-cluster.ps1 | iex; install
 # Remember: no spaces allowed in variable set commands in bash
 
+$GITHUB_URL = "https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master"
+$GITHUB_URL = "."
+
 $AKS_PERS_RESOURCE_GROUP = ""
 $AKS_PERS_LOCATION = ""
 $AKS_CLUSTER_NAME = ""
@@ -72,6 +75,11 @@ if ($resourceGroupExists -eq "true") {
     if ($confirmation -eq 'n') {
         exit 0
     }    
+
+    if ("$AKS_VNET_NAME") {
+        # Write-Output "removing route table"
+        # az network vnet subnet update -n "${AKS_SUBNET_NAME}" -g "${AKS_SUBNET_RESOURCE_GROUP}" --vnet-name "${AKS_VNET_NAME}" --route-table ""
+    }
     Write-Output "delete existing group: $AKS_PERS_RESOURCE_GROUP"
     az group delete --name $AKS_PERS_RESOURCE_GROUP --verbose
 }
@@ -117,9 +125,9 @@ $dnsNamePrefix = "$AKS_PERS_RESOURCE_GROUP"
 # az acs create --orchestrator-type kubernetes --resource-group $AKS_PERS_RESOURCE_GROUP --name $AKS_CLUSTER_NAME --generate-ssh-keys --agent-count=3 --agent-vm-size Standard_B2ms
 #az acs create --orchestrator-type kubernetes --resource-group fabricnlpcluster --name cluster1 --service-principal="$AKS_SERVICE_PRINCIPAL_CLIENTID" --client-secret="$AKS_SERVICE_PRINCIPAL_CLIENTSECRET"  --generate-ssh-keys --agent-count=3 --agent-vm-size Standard_D2 --master-vnet-subnet-id="$mysubnetid" --agent-vnet-subnet-id="$mysubnetid"
 
-$url = "https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/azure/acs.template.json"
+$templateFile = "acs.template.json"
 if (!"$AKS_VNET_NAME") {
-    $url = "https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/azure/acs.template.nosubnet.json"    
+    $templateFile = "acs.template.nosubnet.json"    
 }
 
 $output = "$env:TEMP\acs.json"
@@ -129,8 +137,13 @@ if (Test-Path $output) {
 }
 
 # Write-Output "Invoke-WebRequest -Uri $url -OutFile $output -ContentType 'text/plain; charset=utf-8'"
-
-Invoke-WebRequest -Uri $url -OutFile $output -ContentType "text/plain; charset=utf-8"
+if ($GITHUB_URL.StartsWith("http")) { 
+    Write-Output "Downloading file: $GITHUB_URL/azure/$templateFile"
+    Invoke-WebRequest -Uri "$GITHUB_URL/azure/$templateFile" -OutFile $output -ContentType "text/plain; charset=utf-8"
+}
+else {
+    Copy-Item -Path "$GITHUB_URL/azure/$templateFile" -Destination "$output"
+}
 
 if ("$AKS_VNET_NAME") {
     Write-Output "Looking up CIDR for Subnet: ${AKS_SUBNET_NAME}"
@@ -201,7 +214,6 @@ function Get-FirstIP {
 }
 
 $AKS_FIRST_STATIC_IP = ""
-$AKS_SUBNET_CIDR = ""
 if ("$AKS_VNET_NAME") {
     $suggestedFirstStaticIP = Get-FirstIP -ip ${AKS_SUBNET_CIDR}
 
@@ -234,6 +246,13 @@ $Utf8NoBomEncoding = New-Object System.Text.UTF8Encoding $False
 $acsoutputfolder = "$env:TEMP\_output\$dnsNamePrefix"
 
 Write-Output "Generating ACS engine template"
+
+# acs-engine deploy --subscription-id "$AKS_SUBSCRIPTION_ID" `
+#                     --dns-prefix $dnsNamePrefix --location $AKS_PERS_LOCATION `
+#                     --resource-group $AKS_PERS_RESOURCE_GROUP `
+#                     --api-model "$output" `
+#                     --output-directory "$acsoutputfolder"
+
 acs-engine generate "$output" --output-directory "$acsoutputfolder"
 
 az group deployment create `
@@ -247,27 +266,30 @@ Write-Output "Saved to $acsoutputfolder\azuredeploy.json"
 if ("$AKS_VNET_NAME") {
     Write-Output "Attach route table"
     # https://github.com/Azure/acs-engine/blob/master/examples/vnet/k8s-vnet-postdeploy.sh
-    $rt = az network route-table list -g "${AKS_PERS_RESOURCE_GROUP}" --query '.[].id' -o tsv
+    $rt = az network route-table list -g "${AKS_PERS_RESOURCE_GROUP}" --query "[].id" -o tsv
     az network vnet subnet update -n "${AKS_SUBNET_NAME}" -g "${AKS_SUBNET_RESOURCE_GROUP}" --vnet-name "${AKS_VNET_NAME}" --route-table "$rt"
 }
 
+
 Write-Output "Getting kube config by ssh to the master VM"
-$MASTER_VM_NAME = "${AKS_PERS_RESOURCE_GROUP}.${AKS_PERS_LOCATION}.cloudapp.azure.com"
-$SSH_PRIVATE_KEY_FILE = "$env:userprofile\.ssh\id_rsa"
+# $MASTER_VM_NAME = "${AKS_PERS_RESOURCE_GROUP}.${AKS_PERS_LOCATION}.cloudapp.azure.com"
+# $SSH_PRIVATE_KEY_FILE = "$env:userprofile\.ssh\id_rsa"
 
-if (Get-Module -ListAvailable -Name Posh-SSH) {
-}
-else {
-    Install-Module Posh-SSH -Scope CurrentUser -Force
-}
+# if (Get-Module -ListAvailable -Name Posh-SSH) {
+# }
+# else {
+#     Install-Module Posh-SSH -Scope CurrentUser -Force
+# }
 
-# from http://www.powershellmagazine.com/2014/07/03/posh-ssh-open-source-ssh-powershell-module/
-$User = "azureuser"
-$Credential = New-Object System.Management.Automation.PSCredential($User, (new-object System.Security.SecureString))
-# New-SSHSession -ComputerName ${MASTER_VM_NAME} -KeyFile "${SSH_PRIVATE_KEY_FILE}" -Credential $Credential -AcceptKey -Verbose -Force
-# Invoke-SSHCommand -Command "cat ./.kube/config" -SessionId 0 
-Get-SCPFile -LocalFile "$env:userprofile\.kube\config" -RemoteFile "./.kube/config" -ComputerName ${MASTER_VM_NAME} -KeyFile "${SSH_PRIVATE_KEY_FILE}" -Credential $Credential -AcceptKey -Verbose -Force
+# # from http://www.powershellmagazine.com/2014/07/03/posh-ssh-open-source-ssh-powershell-module/
+# $User = "azureuser"
+# $Credential = New-Object System.Management.Automation.PSCredential($User, (new-object System.Security.SecureString))
+# # New-SSHSession -ComputerName ${MASTER_VM_NAME} -KeyFile "${SSH_PRIVATE_KEY_FILE}" -Credential $Credential -AcceptKey -Verbose -Force
+# # Invoke-SSHCommand -Command "cat ./.kube/config" -SessionId 0 
+# Get-SCPFile -LocalFile "$env:userprofile\.kube\config" -RemoteFile "./.kube/config" -ComputerName ${MASTER_VM_NAME} -KeyFile "${SSH_PRIVATE_KEY_FILE}" -Credential $Credential -AcceptKey -Verbose -Force
 # Remove-SSHSession -SessionId 0
+
+Copy-Item -Path "$acsoutputfolder\kubeconfig\kubeconfig.$AKS_PERS_LOCATION.json" -Destination "$env:userprofile\.kube\config"
 
 # ssh -i "${SSH_PRIVATE_KEY_FILE}" "azureuser@${MASTER_VM_NAME}" cat ./.kube/config > "$env:userprofile\.kube\config"
 
@@ -330,15 +352,15 @@ Write-Output "Creating kubernetes secret"
 kubectl create secret generic azure-secret --from-literal=azurestorageaccountname="${AKS_PERS_STORAGE_ACCOUNT_NAME}" --from-literal=azurestorageaccountkey="${STORAGE_KEY}"
 
 Write-Output "Deploy the ingress controller"
-kubectl create -f https://healthcatalyst.github.io/InstallScripts/azure/ingress.yml
+kubectl create -f "$GITHUB_URL/azure/ingress.yml"
 
 if ("$AKS_OPEN_TO_PUBLIC" -eq "y") {
     Write-Output "Setting up a public load balancer"
-    kubectl create -f https://healthcatalyst.github.io/InstallScripts/azure/loadbalancer-public.yml     
+    kubectl create -f "$GITHUB_URL/azure/loadbalancer-public.yml"
 }
 else {
     Write-Output "Setting up a private load balancer"
-    kubectl create -f https://healthcatalyst.github.io/InstallScripts/azure/loadbalancer-internal.yml 
+    kubectl create -f "$GITHUB_URL/azure/loadbalancer-internal.yml"
 }
 
 kubectl get "deployments,pods,services,ingress,secrets" --namespace=kube-system

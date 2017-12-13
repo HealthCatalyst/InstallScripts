@@ -3,7 +3,11 @@
     "properties": {
         "orchestratorProfile": {
             "orchestratorType": "Kubernetes",
-            "orchestratorRelease": "1.8"
+            "orchestratorRelease": "1.8",
+            "kubernetesConfig": {
+                "clusterSubnet": "REPLACE_VNET_CIDR",
+                "networkPolicy": "azure"
+            }
         },
         "masterProfile": {
             "count": 1,

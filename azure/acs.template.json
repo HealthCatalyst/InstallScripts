@@ -3,7 +3,10 @@
     "properties": {
         "orchestratorProfile": {
             "orchestratorType": "Kubernetes",
-            "orchestratorRelease": "1.8"
+            "orchestratorRelease": "1.8",
+            "kubernetesConfig": {
+                "networkPolicy": "azure"
+            }
         },
         "masterProfile": {
             "count": 1,

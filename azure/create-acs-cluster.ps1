@@ -255,23 +255,41 @@ Write-Output "Generating ACS engine template"
 
 acs-engine generate "$output" --output-directory "$acsoutputfolder"
 
-az group deployment create `
-    --template-file "$acsoutputfolder\azuredeploy.json" `
-    --resource-group $AKS_PERS_RESOURCE_GROUP -n $AKS_CLUSTER_NAME `
-    --parameters "$acsoutputfolder\azuredeploy.parameters.json" `
-    --mode Complete --verbose	
+    # --orchestrator-version 1.8 `
+    # --ssh-key-value 
 
-Write-Output "Saved to $acsoutputfolder\azuredeploy.json"
+az acs create `
+    --orchestrator-type kubernetes `
+    --dns-prefix ${dnsNamePrefix} `
+    --resource-group $AKS_PERS_RESOURCE_GROUP `
+    --name $AKS_CLUSTER_NAME `
+    --location $AKS_PERS_LOCATION `
+    --service-principal="$AKS_SERVICE_PRINCIPAL_CLIENTID" `
+    --client-secret="$AKS_SERVICE_PRINCIPAL_CLIENTSECRET"  `
+    --agent-count=3 --agent-vm-size Standard_D2 `
+    --master-vnet-subnet-id="$mysubnetid" `
+    --agent-vnet-subnet-id="$mysubnetid"
 
-if ("$AKS_VNET_NAME") {
-    Write-Output "Attach route table"
-    # https://github.com/Azure/acs-engine/blob/master/examples/vnet/k8s-vnet-postdeploy.sh
-    $rt = az network route-table list -g "${AKS_PERS_RESOURCE_GROUP}" --query "[].id" -o tsv
-    az network vnet subnet update -n "${AKS_SUBNET_NAME}" -g "${AKS_SUBNET_RESOURCE_GROUP}" --vnet-name "${AKS_VNET_NAME}" --route-table "$rt"
-}
+# az group deployment create `
+#     --template-file "$acsoutputfolder\azuredeploy.json" `
+#     --resource-group $AKS_PERS_RESOURCE_GROUP -n $AKS_CLUSTER_NAME `
+#     --parameters "$acsoutputfolder\azuredeploy.parameters.json" `
+#     --mode Complete --verbose	
 
+# Write-Output "Saved to $acsoutputfolder\azuredeploy.json"
 
-Write-Output "Getting kube config by ssh to the master VM"
+# if ("$AKS_VNET_NAME") {
+#     Write-Output "Attach route table"
+#     # https://github.com/Azure/acs-engine/blob/master/examples/vnet/k8s-vnet-postdeploy.sh
+#     $rt = az network route-table list -g "${AKS_PERS_RESOURCE_GROUP}" --query "[].id" -o tsv
+#     az network vnet subnet update -n "${AKS_SUBNET_NAME}" -g "${AKS_SUBNET_RESOURCE_GROUP}" --vnet-name "${AKS_VNET_NAME}" --route-table "$rt"
+# }
+
+az.cmd acs kubernetes get-credentials `
+    --resource-group=$AKS_PERS_RESOURCE_GROUP `
+    --name=$AKS_CLUSTER_NAME
+
+# Write-Output "Getting kube config by ssh to the master VM"
 # $MASTER_VM_NAME = "${AKS_PERS_RESOURCE_GROUP}.${AKS_PERS_LOCATION}.cloudapp.azure.com"
 # $SSH_PRIVATE_KEY_FILE = "$env:userprofile\.ssh\id_rsa"
 
@@ -289,7 +307,7 @@ Write-Output "Getting kube config by ssh to the master VM"
 # Get-SCPFile -LocalFile "$env:userprofile\.kube\config" -RemoteFile "./.kube/config" -ComputerName ${MASTER_VM_NAME} -KeyFile "${SSH_PRIVATE_KEY_FILE}" -Credential $Credential -AcceptKey -Verbose -Force
 # Remove-SSHSession -SessionId 0
 
-Copy-Item -Path "$acsoutputfolder\kubeconfig\kubeconfig.$AKS_PERS_LOCATION.json" -Destination "$env:userprofile\.kube\config"
+# Copy-Item -Path "$acsoutputfolder\kubeconfig\kubeconfig.$AKS_PERS_LOCATION.json" -Destination "$env:userprofile\.kube\config"
 
 # ssh -i "${SSH_PRIVATE_KEY_FILE}" "azureuser@${MASTER_VM_NAME}" cat ./.kube/config > "$env:userprofile\.kube\config"
 

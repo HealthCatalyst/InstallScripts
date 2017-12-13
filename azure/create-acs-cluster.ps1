@@ -6,7 +6,7 @@ write-output "Version 1.068"
 # Remember: no spaces allowed in variable set commands in bash
 
 $GITHUB_URL = "https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master"
-$GITHUB_URL = "."
+# $GITHUB_URL = "."
 
 $AKS_PERS_RESOURCE_GROUP = ""
 $AKS_PERS_LOCATION = ""

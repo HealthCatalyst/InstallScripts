@@ -247,7 +247,7 @@ Write-Output "Saved to $acsoutputfolder\azuredeploy.json"
 if ("$AKS_VNET_NAME") {
     Write-Output "Attach route table"
     # https://github.com/Azure/acs-engine/blob/master/examples/vnet/k8s-vnet-postdeploy.sh
-    $rt = az network route-table list -g "${AKS_PERS_RESOURCE_GROUP}" | jq -r '.[].id'
+    $rt = az network route-table list -g "${AKS_PERS_RESOURCE_GROUP}" --query '.[].id' -o tsv
     az network vnet subnet update -n "${AKS_SUBNET_NAME}" -g "${AKS_SUBNET_RESOURCE_GROUP}" --vnet-name "${AKS_VNET_NAME}" --route-table "$rt"
 }
 

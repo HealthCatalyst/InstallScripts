@@ -1,5 +1,5 @@
 
-#   curl -useb https://healthcatalyst.github.io/InstallScripts/nlp/installnlpkubernetes.txt | iex; install
+#   curl -useb https://healthcatalyst.github.io/InstallScripts/nlp/installnlpkubernetes.txt | iex; 
 
 
 kubectl create namespace fabricnlp

@@ -69,7 +69,7 @@ Write-Output "checking if resource group already exists"
 $resourceGroupExists = az group exists --name ${AKS_PERS_RESOURCE_GROUP}
 if ($resourceGroupExists -eq "true") {
     Write-Host "The resource group ${AKS_PERS_RESOURCE_GROUP} already exists with these resources:"
-    az resource list --resource-group "${AKS_PERS_RESOURCE_GROUP}" --query "id"
+    az resource list --resource-group "${AKS_PERS_RESOURCE_GROUP}" --query "[].id"
     $confirmation = Read-Host "Would you like to delete it (all above resources will be deleted)? (y/n)"
     if ($confirmation -eq 'n') {
         exit 0
@@ -90,14 +90,14 @@ Write-Output "checking if Service Principal already exists"
 $AKS_SERVICE_PRINCIPAL_NAME = "${AKS_PERS_RESOURCE_GROUP}Kubernetes"
 $AKS_SERVICE_PRINCIPAL_CLIENTID = az ad sp list --display-name ${AKS_SERVICE_PRINCIPAL_NAME} --query "[].appId" --output tsv
 
-$myscope = "/subscriptions/${AKS_SUBSCRIPTION_ID}"
+$myscope = "/subscriptions/${AKS_SUBSCRIPTION_ID}/resourceGroups/${AKS_PERS_RESOURCE_GROUP}"
 
 if ("$AKS_SERVICE_PRINCIPAL_CLIENTID") {
     Write-Host "Service Principal already exists with name: $AKS_SERVICE_PRINCIPAL_NAME"
     Write-Output "Deleting..."
     az ad sp delete --id "$AKS_SERVICE_PRINCIPAL_CLIENTID" --verbose
     Write-Output "Creating Service Principal: $AKS_SERVICE_PRINCIPAL_NAME"
-    $AKS_SERVICE_PRINCIPAL_CLIENTSECRET = az ad sp create-for-rbac --role="Contributor" --scopes="$myscope" --name ${AKS_SERVICE_PRINCIPAL_NAME} --query "password" --output tsv
+    $AKS_SERVICE_PRINCIPAL_CLIENTSECRET = az ad sp create-for-rbac --role="Owner" --scopes="$myscope" --name ${AKS_SERVICE_PRINCIPAL_NAME} --query "password" --output tsv
     Write-Output "created $AKS_SERVICE_PRINCIPAL_NAME clientId=$AKS_SERVICE_PRINCIPAL_CLIENTID clientsecret=$AKS_SERVICE_PRINCIPAL_CLIENTSECRET"
 }
 else {
@@ -269,6 +269,8 @@ acs-engine generate "$output" --output-directory "$acsoutputfolder"
 #     --master-vnet-subnet-id="$mysubnetid" `
 #     --agent-vnet-subnet-id="$mysubnetid"
 
+Write-Output "Starting deployment..."
+
 az group deployment create `
     --template-file "$acsoutputfolder\azuredeploy.json" `
     --resource-group $AKS_PERS_RESOURCE_GROUP -n $AKS_CLUSTER_NAME `
@@ -280,8 +282,8 @@ az group deployment create `
 if ("$AKS_VNET_NAME") {
     Write-Output "Attach route table"
     # https://github.com/Azure/acs-engine/blob/master/examples/vnet/k8s-vnet-postdeploy.sh
-    $rt = az network route-table list -g "${AKS_PERS_RESOURCE_GROUP}" --query "[].id" -o tsv
-    az network vnet subnet update -n "${AKS_SUBNET_NAME}" -g "${AKS_SUBNET_RESOURCE_GROUP}" --vnet-name "${AKS_VNET_NAME}" --route-table "$rt"
+    # $rt = az network route-table list -g "${AKS_PERS_RESOURCE_GROUP}" --query "[].id" -o tsv
+    # az network vnet subnet update -n "${AKS_SUBNET_NAME}" -g "${AKS_SUBNET_RESOURCE_GROUP}" --vnet-name "${AKS_VNET_NAME}" --route-table "$rt"
 }
 
 # az.cmd acs kubernetes get-credentials `

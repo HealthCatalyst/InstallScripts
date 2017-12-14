@@ -14,14 +14,16 @@
             "vmSize": "Standard_D2_v2",
             "vnetSubnetId": "REPLACE-SUBNET",
             "firstConsecutiveStaticIP": "REPLACE-FIRST-STATIC-IP",
-            "vnetCidr": "REPLACE_VNET_CIDR"
+            "vnetCidr": "REPLACE_VNET_CIDR",
+            "storageProfile": "ManagedDisks"
         },
         "agentPoolProfiles": [{
             "name": "linuxagent",
             "count": 2,
             "vmSize": "Standard_D2_v2",
             "vnetSubnetId": "REPLACE-SUBNET",
-            "availabilityProfile": "AvailabilitySet"
+            "availabilityProfile": "AvailabilitySet",
+            "storageProfile": "ManagedDisks"
         }],
         "linuxProfile": {
             "adminUsername": "azureuser",

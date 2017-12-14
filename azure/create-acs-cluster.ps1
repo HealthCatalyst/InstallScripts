@@ -3,10 +3,9 @@ write-output "Version 1.068"
 #
 # This script is meant for quick & easy install via:
 #   curl -useb https://healthcatalyst.github.io/InstallScripts/azure/create-acs-cluster.ps1 | iex; install
-# Remember: no spaces allowed in variable set commands in bash
 
-$GITHUB_URL = "https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master"
-# $GITHUB_URL = "."
+#$GITHUB_URL = "https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master"
+$GITHUB_URL = "."
 
 $AKS_PERS_RESOURCE_GROUP = ""
 $AKS_PERS_LOCATION = ""
@@ -258,36 +257,36 @@ acs-engine generate "$output" --output-directory "$acsoutputfolder"
     # --orchestrator-version 1.8 `
     # --ssh-key-value 
 
-az acs create `
-    --orchestrator-type kubernetes `
-    --dns-prefix ${dnsNamePrefix} `
-    --resource-group $AKS_PERS_RESOURCE_GROUP `
-    --name $AKS_CLUSTER_NAME `
-    --location $AKS_PERS_LOCATION `
-    --service-principal="$AKS_SERVICE_PRINCIPAL_CLIENTID" `
-    --client-secret="$AKS_SERVICE_PRINCIPAL_CLIENTSECRET"  `
-    --agent-count=3 --agent-vm-size Standard_D2 `
-    --master-vnet-subnet-id="$mysubnetid" `
-    --agent-vnet-subnet-id="$mysubnetid"
+# az acs create `
+#     --orchestrator-type kubernetes `
+#     --dns-prefix ${dnsNamePrefix} `
+#     --resource-group $AKS_PERS_RESOURCE_GROUP `
+#     --name $AKS_CLUSTER_NAME `
+#     --location $AKS_PERS_LOCATION `
+#     --service-principal="$AKS_SERVICE_PRINCIPAL_CLIENTID" `
+#     --client-secret="$AKS_SERVICE_PRINCIPAL_CLIENTSECRET"  `
+#     --agent-count=3 --agent-vm-size Standard_D2 `
+#     --master-vnet-subnet-id="$mysubnetid" `
+#     --agent-vnet-subnet-id="$mysubnetid"
 
-# az group deployment create `
-#     --template-file "$acsoutputfolder\azuredeploy.json" `
-#     --resource-group $AKS_PERS_RESOURCE_GROUP -n $AKS_CLUSTER_NAME `
-#     --parameters "$acsoutputfolder\azuredeploy.parameters.json" `
-#     --mode Complete --verbose	
+az group deployment create `
+    --template-file "$acsoutputfolder\azuredeploy.json" `
+    --resource-group $AKS_PERS_RESOURCE_GROUP -n $AKS_CLUSTER_NAME `
+    --parameters "$acsoutputfolder\azuredeploy.parameters.json" `
+    --verbose	
 
 # Write-Output "Saved to $acsoutputfolder\azuredeploy.json"
 
-# if ("$AKS_VNET_NAME") {
-#     Write-Output "Attach route table"
-#     # https://github.com/Azure/acs-engine/blob/master/examples/vnet/k8s-vnet-postdeploy.sh
-#     $rt = az network route-table list -g "${AKS_PERS_RESOURCE_GROUP}" --query "[].id" -o tsv
-#     az network vnet subnet update -n "${AKS_SUBNET_NAME}" -g "${AKS_SUBNET_RESOURCE_GROUP}" --vnet-name "${AKS_VNET_NAME}" --route-table "$rt"
-# }
+if ("$AKS_VNET_NAME") {
+    Write-Output "Attach route table"
+    # https://github.com/Azure/acs-engine/blob/master/examples/vnet/k8s-vnet-postdeploy.sh
+    $rt = az network route-table list -g "${AKS_PERS_RESOURCE_GROUP}" --query "[].id" -o tsv
+    az network vnet subnet update -n "${AKS_SUBNET_NAME}" -g "${AKS_SUBNET_RESOURCE_GROUP}" --vnet-name "${AKS_VNET_NAME}" --route-table "$rt"
+}
 
-az.cmd acs kubernetes get-credentials `
-    --resource-group=$AKS_PERS_RESOURCE_GROUP `
-    --name=$AKS_CLUSTER_NAME
+# az.cmd acs kubernetes get-credentials `
+#     --resource-group=$AKS_PERS_RESOURCE_GROUP `
+#     --name=$AKS_CLUSTER_NAME
 
 # Write-Output "Getting kube config by ssh to the master VM"
 # $MASTER_VM_NAME = "${AKS_PERS_RESOURCE_GROUP}.${AKS_PERS_LOCATION}.cloudapp.azure.com"
@@ -307,7 +306,7 @@ az.cmd acs kubernetes get-credentials `
 # Get-SCPFile -LocalFile "$env:userprofile\.kube\config" -RemoteFile "./.kube/config" -ComputerName ${MASTER_VM_NAME} -KeyFile "${SSH_PRIVATE_KEY_FILE}" -Credential $Credential -AcceptKey -Verbose -Force
 # Remove-SSHSession -SessionId 0
 
-# Copy-Item -Path "$acsoutputfolder\kubeconfig\kubeconfig.$AKS_PERS_LOCATION.json" -Destination "$env:userprofile\.kube\config"
+Copy-Item -Path "$acsoutputfolder\kubeconfig\kubeconfig.$AKS_PERS_LOCATION.json" -Destination "$env:userprofile\.kube\config"
 
 # ssh -i "${SSH_PRIVATE_KEY_FILE}" "azureuser@${MASTER_VM_NAME}" cat ./.kube/config > "$env:userprofile\.kube\config"
 

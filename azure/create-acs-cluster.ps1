@@ -1,4 +1,4 @@
-write-output "Version 2017.12.15.4"
+write-output "Version 2017.12.15.5"
 
 #
 # This script is meant for quick & easy install via:
@@ -64,6 +64,8 @@ if ( $pathItems -notcontains "$AKS_LOCAL_FOLDER") {
     Write-Output "New PATH:"
     $newpath = (Get-ItemProperty -Path "Registry::HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\Session Manager\Environment" -Name PATH).path
     Write-Output "$newpath"
+    # for current session set the PATH too.  the above only takes effect if powershell is reopened
+    $ENV:PATH="$ENV:PATH;$AKS_LOCAL_FOLDER"
 }
 else {
     Write-Output "$AKS_LOCAL_FOLDER is already in PATH"
@@ -77,19 +79,21 @@ if (!(Test-Path -Path "$AKS_FOLDER_FOR_SSH_KEY")) {
 }
 
 # check if SSH key is present
-$SSH_PUBLIC_KEY_FILE = "$AKS_FOLDER_FOR_SSH_KEY/id_rsa"
-if (!(Test-Path "$SSH_PUBLIC_KEY_FILE")) {
-    Write-Output "SSH key does not exist in $SSH_PUBLIC_KEY_FILE."
-    $SSH_PUBLIC_KEY_FILE_UNIX_PATH = (($SSH_PUBLIC_KEY_FILE -replace "\\", "/") -replace ":", "").ToLower().Trim("/")    
+$SSH_PRIVATE_KEY_FILE = "$AKS_FOLDER_FOR_SSH_KEY\id_rsa"
+$SSH_PRIVATE_KEY_FILE_UNIX_PATH = "/" + (($SSH_PRIVATE_KEY_FILE -replace "\\", "/") -replace ":", "").ToLower().Trim("/")    
+
+if (!(Test-Path "$SSH_PRIVATE_KEY_FILE")) {
+    Write-Output "SSH key does not exist in $SSH_PRIVATE_KEY_FILE."
     Write-Output "Please open Git Bash and run:"
-    Write-Output "ssh-keygen -t rsa -b 2048 -q -N '' -C azureuser@linuxvm -f /$SSH_PUBLIC_KEY_FILE_UNIX_PATH"
+    Write-Output "ssh-keygen -t rsa -b 2048 -q -N '' -C azureuser@linuxvm -f $SSH_PRIVATE_KEY_FILE_UNIX_PATH"
     Read-Host "Hit ENTER after you're done"
 }
 else {
-    Write-Output "SSH key already exists at $SSH_PUBLIC_KEY_FILE so using it"
+    Write-Output "SSH key already exists at $SSH_PRIVATE_KEY_FILE so using it"
 }
 
-$AKS_SSH_KEY = Get-Content "$SSH_PUBLIC_KEY_FILE.pub" -First 1
+$SSH_PUBLIC_KEY_FILE = "$AKS_FOLDER_FOR_SSH_KEY\id_rsa.pub"
+$AKS_SSH_KEY = Get-Content "$SSH_PUBLIC_KEY_FILE" -First 1
 Write-Output "SSH Public Key=$AKS_SSH_KEY"
 
 $KUBECTL_FILE = "$AKS_LOCAL_FOLDER\kubectl.exe"
@@ -455,7 +459,9 @@ if (!(Test-Path -Path "$env:userprofile\.kube")) {
 
 Copy-Item -Path "$acsoutputfolder\kubeconfig\kubeconfig.$AKS_PERS_LOCATION.json" -Destination "$env:userprofile\.kube\config"
 
-# ssh -i "${SSH_PRIVATE_KEY_FILE}" "azureuser@${MASTER_VM_NAME}" cat ./.kube/config > "$env:userprofile\.kube\config"
+$MASTER_VM_NAME = "${AKS_PERS_RESOURCE_GROUP}.${AKS_PERS_LOCATION}.cloudapp.azure.com"
+Write-Output "You can connect to master VM in Git Bash for debugging using:"
+Write-Output "ssh -i ${SSH_PRIVATE_KEY_FILE_UNIX_PATH} azureuser@${MASTER_VM_NAME}"
 
 Write-Output "Check nodes via kubectl"
 $command = "$AKS_LOCAL_FOLDER\kubectl get nodes -o=name"

@@ -45,6 +45,63 @@ $AKS_SUBSCRIPTION_ID = az account show --query "id" --output tsv
 
 $AKS_PERS_RESOURCE_GROUP = Read-Host "Resource Group: (e.g., fabricnlp-rg)"
 
+$AKS_LOCAL_FOLDER = Read-Host "Folder to store SSH keys: (default: c:\kubernetes)"
+
+if(!"$AKS_LOCAL_FOLDER"){$AKS_LOCAL_FOLDER="C:\kubernetes"}
+
+if(!(Test-Path -Path "$AKS_LOCAL_FOLDER"))
+{
+    Write-Output "$AKS_LOCAL_FOLDER does not exit.  Creating it..."
+    New-Item -ItemType directory -Path $AKS_LOCAL_FOLDER
+}
+
+$AKS_FOLDER_FOR_SSH_KEY="$AKS_LOCAL_FOLDER\ssh\$AKS_PERS_RESOURCE_GROUP"
+
+if(!(Test-Path -Path "$AKS_FOLDER_FOR_SSH_KEY"))
+{
+    Write-Output "$AKS_FOLDER_FOR_SSH_KEY does not exit.  Creating it..."
+    New-Item -ItemType directory -Path "$AKS_FOLDER_FOR_SSH_KEY"
+}
+
+# check if SSH key is present
+$SSH_PUBLIC_KEY_FILE = "$AKS_FOLDER_FOR_SSH_KEY/id_rsa"
+if (!(Test-Path "$SSH_PUBLIC_KEY_FILE")) {
+    Write-Output "SSH key does not exist in $SSH_PUBLIC_KEY_FILE."
+    $SSH_PUBLIC_KEY_FILE_UNIX_PATH = (($SSH_PUBLIC_KEY_FILE -replace "\\","/") -replace ":","").ToLower().Trim("/")    
+    Write-Output "Please open Git Bash and run:"
+    Write-Output "ssh-keygen -t rsa -b 2048 -q -N '' -C azureuser@linuxvm -f /$SSH_PUBLIC_KEY_FILE_UNIX_PATH"
+    exit 0
+}
+else {
+    Write-Output "SSH key already exists at $SSH_PUBLIC_KEY_FILE so using it"
+}
+
+$AKS_SSH_KEY = Get-Content "$SSH_PUBLIC_KEY_FILE.pub" -First 1
+Write-Output "SSH Public Key=$AKS_SSH_KEY"
+
+$KUBECTL_FILE = "$AKS_LOCAL_FOLDER\kubectl.exe"
+if (!(Test-Path "$KUBECTL_FILE")) {
+    Write-Output "Downloading kubectl.exe to $KUBECTL_FILE"
+    $url="https://storage.googleapis.com/kubernetes-release/release/v1.8.0/bin/windows/amd64/kubectl.exe"
+    (New-Object System.Net.WebClient).DownloadFile($url, $KUBECTL_FILE)
+}
+else {
+    Write-Output "kubectl already exists at $KUBECTL_FILE"    
+}
+
+# echo download as-engine
+$ACS_ENGINE_FILE = "$AKS_LOCAL_FOLDER\acs-engine.exe"
+if (!(Test-Path "$ACS_ENGINE_FILE")) {
+    Write-Output "Downloading acs-engine.exe to $ACS_ENGINE_FILE"
+    $url="https://github.com/Azure/acs-engine/releases/download/v0.10.0/acs-engine-v0.10.0-windows-amd64.zip"
+    (New-Object System.Net.WebClient).DownloadFile($url, "$AKS_LOCAL_FOLDER\acs-engine.zip")
+    Expand-Archive -Path "$AKS_LOCAL_FOLDER\acs-engine.zip" -DestinationPath "$AKS_LOCAL_FOLDER" -Force
+    Copy-Item -Path "$AKS_LOCAL_FOLDER\acs-engine-v0.10.0-windows-amd64\acs-engine.exe" -Destination $ACS_ENGINE_FILE
+}
+else {
+    Write-Output "acs-engine.exe already exists at $ACS_ENGINE_FILE"    
+}
+
 $AKS_PERS_LOCATION = Read-Host "Location: (e.g., eastus)"
 
 $AKS_CLUSTER_NAME = "kubcluster"
@@ -173,14 +230,6 @@ if ("$AKS_SUBNET_RESOURCE_GROUP") {
 Write-Output "Create Azure Container Service cluster"
 
 $mysubnetid = "/subscriptions/${AKS_SUBSCRIPTION_ID}/resourceGroups/${AKS_SUBNET_RESOURCE_GROUP}/providers/Microsoft.Network/virtualNetworks/${AKS_VNET_NAME}/subnets/${AKS_SUBNET_NAME}"
-
-$SSH_PUBLIC_KEY_FILE = "$env:userprofile/.ssh/id_rsa.pub"
-if (!(Test-Path "$SSH_PUBLIC_KEY_FILE")) {
-    Write-Output "SSH key does not exist in $SSH_PUBLIC_KEY_FILE.  Creating it..."
-    ssh-keygen -t rsa -b 2048 -q -N "" -C azureuser@linuxvm -f "$SSH_PUBLIC_KEY_FILE"
-}
-
-$AKS_SSH_KEY = Get-Content "$SSH_PUBLIC_KEY_FILE" -First 1
 
 $dnsNamePrefix = "$AKS_PERS_RESOURCE_GROUP"
 
@@ -315,7 +364,8 @@ Write-Output "Generating ACS engine template"
 #                     --api-model "$output" `
 #                     --output-directory "$acsoutputfolder"
 
-acs-engine generate "$output" --output-directory "$acsoutputfolder"
+$command = "$AKS_LOCAL_FOLDER\acs-engine generate $output --output-directory $acsoutputfolder"
+Invoke-Expression "$command"
 
 # --orchestrator-version 1.8 `
 # --ssh-key-value 
@@ -376,12 +426,13 @@ Copy-Item -Path "$acsoutputfolder\kubeconfig\kubeconfig.$AKS_PERS_LOCATION.json"
 # ssh -i "${SSH_PRIVATE_KEY_FILE}" "azureuser@${MASTER_VM_NAME}" cat ./.kube/config > "$env:userprofile\.kube\config"
 
 Write-Output "Check nodes via kubectl"
-kubectl get nodes
+$command = "$AKS_LOCAL_FOLDER\kubectl get nodes -o=name"
+Invoke-Expression "$command"
 
 $nodeCount = 0
 
 while ($nodeCount -lt 3) {
-    $lines = kubectl get nodes -o=name | Measure-Object -Line
+    $lines = Invoke-Expression "$command" | Measure-Object -Line
     $nodeCount = $lines.Lines
     Start-Sleep -s 10
 }

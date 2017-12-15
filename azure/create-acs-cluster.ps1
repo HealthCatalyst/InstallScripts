@@ -117,6 +117,16 @@ $AKS_VNET_NAME = Read-Host "Virtual Network Name: (leave empty for default)"
 if ("$AKS_VNET_NAME") {
     $AKS_SUBNET_NAME = Read-Host "Subnet Name"
     $AKS_SUBNET_RESOURCE_GROUP = Read-Host "Resource Group of Subnet"
+
+    # verify the subnet exists
+    $mysubnetid = "/subscriptions/${AKS_SUBSCRIPTION_ID}/resourceGroups/${AKS_SUBNET_RESOURCE_GROUP}/providers/Microsoft.Network/virtualNetworks/${AKS_VNET_NAME}/subnets/${AKS_SUBNET_NAME}"
+
+    $subnetexists= az resource show --ids $mysubnetid --query "id" -o tsv
+    if(!"$subnetexists"){
+        Write-Host "The subnet was not found: $mysubnetid"
+        Read-Host "Hit ENTER to exit"
+        exit 0        
+    }
 }
 
 $AKS_OPEN_TO_PUBLIC = Read-Host "Do you want this cluster open to public? (y/n)"

@@ -2,10 +2,10 @@ write-output "Version 1.068"
 
 #
 # This script is meant for quick & easy install via:
-#   curl -useb https://healthcatalyst.github.io/InstallScripts/azure/create-acs-cluster.ps1 | iex; install
+#   curl -useb https://healthcatalyst.github.io/InstallScripts/azure/create-acs-cluster.ps1 | iex;
 
-#$GITHUB_URL = "https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master"
-$GITHUB_URL = "."
+$GITHUB_URL = "https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master"
+#$GITHUB_URL = "."
 
 $AKS_PERS_RESOURCE_GROUP = ""
 $AKS_PERS_LOCATION = ""
@@ -105,6 +105,12 @@ else {
     $AKS_SERVICE_PRINCIPAL_CLIENTSECRET = az ad sp create-for-rbac --role="Contributor" --scopes="$myscope" --name ${AKS_SERVICE_PRINCIPAL_NAME} --query "password" --output tsv
     $AKS_SERVICE_PRINCIPAL_CLIENTID = az ad sp list --display-name ${AKS_SERVICE_PRINCIPAL_NAME} --query "[].appId" --output tsv
     Write-Output "created $AKS_SERVICE_PRINCIPAL_NAME clientId=$AKS_SERVICE_PRINCIPAL_CLIENTID clientsecret=$AKS_SERVICE_PRINCIPAL_CLIENTSECRET"
+}
+
+if("$AKS_SUBNET_RESOURCE_GROUP"){
+    Write-Output "Giving service principal access to vnet resource group: ${AKS_SUBNET_RESOURCE_GROUP}"
+    $subnetscope = "/subscriptions/${AKS_SUBSCRIPTION_ID}/resourceGroups/${AKS_SUBNET_RESOURCE_GROUP}"
+    az role assignment create --assignee $AKS_SERVICE_PRINCIPAL_CLIENTID --role "contributor" --scope "$subnetscope"
 }
 
 Write-Output "Create Azure Container Service cluster"
@@ -375,7 +381,42 @@ kubectl create -f "$GITHUB_URL/azure/ingress.yml"
 
 if ("$AKS_OPEN_TO_PUBLIC" -eq "y") {
     Write-Output "Setting up a public load balancer"
-    kubectl create -f "$GITHUB_URL/azure/loadbalancer-public.yml"
+
+    az network public-ip create -g $AKS_PERS_RESOURCE_GROUP -n IngressPublicIP --location $AKS_PERS_LOCATION --allocation-method Static
+    $publicip = az network public-ip show -g $AKS_PERS_RESOURCE_GROUP -n IngressPublicIP --query "ipAddress" -o tsv;
+
+$serviceyaml = @"
+kind: Service
+apiVersion: v1
+metadata:
+  name: traefik-ingress-service-public
+  namespace: kube-system
+spec:
+  selector:
+    k8s-app: traefik-ingress-lb
+  ports:
+    - protocol: TCP
+      port: 80
+      name: web
+    - protocol: TCP
+      port: 443
+      name: ssl      
+  type: LoadBalancer
+  # Special notes for Azure: To use user-specified public type loadBalancerIP, a static type public IP address resource needs to be created first, 
+  # and it should be in the same resource group of the cluster. 
+  # note that in the case of AKS, that resource group is MC_<resourcegroup>_<cluster>
+  # Then you could specify the assigned IP address as loadBalancerIP
+  # https://kubernetes.io/docs/concepts/services-networking/service/#type-loadbalancer
+  loadBalancerIP: $publicip
+---
+"@
+
+    Write-Output $serviceyaml | kubectl create -f -
+    #kubectl create -f "$GITHUB_URL/azure/loadbalancer-public.yml"
+
+    #kubectl patch service traefik-ingress-service-public --loadBalancerIP=52.191.114.120
+
+    #kubectl patch deployment traefik-ingress-controller -p '{"spec":{"loadBalancerIP":"52.191.114.120"}}'    
 }
 else {
     Write-Output "Setting up a private load balancer"

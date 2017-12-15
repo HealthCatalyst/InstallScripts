@@ -1,4 +1,4 @@
-write-output "Version 2017.12.15.2"
+write-output "Version 2017.12.15.4"
 
 #
 # This script is meant for quick & easy install via:
@@ -47,18 +47,31 @@ $AKS_PERS_RESOURCE_GROUP = Read-Host "Resource Group: (e.g., fabricnlp-rg)"
 
 $AKS_LOCAL_FOLDER = Read-Host "Folder to store SSH keys: (default: c:\kubernetes)"
 
-if(!"$AKS_LOCAL_FOLDER"){$AKS_LOCAL_FOLDER="C:\kubernetes"}
+if (!"$AKS_LOCAL_FOLDER") {$AKS_LOCAL_FOLDER = "C:\kubernetes"}
 
-if(!(Test-Path -Path "$AKS_LOCAL_FOLDER"))
-{
+if (!(Test-Path -Path "$AKS_LOCAL_FOLDER")) {
     Write-Output "$AKS_LOCAL_FOLDER does not exist.  Creating it..."
     New-Item -ItemType directory -Path $AKS_LOCAL_FOLDER
 }
 
-$AKS_FOLDER_FOR_SSH_KEY="$AKS_LOCAL_FOLDER\ssh\$AKS_PERS_RESOURCE_GROUP"
+Write-Output "Checking if $AKS_LOCAL_FOLDER is in PATH"
+$pathItems = ($env:path).split(";")
+if ( $pathItems -notcontains "$AKS_LOCAL_FOLDER") {
+    Write-Output "Adding $AKS_LOCAL_FOLDER to system path"
+    $oldpath = (Get-ItemProperty -Path "Registry::HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\Session Manager\Environment" -Name PATH).path
+    $newpath = "$oldpath;$AKS_LOCAL_FOLDER"
+    Set-ItemProperty -Path "Registry::HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\Session Manager\Environment" -Name PATH -Value $newPath
+    Write-Output "New PATH:"
+    $newpath = (Get-ItemProperty -Path "Registry::HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\Session Manager\Environment" -Name PATH).path
+    Write-Output "$newpath"
+}
+else {
+    Write-Output "$AKS_LOCAL_FOLDER is already in PATH"
+}
 
-if(!(Test-Path -Path "$AKS_FOLDER_FOR_SSH_KEY"))
-{
+$AKS_FOLDER_FOR_SSH_KEY = "$AKS_LOCAL_FOLDER\ssh\$AKS_PERS_RESOURCE_GROUP"
+
+if (!(Test-Path -Path "$AKS_FOLDER_FOR_SSH_KEY")) {
     Write-Output "$AKS_FOLDER_FOR_SSH_KEY does not exist.  Creating it..."
     New-Item -ItemType directory -Path "$AKS_FOLDER_FOR_SSH_KEY"
 }
@@ -67,7 +80,7 @@ if(!(Test-Path -Path "$AKS_FOLDER_FOR_SSH_KEY"))
 $SSH_PUBLIC_KEY_FILE = "$AKS_FOLDER_FOR_SSH_KEY/id_rsa"
 if (!(Test-Path "$SSH_PUBLIC_KEY_FILE")) {
     Write-Output "SSH key does not exist in $SSH_PUBLIC_KEY_FILE."
-    $SSH_PUBLIC_KEY_FILE_UNIX_PATH = (($SSH_PUBLIC_KEY_FILE -replace "\\","/") -replace ":","").ToLower().Trim("/")    
+    $SSH_PUBLIC_KEY_FILE_UNIX_PATH = (($SSH_PUBLIC_KEY_FILE -replace "\\", "/") -replace ":", "").ToLower().Trim("/")    
     Write-Output "Please open Git Bash and run:"
     Write-Output "ssh-keygen -t rsa -b 2048 -q -N '' -C azureuser@linuxvm -f /$SSH_PUBLIC_KEY_FILE_UNIX_PATH"
     Read-Host "Hit ENTER after you're done"
@@ -82,7 +95,7 @@ Write-Output "SSH Public Key=$AKS_SSH_KEY"
 $KUBECTL_FILE = "$AKS_LOCAL_FOLDER\kubectl.exe"
 if (!(Test-Path "$KUBECTL_FILE")) {
     Write-Output "Downloading kubectl.exe to $KUBECTL_FILE"
-    $url="https://storage.googleapis.com/kubernetes-release/release/v1.8.0/bin/windows/amd64/kubectl.exe"
+    $url = "https://storage.googleapis.com/kubernetes-release/release/v1.8.0/bin/windows/amd64/kubectl.exe"
     (New-Object System.Net.WebClient).DownloadFile($url, $KUBECTL_FILE)
 }
 else {
@@ -93,7 +106,7 @@ else {
 $ACS_ENGINE_FILE = "$AKS_LOCAL_FOLDER\acs-engine.exe"
 if (!(Test-Path "$ACS_ENGINE_FILE")) {
     Write-Output "Downloading acs-engine.exe to $ACS_ENGINE_FILE"
-    $url="https://github.com/Azure/acs-engine/releases/download/v0.10.0/acs-engine-v0.10.0-windows-amd64.zip"
+    $url = "https://github.com/Azure/acs-engine/releases/download/v0.10.0/acs-engine-v0.10.0-windows-amd64.zip"
     (New-Object System.Net.WebClient).DownloadFile($url, "$AKS_LOCAL_FOLDER\acs-engine.zip")
     Expand-Archive -Path "$AKS_LOCAL_FOLDER\acs-engine.zip" -DestinationPath "$AKS_LOCAL_FOLDER" -Force
     Copy-Item -Path "$AKS_LOCAL_FOLDER\acs-engine-v0.10.0-windows-amd64\acs-engine.exe" -Destination $ACS_ENGINE_FILE
@@ -121,8 +134,8 @@ if ("$AKS_VNET_NAME") {
     # verify the subnet exists
     $mysubnetid = "/subscriptions/${AKS_SUBSCRIPTION_ID}/resourceGroups/${AKS_SUBNET_RESOURCE_GROUP}/providers/Microsoft.Network/virtualNetworks/${AKS_VNET_NAME}/subnets/${AKS_SUBNET_NAME}"
 
-    $subnetexists= az resource show --ids $mysubnetid --query "id" -o tsv
-    if(!"$subnetexists"){
+    $subnetexists = az resource show --ids $mysubnetid --query "id" -o tsv
+    if (!"$subnetexists") {
         Write-Host "The subnet was not found: $mysubnetid"
         Read-Host "Hit ENTER to exit"
         exit 0        
@@ -161,12 +174,12 @@ if ($resourceGroupExists -eq "true") {
 
     if ($(az vm list -g $AKS_PERS_RESOURCE_GROUP --query "[].id" -o tsv).length -ne 0) {
         Write-Output "delete the VMs first"
-        az vm delete --ids $(az vm list -g $AKS_PERS_RESOURCE_GROUP --query "[].id" -o tsv) --yes
+        az vm delete --ids $(az vm list -g $AKS_PERS_RESOURCE_GROUP --query "[].id" -o tsv) --verbose --yes
     }
 
     if ($(az resource list --resource-group $AKS_PERS_RESOURCE_GROUP --resource-type "Microsoft.Network/networkInterfaces" --query "[].id" -o tsv ).length -ne 0) {
         Write-Output "delete the nics"
-        az resource delete --ids $(az resource list --resource-group $AKS_PERS_RESOURCE_GROUP --resource-type "Microsoft.Network/networkInterfaces" --query "[].id" -o tsv )
+        az resource delete --ids $(az resource list --resource-group $AKS_PERS_RESOURCE_GROUP --resource-type "Microsoft.Network/networkInterfaces" --query "[].id" -o tsv )  --verbose
     }
 
     if ($(az resource list --resource-group $AKS_PERS_RESOURCE_GROUP --resource-type "Microsoft.Compute/disks" --query "[].id" -o tsv ).length -ne 0) {
@@ -435,8 +448,7 @@ if ("$AKS_VNET_NAME") {
 # Get-SCPFile -LocalFile "$env:userprofile\.kube\config" -RemoteFile "./.kube/config" -ComputerName ${MASTER_VM_NAME} -KeyFile "${SSH_PRIVATE_KEY_FILE}" -Credential $Credential -AcceptKey -Verbose -Force
 # Remove-SSHSession -SessionId 0
 
-if(!(Test-Path -Path "$env:userprofile\.kube"))
-{
+if (!(Test-Path -Path "$env:userprofile\.kube")) {
     Write-Output "$env:userprofile\.kube does not exist.  Creating it..."
     New-Item -ItemType directory -Path "$env:userprofile\.kube"
 }

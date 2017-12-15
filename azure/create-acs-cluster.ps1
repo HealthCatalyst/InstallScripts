@@ -334,7 +334,7 @@ function Get-FirstIP {
         $endaddr = IP-toINT64 -ip $end 
     } 
  
-    $startaddr = $startaddr + 50 # skip the first few since they are reserved
+    $startaddr = $startaddr + 100 # skip the first few since they are reserved
     INT64-toIP -int $startaddr
 }
 
@@ -434,6 +434,12 @@ if ("$AKS_VNET_NAME") {
 # # Invoke-SSHCommand -Command "cat ./.kube/config" -SessionId 0 
 # Get-SCPFile -LocalFile "$env:userprofile\.kube\config" -RemoteFile "./.kube/config" -ComputerName ${MASTER_VM_NAME} -KeyFile "${SSH_PRIVATE_KEY_FILE}" -Credential $Credential -AcceptKey -Verbose -Force
 # Remove-SSHSession -SessionId 0
+
+if(!(Test-Path -Path "$env:userprofile\.kube"))
+{
+    Write-Output "$env:userprofile\.kube does not exist.  Creating it..."
+    New-Item -ItemType directory -Path "$env:userprofile\.kube"
+}
 
 Copy-Item -Path "$acsoutputfolder\kubeconfig\kubeconfig.$AKS_PERS_LOCATION.json" -Destination "$env:userprofile\.kube\config"
 

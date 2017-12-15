@@ -2,7 +2,7 @@ write-output "Version 1.068"
 
 #
 # This script is meant for quick & easy install via:
-#   curl -useb https://healthcatalyst.github.io/InstallScripts/azure/create-acs-cluster.ps1 | iex;
+#   curl -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/azure/create-acs-cluster.ps1 | iex;
 
 $GITHUB_URL = "https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master"
 #$GITHUB_URL = "."
@@ -51,7 +51,7 @@ if(!"$AKS_LOCAL_FOLDER"){$AKS_LOCAL_FOLDER="C:\kubernetes"}
 
 if(!(Test-Path -Path "$AKS_LOCAL_FOLDER"))
 {
-    Write-Output "$AKS_LOCAL_FOLDER does not exit.  Creating it..."
+    Write-Output "$AKS_LOCAL_FOLDER does not exist.  Creating it..."
     New-Item -ItemType directory -Path $AKS_LOCAL_FOLDER
 }
 
@@ -59,7 +59,7 @@ $AKS_FOLDER_FOR_SSH_KEY="$AKS_LOCAL_FOLDER\ssh\$AKS_PERS_RESOURCE_GROUP"
 
 if(!(Test-Path -Path "$AKS_FOLDER_FOR_SSH_KEY"))
 {
-    Write-Output "$AKS_FOLDER_FOR_SSH_KEY does not exit.  Creating it..."
+    Write-Output "$AKS_FOLDER_FOR_SSH_KEY does not exist.  Creating it..."
     New-Item -ItemType directory -Path "$AKS_FOLDER_FOR_SSH_KEY"
 }
 
@@ -70,7 +70,7 @@ if (!(Test-Path "$SSH_PUBLIC_KEY_FILE")) {
     $SSH_PUBLIC_KEY_FILE_UNIX_PATH = (($SSH_PUBLIC_KEY_FILE -replace "\\","/") -replace ":","").ToLower().Trim("/")    
     Write-Output "Please open Git Bash and run:"
     Write-Output "ssh-keygen -t rsa -b 2048 -q -N '' -C azureuser@linuxvm -f /$SSH_PUBLIC_KEY_FILE_UNIX_PATH"
-    exit 0
+    Read-Host "Hit ENTER after you're done"
 }
 else {
     Write-Output "SSH key already exists at $SSH_PUBLIC_KEY_FILE so using it"
@@ -129,8 +129,9 @@ if ($resourceGroupExists -eq "true") {
     if ($(az vm list -g $AKS_PERS_RESOURCE_GROUP --query "[].id" -o tsv).length -ne 0) {
         Write-Host "The resource group ${AKS_PERS_RESOURCE_GROUP} already exists with the following VMs"
         az resource list --resource-group "${AKS_PERS_RESOURCE_GROUP}" --resource-type "Microsoft.Compute/virtualMachines" --query "[].id"
-        $confirmation = Read-Host "Would you like to delete it (all above resources will be deleted)? (y/n)"
+        $confirmation = Read-Host "Would you like to continue (all above resources will be deleted)? (y/n)"
         if ($confirmation -eq 'n') {
+            Read-Host "Hit ENTER to exit"
             exit 0
         }    
     }
@@ -461,6 +462,7 @@ else {
 
     if ($storageaccountexists -ne "True" ) {
         Write-Error "Storage account, $AKS_PERS_STORAGE_ACCOUNT_NAME, does not exist."
+        Read-Host "Hit ENTER to exit"
         exit 0
     }
     

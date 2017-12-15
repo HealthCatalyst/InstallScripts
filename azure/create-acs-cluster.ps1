@@ -109,7 +109,7 @@ $AKS_CLUSTER_NAME = "kubcluster"
 
 $AKS_PERS_STORAGE_ACCOUNT_NAME = Read-Host "Storage Account Name: (leave empty for default)"
 
-$AKS_PERS_SHARE_NAME = Read-Host "Storage File share Name: (leave empty for default)"
+# $AKS_PERS_SHARE_NAME = Read-Host "Storage File share Name: (leave empty for default)"
 
 # see if the user wants to use a specific virtual network
 $AKS_VNET_NAME = Read-Host "Virtual Network Name: (leave empty for default)"
@@ -126,6 +126,9 @@ if ("$AKS_VNET_NAME") {
         Write-Host "The subnet was not found: $mysubnetid"
         Read-Host "Hit ENTER to exit"
         exit 0        
+    }
+    else {
+        Write-Output "Found subnet: $mysubnetid"
     }
 }
 

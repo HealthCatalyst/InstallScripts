@@ -68,23 +68,67 @@ $AKS_OPEN_TO_PUBLIC = Read-Host "Do you want this cluster open to public? (y/n)"
 Write-Output "checking if resource group already exists"
 $resourceGroupExists = az group exists --name ${AKS_PERS_RESOURCE_GROUP}
 if ($resourceGroupExists -eq "true") {
-    Write-Host "The resource group ${AKS_PERS_RESOURCE_GROUP} already exists with these resources:"
-    az resource list --resource-group "${AKS_PERS_RESOURCE_GROUP}" --query "[].id"
-    $confirmation = Read-Host "Would you like to delete it (all above resources will be deleted)? (y/n)"
-    if ($confirmation -eq 'n') {
-        exit 0
-    }    
+
+    if ($(az vm list -g $AKS_PERS_RESOURCE_GROUP --query "[].id" -o tsv).length -ne 0) {
+        Write-Host "The resource group ${AKS_PERS_RESOURCE_GROUP} already exists with the following VMs"
+        az resource list --resource-group "${AKS_PERS_RESOURCE_GROUP}" --resource-type "Microsoft.Compute/virtualMachines" --query "[].id"
+        $confirmation = Read-Host "Would you like to delete it (all above resources will be deleted)? (y/n)"
+        if ($confirmation -eq 'n') {
+            exit 0
+        }    
+    }
+    else {
+        Write-Host "The resource group ${AKS_PERS_RESOURCE_GROUP} already exists but has no VMs"
+    }
 
     if ("$AKS_VNET_NAME") {
         # Write-Output "removing route table"
         # az network vnet subnet update -n "${AKS_SUBNET_NAME}" -g "${AKS_SUBNET_RESOURCE_GROUP}" --vnet-name "${AKS_VNET_NAME}" --route-table ""
     }
-    Write-Output "delete existing group: $AKS_PERS_RESOURCE_GROUP"
-    az group delete --name $AKS_PERS_RESOURCE_GROUP --verbose
+    Write-Output "cleaning out the existing group: $AKS_PERS_RESOURCE_GROUP"
+    #az group delete --name $AKS_PERS_RESOURCE_GROUP --verbose
+
+    if ($(az vm list -g $AKS_PERS_RESOURCE_GROUP --query "[].id" -o tsv).length -ne 0) {
+        Write-Output "delete the VMs first"
+        az vm delete --ids $(az vm list -g $AKS_PERS_RESOURCE_GROUP --query "[].id" -o tsv) --yes
+    }
+
+    if ($(az resource list --resource-group $AKS_PERS_RESOURCE_GROUP --resource-type "Microsoft.Network/networkInterfaces" --query "[].id" -o tsv ).length -ne 0) {
+        Write-Output "delete the nics"
+        az resource delete --ids $(az resource list --resource-group $AKS_PERS_RESOURCE_GROUP --resource-type "Microsoft.Network/networkInterfaces" --query "[].id" -o tsv )
+    }
+
+    if ($(az resource list --resource-group $AKS_PERS_RESOURCE_GROUP --resource-type "Microsoft.Compute/disks" --query "[].id" -o tsv ).length -ne 0) {
+        Write-Output "delete the disks"
+        az resource delete --ids $(az resource list --resource-group $AKS_PERS_RESOURCE_GROUP --resource-type "Microsoft.Compute/disks" --query "[].id" -o tsv )
+    }
+
+    if ($(az resource list --resource-group $AKS_PERS_RESOURCE_GROUP --resource-type "Microsoft.Compute/availabilitySets" --query "[].id" -o tsv ).length -ne 0) {
+        Write-Output "delete the availabilitysets"
+        az resource delete --ids $(az resource list --resource-group $AKS_PERS_RESOURCE_GROUP --resource-type "Microsoft.Compute/availabilitySets" --query "[].id" -o tsv )
+    }
+
+    if ($(az resource list --resource-group $AKS_PERS_RESOURCE_GROUP --resource-type "Microsoft.Network/loadBalancers" --query "[].id" -o tsv ).length -ne 0) {
+        Write-Output "delete the load balancers"
+        az resource delete --ids $(az resource list --resource-group $AKS_PERS_RESOURCE_GROUP --resource-type "Microsoft.Network/loadBalancers" --query "[].id" -o tsv )
+    }
+    if ($(az resource list --resource-group $AKS_PERS_RESOURCE_GROUP --resource-type "Microsoft.Network/networkSecurityGroups" --query "[].id" -o tsv ).length -ne 0) {
+        Write-Output "delete the network security groups"
+        az resource delete --ids $(az resource list --resource-group $AKS_PERS_RESOURCE_GROUP --resource-type "Microsoft.Network/networkSecurityGroups" --query "[].id" -o tsv )
+    }
+    if ($(az resource list --resource-group $AKS_PERS_RESOURCE_GROUP --resource-type "Microsoft.Storage/storageAccounts" --query "[].id" -o tsv | Where-Object {!"$_".EndsWith("${AKS_PERS_RESOURCE_GROUP}storage")}).length -ne 0) {
+        Write-Output "delete the storage accounts EXCEPT storage account we created in the past"
+        az resource delete --ids $(az resource list --resource-group $AKS_PERS_RESOURCE_GROUP --resource-type "Microsoft.Storage/storageAccounts" --query "[].id" -o tsv | Where-Object {!"$_".EndsWith("${AKS_PERS_RESOURCE_GROUP}storage")} )
+
+        # az resource list --resource-group fabricnlp3 --resource-type "Microsoft.Storage/storageAccounts" --query "[].id" -o tsv | ForEach-Object { if (!"$_".EndsWith("${AKS_PERS_RESOURCE_GROUP}storage")) {  az resource delete --ids "$_" }}    
+    }
+    # note: do not delete the Microsoft.Network/publicIPAddresses otherwise the loadBalancer will get a new IP
+}
+else {
+    Write-Output "Create the Resource Group"
+    az group create --name $AKS_PERS_RESOURCE_GROUP --location $AKS_PERS_LOCATION --verbose
 }
 
-Write-Output "Create the Resource Group"
-az group create --name $AKS_PERS_RESOURCE_GROUP --location $AKS_PERS_LOCATION --verbose
 
 Write-Output "checking if Service Principal already exists"
 $AKS_SERVICE_PRINCIPAL_NAME = "${AKS_PERS_RESOURCE_GROUP}Kubernetes"
@@ -96,18 +140,31 @@ if ("$AKS_SERVICE_PRINCIPAL_CLIENTID") {
     Write-Host "Service Principal already exists with name: $AKS_SERVICE_PRINCIPAL_NAME"
     Write-Output "Deleting..."
     az ad sp delete --id "$AKS_SERVICE_PRINCIPAL_CLIENTID" --verbose
+    # https://github.com/Azure/azure-cli/issues/1332
+    Write-Output "Sleeping to wait for Service Principal to propagate"
+    Start-Sleep -Seconds 30;
+
     Write-Output "Creating Service Principal: $AKS_SERVICE_PRINCIPAL_NAME"
     $AKS_SERVICE_PRINCIPAL_CLIENTSECRET = az ad sp create-for-rbac --role="Owner" --scopes="$myscope" --name ${AKS_SERVICE_PRINCIPAL_NAME} --query "password" --output tsv
+    # https://github.com/Azure/azure-cli/issues/1332
+    Write-Output "Sleeping to wait for Service Principal to propagate"
+    Start-Sleep -Seconds 30;
+    $AKS_SERVICE_PRINCIPAL_CLIENTID = az ad sp list --display-name ${AKS_SERVICE_PRINCIPAL_NAME} --query "[].appId" --output tsv
     Write-Output "created $AKS_SERVICE_PRINCIPAL_NAME clientId=$AKS_SERVICE_PRINCIPAL_CLIENTID clientsecret=$AKS_SERVICE_PRINCIPAL_CLIENTSECRET"
+    
 }
 else {
     Write-Output "Creating Service Principal: $AKS_SERVICE_PRINCIPAL_NAME"
     $AKS_SERVICE_PRINCIPAL_CLIENTSECRET = az ad sp create-for-rbac --role="Contributor" --scopes="$myscope" --name ${AKS_SERVICE_PRINCIPAL_NAME} --query "password" --output tsv
+    # https://github.com/Azure/azure-cli/issues/1332
+    Write-Output "Sleeping to wait for Service Principal to propagate"
+    Start-Sleep -Seconds 30;
+
     $AKS_SERVICE_PRINCIPAL_CLIENTID = az ad sp list --display-name ${AKS_SERVICE_PRINCIPAL_NAME} --query "[].appId" --output tsv
     Write-Output "created $AKS_SERVICE_PRINCIPAL_NAME clientId=$AKS_SERVICE_PRINCIPAL_CLIENTID clientsecret=$AKS_SERVICE_PRINCIPAL_CLIENTSECRET"
 }
 
-if("$AKS_SUBNET_RESOURCE_GROUP"){
+if ("$AKS_SUBNET_RESOURCE_GROUP") {
     Write-Output "Giving service principal access to vnet resource group: ${AKS_SUBNET_RESOURCE_GROUP}"
     $subnetscope = "/subscriptions/${AKS_SUBSCRIPTION_ID}/resourceGroups/${AKS_SUBNET_RESOURCE_GROUP}"
     az role assignment create --assignee $AKS_SERVICE_PRINCIPAL_CLIENTID --role "contributor" --scope "$subnetscope"
@@ -214,7 +271,7 @@ function Get-FirstIP {
         $endaddr = IP-toINT64 -ip $end 
     } 
  
-    $startaddr = $startaddr + 10 # skip the first few since they are reserved
+    $startaddr = $startaddr + 50 # skip the first few since they are reserved
     INT64-toIP -int $startaddr
 }
 
@@ -260,8 +317,8 @@ Write-Output "Generating ACS engine template"
 
 acs-engine generate "$output" --output-directory "$acsoutputfolder"
 
-    # --orchestrator-version 1.8 `
-    # --ssh-key-value 
+# --orchestrator-version 1.8 `
+# --ssh-key-value 
 
 # az acs create `
 #     --orchestrator-type kubernetes `
@@ -385,7 +442,7 @@ if ("$AKS_OPEN_TO_PUBLIC" -eq "y") {
     az network public-ip create -g $AKS_PERS_RESOURCE_GROUP -n IngressPublicIP --location $AKS_PERS_LOCATION --allocation-method Static
     $publicip = az network public-ip show -g $AKS_PERS_RESOURCE_GROUP -n IngressPublicIP --query "ipAddress" -o tsv;
 
-$serviceyaml = @"
+    $serviceyaml = @"
 kind: Service
 apiVersion: v1
 metadata:

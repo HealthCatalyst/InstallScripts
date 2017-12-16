@@ -1,4 +1,4 @@
-write-output "Version 2017.12.15.5"
+write-output "Version 2017.12.15.7"
 
 #
 # This script is meant for quick & easy install via:
@@ -60,12 +60,15 @@ if ( $pathItems -notcontains "$AKS_LOCAL_FOLDER") {
     Write-Output "Adding $AKS_LOCAL_FOLDER to system path"
     $oldpath = (Get-ItemProperty -Path "Registry::HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\Session Manager\Environment" -Name PATH).path
     $newpath = "$oldpath;$AKS_LOCAL_FOLDER"
-    Set-ItemProperty -Path "Registry::HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\Session Manager\Environment" -Name PATH -Value $newPath
+    Read-Host "Script needs elevated privileges to set PATH.  Hit ENTER to launch script to set PATH"
+    Start-Process powershell -verb RunAs -ArgumentList "Set-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\Session Manager\Environment' -Name PATH -Value $newPath"
     Write-Output "New PATH:"
     $newpath = (Get-ItemProperty -Path "Registry::HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\Session Manager\Environment" -Name PATH).path
-    Write-Output "$newpath"
+    Write-Output "$newpath".split(";")
     # for current session set the PATH too.  the above only takes effect if powershell is reopened
     $ENV:PATH="$ENV:PATH;$AKS_LOCAL_FOLDER"
+    Write-Output "Set path for current powershell session"
+    Write-Output ($env:path).split(";")
 }
 else {
     Write-Output "$AKS_LOCAL_FOLDER is already in PATH"
@@ -207,9 +210,15 @@ if ($resourceGroupExists -eq "true") {
     if ($(az resource list --resource-group $AKS_PERS_RESOURCE_GROUP --resource-type "Microsoft.Storage/storageAccounts" --query "[].id" -o tsv | Where-Object {!"$_".EndsWith("${AKS_PERS_RESOURCE_GROUP}storage")}).length -ne 0) {
         Write-Output "delete the storage accounts EXCEPT storage account we created in the past"
         az resource delete --ids $(az resource list --resource-group $AKS_PERS_RESOURCE_GROUP --resource-type "Microsoft.Storage/storageAccounts" --query "[].id" -o tsv | Where-Object {!"$_".EndsWith("${AKS_PERS_RESOURCE_GROUP}storage")} )
-
         # az resource list --resource-group fabricnlp3 --resource-type "Microsoft.Storage/storageAccounts" --query "[].id" -o tsv | ForEach-Object { if (!"$_".EndsWith("${AKS_PERS_RESOURCE_GROUP}storage")) {  az resource delete --ids "$_" }}    
     }
+    if ($(az resource list --resource-group $AKS_PERS_RESOURCE_GROUP --resource-type "Microsoft.Network/publicIPAddresses" --query "[].id" -o tsv | Where-Object {!"$_".EndsWith("IngressPublicIP")}).length -ne 0) {
+        Write-Output "delete the pulbi IPs EXCEPT Ingress IP we created in the past"
+        az resource delete --ids $(az resource list --resource-group $AKS_PERS_RESOURCE_GROUP --resource-type "Microsoft.Network/publicIPAddresses" --query "[].id" -o tsv | Where-Object {!"$_".EndsWith("IngressPublicIP")} )
+    }
+    
+    
+        
     # note: do not delete the Microsoft.Network/publicIPAddresses otherwise the loadBalancer will get a new IP
 }
 else {
@@ -396,7 +405,7 @@ Write-Output "Generating ACS engine template"
 #                     --output-directory "$acsoutputfolder"
 
 $command = "$AKS_LOCAL_FOLDER\acs-engine generate $output --output-directory $acsoutputfolder"
-Invoke-Expression "$command"
+Invoke-Expression $command
 
 # --orchestrator-version 1.8 `
 # --ssh-key-value 

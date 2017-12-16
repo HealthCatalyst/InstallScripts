@@ -1,4 +1,4 @@
-write-output "Version 2017.12.15.9"
+write-output "Version 2017.12.15.10"
 
 #
 # This script is meant for quick & easy install via:
@@ -59,14 +59,17 @@ $pathItems = ($env:path).split(";")
 if ( $pathItems -notcontains "$AKS_LOCAL_FOLDER") {
     Write-Output "Adding $AKS_LOCAL_FOLDER to system path"
     $oldpath = (Get-ItemProperty -Path "Registry::HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\Session Manager\Environment" -Name PATH).path
-    $newpath = "$oldpath;$AKS_LOCAL_FOLDER"
-    Read-Host "Script needs elevated privileges to set PATH.  Hit ENTER to launch script to set PATH"
-    Start-Process powershell -verb RunAs -ArgumentList "Set-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\Session Manager\Environment' -Name PATH -Value '$newPath'; Read-Host 'Press ENTER'"
-    Write-Output "New PATH:"
-    $newpath = (Get-ItemProperty -Path "Registry::HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\Session Manager\Environment" -Name PATH).path
-    Write-Output "$newpath".split(";")
+    # see if the registry value is wrong too
+    if ( ($oldpath).split(";") -notcontains "$AKS_LOCAL_FOLDER") {
+        $newpath = "$oldpath;$AKS_LOCAL_FOLDER"
+        Read-Host "Script needs elevated privileges to set PATH.  Hit ENTER to launch script to set PATH"
+        Start-Process powershell -verb RunAs -ArgumentList "Set-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\Session Manager\Environment' -Name PATH -Value '$newPath'; Read-Host 'Press ENTER'"
+        Write-Output "New PATH:"
+        $newpath = (Get-ItemProperty -Path "Registry::HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\Session Manager\Environment" -Name PATH).path
+        Write-Output "$newpath".split(";")
+    }
     # for current session set the PATH too.  the above only takes effect if powershell is reopened
-    $ENV:PATH="$ENV:PATH;$AKS_LOCAL_FOLDER"
+    $ENV:PATH = "$ENV:PATH;$AKS_LOCAL_FOLDER"
     Write-Output "Set path for current powershell session"
     Write-Output ($env:path).split(";")
 }

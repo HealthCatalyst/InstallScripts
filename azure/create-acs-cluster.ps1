@@ -1,4 +1,4 @@
-write-output "Version 2017.12.15.10"
+write-output "Version 2017.12.15.12"
 
 #
 # This script is meant for quick & easy install via:
@@ -19,6 +19,7 @@ $AKS_SUBNET_RESOURCE_GROUP = ""
 $AKS_SSH_KEY = ""
 $AKS_FIRST_STATIC_IP = ""
 $AKS_OPEN_TO_PUBLIC = ""
+$AKS_USE_AZURE_NETWORKING = "no"
 
 write-output "Checking if you're already logged in..."
 
@@ -435,10 +436,12 @@ az group deployment create `
 # Write-Output "Saved to $acsoutputfolder\azuredeploy.json"
 
 if ("$AKS_VNET_NAME") {
-    # Write-Output "Attach route table"
-    # https://github.com/Azure/acs-engine/blob/master/examples/vnet/k8s-vnet-postdeploy.sh
-    # $rt = az network route-table list -g "${AKS_PERS_RESOURCE_GROUP}" --query "[].id" -o tsv
-    # az network vnet subnet update -n "${AKS_SUBNET_NAME}" -g "${AKS_SUBNET_RESOURCE_GROUP}" --vnet-name "${AKS_VNET_NAME}" --route-table "$rt"
+    if ("$AKS_USE_AZURE_NETWORKING" -eq "no") {
+        Write-Output "Attach route table"
+        # https://github.com/Azure/acs-engine/blob/master/examples/vnet/k8s-vnet-postdeploy.sh
+        $rt = az network route-table list -g "${AKS_PERS_RESOURCE_GROUP}" --query "[].id" -o tsv
+        az network vnet subnet update -n "${AKS_SUBNET_NAME}" -g "${AKS_SUBNET_RESOURCE_GROUP}" --vnet-name "${AKS_VNET_NAME}" --route-table "$rt"
+    }
 }
 
 # az.cmd acs kubernetes get-credentials `

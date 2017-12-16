@@ -1,4 +1,4 @@
-write-output "Version 2017.12.15.7"
+write-output "Version 2017.12.15.8"
 
 #
 # This script is meant for quick & easy install via:
@@ -404,8 +404,7 @@ Write-Output "Generating ACS engine template"
 #                     --api-model "$output" `
 #                     --output-directory "$acsoutputfolder"
 
-$command = "$AKS_LOCAL_FOLDER\acs-engine generate $output --output-directory $acsoutputfolder"
-Invoke-Expression $command
+acs-engine generate $output --output-directory $acsoutputfolder
 
 # --orchestrator-version 1.8 `
 # --ssh-key-value 
@@ -433,7 +432,7 @@ az group deployment create `
 # Write-Output "Saved to $acsoutputfolder\azuredeploy.json"
 
 if ("$AKS_VNET_NAME") {
-    Write-Output "Attach route table"
+    # Write-Output "Attach route table"
     # https://github.com/Azure/acs-engine/blob/master/examples/vnet/k8s-vnet-postdeploy.sh
     # $rt = az network route-table list -g "${AKS_PERS_RESOURCE_GROUP}" --query "[].id" -o tsv
     # az network vnet subnet update -n "${AKS_SUBNET_NAME}" -g "${AKS_SUBNET_RESOURCE_GROUP}" --vnet-name "${AKS_VNET_NAME}" --route-table "$rt"
@@ -473,13 +472,12 @@ Write-Output "You can connect to master VM in Git Bash for debugging using:"
 Write-Output "ssh -i ${SSH_PRIVATE_KEY_FILE_UNIX_PATH} azureuser@${MASTER_VM_NAME}"
 
 Write-Output "Check nodes via kubectl"
-$command = "$AKS_LOCAL_FOLDER\kubectl get nodes -o=name"
-Invoke-Expression "$command"
+kubectl get nodes -o=name
 
 $nodeCount = 0
 
 while ($nodeCount -lt 3) {
-    $lines = Invoke-Expression "$command" | Measure-Object -Line
+    $lines = kubectl get nodes -o=name | Measure-Object -Line
     $nodeCount = $lines.Lines
     Start-Sleep -s 10
 }

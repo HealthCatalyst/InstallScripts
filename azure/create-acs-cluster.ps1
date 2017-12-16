@@ -1,4 +1,4 @@
-write-output "Version 2017.12.15.8"
+write-output "Version 2017.12.15.9"
 
 #
 # This script is meant for quick & easy install via:
@@ -61,7 +61,7 @@ if ( $pathItems -notcontains "$AKS_LOCAL_FOLDER") {
     $oldpath = (Get-ItemProperty -Path "Registry::HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\Session Manager\Environment" -Name PATH).path
     $newpath = "$oldpath;$AKS_LOCAL_FOLDER"
     Read-Host "Script needs elevated privileges to set PATH.  Hit ENTER to launch script to set PATH"
-    Start-Process powershell -verb RunAs -ArgumentList "Set-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\Session Manager\Environment' -Name PATH -Value $newPath"
+    Start-Process powershell -verb RunAs -ArgumentList "Set-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\Session Manager\Environment' -Name PATH -Value '$newPath'; Read-Host 'Press ENTER'"
     Write-Output "New PATH:"
     $newpath = (Get-ItemProperty -Path "Registry::HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\Session Manager\Environment" -Name PATH).path
     Write-Output "$newpath".split(";")

@@ -5,7 +5,7 @@
             "orchestratorType": "Kubernetes",
             "orchestratorRelease": "1.8",
             "kubernetesConfig": {
-                "networkPolicy": "azure"
+                "networkPolicy": "none"
             }
         },
         "masterProfile": {
@@ -15,7 +15,6 @@
             "vnetSubnetId": "REPLACE-SUBNET",
             "firstConsecutiveStaticIP": "REPLACE-FIRST-STATIC-IP",
             "vnetCidr": "REPLACE_VNET_CIDR",
-            "ipAddressCount": 50,
             "storageProfile": "ManagedDisks"
         },
         "agentPoolProfiles": [{

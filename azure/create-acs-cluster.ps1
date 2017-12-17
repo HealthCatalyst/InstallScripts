@@ -1,4 +1,4 @@
-write-output "Version 2017.12.15.12"
+write-output "Version 2017.12.17.1"
 
 #
 # This script is meant for quick & easy install via:
@@ -364,7 +364,7 @@ function Get-FirstIP {
         $endaddr = IP-toINT64 -ip $end 
     } 
  
-    $startaddr = $startaddr + 100 # skip the first few since they are reserved
+    $startaddr = $startaddr + 256 # skip the first few since they are reserved
     INT64-toIP -int $startaddr
 }
 

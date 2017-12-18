@@ -1,4 +1,4 @@
-write-output "Version 2017.12.18.2"
+write-output "Version 2017.12.18.3"
 
 #
 # This script is meant for quick & easy install via:
@@ -44,11 +44,12 @@ else {
 
 $AKS_SUBSCRIPTION_ID = az account show --query "id" --output tsv
 
-$AKS_PERS_RESOURCE_GROUP = Read-Host "Resource Group: (e.g., fabricnlp-rg)"
+Do { $AKS_PERS_RESOURCE_GROUP = Read-Host "Resource Group: (e.g., fabricnlp-rg)"}
+while ([string]::IsNullOrWhiteSpace($AKS_PERS_RESOURCE_GROUP))
 
 $AKS_LOCAL_FOLDER = Read-Host "Folder to store SSH keys: (default: c:\kubernetes)"
 
-if (!"$AKS_LOCAL_FOLDER") {$AKS_LOCAL_FOLDER = "C:\kubernetes"}
+if ([string]::IsNullOrWhiteSpace($AKS_LOCAL_FOLDER)) {$AKS_LOCAL_FOLDER = "C:\kubernetes"}
 
 if (!(Test-Path -Path "$AKS_LOCAL_FOLDER")) {
     Write-Output "$AKS_LOCAL_FOLDER does not exist.  Creating it..."
@@ -126,7 +127,8 @@ else {
     Write-Output "acs-engine.exe already exists at $ACS_ENGINE_FILE"    
 }
 
-$AKS_PERS_LOCATION = Read-Host "Location: (e.g., eastus)"
+Do { $AKS_PERS_LOCATION = Read-Host "Location: (e.g., eastus)"}
+while ([string]::IsNullOrWhiteSpace($AKS_PERS_LOCATION))
 
 $AKS_CLUSTER_NAME = "kubcluster"
 # $AKS_CLUSTER_NAME = Read-Host "Cluster Name: (e.g., fabricnlpcluster)"
@@ -136,21 +138,31 @@ $AKS_PERS_STORAGE_ACCOUNT_NAME = Read-Host "Storage Account Name: (leave empty f
 # $AKS_PERS_SHARE_NAME = Read-Host "Storage File share Name: (leave empty for default)"
 
 # see if the user wants to use a specific virtual network
-$confirmation = Read-Host "Would you like to connect to an existing virtual network? (y/n)"
+
+Do { $confirmation = Read-Host "Would you like to connect to an existing virtual network? (y/n)"}
+while ([string]::IsNullOrWhiteSpace($confirmation))
+
 if ($confirmation -eq 'y') {
     Write-Output "------  Existing vnets -------"
     Write-Output " vnet `t resourcegroup"
     az network vnet list --query "[].[name,resourceGroup ]" -o tsv    
     Write-Output "------  End vnets -------"
 
-    $AKS_VNET_NAME = Read-Host "Virtual Network Name: (leave empty for default)"
+    
+    Do { $AKS_VNET_NAME = Read-Host "Virtual Network Name:"}
+    while ([string]::IsNullOrWhiteSpace($AKS_VNET_NAME))    
 
     if ("$AKS_VNET_NAME") {
-        $AKS_SUBNET_RESOURCE_GROUP = Read-Host "Resource Group of Virtual Network"
+        
+        Do { $AKS_SUBNET_RESOURCE_GROUP = Read-Host "Resource Group of Virtual Network: "}
+        while ([string]::IsNullOrWhiteSpace($AKS_SUBNET_RESOURCE_GROUP)) 
+
         Write-Output "------  Subnets in $AKS_VNET_NAME -------"
         az network vnet subnet list --resource-group $AKS_SUBNET_RESOURCE_GROUP --vnet-name $AKS_VNET_NAME --query "[].name" -o tsv
         Write-Output "------  End Subnets -------"
-        $AKS_SUBNET_NAME = Read-Host "Subnet Name"
+        
+        Do { $AKS_SUBNET_NAME = Read-Host "Subnet Name: "}
+        while ([string]::IsNullOrWhiteSpace($AKS_SUBNET_NAME)) 
 
         # verify the subnet exists
         $mysubnetid = "/subscriptions/${AKS_SUBSCRIPTION_ID}/resourceGroups/${AKS_SUBNET_RESOURCE_GROUP}/providers/Microsoft.Network/virtualNetworks/${AKS_VNET_NAME}/subnets/${AKS_SUBNET_NAME}"
@@ -177,7 +189,10 @@ if ($resourceGroupExists -eq "true") {
     if ($(az vm list -g $AKS_PERS_RESOURCE_GROUP --query "[].id" -o tsv).length -ne 0) {
         Write-Host "The resource group ${AKS_PERS_RESOURCE_GROUP} already exists with the following VMs"
         az resource list --resource-group "${AKS_PERS_RESOURCE_GROUP}" --resource-type "Microsoft.Compute/virtualMachines" --query "[].id"
-        $confirmation = Read-Host "Would you like to continue (all above resources will be deleted)? (y/n)"
+        
+        Do { $confirmation = Read-Host "Would you like to continue (all above resources will be deleted)? (y/n)"}
+        while ([string]::IsNullOrWhiteSpace($confirmation)) 
+
         if ($confirmation -eq 'n') {
             Read-Host "Hit ENTER to exit"
             exit 0
@@ -384,7 +399,8 @@ if ("$AKS_VNET_NAME") {
     $suggestedFirstStaticIP = Get-FirstIP -ip ${AKS_SUBNET_CIDR}
 
     $AKS_FIRST_STATIC_IP = Read-Host "First static IP: (default: $suggestedFirstStaticIP )"
-    if (!"$AKS_FIRST_STATIC_IP") {
+    
+    if ([string]::IsNullOrWhiteSpace($AKS_FIRST_STATIC_IP)) {
         $AKS_FIRST_STATIC_IP = "$suggestedFirstStaticIP"
     }
 
@@ -490,7 +506,7 @@ Write-Output "ssh -i ${SSH_PRIVATE_KEY_FILE_UNIX_PATH} azureuser@${MASTER_VM_NAM
 
 Write-Output "Check nodes via kubectl"
 # set the environment variable so kubectl gets the new config
-$env:KUBECONFIG="${HOME}\.kube\config"
+$env:KUBECONFIG = "${HOME}\.kube\config"
 kubectl get nodes -o=name
 
 $nodeCount = 0

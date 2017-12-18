@@ -1,7 +1,6 @@
+write-output "Version 2017.12.18.9"
 
-#   curl -useb https://healthcatalyst.github.io/InstallScripts/nlp/installnlpkubernetes.txt | iex; 
-
-$AKS_PERS_RESOURCE_GROUP = ""
+# curl -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/nlp/installnlpkubernetes.ps1 | iex;
 
 $loggedInUser = az account show --query "user.name"  --output tsv
 
@@ -21,10 +20,6 @@ else {
     az login
 }
 
-$AKS_PERS_RESOURCE_GROUP = Read-Host "Resource Group: (e.g., fabricnlp-rg)"
-
-kubectl create namespace fabricnlp
-
 # https://kubernetes.io/docs/reference/kubectl/jsonpath/
 
 # setup DNS
@@ -34,9 +29,19 @@ kubectl create namespace fabricnlp
 #                                        --resource-group $AKS_PERS_RESOURCE_GROUP `
 #                                        --zone-name 
 
-kubectl create secret generic mysqlrootpassword --namespace=fabricnlp --from-literal=password=ILoveNLP2017!
+$mysqlrootpasswordsecure = Read-host "MySQL root password" -AsSecureString 
+$mysqlrootpassword = [Runtime.InteropServices.Marshal]::PtrToStringAuto([Runtime.InteropServices.Marshal]::SecureStringToBSTR($mysqlrootpasswordsecure))
 
-kubectl create secret generic mysqlpassword --namespace=fabricnlp --from-literal=password=ILoveNLP2017!
+$mysqlpasswordsecure = Read-host "MySQL password for NLP database" -AsSecureString 
+$mysqlpassword = [Runtime.InteropServices.Marshal]::PtrToStringAuto([Runtime.InteropServices.Marshal]::SecureStringToBSTR($mysqlpasswordsecure))
+
+Write-Output "WARNING: Be sure to keep the passwords in a secure place or you won't be able to access the data in the cluster afterwards"
+
+kubectl create namespace fabricnlp
+
+kubectl create secret generic mysqlrootpassword --namespace=fabricnlp --from-literal=password=$mysqlrootpassword
+
+kubectl create secret generic mysqlpassword --namespace=fabricnlp --from-literal=password=$mysqlpassword
 
 kubectl create -f https://healthcatalyst.github.io/InstallScripts/nlp/nlp-kubernetes-storage.yml
 
@@ -46,15 +51,13 @@ kubectl create -f https://healthcatalyst.github.io/InstallScripts/nlp/nlp-kubern
 
 kubectl create -f https://healthcatalyst.github.io/InstallScripts/nlp/nlp-mysql-private.yml
 
-kubectl get "deployments,pods,services,ingress,secrets" --namespace=fabricnlp
-
-
+kubectl get deployments,pods,services,ingress,secrets,persistentvolumeclaims,persistentvolumes,nodes --namespace=fabricnlp
 
 # to get a shell
 # kubectl exec -it fabric.nlp.nlpwebserver-85c8cb86b5-gkphh bash --namespace=fabricnlp
 
 # kubectl create secret generic azure-secret --namespace=fabricnlp --from-literal=azurestorageaccountname="fabricnlp7storage" --from-literal=azurestorageaccountkey="/bYhXNstTodg3MdOvTMog/vDLSFrQDpxG/Zgkp2MlnjtOWhDBNQ2xOs6zjRoZYNjmJHya34MfzqdfOwXkMDN2A=="
 
-
-kubectl get deployments,pods,services,ingress,secrets,persistentvolumeclaims,persistentvolumes,nodes --namespace=fabricnlp
+Write-Output "To get status of Fabric.NLP run:"
+Write-Output "kubectl get deployments,pods,services,ingress,secrets,persistentvolumeclaims,persistentvolumes,nodes --namespace=fabricnlp"
 

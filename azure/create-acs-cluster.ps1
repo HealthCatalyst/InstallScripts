@@ -1,4 +1,4 @@
-write-output "Version 2017.12.18.4"
+write-output "Version 2017.12.18.6"
 
 #
 # This script is meant for quick & easy install via:
@@ -134,6 +134,13 @@ $AKS_CLUSTER_NAME = "kubcluster"
 # $AKS_CLUSTER_NAME = Read-Host "Cluster Name: (e.g., fabricnlpcluster)"
 
 $AKS_PERS_STORAGE_ACCOUNT_NAME = Read-Host "Storage Account Name (leave empty for default)"
+if ([string]::IsNullOrWhiteSpace($AKS_PERS_STORAGE_ACCOUNT_NAME)) {
+    $AKS_PERS_STORAGE_ACCOUNT_NAME = "${AKS_PERS_RESOURCE_GROUP}storage"
+    # remove non-alphanumeric characters and use lowercase since azure doesn't allow those in a storage account
+    $AKS_PERS_STORAGE_ACCOUNT_NAME -replace '[^a-zA-Z0-9]', ''
+    $AKS_PERS_STORAGE_ACCOUNT_NAME = $AKS_PERS_STORAGE_ACCOUNT_NAME.ToLower()
+    Write-Output "Using storage account: [$AKS_PERS_STORAGE_ACCOUNT_NAME]"
+}
 
 # $AKS_PERS_SHARE_NAME = Read-Host "Storage File share Name: (leave empty for default)"
 
@@ -176,7 +183,7 @@ if ($confirmation -eq 'y') {
             exit 0        
         }
         else {
-            Write-Output "Found subnet: $mysubnetid"
+            Write-Output "Found subnet: [$mysubnetid]"
         }
     }
 }    
@@ -189,7 +196,7 @@ $resourceGroupExists = az group exists --name ${AKS_PERS_RESOURCE_GROUP}
 if ($resourceGroupExists -eq "true") {
 
     if ($(az vm list -g $AKS_PERS_RESOURCE_GROUP --query "[].id" -o tsv).length -ne 0) {
-        Write-Host "The resource group ${AKS_PERS_RESOURCE_GROUP} already exists with the following VMs"
+        Write-Host "The resource group [${AKS_PERS_RESOURCE_GROUP}] already exists with the following VMs"
         az resource list --resource-group "${AKS_PERS_RESOURCE_GROUP}" --resource-type "Microsoft.Compute/virtualMachines" --query "[].id"
         
         Do { $confirmation = Read-Host "Would you like to continue (all above resources will be deleted)? (y/n)"}
@@ -201,14 +208,14 @@ if ($resourceGroupExists -eq "true") {
         }    
     }
     else {
-        Write-Host "The resource group ${AKS_PERS_RESOURCE_GROUP} already exists but has no VMs"
+        Write-Host "The resource group [${AKS_PERS_RESOURCE_GROUP}] already exists but has no VMs"
     }
 
     if ("$AKS_VNET_NAME") {
         # Write-Output "removing route table"
         # az network vnet subnet update -n "${AKS_SUBNET_NAME}" -g "${AKS_SUBNET_RESOURCE_GROUP}" --vnet-name "${AKS_VNET_NAME}" --route-table ""
     }
-    Write-Output "cleaning out the existing group: $AKS_PERS_RESOURCE_GROUP"
+    Write-Output "cleaning out the existing group: [$AKS_PERS_RESOURCE_GROUP]"
     #az group delete --name $AKS_PERS_RESOURCE_GROUP --verbose
 
     if ($(az vm list -g $AKS_PERS_RESOURCE_GROUP --query "[].id" -o tsv).length -ne 0) {
@@ -264,14 +271,14 @@ $AKS_SERVICE_PRINCIPAL_CLIENTID = az ad sp list --display-name ${AKS_SERVICE_PRI
 $myscope = "/subscriptions/${AKS_SUBSCRIPTION_ID}/resourceGroups/${AKS_PERS_RESOURCE_GROUP}"
 
 if ("$AKS_SERVICE_PRINCIPAL_CLIENTID") {
-    Write-Host "Service Principal already exists with name: $AKS_SERVICE_PRINCIPAL_NAME"
+    Write-Host "Service Principal already exists with name: [$AKS_SERVICE_PRINCIPAL_NAME]"
     Write-Output "Deleting..."
     az ad sp delete --id "$AKS_SERVICE_PRINCIPAL_CLIENTID" --verbose
     # https://github.com/Azure/azure-cli/issues/1332
     Write-Output "Sleeping to wait for Service Principal to propagate"
     Start-Sleep -Seconds 30;
 
-    Write-Output "Creating Service Principal: $AKS_SERVICE_PRINCIPAL_NAME"
+    Write-Output "Creating Service Principal: [$AKS_SERVICE_PRINCIPAL_NAME]"
     $AKS_SERVICE_PRINCIPAL_CLIENTSECRET = az ad sp create-for-rbac --role="Owner" --scopes="$myscope" --name ${AKS_SERVICE_PRINCIPAL_NAME} --query "password" --output tsv
     # https://github.com/Azure/azure-cli/issues/1332
     Write-Output "Sleeping to wait for Service Principal to propagate"
@@ -281,7 +288,7 @@ if ("$AKS_SERVICE_PRINCIPAL_CLIENTID") {
     
 }
 else {
-    Write-Output "Creating Service Principal: $AKS_SERVICE_PRINCIPAL_NAME"
+    Write-Output "Creating Service Principal: [$AKS_SERVICE_PRINCIPAL_NAME]"
     $AKS_SERVICE_PRINCIPAL_CLIENTSECRET = az ad sp create-for-rbac --role="Contributor" --scopes="$myscope" --name ${AKS_SERVICE_PRINCIPAL_NAME} --query "password" --output tsv
     # https://github.com/Azure/azure-cli/issues/1332
     Write-Output "Sleeping to wait for Service Principal to propagate"
@@ -292,7 +299,7 @@ else {
 }
 
 if ("$AKS_SUBNET_RESOURCE_GROUP") {
-    Write-Output "Giving service principal access to vnet resource group: ${AKS_SUBNET_RESOURCE_GROUP}"
+    Write-Output "Giving service principal access to vnet resource group: [${AKS_SUBNET_RESOURCE_GROUP}]"
     $subnetscope = "/subscriptions/${AKS_SUBSCRIPTION_ID}/resourceGroups/${AKS_SUBNET_RESOURCE_GROUP}"
     az role assignment create --assignee $AKS_SERVICE_PRINCIPAL_CLIENTID --role "contributor" --scope "$subnetscope"
 }
@@ -327,10 +334,10 @@ else {
 }
 
 if ("$AKS_VNET_NAME") {
-    Write-Output "Looking up CIDR for Subnet: ${AKS_SUBNET_NAME}"
+    Write-Output "Looking up CIDR for Subnet: [${AKS_SUBNET_NAME}]"
     $AKS_SUBNET_CIDR = az network vnet subnet show --name ${AKS_SUBNET_NAME} --resource-group ${AKS_SUBNET_RESOURCE_GROUP} --vnet-name ${AKS_VNET_NAME} --query "addressPrefix" --output tsv
 
-    Write-Output "Subnet CIDR=$AKS_SUBNET_CIDR"
+    Write-Output "Subnet CIDR=[$AKS_SUBNET_CIDR]"
 }
 
 # helper functions for subnet match
@@ -404,7 +411,7 @@ if ("$AKS_VNET_NAME") {
         $AKS_FIRST_STATIC_IP = "$suggestedFirstStaticIP"
     }
 
-    Write-Output "First static IP=${AKS_FIRST_STATIC_IP}"
+    Write-Output "First static IP=[${AKS_FIRST_STATIC_IP}]"
 }
 
 # subnet CIDR to mask
@@ -464,7 +471,7 @@ az group deployment create `
 
 if ("$AKS_VNET_NAME") {
     if ("$AKS_USE_AZURE_NETWORKING" -eq "no") {
-        Write-Output "Attach route table"
+        Write-Output "Attaching route table"
         # https://github.com/Azure/acs-engine/blob/master/examples/vnet/k8s-vnet-postdeploy.sh
         $rt = az network route-table list -g "${AKS_PERS_RESOURCE_GROUP}" --query "[].id" -o tsv
         az network vnet subnet update -n "${AKS_SUBNET_NAME}" -g "${AKS_SUBNET_RESOURCE_GROUP}" --vnet-name "${AKS_VNET_NAME}" --route-table "$rt"
@@ -517,35 +524,24 @@ while ($nodeCount -lt 3) {
     Start-Sleep -s 10
 }
 
-Write-Output "Create the storage account"
-if (!"$AKS_PERS_STORAGE_ACCOUNT_NAME") {
-    $AKS_PERS_STORAGE_ACCOUNT_NAME = "${AKS_PERS_RESOURCE_GROUP}storage"
-    Write-Output "Checking to see if storage account exists"
-    $storageaccountexists = az storage account check-name --name $AKS_PERS_STORAGE_ACCOUNT_NAME --query "nameAvailable" --output tsv
 
-    if ($storageaccountexists -ne "True" ) {
-        az storage account check-name --name $AKS_PERS_STORAGE_ACCOUNT_NAME   
-        $confirmation = Read-Host "Storage account, $AKS_PERS_STORAGE_ACCOUNT_NAME, already exists.  Delete it?  (Warning: deletes data) (y/n)"
-        if ($confirmation -eq 'y') {
-            az storage account delete -n $AKS_PERS_STORAGE_ACCOUNT_NAME -g $AKS_PERS_RESOURCE_GROUP
-        }    
-    }
-    else {
-        Write-Output "Using storage account: ${AKS_PERS_STORAGE_ACCOUNT_NAME}"
-        az storage account create -n $AKS_PERS_STORAGE_ACCOUNT_NAME -g $AKS_PERS_RESOURCE_GROUP -l $AKS_PERS_LOCATION --sku Standard_LRS            
-    }
+Write-Output "Checking to see if storage account exists"
+$storageAccountCanBeCreated = az storage account check-name --name $AKS_PERS_STORAGE_ACCOUNT_NAME --query "nameAvailable" --output tsv
+
+if ($storageAccountCanBeCreated -ne "True" ) {
+    az storage account check-name --name $AKS_PERS_STORAGE_ACCOUNT_NAME   
+    $confirmation = Read-Host "Storage account, [$AKS_PERS_STORAGE_ACCOUNT_NAME], already exists.  Delete it?  (Warning: deletes data) (y/n)"
+    if ($confirmation -eq 'y') {
+        az storage account delete -n $AKS_PERS_STORAGE_ACCOUNT_NAME -g $AKS_PERS_RESOURCE_GROUP
+        Write-Output "Creating storage account: [${AKS_PERS_STORAGE_ACCOUNT_NAME}]"
+        az storage account create -n $AKS_PERS_STORAGE_ACCOUNT_NAME -g $AKS_PERS_RESOURCE_GROUP -l $AKS_PERS_LOCATION --sku Standard_LRS                       
+    }    
 }
 else {
-    Write-Output "Checking to see if storage account $AKS_PERS_STORAGE_ACCOUNT_NAME exists"
-    $storageaccountexists = az storage account check-name --name $AKS_PERS_STORAGE_ACCOUNT_NAME --query "nameAvailable" --output tsv
-
-    if ($storageaccountexists -ne "True" ) {
-        Write-Error "Storage account, $AKS_PERS_STORAGE_ACCOUNT_NAME, does not exist."
-        Read-Host "Hit ENTER to exit"
-        exit 0
-    }
-    
+    Write-Output "Creating storage account: [${AKS_PERS_STORAGE_ACCOUNT_NAME}]"
+    az storage account create -n $AKS_PERS_STORAGE_ACCOUNT_NAME -g $AKS_PERS_RESOURCE_GROUP -l $AKS_PERS_LOCATION --sku Standard_LRS            
 }
+
 if (!"${AKS_PERS_SHARE_NAME}") {
     $AKS_PERS_SHARE_NAME = "fileshare"
     Write-Output "Using share name: ${AKS_PERS_SHARE_NAME}"
@@ -560,7 +556,7 @@ if (!"${AKS_PERS_SHARE_NAME}") {
 Write-Output "Get storage account key"
 $STORAGE_KEY = az storage account keys list --resource-group $AKS_PERS_RESOURCE_GROUP --account-name $AKS_PERS_STORAGE_ACCOUNT_NAME --query "[0].value" --output tsv
 
-Write-Output "Storagekey: $STORAGE_KEY"
+Write-Output "Storagekey: [$STORAGE_KEY]"
 
 Write-Output "Creating kubernetes secret"
 kubectl create secret generic azure-secret --from-literal=azurestorageaccountname="${AKS_PERS_STORAGE_ACCOUNT_NAME}" --from-literal=azurestorageaccountkey="${STORAGE_KEY}"
@@ -573,6 +569,8 @@ if ("$AKS_OPEN_TO_PUBLIC" -eq "y") {
 
     az network public-ip create -g $AKS_PERS_RESOURCE_GROUP -n IngressPublicIP --location $AKS_PERS_LOCATION --allocation-method Static
     $publicip = az network public-ip show -g $AKS_PERS_RESOURCE_GROUP -n IngressPublicIP --query "ipAddress" -o tsv;
+
+    Write-Host "Using Public IP: [$publicip]"
 
     $serviceyaml = @"
 kind: Service

@@ -1,4 +1,4 @@
-Write-output "Version 2017.12.18.18"
+Write-output "Version 2017.12.18.19"
 
 #
 # This script is meant for quick & easy install via:
@@ -251,10 +251,7 @@ if ($resourceGroupExists -eq "true") {
         Write-Output "delete the load balancers"
         az resource delete --ids $(az resource list --resource-group $AKS_PERS_RESOURCE_GROUP --resource-type "Microsoft.Network/loadBalancers" --query "[].id" -o tsv )
     }
-    if ($(az resource list --resource-group $AKS_PERS_RESOURCE_GROUP --resource-type "Microsoft.Network/networkSecurityGroups" --query "[].id" -o tsv ).length -ne 0) {
-        Write-Output "delete the network security groups"
-        az resource delete --ids $(az resource list --resource-group $AKS_PERS_RESOURCE_GROUP --resource-type "Microsoft.Network/networkSecurityGroups" --query "[].id" -o tsv )
-    }
+
     if ($(az resource list --resource-group $AKS_PERS_RESOURCE_GROUP --resource-type "Microsoft.Storage/storageAccounts" --query "[].id" -o tsv | Where-Object {!"$_".EndsWith("$AKS_PERS_STORAGE_ACCOUNT_NAME")}).length -ne 0) {
         Write-Output "delete the storage accounts EXCEPT storage account we created in the past"
         az resource delete --ids $(az resource list --resource-group $AKS_PERS_RESOURCE_GROUP --resource-type "Microsoft.Storage/storageAccounts" --query "[].id" -o tsv | Where-Object {!"$_".EndsWith("${AKS_PERS_STORAGE_ACCOUNT_NAME}")} )
@@ -266,20 +263,43 @@ if ($resourceGroupExists -eq "true") {
     }
     
     if ("$AKS_VNET_NAME") {
-        Write-Output "Switching the subnet to a temp route table so we can delete the old route table"
-        if ($(az resource list --resource-group $AKS_PERS_RESOURCE_GROUP --resource-type "Microsoft.Network/routeTables" --query "[].id" -o tsv | Where-Object {"$_".EndsWith("temproutetable")}).length -ne 0) {
-            Write-Output "delete old temproutetable"
-            az resource delete --ids $(az resource list --resource-group $AKS_PERS_RESOURCE_GROUP --resource-type "Microsoft.Network/routeTables" --query "[].id" -o tsv | Where-Object {"$_".EndsWith("temproutetable")} )
+        Write-Output "Switching the subnet to a temp route table and tempnsg so we can delete the old route table and nsg"
+
+        $routeid = $(az network route-table show --name temproutetable --resource-group $AKS_PERS_RESOURCE_GROUP --query "id" -o tsv)
+        if ([string]::IsNullOrWhiteSpace($routeid)) {
+            Write-Output "create temproutetable"
+            $routeid = az network route-table create --name temproutetable --resource-group $AKS_PERS_RESOURCE_GROUP --query "id" -o tsv   
         }
 
-        Write-Output "create temproutetable"
-        $routeid = az network route-table create --name temproutetable --resource-group $AKS_PERS_RESOURCE_GROUP --query "id" -o tsv
-        az network vnet subnet update -n "${AKS_SUBNET_NAME}" -g "${AKS_SUBNET_RESOURCE_GROUP}" --vnet-name "${AKS_VNET_NAME}" --route-table "$routeid"
+        $nsg = $(az network nsg show --name tempnsg --resource-group $AKS_PERS_RESOURCE_GROUP --query "id" -o tsv)
+        if ([string]::IsNullOrWhiteSpace($nsg)) {
+            Write-Output "create tempnsg"
+            $nsg = az network nsg create --name tempnsg --resource-group $AKS_PERS_RESOURCE_GROUP --query "id" -o tsv   
+        }
+
+        Write-Output "Updating the subnet"
+        az network vnet subnet update -n "${AKS_SUBNET_NAME}" -g "${AKS_SUBNET_RESOURCE_GROUP}" --vnet-name "${AKS_VNET_NAME}" --route-table "$routeid" --network-security-group "$nsg"
+
 
         if ($(az resource list --resource-group $AKS_PERS_RESOURCE_GROUP --resource-type "Microsoft.Network/routeTables" --query "[].id" -o tsv | Where-Object {!"$_".EndsWith("temproutetable")}).length -ne 0) {
             Write-Output "delete the routes EXCEPT the temproutetable we just created"
             az resource delete --ids $(az resource list --resource-group $AKS_PERS_RESOURCE_GROUP --resource-type "Microsoft.Network/routeTables" --query "[].id" -o tsv | Where-Object {!"$_".EndsWith("temproutetable")} )
         }
+        if ($(az resource list --resource-group $AKS_PERS_RESOURCE_GROUP --resource-type "Microsoft.Network/networkSecurityGroups" --query "[].id" -o tsv | Where-Object {!"$_".EndsWith("tempnsg")}).length -ne 0) {
+            Write-Output "delete the nsgs EXCEPT the tempnsg we just created"
+            az resource delete --ids $(az resource list --resource-group $AKS_PERS_RESOURCE_GROUP --resource-type "Microsoft.Network/networkSecurityGroups" --query "[].id" -o tsv | Where-Object {!"$_".EndsWith("tempnsg")} )
+        }
+    }
+    else {
+        if ($(az resource list --resource-group $AKS_PERS_RESOURCE_GROUP --resource-type "Microsoft.Network/routeTables" --query "[].id" -o tsv).length -ne 0) {
+            Write-Output "delete the routes EXCEPT the temproutetable we just created"
+            az resource delete --ids $(az resource list --resource-group $AKS_PERS_RESOURCE_GROUP --resource-type "Microsoft.Network/routeTables" --query "[].id" -o tsv)
+        }
+        if ($(az resource list --resource-group $AKS_PERS_RESOURCE_GROUP --resource-type "Microsoft.Network/networkSecurityGroups" --query "[].id" -o tsv ).length -ne 0) {
+            Write-Output "delete the network security groups"
+            az resource delete --ids $(az resource list --resource-group $AKS_PERS_RESOURCE_GROUP --resource-type "Microsoft.Network/networkSecurityGroups" --query "[].id" -o tsv )
+        }
+    
     }
     # note: do not delete the Microsoft.Network/publicIPAddresses otherwise the loadBalancer will get a new IP
 }
@@ -506,6 +526,7 @@ if ("$AKS_VNET_NAME") {
         $nsg = az network nsg list --resource-group ${AKS_PERS_RESOURCE_GROUP} --query "[].id" -o tsv
         az network vnet subnet update -n "${AKS_SUBNET_NAME}" -g "${AKS_SUBNET_RESOURCE_GROUP}" --vnet-name "${AKS_VNET_NAME}" --route-table "$rt" --network-security-group "$nsg"
         az network route-table delete --name temproutetable --resource-group $AKS_PERS_RESOURCE_GROUP
+        az network nsg delete --name tempnsg --resource-group $AKS_PERS_RESOURCE_GROUP
     }
 }
 

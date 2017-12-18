@@ -1,4 +1,4 @@
-Write-output "Version 2017.12.18.17"
+Write-output "Version 2017.12.18.18"
 
 #
 # This script is meant for quick & easy install via:
@@ -33,7 +33,9 @@ if ( "$loggedInUser" ) {
     $SUBSCRIPTION_NAME = az account show --query "name"  --output tsv
     Write-Output "You are currently logged in as [$loggedInUser] into subscription [$SUBSCRIPTION_NAME]"
     
-    $confirmation = Read-Host "Do you want to use this account? (y/n)"
+    Do { $confirmation = Read-Host "Do you want to use this account? (y/n)"}
+    while ([string]::IsNullOrWhiteSpace($confirmation))
+
     if ($confirmation -eq 'n') {
         az login
     }    
@@ -194,8 +196,9 @@ if ($confirmation -eq 'y') {
     }
 }    
 
-$AKS_OPEN_TO_PUBLIC = Read-Host "Do you want this cluster open to public? (y/n)"
 
+Do { $AKS_OPEN_TO_PUBLIC = Read-Host "Do you want this cluster open to public? (y/n)"}
+while ([string]::IsNullOrWhiteSpace($AKS_OPEN_TO_PUBLIC))
 
 Write-Output "checking if resource group already exists"
 $resourceGroupExists = az group exists --name ${AKS_PERS_RESOURCE_GROUP}
@@ -500,7 +503,8 @@ if ("$AKS_VNET_NAME") {
         Write-Output "Attaching route table"
         # https://github.com/Azure/acs-engine/blob/master/examples/vnet/k8s-vnet-postdeploy.sh
         $rt = az network route-table list -g "${AKS_PERS_RESOURCE_GROUP}" --query "[].id" -o tsv
-        az network vnet subnet update -n "${AKS_SUBNET_NAME}" -g "${AKS_SUBNET_RESOURCE_GROUP}" --vnet-name "${AKS_VNET_NAME}" --route-table "$rt"
+        $nsg = az network nsg list --resource-group ${AKS_PERS_RESOURCE_GROUP} --query "[].id" -o tsv
+        az network vnet subnet update -n "${AKS_SUBNET_NAME}" -g "${AKS_SUBNET_RESOURCE_GROUP}" --vnet-name "${AKS_VNET_NAME}" --route-table "$rt" --network-security-group "$nsg"
         az network route-table delete --name temproutetable --resource-group $AKS_PERS_RESOURCE_GROUP
     }
 }
@@ -562,7 +566,10 @@ $storageAccountCanBeCreated = az storage account check-name --name $AKS_PERS_STO
 
 if ($storageAccountCanBeCreated -ne "True" ) {
     az storage account check-name --name $AKS_PERS_STORAGE_ACCOUNT_NAME   
-    $confirmation = Read-Host "Storage account, [$AKS_PERS_STORAGE_ACCOUNT_NAME], already exists.  Delete it?  (Warning: deletes data) (y/n)"
+    
+    Do { $confirmation = Read-Host "Storage account, [$AKS_PERS_STORAGE_ACCOUNT_NAME], already exists.  Delete it?  (Warning: deletes data) (y/n)"}
+    while ([string]::IsNullOrWhiteSpace($confirmation)) 
+
     if ($confirmation -eq 'y') {
         az storage account delete -n $AKS_PERS_STORAGE_ACCOUNT_NAME -g $AKS_PERS_RESOURCE_GROUP
         Write-Output "Creating storage account: [${AKS_PERS_STORAGE_ACCOUNT_NAME}]"
@@ -647,6 +654,7 @@ kubectl get "deployments,pods,services,ingress,secrets" --namespace=kube-system
 Write-Output "Run the following to see status of the cluster"
 Write-Output "kubectl get deployments,pods,services,ingress,secrets --namespace=kube-system"
 
+Write-Output "------------------------"
 Write-Output "To launch the dashboard UI, run:"
 Write-Output "kubectl proxy"
 Write-Output "and then in your browser, navigate to: http://127.0.0.1:8001/ui"

@@ -1,4 +1,4 @@
-write-output "Version 2017.12.18.9"
+write-output "Version 2017.12.18.10"
 
 #
 # This script is meant for quick & easy install via:
@@ -543,15 +543,15 @@ else {
 }
 
 if (!"${AKS_PERS_SHARE_NAME}") {
-    $AKS_PERS_SHARE_NAME = "fileshare"
+    $AKS_PERS_SHARE_NAME = "fabricnlp"
     Write-Output "Using share name: ${AKS_PERS_SHARE_NAME}"
 }
 
 # Export the connection string as an environment variable, this is used when creating the Azure file share
-# $AZURE_STORAGE_CONNECTION_STRING = az storage account show-connection-string -n $AKS_PERS_STORAGE_ACCOUNT_NAME -g $AKS_PERS_RESOURCE_GROUP -o tsv
+$AZURE_STORAGE_CONNECTION_STRING = az storage account show-connection-string -n $AKS_PERS_STORAGE_ACCOUNT_NAME -g $AKS_PERS_RESOURCE_GROUP -o tsv
 
 # Write-Output "Create the file share"
-# az storage share create -n $AKS_PERS_SHARE_NAME --connection-string $AZURE_STORAGE_CONNECTION_STRING
+az storage share create -n $AKS_PERS_SHARE_NAME --connection-string $AZURE_STORAGE_CONNECTION_STRING
 
 Write-Output "Get storage account key"
 $STORAGE_KEY = az storage account keys list --resource-group $AKS_PERS_RESOURCE_GROUP --account-name $AKS_PERS_STORAGE_ACCOUNT_NAME --query "[0].value" --output tsv

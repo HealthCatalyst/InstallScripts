@@ -1,4 +1,4 @@
-Write-output "Version 2017.12.18.11"
+Write-output "Version 2017.12.18.13"
 
 #
 # This script is meant for quick & easy install via:
@@ -318,7 +318,12 @@ if (!"$AKS_VNET_NAME") {
     $templateFile = "acs.template.nosubnet.json"    
 }
 
-$output = "$env:TEMP\acs.json"
+$AKS_LOCAL_TEMP_FOLDER = "$AKS_LOCAL_FOLDER\$AKS_PERS_RESOURCE_GROUP\temp"
+if (!(Test-Path -Path "$AKS_LOCAL_TEMP_FOLDER")) {
+    New-Item -ItemType directory -Path "$AKS_LOCAL_TEMP_FOLDER"
+}
+
+$output = "$AKS_LOCAL_TEMP_FOLDER\acs.json"
 Write-Output "Downloading parameters file from github to $output"
 if (Test-Path $output) {
     Remove-Item $output
@@ -432,7 +437,7 @@ $MyFile = (Get-Content $output) |
 $Utf8NoBomEncoding = New-Object System.Text.UTF8Encoding $False
 [System.IO.File]::WriteAllLines($output, $MyFile, $Utf8NoBomEncoding)
 
-$acsoutputfolder = "$env:TEMP\_output\$dnsNamePrefix"
+$acsoutputfolder = "$AKS_LOCAL_TEMP_FOLDER\_output\$dnsNamePrefix"
 
 Write-Output "Generating ACS engine template"
 
@@ -504,8 +509,13 @@ if (!(Test-Path -Path "$env:userprofile\.kube")) {
     Write-Output "$env:userprofile\.kube does not exist.  Creating it..."
     New-Item -ItemType directory -Path "$env:userprofile\.kube"
 }
+if (!(Test-Path -Path "$AKS_LOCAL_TEMP_FOLDER\.kube")) {
+    New-Item -ItemType directory -Path "$AKS_LOCAL_TEMP_FOLDER\.kube"
+}
 
 Copy-Item -Path "$acsoutputfolder\kubeconfig\kubeconfig.$AKS_PERS_LOCATION.json" -Destination "$env:userprofile\.kube\config"
+
+Copy-Item -Path "$acsoutputfolder\kubeconfig\kubeconfig.$AKS_PERS_LOCATION.json" -Destination "$AKS_LOCAL_TEMP_FOLDER\.kube\config"
 
 $MASTER_VM_NAME = "${AKS_PERS_RESOURCE_GROUP}.${AKS_PERS_LOCATION}.cloudapp.azure.com"
 Write-Output "You can connect to master VM in Git Bash for debugging using:"

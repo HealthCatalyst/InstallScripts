@@ -1,4 +1,4 @@
-write-output "Version 2017.12.18.9"
+write-output "Version 2017.12.18.10"
 
 # curl -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/nlp/installnlpkubernetes.ps1 | iex;
 
@@ -35,7 +35,7 @@ $mysqlrootpassword = [Runtime.InteropServices.Marshal]::PtrToStringAuto([Runtime
 $mysqlpasswordsecure = Read-host "MySQL password for NLP database" -AsSecureString 
 $mysqlpassword = [Runtime.InteropServices.Marshal]::PtrToStringAuto([Runtime.InteropServices.Marshal]::SecureStringToBSTR($mysqlpasswordsecure))
 
-Write-Output "WARNING: Be sure to keep the passwords in a secure place or you won't be able to access the data in the cluster afterwards"
+Write-Warning "WARNING: Be sure to keep the passwords in a secure place or you won't be able to access the data in the cluster afterwards"
 
 kubectl create namespace fabricnlp
 
@@ -61,3 +61,6 @@ kubectl get deployments,pods,services,ingress,secrets,persistentvolumeclaims,per
 Write-Output "To get status of Fabric.NLP run:"
 Write-Output "kubectl get deployments,pods,services,ingress,secrets,persistentvolumeclaims,persistentvolumes,nodes --namespace=fabricnlp"
 
+Write-Output "To launch the dashboard UI, run:"
+Write-Output "kubectl proxy"
+Write-Output "and then in your browser, navigate to: http://127.0.0.1:8001"

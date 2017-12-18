@@ -63,4 +63,4 @@ Write-Output "kubectl get deployments,pods,services,ingress,secrets,persistentvo
 
 Write-Output "To launch the dashboard UI, run:"
 Write-Output "kubectl proxy"
-Write-Output "and then in your browser, navigate to: http://127.0.0.1:8001"
+Write-Output "and then in your browser, navigate to: http://127.0.0.1:8001/ui"

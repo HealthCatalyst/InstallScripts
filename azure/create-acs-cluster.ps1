@@ -1,4 +1,4 @@
-write-output "Version 2017.12.17.2"
+write-output "Version 2017.12.18.1"
 
 #
 # This script is meant for quick & easy install via:
@@ -488,6 +488,8 @@ Write-Output "You can connect to master VM in Git Bash for debugging using:"
 Write-Output "ssh -i ${SSH_PRIVATE_KEY_FILE_UNIX_PATH} azureuser@${MASTER_VM_NAME}"
 
 Write-Output "Check nodes via kubectl"
+# set the environment variable so kubectl gets the new config
+$env:KUBECONFIG="${HOME}\.kube\config"
 kubectl get nodes -o=name
 
 $nodeCount = 0

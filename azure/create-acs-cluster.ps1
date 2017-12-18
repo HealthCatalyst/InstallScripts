@@ -1,4 +1,4 @@
-Write-output "Version 2017.12.18.16"
+Write-output "Version 2017.12.18.17"
 
 #
 # This script is meant for quick & easy install via:
@@ -49,7 +49,7 @@ Do { $AKS_PERS_RESOURCE_GROUP = Read-Host "Resource Group (e.g., fabricnlp-rg)"}
 while ([string]::IsNullOrWhiteSpace($AKS_PERS_RESOURCE_GROUP))
 
 $AKS_SERVICE_PRINCIPAL_NAME = Read-Host "Service account to use (default: ${AKS_PERS_RESOURCE_GROUP}Kubernetes)"
-if ([string]::IsNullOrWhiteSpace($AKS_LOCAL_FOLDER)) {
+if ([string]::IsNullOrWhiteSpace($AKS_SERVICE_PRINCIPAL_NAME)) {
     $AKS_SERVICE_PRINCIPAL_NAME = "${AKS_PERS_RESOURCE_GROUP}Kubernetes"
 }
 

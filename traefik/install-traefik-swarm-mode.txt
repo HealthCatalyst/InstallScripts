@@ -28,16 +28,24 @@ testFQDN () {
 done
 }
 
+### Validate the users entered FQDN is accessible publicly
+
+validateFQDN () {
+  results=$([ "$(dig @9.9.9.9 +short ${FQDN})" ] && echo "got answer")
+  if [ -z "$results" ]; then printf "\n ${bold}$FQDN ${normal}is not resolvable. Please ensure that the server is resolvable via nslookup before re-running this script.\n\n"
+  fi
+}
+
 ### Install Extra Packages for Enterprise Linux. This is needed for certbot.
 printf "Installing Extra Packages for Enterprise Linux\n"
 printf "##############################################\n\n"
 
-#sudo yum install epel-release -y
+sudo yum install epel-release -y
 
 printf "\nInstall certbot for nginx\n"
 printf "############################\n\n"
 
-#sudo yum install certbot-nginx -y
+sudo yum install certbot-nginx -y
 
 printf "\nGet Certificate from Let's Encrypt\n"
 printf "##################################\n\n"
@@ -45,6 +53,7 @@ printf "##################################\n\n"
 ### Get the FQDN of the server and get user verification
 getFQDN
 testFQDN
+validateFQDN
 
 printf "\n########### IMPORTANT ##########\n When the task of getting the SSL Certificate is complete you will need to execute another script to continue the configuration process.\n\n"
 printf "\install-traefik-swarm-mode.txt\n\n"

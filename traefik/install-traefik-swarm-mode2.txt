@@ -28,12 +28,19 @@ testFQDN () {
 done
 }
 
-printf "\nThis is the second scrip in the install and configuration of Traefik in swarm mode."
+validateFQDN () {
+  results=$([ "$(dig @9.9.9.9 +short ${FQDN})" ] && echo "got answer")
+  if [ -z "$results" ]; then printf "\n ${bold}$FQDN ${normal}is not resolvable. Please ensure that the server is resolvable via nslookup before re-running this script.\n\n"
+  fi
+}
+
+printf "\nThis is the second scrip in the install and configuration of Traefik in swarm mode.\n"
 printf "#####################################################################################\n\n"
 
 ### Get the FQDN of the server and get user verification
 getFQDN
 testFQDN
+validateFQDN
 
 ### Create necessary directories and set permission
 printf "\nCreating necessary directories and setting permissions.\n"
@@ -67,9 +74,9 @@ chmod 700 /opt/traefik/traefik.toml /opt/traefik/docker-compose-traefik.yml
 printf "\nSetup Complete.\n"
 printf "###########################################\n\n"
 printf "Run the following command to start the Traefik Docker service.\n"
-printf "\n  docker stack deploy -c /opt/traefik/docker-compose.yml /opt/traefik/traefik \n\n\n"
-printf "Traefik status can be monitored at http://<FQDN of Server>:8080 \n\n"
-printf "Traefik status can be monitored at http://<FQDN of Server>:8080 \n\n"
+printf "\n  docker stack deploy -c /opt/traefik/docker-compose.yml traefik \n\n\n"
+printf "Traefik's status can be monitored at http://$FQDN:8080 \n\n"
+
 
 
 

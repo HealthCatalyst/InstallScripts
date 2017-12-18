@@ -1,4 +1,4 @@
-Write-output "Version 2017.12.18.20"
+Write-output "Version 2017.12.18.21"
 
 #
 # This script is meant for quick & easy install via:
@@ -528,7 +528,15 @@ if ("$AKS_VNET_NAME") {
         # https://github.com/Azure/acs-engine/blob/master/examples/vnet/k8s-vnet-postdeploy.sh
         $rt = az network route-table list -g "${AKS_PERS_RESOURCE_GROUP}" --query "[].id" -o tsv
         $nsg = az network nsg list --resource-group ${AKS_PERS_RESOURCE_GROUP} --query "[].id" -o tsv
+
+        Write-Output "new route: $rt"
+        Write-Output "new nsg: $nsg"
+
         az network vnet subnet update -n "${AKS_SUBNET_NAME}" -g "${AKS_SUBNET_RESOURCE_GROUP}" --vnet-name "${AKS_VNET_NAME}" --route-table "$rt" --network-security-group "$nsg"
+        
+        Write-Output "Sleeping to let subnet be updated"
+        Start-Sleep -Seconds 30
+
         az network route-table delete --name temproutetable --resource-group $AKS_PERS_RESOURCE_GROUP
         az network nsg delete --name tempnsg --resource-group $AKS_PERS_RESOURCE_GROUP
     }

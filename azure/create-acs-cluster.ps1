@@ -1,4 +1,4 @@
-write-output "Version 2017.12.18.3"
+write-output "Version 2017.12.18.4"
 
 #
 # This script is meant for quick & easy install via:
@@ -44,10 +44,10 @@ else {
 
 $AKS_SUBSCRIPTION_ID = az account show --query "id" --output tsv
 
-Do { $AKS_PERS_RESOURCE_GROUP = Read-Host "Resource Group: (e.g., fabricnlp-rg)"}
+Do { $AKS_PERS_RESOURCE_GROUP = Read-Host "Resource Group (e.g., fabricnlp-rg)"}
 while ([string]::IsNullOrWhiteSpace($AKS_PERS_RESOURCE_GROUP))
 
-$AKS_LOCAL_FOLDER = Read-Host "Folder to store SSH keys: (default: c:\kubernetes)"
+$AKS_LOCAL_FOLDER = Read-Host "Folder to store SSH keys (default: c:\kubernetes)"
 
 if ([string]::IsNullOrWhiteSpace($AKS_LOCAL_FOLDER)) {$AKS_LOCAL_FOLDER = "C:\kubernetes"}
 
@@ -133,7 +133,7 @@ while ([string]::IsNullOrWhiteSpace($AKS_PERS_LOCATION))
 $AKS_CLUSTER_NAME = "kubcluster"
 # $AKS_CLUSTER_NAME = Read-Host "Cluster Name: (e.g., fabricnlpcluster)"
 
-$AKS_PERS_STORAGE_ACCOUNT_NAME = Read-Host "Storage Account Name: (leave empty for default)"
+$AKS_PERS_STORAGE_ACCOUNT_NAME = Read-Host "Storage Account Name (leave empty for default)"
 
 # $AKS_PERS_SHARE_NAME = Read-Host "Storage File share Name: (leave empty for default)"
 
@@ -143,25 +143,27 @@ Do { $confirmation = Read-Host "Would you like to connect to an existing virtual
 while ([string]::IsNullOrWhiteSpace($confirmation))
 
 if ($confirmation -eq 'y') {
+    Write-Output "Finding existing vnets..."
     Write-Output "------  Existing vnets -------"
     Write-Output " vnet `t resourcegroup"
     az network vnet list --query "[].[name,resourceGroup ]" -o tsv    
     Write-Output "------  End vnets -------"
 
     
-    Do { $AKS_VNET_NAME = Read-Host "Virtual Network Name:"}
+    Do { $AKS_VNET_NAME = Read-Host "Virtual Network Name"}
     while ([string]::IsNullOrWhiteSpace($AKS_VNET_NAME))    
 
     if ("$AKS_VNET_NAME") {
         
-        Do { $AKS_SUBNET_RESOURCE_GROUP = Read-Host "Resource Group of Virtual Network: "}
+        Do { $AKS_SUBNET_RESOURCE_GROUP = Read-Host "Resource Group of Virtual Network"}
         while ([string]::IsNullOrWhiteSpace($AKS_SUBNET_RESOURCE_GROUP)) 
 
+        Write-Output "Finding existing subnets in $AKS_VNET_NAME ..."
         Write-Output "------  Subnets in $AKS_VNET_NAME -------"
         az network vnet subnet list --resource-group $AKS_SUBNET_RESOURCE_GROUP --vnet-name $AKS_VNET_NAME --query "[].name" -o tsv
         Write-Output "------  End Subnets -------"
         
-        Do { $AKS_SUBNET_NAME = Read-Host "Subnet Name: "}
+        Do { $AKS_SUBNET_NAME = Read-Host "Subnet Name"}
         while ([string]::IsNullOrWhiteSpace($AKS_SUBNET_NAME)) 
 
         # verify the subnet exists
@@ -247,8 +249,6 @@ if ($resourceGroupExists -eq "true") {
         az resource delete --ids $(az resource list --resource-group $AKS_PERS_RESOURCE_GROUP --resource-type "Microsoft.Network/publicIPAddresses" --query "[].id" -o tsv | Where-Object {!"$_".EndsWith("IngressPublicIP")} )
     }
     
-    
-        
     # note: do not delete the Microsoft.Network/publicIPAddresses otherwise the loadBalancer will get a new IP
 }
 else {

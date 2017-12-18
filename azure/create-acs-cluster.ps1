@@ -1,4 +1,4 @@
-write-output "Version 2017.12.18.1"
+write-output "Version 2017.12.18.2"
 
 #
 # This script is meant for quick & easy install via:
@@ -139,8 +139,9 @@ $AKS_PERS_STORAGE_ACCOUNT_NAME = Read-Host "Storage Account Name: (leave empty f
 $confirmation = Read-Host "Would you like to connect to an existing virtual network? (y/n)"
 if ($confirmation -eq 'y') {
     Write-Output "------  Existing vnets -------"
-    az network vnet list --query "[].name" -o tsv
-    Write-Output "------  Subnets in $AKS_VNET_NAME -------"
+    Write-Output " vnet `t resourcegroup"
+    az network vnet list --query "[].[name,resourceGroup ]" -o tsv    
+    Write-Output "------  End vnets -------"
 
     $AKS_VNET_NAME = Read-Host "Virtual Network Name: (leave empty for default)"
 

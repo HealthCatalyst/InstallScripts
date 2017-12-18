@@ -1,4 +1,4 @@
-Write-output "Version 2017.12.18.19"
+Write-output "Version 2017.12.18.20"
 
 #
 # This script is meant for quick & easy install via:
@@ -270,13 +270,17 @@ if ($resourceGroupExists -eq "true") {
             Write-Output "create temproutetable"
             $routeid = az network route-table create --name temproutetable --resource-group $AKS_PERS_RESOURCE_GROUP --query "id" -o tsv   
         }
+        $routeid = $(az network route-table show --name temproutetable --resource-group $AKS_PERS_RESOURCE_GROUP --query "id" -o tsv)
+        Write-Output "temproutetable: $routeid"
 
         $nsg = $(az network nsg show --name tempnsg --resource-group $AKS_PERS_RESOURCE_GROUP --query "id" -o tsv)
         if ([string]::IsNullOrWhiteSpace($nsg)) {
             Write-Output "create tempnsg"
             $nsg = az network nsg create --name tempnsg --resource-group $AKS_PERS_RESOURCE_GROUP --query "id" -o tsv   
         }
-
+        $nsg = $(az network nsg show --name tempnsg --resource-group $AKS_PERS_RESOURCE_GROUP --query "id" -o tsv)
+        Write-Output "tempnsg: $nsg"
+        
         Write-Output "Updating the subnet"
         az network vnet subnet update -n "${AKS_SUBNET_NAME}" -g "${AKS_SUBNET_RESOURCE_GROUP}" --vnet-name "${AKS_VNET_NAME}" --route-table "$routeid" --network-security-group "$nsg"
 

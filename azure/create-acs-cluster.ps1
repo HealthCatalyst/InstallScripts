@@ -1,4 +1,4 @@
-write-output "Version 2017.12.18.8"
+write-output "Version 2017.12.18.9"
 
 #
 # This script is meant for quick & easy install via:
@@ -252,7 +252,7 @@ if ($resourceGroupExists -eq "true") {
         # az resource list --resource-group fabricnlp3 --resource-type "Microsoft.Storage/storageAccounts" --query "[].id" -o tsv | ForEach-Object { if (!"$_".EndsWith("${AKS_PERS_RESOURCE_GROUP}storage")) {  az resource delete --ids "$_" }}    
     }
     if ($(az resource list --resource-group $AKS_PERS_RESOURCE_GROUP --resource-type "Microsoft.Network/publicIPAddresses" --query "[].id" -o tsv | Where-Object {!"$_".EndsWith("IngressPublicIP")}).length -ne 0) {
-        Write-Output "delete the pulbi IPs EXCEPT Ingress IP we created in the past"
+        Write-Output "delete the public IPs EXCEPT Ingress IP we created in the past"
         az resource delete --ids $(az resource list --resource-group $AKS_PERS_RESOURCE_GROUP --resource-type "Microsoft.Network/publicIPAddresses" --query "[].id" -o tsv | Where-Object {!"$_".EndsWith("IngressPublicIP")} )
     }
     
@@ -612,3 +612,5 @@ else {
 
 kubectl get "deployments,pods,services,ingress,secrets" --namespace=kube-system
 
+Write-Output "Run the following to see status of the cluster"
+Write-Output "kubectl get deployments,pods,services,ingress,secrets --namespace=kube-system"

@@ -1,4 +1,4 @@
-Write-output "Version 2017.12.18.14"
+Write-output "Version 2017.12.18.15"
 
 #
 # This script is meant for quick & easy install via:
@@ -258,6 +258,12 @@ if ($resourceGroupExists -eq "true") {
     
     if ("$AKS_VNET_NAME") {
         Write-Output "Switching the subnet to a temp route table so we can delete the old route table"
+        if ($(az resource list --resource-group $AKS_PERS_RESOURCE_GROUP --resource-type "Microsoft.Network/routeTables" --query "[].id" -o tsv | Where-Object {"$_".EndsWith("temproutetable")}).length -ne 0) {
+            Write-Output "delete old temproutetable"
+            az resource delete --ids $(az resource list --resource-group $AKS_PERS_RESOURCE_GROUP --resource-type "Microsoft.Network/routeTables" --query "[].id" -o tsv | Where-Object {"$_".EndsWith("temproutetable")} )
+        }
+
+        Write-Output "create temproutetable"
         $routeid = az network route-table create --name temproutetable --resource-group $AKS_PERS_RESOURCE_GROUP --query "id" -o tsv
         az network vnet subnet update -n "${AKS_SUBNET_NAME}" -g "${AKS_SUBNET_RESOURCE_GROUP}" --vnet-name "${AKS_VNET_NAME}" --route-table "$routeid"
 

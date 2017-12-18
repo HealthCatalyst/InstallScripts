@@ -1,4 +1,4 @@
-Write-output "Version 2017.12.18.13"
+Write-output "Version 2017.12.18.14"
 
 #
 # This script is meant for quick & easy install via:
@@ -256,6 +256,16 @@ if ($resourceGroupExists -eq "true") {
         az resource delete --ids $(az resource list --resource-group $AKS_PERS_RESOURCE_GROUP --resource-type "Microsoft.Network/publicIPAddresses" --query "[].id" -o tsv | Where-Object {!"$_".EndsWith("IngressPublicIP")} )
     }
     
+    if ("$AKS_VNET_NAME") {
+        Write-Output "Switching the subnet to a temp route table so we can delete the old route table"
+        $routeid = az network route-table create --name temproutetable --resource-group $AKS_PERS_RESOURCE_GROUP --query "id" -o tsv
+        az network vnet subnet update -n "${AKS_SUBNET_NAME}" -g "${AKS_SUBNET_RESOURCE_GROUP}" --vnet-name "${AKS_VNET_NAME}" --route-table "$routeid"
+
+        if ($(az resource list --resource-group $AKS_PERS_RESOURCE_GROUP --resource-type "Microsoft.Network/routeTables" --query "[].id" -o tsv | Where-Object {!"$_".EndsWith("temproutetable")}).length -ne 0) {
+            Write-Output "delete the routes EXCEPT the temproutetable we just created"
+            az resource delete --ids $(az resource list --resource-group $AKS_PERS_RESOURCE_GROUP --resource-type "Microsoft.Network/routeTables" --query "[].id" -o tsv | Where-Object {!"$_".EndsWith("temproutetable")} )
+        }
+    }
     # note: do not delete the Microsoft.Network/publicIPAddresses otherwise the loadBalancer will get a new IP
 }
 else {
@@ -480,6 +490,7 @@ if ("$AKS_VNET_NAME") {
         # https://github.com/Azure/acs-engine/blob/master/examples/vnet/k8s-vnet-postdeploy.sh
         $rt = az network route-table list -g "${AKS_PERS_RESOURCE_GROUP}" --query "[].id" -o tsv
         az network vnet subnet update -n "${AKS_SUBNET_NAME}" -g "${AKS_SUBNET_RESOURCE_GROUP}" --vnet-name "${AKS_VNET_NAME}" --route-table "$rt"
+        az network route-table delete --name temproutetable --resource-group $AKS_PERS_RESOURCE_GROUP
     }
 }
 

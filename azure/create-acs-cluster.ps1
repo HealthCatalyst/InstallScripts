@@ -1,4 +1,4 @@
-Write-output "Version 2017.12.18.15"
+Write-output "Version 2017.12.18.16"
 
 #
 # This script is meant for quick & easy install via:
@@ -20,6 +20,7 @@ $AKS_SSH_KEY = ""
 $AKS_FIRST_STATIC_IP = ""
 $AKS_OPEN_TO_PUBLIC = ""
 $AKS_USE_AZURE_NETWORKING = "no"
+$AKS_SERVICE_PRINCIPAL_NAME = ""
 
 write-output "Checking if you're already logged in..."
 
@@ -30,7 +31,7 @@ Write-Output "user: $loggedInUser"
 
 if ( "$loggedInUser" ) {
     $SUBSCRIPTION_NAME = az account show --query "name"  --output tsv
-    Write-Output "You are currently logged in as $loggedInUser into subscription $SUBSCRIPTION_NAME"
+    Write-Output "You are currently logged in as [$loggedInUser] into subscription [$SUBSCRIPTION_NAME]"
     
     $confirmation = Read-Host "Do you want to use this account? (y/n)"
     if ($confirmation -eq 'n') {
@@ -46,6 +47,11 @@ $AKS_SUBSCRIPTION_ID = az account show --query "id" --output tsv
 
 Do { $AKS_PERS_RESOURCE_GROUP = Read-Host "Resource Group (e.g., fabricnlp-rg)"}
 while ([string]::IsNullOrWhiteSpace($AKS_PERS_RESOURCE_GROUP))
+
+$AKS_SERVICE_PRINCIPAL_NAME = Read-Host "Service account to use (default: ${AKS_PERS_RESOURCE_GROUP}Kubernetes)"
+if ([string]::IsNullOrWhiteSpace($AKS_LOCAL_FOLDER)) {
+    $AKS_SERVICE_PRINCIPAL_NAME = "${AKS_PERS_RESOURCE_GROUP}Kubernetes"
+}
 
 $AKS_LOCAL_FOLDER = Read-Host "Folder to store SSH keys (default: c:\kubernetes)"
 
@@ -281,7 +287,6 @@ else {
 
 
 Write-Output "checking if Service Principal already exists"
-$AKS_SERVICE_PRINCIPAL_NAME = "${AKS_PERS_RESOURCE_GROUP}Kubernetes"
 $AKS_SERVICE_PRINCIPAL_CLIENTID = az ad sp list --display-name ${AKS_SERVICE_PRINCIPAL_NAME} --query "[].appId" --output tsv
 
 $myscope = "/subscriptions/${AKS_SUBSCRIPTION_ID}/resourceGroups/${AKS_PERS_RESOURCE_GROUP}"

@@ -1,4 +1,4 @@
-write-output "Version 2017.12.17.1"
+write-output "Version 2017.12.17.2"
 
 #
 # This script is meant for quick & easy install via:
@@ -136,25 +136,35 @@ $AKS_PERS_STORAGE_ACCOUNT_NAME = Read-Host "Storage Account Name: (leave empty f
 # $AKS_PERS_SHARE_NAME = Read-Host "Storage File share Name: (leave empty for default)"
 
 # see if the user wants to use a specific virtual network
-$AKS_VNET_NAME = Read-Host "Virtual Network Name: (leave empty for default)"
+$confirmation = Read-Host "Would you like to connect to an existing virtual network? (y/n)"
+if ($confirmation -eq 'y') {
+    Write-Output "------  Existing vnets -------"
+    az network vnet list --query "[].name" -o tsv
+    Write-Output "------  Subnets in $AKS_VNET_NAME -------"
 
-if ("$AKS_VNET_NAME") {
-    $AKS_SUBNET_NAME = Read-Host "Subnet Name"
-    $AKS_SUBNET_RESOURCE_GROUP = Read-Host "Resource Group of Subnet"
+    $AKS_VNET_NAME = Read-Host "Virtual Network Name: (leave empty for default)"
 
-    # verify the subnet exists
-    $mysubnetid = "/subscriptions/${AKS_SUBSCRIPTION_ID}/resourceGroups/${AKS_SUBNET_RESOURCE_GROUP}/providers/Microsoft.Network/virtualNetworks/${AKS_VNET_NAME}/subnets/${AKS_SUBNET_NAME}"
+    if ("$AKS_VNET_NAME") {
+        $AKS_SUBNET_RESOURCE_GROUP = Read-Host "Resource Group of Virtual Network"
+        Write-Output "------  Subnets in $AKS_VNET_NAME -------"
+        az network vnet subnet list --resource-group $AKS_SUBNET_RESOURCE_GROUP --vnet-name $AKS_VNET_NAME --query "[].name" -o tsv
+        Write-Output "------  End Subnets -------"
+        $AKS_SUBNET_NAME = Read-Host "Subnet Name"
 
-    $subnetexists = az resource show --ids $mysubnetid --query "id" -o tsv
-    if (!"$subnetexists") {
-        Write-Host "The subnet was not found: $mysubnetid"
-        Read-Host "Hit ENTER to exit"
-        exit 0        
+        # verify the subnet exists
+        $mysubnetid = "/subscriptions/${AKS_SUBSCRIPTION_ID}/resourceGroups/${AKS_SUBNET_RESOURCE_GROUP}/providers/Microsoft.Network/virtualNetworks/${AKS_VNET_NAME}/subnets/${AKS_SUBNET_NAME}"
+
+        $subnetexists = az resource show --ids $mysubnetid --query "id" -o tsv
+        if (!"$subnetexists") {
+            Write-Host "The subnet was not found: $mysubnetid"
+            Read-Host "Hit ENTER to exit"
+            exit 0        
+        }
+        else {
+            Write-Output "Found subnet: $mysubnetid"
+        }
     }
-    else {
-        Write-Output "Found subnet: $mysubnetid"
-    }
-}
+}    
 
 $AKS_OPEN_TO_PUBLIC = Read-Host "Do you want this cluster open to public? (y/n)"
 

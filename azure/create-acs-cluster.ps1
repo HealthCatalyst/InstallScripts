@@ -1,4 +1,4 @@
-write-output "Version 2017.12.18.6"
+write-output "Version 2017.12.18.7"
 
 #
 # This script is meant for quick & easy install via:
@@ -137,7 +137,7 @@ $AKS_PERS_STORAGE_ACCOUNT_NAME = Read-Host "Storage Account Name (leave empty fo
 if ([string]::IsNullOrWhiteSpace($AKS_PERS_STORAGE_ACCOUNT_NAME)) {
     $AKS_PERS_STORAGE_ACCOUNT_NAME = "${AKS_PERS_RESOURCE_GROUP}storage"
     # remove non-alphanumeric characters and use lowercase since azure doesn't allow those in a storage account
-    $AKS_PERS_STORAGE_ACCOUNT_NAME -replace '[^a-zA-Z0-9]', ''
+    $AKS_PERS_STORAGE_ACCOUNT_NAME = $AKS_PERS_STORAGE_ACCOUNT_NAME -replace '[^a-zA-Z0-9]', ''
     $AKS_PERS_STORAGE_ACCOUNT_NAME = $AKS_PERS_STORAGE_ACCOUNT_NAME.ToLower()
     Write-Output "Using storage account: [$AKS_PERS_STORAGE_ACCOUNT_NAME]"
 }

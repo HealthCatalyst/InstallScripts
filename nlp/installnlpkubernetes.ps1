@@ -52,11 +52,12 @@ else {
 
 Write-Output "Cleaning out any old resources in fabricnlp"
 
-kubectl delete --all 'deployments, pods, services, ingress, persistentvolumeclaims, persistentvolumes' --namespace=fabricnlp
+# note kubectl doesn't like spaces in between commas below
+kubectl delete --all 'deployments,pods,services,ingress,persistentvolumeclaims,persistentvolumes' --namespace=fabricnlp
 
 Write-Output "Waiting until all the resources are cleared up"
 
-Do { $CLEANUP_DONE = $(kubectl get 'deployments, pods, services, ingress, persistentvolumeclaims, persistentvolumes' --namespace=fabricnlp)}
+Do { $CLEANUP_DONE = $(kubectl get 'deployments,pods,services,ingress,persistentvolumeclaims,persistentvolumes' --namespace=fabricnlp)}
 while (![string]::IsNullOrWhiteSpace($CLEANUP_DONE))
 
 kubectl create -f https://healthcatalyst.github.io/InstallScripts/nlp/nlp-kubernetes-storage.yml
@@ -67,7 +68,7 @@ kubectl create -f https://healthcatalyst.github.io/InstallScripts/nlp/nlp-kubern
 
 kubectl create -f https://healthcatalyst.github.io/InstallScripts/nlp/nlp-mysql-private.yml
 
-kubectl get 'deployments, pods, services, ingress, secrets, persistentvolumeclaims, persistentvolumes, nodes' --namespace=fabricnlp
+kubectl get 'deployments,pods,services,ingress,secrets,persistentvolumeclaims,persistentvolumes,nodes' --namespace=fabricnlp
 
 # to get a shell
 # kubectl exec -it fabric.nlp.nlpwebserver-85c8cb86b5-gkphh bash --namespace=fabricnlp

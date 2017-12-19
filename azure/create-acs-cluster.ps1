@@ -1,4 +1,4 @@
-Write-output "Version 2017.12.18.22"
+Write-output "Version 2017.12.18.23"
 
 #
 # This script is meant for quick & easy install via:

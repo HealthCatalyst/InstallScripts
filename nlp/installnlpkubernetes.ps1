@@ -8,9 +8,11 @@ Write-Output "user: $loggedInUser"
 
 if ( "$loggedInUser" ) {
     $SUBSCRIPTION_NAME = az account show --query "name"  --output tsv
-    Write-Output "You are currently logged in as $loggedInUser into subscription $SUBSCRIPTION_NAME"
+    Write-Output "You are currently logged in as [$loggedInUser] into subscription [$SUBSCRIPTION_NAME]"
+
+    Do { $confirmation = Read-Host "Do you want to use this account? (y/n)"}
+    while ([string]::IsNullOrWhiteSpace($confirmation))
     
-    $confirmation = Read-Host "Do you want to use this account? (y/n)"
     if ($confirmation -eq 'n') {
         az login
     }    
@@ -44,7 +46,7 @@ if ([string]::IsNullOrWhiteSpace($(kubectl get secret mysqlpassword -n fabricnlp
     $mysqlpasswordsecure = Read-host "MySQL password for NLP database" -AsSecureString 
     $mysqlpassword = [Runtime.InteropServices.Marshal]::PtrToStringAuto([Runtime.InteropServices.Marshal]::SecureStringToBSTR($mysqlpasswordsecure))
     kubectl create secret generic mysqlpassword --namespace=fabricnlp --from-literal=password=$mysqlpassword
-    Write-Warning "WARNING: Be sure to keep the passwords in a secure place or you won't be able to access the data in the cluster afterwards"
+    Write-Warning "Be sure to keep the passwords in a secure place or you won't be able to access the data in the cluster afterwards"
 }
 else {
     Write-Output "mysqlpassword secret already set so will reuse it"

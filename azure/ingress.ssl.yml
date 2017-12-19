@@ -1,7 +1,12 @@
+# Traefik Ingress reverse proxy
+# based on https://github.com/containous/traefik/issues/2329
+
+# the config for Traefik so it knows where the certificates are
 apiVersion: v1
 kind: ConfigMap
 metadata:
   name: traefik-conf
+  namespace: kube-system  
 data:
   traefik.toml: |
     # traefik.toml
@@ -15,15 +20,21 @@ data:
       address = ":443"
         [entryPoints.https.tls]
           [[entryPoints.https.tls.certificates]]
-          CertFile = "/ssl/tls.crt"
-          KeyFile = "/ssl/tls.key"
+          # TLS certs for Allina (AHMN): *.ahmn.healthcatalyst.net
+          CertFile = "/ssl/ahmn/tls.crt"
+          KeyFile = "/ssl/ahmn/tls.key"
+          # [[entryPoints.https.tls.certificates]]
+          # CertFile = "/ssl/ahmn/tls.crt"
+          # KeyFile = "/ssl/ahmn/tls.key"        
 ---
+# service account to use for running the traefik ingress service
 apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: traefik-ingress-controller-serviceaccount
   namespace: kube-system
 ---
+# deployment of the pods for traefik service
 kind: Deployment
 apiVersion: extensions/v1beta1
 metadata:
@@ -46,9 +57,12 @@ spec:
       terminationGracePeriodSeconds: 60
       terminationGracePeriodSeconds: 60
       volumes:
-        - name: ssl
+        - name: ssl-ahmn
           secret:
-            secretName: traefik-cert
+            secretName: traefik-cert-ahmn
+        # - name: ssl-ahmn
+        #   secret:
+        #     secretName: traefik-cert-ahmn
         - name: config
           configMap:
             name: traefik-conf
@@ -58,12 +72,21 @@ spec:
         volumeMounts:
           - mountPath: "/config"
             name: "config"        
+          - mountPath: "/ssl/ahmn"
+            name: "ssl-ahmn" 
+          # - mountPath: "/ssl/ahmn"
+          #   name: "ssl-ahmn" 
+        ports:
+          - containerPort: 80
+          - containerPort: 443
+          - containerPort: 8080
         args:
         - --web
         - --kubernetes
         - --configfile=/config/traefik.toml
         - --logLevel=DEBUG
 ---
+# service definition for traefik
 apiVersion: v1
 kind: Service
 metadata:
@@ -76,6 +99,7 @@ spec:
   - port: 80
     targetPort: 8080
 ---
+# ingress for the Traefik admin ui
 apiVersion: extensions/v1beta1
 kind: Ingress
 metadata:

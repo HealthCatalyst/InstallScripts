@@ -18,7 +18,6 @@ $AKS_SUBNET_NAME = ""
 $AKS_SUBNET_RESOURCE_GROUP = ""
 $AKS_SSH_KEY = ""
 $AKS_FIRST_STATIC_IP = ""
-$AKS_OPEN_TO_PUBLIC = ""
 $AKS_USE_AZURE_NETWORKING = "no"
 $AKS_SERVICE_PRINCIPAL_NAME = ""
 
@@ -198,10 +197,6 @@ if ($confirmation -eq 'y') {
         }
     }
 }    
-
-
-Do { $AKS_OPEN_TO_PUBLIC = Read-Host "Do you want this cluster open to public? (y/n)"}
-while ([string]::IsNullOrWhiteSpace($AKS_OPEN_TO_PUBLIC))
 
 Write-Output "checking if resource group already exists"
 $resourceGroupExists = az group exists --name ${AKS_PERS_RESOURCE_GROUP}
@@ -636,63 +631,10 @@ Write-Output "Storagekey: [$STORAGE_KEY]"
 Write-Output "Creating kubernetes secret"
 kubectl create secret generic azure-secret --from-literal=azurestorageaccountname="${AKS_PERS_STORAGE_ACCOUNT_NAME}" --from-literal=azurestorageaccountkey="${STORAGE_KEY}"
 
-Write-Output "Deploy the ingress controller"
-kubectl create -f "$GITHUB_URL/azure/ingress.yml"
-
-if ("$AKS_OPEN_TO_PUBLIC" -eq "y") {
-    Write-Output "Setting up a public load balancer"
-
-    az network public-ip create -g $AKS_PERS_RESOURCE_GROUP -n IngressPublicIP --location $AKS_PERS_LOCATION --allocation-method Static
-    $publicip = az network public-ip show -g $AKS_PERS_RESOURCE_GROUP -n IngressPublicIP --query "ipAddress" -o tsv;
-
-    Write-Host "Using Public IP: [$publicip]"
-
-    $serviceyaml = @"
-kind: Service
-apiVersion: v1
-metadata:
-  name: traefik-ingress-service-public
-  namespace: kube-system
-spec:
-  selector:
-    k8s-app: traefik-ingress-lb
-  ports:
-    - protocol: TCP
-      port: 80
-      name: web
-    - protocol: TCP
-      port: 443
-      name: ssl      
-  type: LoadBalancer
-  # Special notes for Azure: To use user-specified public type loadBalancerIP, a static type public IP address resource needs to be created first, 
-  # and it should be in the same resource group of the cluster. 
-  # note that in the case of AKS, that resource group is MC_<resourcegroup>_<cluster>
-  # Then you could specify the assigned IP address as loadBalancerIP
-  # https://kubernetes.io/docs/concepts/services-networking/service/#type-loadbalancer
-  loadBalancerIP: $publicip
----
-"@
-
-    Write-Output $serviceyaml | kubectl create -f -
-    #kubectl create -f "$GITHUB_URL/azure/loadbalancer-public.yml"
-
-    #kubectl patch service traefik-ingress-service-public --loadBalancerIP=52.191.114.120
-
-    #kubectl patch deployment traefik-ingress-controller -p '{"spec":{"loadBalancerIP":"52.191.114.120"}}'    
-}
-else {
-    Write-Output "Setting up a private load balancer"
-    kubectl create -f "$GITHUB_URL/azure/loadbalancer-internal.yml"
-
-}
-
 kubectl get "deployments,pods,services,ingress,secrets" --namespace=kube-system
 
 Write-Output "Run the following to see status of the cluster"
 Write-Output "kubectl get deployments,pods,services,ingress,secrets --namespace=kube-system"
-
-Write-Output "To get IP of cluster, run:"
-Write-Output "kubectl get svc traefik-ingress-service-private -n kube-system -o jsonpath='{.status.loadBalancer.ingress[].ip}'"
 
 Write-Output "------------------------"
 Write-Output "To launch the dashboard UI, run:"

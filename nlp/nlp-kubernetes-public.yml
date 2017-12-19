@@ -1,4 +1,5 @@
-# ingress for solr web server
+# ingress for web services
+# for SSL, from: https://github.com/containous/traefik/issues/2329
 apiVersion: extensions/v1beta1
 kind: Ingress
 metadata:
@@ -7,6 +8,12 @@ metadata:
   annotations:
     kubernetes.io/ingress.class: traefik
 spec:
+  tls:
+    - secretName: ssl-ahmn
+      hosts:
+        - solr.allina.healthcatalyst.net
+        - nlp.allina.healthcatalyst.net
+        - nlpjobs.allina.healthcatalyst.net
   rules:
   - host: solr.allina.healthcatalyst.net
     http:

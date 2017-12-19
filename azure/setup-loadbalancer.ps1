@@ -1,0 +1,116 @@
+Write-output "Version 2017.12.18.23"
+
+#
+# This script is meant for quick & easy install via:
+#   curl -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/azure/setup-loadbalancer.ps1 | iex;
+
+$GITHUB_URL = "https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master"
+$GITHUB_URL = "."
+
+$AKS_OPEN_TO_PUBLIC = ""
+$AKS_USE_SSL=""
+
+$loggedInUser = az account show --query "user.name"  --output tsv
+
+Write-Output "user: $loggedInUser"
+
+if ( "$loggedInUser" ) {
+    $SUBSCRIPTION_NAME = az account show --query "name"  --output tsv
+    Write-Output "You are currently logged in as [$loggedInUser] into subscription [$SUBSCRIPTION_NAME]"
+    
+    Do { $confirmation = Read-Host "Do you want to use this account? (y/n)"}
+    while ([string]::IsNullOrWhiteSpace($confirmation))
+        
+    if ($confirmation -eq 'n') {
+        az login
+    }    
+}
+else {
+    az login
+}
+
+$AKS_SUBSCRIPTION_ID = az account show --query "id" --output tsv
+
+Do { $AKS_PERS_RESOURCE_GROUP = Read-Host "Resource Group (e.g., fabricnlp-rg)"}
+while ([string]::IsNullOrWhiteSpace($AKS_PERS_RESOURCE_GROUP))
+
+$AKS_PERS_LOCATION = az group show --name $AKS_PERS_RESOURCE_GROUP --query "location" -o tsv
+Write-Output "Using location: [$AKS_PERS_LOCATION]"
+
+Do { $AKS_OPEN_TO_PUBLIC = Read-Host "Do you want this cluster open to public? (y/n)"}
+while ([string]::IsNullOrWhiteSpace($AKS_OPEN_TO_PUBLIC))
+
+Do { $AKS_USE_SSL = Read-Host "Do you want to setup SSL? (y/n)"}
+while ([string]::IsNullOrWhiteSpace($AKS_USE_SSL))
+
+if($AKS_USE_SSL -eq "y" ){
+    # ask for tls cert files
+    Do { $AKS_SSL_CERT_FOLDER = Read-Host "What folder has the tls.crt and tls.key files? (relative path e.g., /temp/certs"}
+    while ([string]::IsNullOrWhiteSpace($AKS_SSL_CERT_FOLDER) -and  (Test-Path -Path "$AKS_SSL_CERT_FOLDER"))
+      
+    Write-Output "Storing TLS certs as kubernetes secret"
+    kubectl create secret generic traefik-cert-ahmn --from-file=$AKS_SSL_CERT_FOLDER/tls.crt --from-file=$AKS_SSL_CERT_FOLDER/tls.key
+
+    Write-Output "Deploy the SSL ingress controller"
+    kubectl create -f "$GITHUB_URL/azure/ingress.ssl.yml"
+}
+else {
+    Write-Output "Deploy the non-SSL ingress controller"
+    kubectl create -f "$GITHUB_URL/azure/ingress.yml"
+}
+
+if ("$AKS_OPEN_TO_PUBLIC" -eq "y") {
+    Write-Output "Setting up a public load balancer"
+
+    $publicip = az network public-ip show -g $AKS_PERS_RESOURCE_GROUP -n IngressPublicIP --query "ipAddress" -o tsv;
+    if ([string]::IsNullOrWhiteSpace($publicip)){
+        az network public-ip create -g $AKS_PERS_RESOURCE_GROUP -n IngressPublicIP --location $AKS_PERS_LOCATION --allocation-method Static
+        $publicip = az network public-ip show -g $AKS_PERS_RESOURCE_GROUP -n IngressPublicIP --query "ipAddress" -o tsv;
+    }  
+
+    Write-Host "Using Public IP: [$publicip]"
+
+    $serviceyaml = @"
+kind: Service
+apiVersion: v1
+metadata:
+  name: traefik-ingress-service-public
+  namespace: kube-system
+spec:
+  selector:
+    k8s-app: traefik-ingress-lb
+  ports:
+    - protocol: TCP
+      port: 80
+      name: web
+    - protocol: TCP
+      port: 443
+      name: ssl      
+  type: LoadBalancer
+  # Special notes for Azure: To use user-specified public type loadBalancerIP, a static type public IP address resource needs to be created first, 
+  # and it should be in the same resource group of the cluster. 
+  # note that in the case of AKS, that resource group is MC_<resourcegroup>_<cluster>
+  # Then you could specify the assigned IP address as loadBalancerIP
+  # https://kubernetes.io/docs/concepts/services-networking/service/#type-loadbalancer
+  loadBalancerIP: $publicip
+---
+"@
+
+    Write-Output $serviceyaml | kubectl create -f -
+    #kubectl create -f "$GITHUB_URL/azure/loadbalancer-public.yml"
+
+    #kubectl patch service traefik-ingress-service-public --loadBalancerIP=52.191.114.120
+
+    #kubectl patch deployment traefik-ingress-controller -p '{"spec":{"loadBalancerIP":"52.191.114.120"}}'    
+}
+else {
+    Write-Output "Setting up a private load balancer"
+    kubectl create -f "$GITHUB_URL/azure/loadbalancer-internal.yml"
+}
+
+
+Write-Output "To get IP of cluster, run:"
+Write-Output "kubectl get svc traefik-ingress-service-private -n kube-system -o jsonpath='{.status.loadBalancer.ingress[].ip}'"
+
+
+

@@ -1,4 +1,4 @@
-Write-output "Version 2017.12.18.21"
+Write-output "Version 2017.12.18.22"
 
 #
 # This script is meant for quick & easy install via:
@@ -170,8 +170,11 @@ if ($confirmation -eq 'y') {
 
     if ("$AKS_VNET_NAME") {
         
-        Do { $AKS_SUBNET_RESOURCE_GROUP = Read-Host "Resource Group of Virtual Network"}
-        while ([string]::IsNullOrWhiteSpace($AKS_SUBNET_RESOURCE_GROUP)) 
+        # Do { $AKS_SUBNET_RESOURCE_GROUP = Read-Host "Resource Group of Virtual Network"}
+        # while ([string]::IsNullOrWhiteSpace($AKS_SUBNET_RESOURCE_GROUP)) 
+
+        $AKS_SUBNET_RESOURCE_GROUP = az network vnet list --query "[?name == '$AKS_VNET_NAME'].resourceGroup" -o tsv
+        Write-Output "Using subnet resource group: [$AKS_SUBNET_RESOURCE_GROUP]"
 
         Write-Output "Finding existing subnets in $AKS_VNET_NAME ..."
         Write-Output "------  Subnets in $AKS_VNET_NAME -------"
@@ -285,13 +288,13 @@ if ($resourceGroupExists -eq "true") {
         az network vnet subnet update -n "${AKS_SUBNET_NAME}" -g "${AKS_SUBNET_RESOURCE_GROUP}" --vnet-name "${AKS_VNET_NAME}" --route-table "$routeid" --network-security-group "$nsg"
 
 
-        if ($(az resource list --resource-group $AKS_PERS_RESOURCE_GROUP --resource-type "Microsoft.Network/routeTables" --query "[].id" -o tsv | Where-Object {!"$_".EndsWith("temproutetable")}).length -ne 0) {
+        if ($(az resource list --resource-group $AKS_PERS_RESOURCE_GROUP --resource-type "Microsoft.Network/routeTables" --query "[?name != 'temproutetable'].id" -o tsv ).length -ne 0) {
             Write-Output "delete the routes EXCEPT the temproutetable we just created"
-            az resource delete --ids $(az resource list --resource-group $AKS_PERS_RESOURCE_GROUP --resource-type "Microsoft.Network/routeTables" --query "[].id" -o tsv | Where-Object {!"$_".EndsWith("temproutetable")} )
+            az resource delete --ids $(az resource list --resource-group $AKS_PERS_RESOURCE_GROUP --resource-type "Microsoft.Network/routeTables" --query "[?name != 'temproutetable'].id" -o tsv)
         }
-        if ($(az resource list --resource-group $AKS_PERS_RESOURCE_GROUP --resource-type "Microsoft.Network/networkSecurityGroups" --query "[].id" -o tsv | Where-Object {!"$_".EndsWith("tempnsg")}).length -ne 0) {
+        if ($(az resource list --resource-group $AKS_PERS_RESOURCE_GROUP --resource-type "Microsoft.Network/networkSecurityGroups" --query "[?name != 'tempnsg'].id" -o tsv).length -ne 0) {
             Write-Output "delete the nsgs EXCEPT the tempnsg we just created"
-            az resource delete --ids $(az resource list --resource-group $AKS_PERS_RESOURCE_GROUP --resource-type "Microsoft.Network/networkSecurityGroups" --query "[].id" -o tsv | Where-Object {!"$_".EndsWith("tempnsg")} )
+            az resource delete --ids $(az resource list --resource-group $AKS_PERS_RESOURCE_GROUP --resource-type "Microsoft.Network/networkSecurityGroups" --query "[?name != 'tempnsg'].id" -o tsv)
         }
     }
     else {
@@ -526,8 +529,8 @@ if ("$AKS_VNET_NAME") {
     if ("$AKS_USE_AZURE_NETWORKING" -eq "no") {
         Write-Output "Attaching route table"
         # https://github.com/Azure/acs-engine/blob/master/examples/vnet/k8s-vnet-postdeploy.sh
-        $rt = az network route-table list -g "${AKS_PERS_RESOURCE_GROUP}" --query "[].id" -o tsv
-        $nsg = az network nsg list --resource-group ${AKS_PERS_RESOURCE_GROUP} --query "[].id" -o tsv
+        $rt = az network route-table list -g "${AKS_PERS_RESOURCE_GROUP}" --query "[?name != 'temproutetable'].id" -o tsv
+        $nsg = az network nsg list --resource-group ${AKS_PERS_RESOURCE_GROUP} --query "[?name != 'tempnsg'].id" -o tsv
 
         Write-Output "new route: $rt"
         Write-Output "new nsg: $nsg"

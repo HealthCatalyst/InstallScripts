@@ -1,4 +1,4 @@
-write-output "Version 2017.12.18.10"
+write-output "Version 2017.12.18.21"
 
 # curl -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/nlp/installnlpkubernetes.ps1 | iex;
 
@@ -29,19 +29,35 @@ else {
 #                                        --resource-group $AKS_PERS_RESOURCE_GROUP `
 #                                        --zone-name 
 
-$mysqlrootpasswordsecure = Read-host "MySQL root password" -AsSecureString 
-$mysqlrootpassword = [Runtime.InteropServices.Marshal]::PtrToStringAuto([Runtime.InteropServices.Marshal]::SecureStringToBSTR($mysqlrootpasswordsecure))
-
-$mysqlpasswordsecure = Read-host "MySQL password for NLP database" -AsSecureString 
-$mysqlpassword = [Runtime.InteropServices.Marshal]::PtrToStringAuto([Runtime.InteropServices.Marshal]::SecureStringToBSTR($mysqlpasswordsecure))
-
-Write-Warning "WARNING: Be sure to keep the passwords in a secure place or you won't be able to access the data in the cluster afterwards"
-
 kubectl create namespace fabricnlp
 
-kubectl create secret generic mysqlrootpassword --namespace=fabricnlp --from-literal=password=$mysqlrootpassword
+if ([string]::IsNullOrWhiteSpace($(kubectl get secret mysqlrootpassword -n fabricnlp -o jsonpath='{.data.password}'))) {
+    $mysqlrootpasswordsecure = Read-host "MySQL root password" -AsSecureString 
+    $mysqlrootpassword = [Runtime.InteropServices.Marshal]::PtrToStringAuto([Runtime.InteropServices.Marshal]::SecureStringToBSTR($mysqlrootpasswordsecure))
+    kubectl create secret generic mysqlrootpassword --namespace=fabricnlp --from-literal=password=$mysqlrootpassword
+}
+else {
+    Write-Output "mysqlrootpassword secret already set so will reuse it"
+}
 
-kubectl create secret generic mysqlpassword --namespace=fabricnlp --from-literal=password=$mysqlpassword
+if ([string]::IsNullOrWhiteSpace($(kubectl get secret mysqlpassword -n fabricnlp -o jsonpath='{.data.password}'))) {
+    $mysqlpasswordsecure = Read-host "MySQL password for NLP database" -AsSecureString 
+    $mysqlpassword = [Runtime.InteropServices.Marshal]::PtrToStringAuto([Runtime.InteropServices.Marshal]::SecureStringToBSTR($mysqlpasswordsecure))
+    kubectl create secret generic mysqlpassword --namespace=fabricnlp --from-literal=password=$mysqlpassword
+    Write-Warning "WARNING: Be sure to keep the passwords in a secure place or you won't be able to access the data in the cluster afterwards"
+}
+else {
+    Write-Output "mysqlpassword secret already set so will reuse it"
+}
+
+Write-Output "Cleaning out any old resources in fabricnlp"
+
+kubectl delete --all 'deployments, pods, services, ingress, persistentvolumeclaims, persistentvolumes' --namespace=fabricnlp
+
+Write-Output "Waiting until all the resources are cleared up"
+
+Do { $CLEANUP_DONE = $(kubectl get 'deployments, pods, services, ingress, persistentvolumeclaims, persistentvolumes' --namespace=fabricnlp)}
+while (![string]::IsNullOrWhiteSpace($CLEANUP_DONE))
 
 kubectl create -f https://healthcatalyst.github.io/InstallScripts/nlp/nlp-kubernetes-storage.yml
 
@@ -51,7 +67,7 @@ kubectl create -f https://healthcatalyst.github.io/InstallScripts/nlp/nlp-kubern
 
 kubectl create -f https://healthcatalyst.github.io/InstallScripts/nlp/nlp-mysql-private.yml
 
-kubectl get deployments,pods,services,ingress,secrets,persistentvolumeclaims,persistentvolumes,nodes --namespace=fabricnlp
+kubectl get 'deployments, pods, services, ingress, secrets, persistentvolumeclaims, persistentvolumes, nodes' --namespace=fabricnlp
 
 # to get a shell
 # kubectl exec -it fabric.nlp.nlpwebserver-85c8cb86b5-gkphh bash --namespace=fabricnlp
@@ -64,3 +80,9 @@ Write-Output "kubectl get deployments,pods,services,ingress,secrets,persistentvo
 Write-Output "To launch the dashboard UI, run:"
 Write-Output "kubectl proxy"
 Write-Output "and then in your browser, navigate to: http://127.0.0.1:8001/ui"
+
+$loadBalancerIP = kubectl get svc traefik-ingress-service-private -n kube-system -o jsonpath='{.status.loadBalancer.ingress[].ip}'
+
+Write-Output "To test out the NLP services, open Git Bash and run:"
+Write-Output "curl -L --verbose --header 'Host: solr.allina.healthcatalyst.net' 'http://$loadBalancerIP/solr'"
+Write-Output "curl -L --verbose --header 'Host: nlp.allina.healthcatalyst.net' 'http://$loadBalancerIP/nlpweb'"

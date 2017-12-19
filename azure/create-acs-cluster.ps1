@@ -683,12 +683,16 @@ spec:
 else {
     Write-Output "Setting up a private load balancer"
     kubectl create -f "$GITHUB_URL/azure/loadbalancer-internal.yml"
+
 }
 
 kubectl get "deployments,pods,services,ingress,secrets" --namespace=kube-system
 
 Write-Output "Run the following to see status of the cluster"
 Write-Output "kubectl get deployments,pods,services,ingress,secrets --namespace=kube-system"
+
+Write-Output "To get IP of cluster, run:"
+Write-Output "kubectl get svc traefik-ingress-service-private -n kube-system -o jsonpath='{.status.loadBalancer.ingress[].ip}'"
 
 Write-Output "------------------------"
 Write-Output "To launch the dashboard UI, run:"

@@ -89,9 +89,9 @@ spec:
           imagePullPolicy: Always          
           env:
             - name: NLPWEB_EXTERNAL_URL
-              value: nlp.allina.healthcatalyst.net
+              value: nlp.ahmn.healthcatalyst.net
             - name: JOBSERVER_EXTERNAL_URL
-              value: nlpjobs.allina.healthcatalyst.net
+              value: nlpjobs.ahmn.healthcatalyst.net
             - name: MYSQL_PASSWORD
               valueFrom:
                 secretKeyRef:
@@ -157,9 +157,9 @@ spec:
           imagePullPolicy: Always          
           env:
             # - name: NLPWEB_EXTERNAL_URL
-            #   value: nlp.allina.healthcatalyst.net
+            #   value: nlp.ahmn.healthcatalyst.net
             # - name: JOBSERVER_EXTERNAL_URL
-            #   value: nlpjobs.allina.healthcatalyst.net
+            #   value: nlpjobs.ahmn.healthcatalyst.net
             - name: EXTERNAL_HOSTNAME
               value: localhost
             - name: MYSQL_PASSWORD

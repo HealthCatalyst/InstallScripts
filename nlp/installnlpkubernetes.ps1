@@ -98,5 +98,5 @@ Write-Output "and then in your browser, navigate to: http://127.0.0.1:8001/ui"
 $loadBalancerIP = kubectl get svc traefik-ingress-service-private -n kube-system -o jsonpath='{.status.loadBalancer.ingress[].ip}'
 
 Write-Output "To test out the NLP services, open Git Bash and run:"
-Write-Output "curl -L --verbose --header 'Host: solr.allina.healthcatalyst.net' 'http://$loadBalancerIP/solr'"
-Write-Output "curl -L --verbose --header 'Host: nlp.allina.healthcatalyst.net' 'http://$loadBalancerIP/nlpweb'"
+Write-Output "curl -L --verbose --header 'Host: solr.ahmn.healthcatalyst.net' 'http://$loadBalancerIP/solr'"
+Write-Output "curl -L --verbose --header 'Host: nlp.ahmn.healthcatalyst.net' 'http://$loadBalancerIP/nlpweb'"

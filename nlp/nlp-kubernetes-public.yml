@@ -11,23 +11,23 @@ spec:
   tls:
     - secretName: ssl-ahmn
       hosts:
-        - solr.allina.healthcatalyst.net
-        - nlp.allina.healthcatalyst.net
-        - nlpjobs.allina.healthcatalyst.net
+        - solr.ahmn.healthcatalyst.net
+        - nlp.ahmn.healthcatalyst.net
+        - nlpjobs.ahmn.healthcatalyst.net
   rules:
-  - host: solr.allina.healthcatalyst.net
+  - host: solr.ahmn.healthcatalyst.net
     http:
       paths:
       - backend:
           serviceName: solrserverpublic
           servicePort: 80
-  - host: nlp.allina.healthcatalyst.net
+  - host: nlp.ahmn.healthcatalyst.net
     http:
       paths:
       - backend:
           serviceName: nlpserverpublic
           servicePort: 80
-  - host: nlpjobs.allina.healthcatalyst.net
+  - host: nlpjobs.ahmn.healthcatalyst.net
     http:
       paths:
       - backend:

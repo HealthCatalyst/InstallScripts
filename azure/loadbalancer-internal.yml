@@ -3,6 +3,8 @@ apiVersion: v1
 metadata:
   name: traefik-ingress-service-private
   namespace: kube-system
+  labels:
+    k8s-traefik: traefik  
   annotations:
     # from https://radu-matei.com/blog/k8s-appsvc/
     service.beta.kubernetes.io/azure-load-balancer-internal: "true"

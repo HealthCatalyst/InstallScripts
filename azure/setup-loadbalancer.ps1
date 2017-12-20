@@ -1,4 +1,4 @@
-Write-output "Version 2017.12.18.25"
+Write-output "Version 2017.12.20.1"
 
 #
 # This script is meant for quick & easy install via:
@@ -47,11 +47,15 @@ kubectl delete 'pods,services,configMaps,deployments,ingress' -l k8s-traefik=tra
 
 if($AKS_USE_SSL -eq "y" ){
     # ask for tls cert files
-    Do { $AKS_SSL_CERT_FOLDER = Read-Host "What folder has the tls.crt and tls.key files? (relative path e.g., /temp/certs.  no slash at the end)"}
+    Do { $AKS_SSL_CERT_FOLDER = Read-Host "What folder has the tls.crt and tls.key files? (absolute path e.g., c:\temp\certs)"}
     while ([string]::IsNullOrWhiteSpace($AKS_SSL_CERT_FOLDER) -or  (!(Test-Path -Path "$AKS_SSL_CERT_FOLDER")))
       
+    $AKS_SSL_CERT_FOLDER_UNIX_PATH = (($AKS_SSL_CERT_FOLDER -replace "\\", "/")).ToLower().Trim("/")    
+
+    kubectl delete secret traefik-cert-ahmn -n kube-system
+
     Write-Output "Storing TLS certs as kubernetes secret"
-    kubectl create secret generic traefik-cert-ahmn -n kube-system --from-file=$AKS_SSL_CERT_FOLDER/tls.crt --from-file=$AKS_SSL_CERT_FOLDER/tls.key
+    kubectl create secret generic traefik-cert-ahmn -n kube-system --from-file="$AKS_SSL_CERT_FOLDER_UNIX_PATH/tls.crt" --from-file="$AKS_SSL_CERT_FOLDER_UNIX_PATH/tls.key"
 
     Write-Output "Deploy the SSL ingress controller"
     # kubectl delete -f "$GITHUB_URL/azure/ingress.ssl.yml"

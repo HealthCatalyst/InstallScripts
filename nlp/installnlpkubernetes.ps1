@@ -36,6 +36,7 @@ kubectl create namespace fabricnlp
 if ([string]::IsNullOrWhiteSpace($(kubectl get secret mysqlrootpassword -n fabricnlp -o jsonpath='{.data.password}'))) {
 
     # MySQL password requirements: https://dev.mysql.com/doc/refman/5.6/en/validate-password-plugin.html
+    # we also use sed to replace configs: https://unix.stackexchange.com/questions/32907/what-characters-do-i-need-to-escape-when-using-sed-in-a-sh-script
     Do {
         $mysqlrootpasswordsecure = Read-host "MySQL root password (> 8 chars, min 1 number, 1 lowercase, 1 uppercase, 1 special [!.*@] )" -AsSecureString 
         $mysqlrootpassword = [Runtime.InteropServices.Marshal]::PtrToStringAuto([Runtime.InteropServices.Marshal]::SecureStringToBSTR($mysqlrootpasswordsecure))

@@ -1,4 +1,4 @@
-Write-output "Version 2017.12.18.24"
+Write-output "Version 2017.12.18.25"
 
 #
 # This script is meant for quick & easy install via:
@@ -43,19 +43,23 @@ while ([string]::IsNullOrWhiteSpace($AKS_OPEN_TO_PUBLIC))
 Do { $AKS_USE_SSL = Read-Host "Do you want to setup SSL? (y/n)"}
 while ([string]::IsNullOrWhiteSpace($AKS_USE_SSL))
 
+kubectl delete 'pods,services,configMaps,deployments,ingress' -l k8s-traefik=traefik -n kube-system
+
 if($AKS_USE_SSL -eq "y" ){
     # ask for tls cert files
-    Do { $AKS_SSL_CERT_FOLDER = Read-Host "What folder has the tls.crt and tls.key files? (relative path e.g., /temp/certs"}
-    while ([string]::IsNullOrWhiteSpace($AKS_SSL_CERT_FOLDER) -and  (Test-Path -Path "$AKS_SSL_CERT_FOLDER"))
+    Do { $AKS_SSL_CERT_FOLDER = Read-Host "What folder has the tls.crt and tls.key files? (relative path e.g., /temp/certs.  no slash at the end)"}
+    while ([string]::IsNullOrWhiteSpace($AKS_SSL_CERT_FOLDER) -or  (!(Test-Path -Path "$AKS_SSL_CERT_FOLDER")))
       
     Write-Output "Storing TLS certs as kubernetes secret"
-    kubectl create secret generic traefik-cert-ahmn --from-file=$AKS_SSL_CERT_FOLDER/tls.crt --from-file=$AKS_SSL_CERT_FOLDER/tls.key
+    kubectl create secret generic traefik-cert-ahmn -n kube-system --from-file=$AKS_SSL_CERT_FOLDER/tls.crt --from-file=$AKS_SSL_CERT_FOLDER/tls.key
 
     Write-Output "Deploy the SSL ingress controller"
+    # kubectl delete -f "$GITHUB_URL/azure/ingress.ssl.yml"
     kubectl create -f "$GITHUB_URL/azure/ingress.ssl.yml"
 }
 else {
     Write-Output "Deploy the non-SSL ingress controller"
+    # kubectl delete -f "$GITHUB_URL/azure/ingress.yml"
     kubectl create -f "$GITHUB_URL/azure/ingress.yml"
 }
 
@@ -70,12 +74,15 @@ if ("$AKS_OPEN_TO_PUBLIC" -eq "y") {
 
     Write-Host "Using Public IP: [$publicip]"
 
+    # kubectl delete svc traefik-ingress-service-public -n kube-system
     $serviceyaml = @"
 kind: Service
 apiVersion: v1
 metadata:
   name: traefik-ingress-service-public
   namespace: kube-system
+  labels:
+    k8s-traefik: traefik    
 spec:
   selector:
     k8s-app: traefik-ingress-lb
@@ -108,9 +115,14 @@ else {
     kubectl create -f "$GITHUB_URL/azure/loadbalancer-internal.yml"
 }
 
-
-Write-Output "To get IP of cluster, run:"
-Write-Output "kubectl get svc traefik-ingress-service-private -n kube-system -o jsonpath='{.status.loadBalancer.ingress[].ip}'"
+if ("$AKS_OPEN_TO_PUBLIC" -eq "y"){
+    Write-Output "To get IP of cluster, run (Note: It can take a minute or so to get the IP from azure):"
+    Write-Output "kubectl get svc traefik-ingress-service-public -n kube-system -o jsonpath='{.status.loadBalancer.ingress[].ip}'"
+}
+else {
+    Write-Output "To get IP of cluster, run:"
+    Write-Output "kubectl get svc traefik-ingress-service-private -n kube-system -o jsonpath='{.status.loadBalancer.ingress[].ip}'"       
+}
 
 
 

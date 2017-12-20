@@ -12,6 +12,7 @@ metadata:
   namespace: kube-system
   labels:
     k8s-app: traefik-ingress-lb
+    k8s-traefik: traefik  
 spec:
   replicas: 1
   selector:
@@ -37,6 +38,8 @@ kind: Service
 metadata:
   name: traefik-web-ui
   namespace: kube-system
+  labels:
+    k8s-traefik: traefik    
 spec:
   selector:
     k8s-app: traefik-ingress-lb
@@ -49,6 +52,8 @@ kind: Ingress
 metadata:
   name: traefik-web-ui
   namespace: kube-system
+  labels:
+    k8s-traefik: traefik    
   annotations:
     kubernetes.io/ingress.class: traefik
 spec:

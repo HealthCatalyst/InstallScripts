@@ -1,4 +1,4 @@
-write-output "Version 2017.12.18.23"
+write-output "Version 2017.12.18.24"
 
 # curl -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/nlp/installnlpkubernetes.ps1 | iex;
 
@@ -34,8 +34,13 @@ else {
 kubectl create namespace fabricnlp
 
 if ([string]::IsNullOrWhiteSpace($(kubectl get secret mysqlrootpassword -n fabricnlp -o jsonpath='{.data.password}'))) {
-    $mysqlrootpasswordsecure = Read-host "MySQL root password" -AsSecureString 
-    $mysqlrootpassword = [Runtime.InteropServices.Marshal]::PtrToStringAuto([Runtime.InteropServices.Marshal]::SecureStringToBSTR($mysqlrootpasswordsecure))
+
+    # MySQL password requirements: https://dev.mysql.com/doc/refman/5.6/en/validate-password-plugin.html
+    Do {
+        $mysqlrootpasswordsecure = Read-host "MySQL root password (> 8 chars, min 1 number, 1 lowercase, 1 uppercase, 1 special [!.*@] )" -AsSecureString 
+        $mysqlrootpassword = [Runtime.InteropServices.Marshal]::PtrToStringAuto([Runtime.InteropServices.Marshal]::SecureStringToBSTR($mysqlrootpasswordsecure))
+    }
+    while (($mysqlrootpassword -notmatch "^[a-z0-9!.*@\s]+$") -or ($mysqlrootpassword.Length -lt 8 ))
     kubectl create secret generic mysqlrootpassword --namespace=fabricnlp --from-literal=password=$mysqlrootpassword
 }
 else {
@@ -43,8 +48,13 @@ else {
 }
 
 if ([string]::IsNullOrWhiteSpace($(kubectl get secret mysqlpassword -n fabricnlp -o jsonpath='{.data.password}'))) {
-    $mysqlpasswordsecure = Read-host "MySQL password for NLP database" -AsSecureString 
-    $mysqlpassword = [Runtime.InteropServices.Marshal]::PtrToStringAuto([Runtime.InteropServices.Marshal]::SecureStringToBSTR($mysqlpasswordsecure))
+
+    Do {
+        $mysqlpasswordsecure = Read-host "MySQL NLP_APP_USER password (> 8 chars, min 1 number, 1 lowercase, 1 uppercase, 1 special [!.*@] )" -AsSecureString 
+        $mysqlpassword = [Runtime.InteropServices.Marshal]::PtrToStringAuto([Runtime.InteropServices.Marshal]::SecureStringToBSTR($mysqlpasswordsecure))
+    }
+    while (($mysqlpassword -notmatch "^[a-z0-9!.*@\s]+$") -or ($mysqlpassword.Length -lt 8 ))
+
     kubectl create secret generic mysqlpassword --namespace=fabricnlp --from-literal=password=$mysqlpassword
     Write-Warning "Be sure to keep the passwords in a secure place or you won't be able to access the data in the cluster afterwards"
 }

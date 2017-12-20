@@ -448,7 +448,8 @@ function Get-FirstIP {
         $endaddr = IP-toINT64 -ip $end 
     } 
  
-    $startaddr = $startaddr + 256 # skip the first few since they are reserved
+    # https://github.com/Azure/acs-engine/blob/master/docs/kubernetes/features.md#feat-custom-vnet
+    $startaddr = $startaddr + 239 # skip the first few since they are reserved
     INT64-toIP -int $startaddr
 }
 
@@ -621,7 +622,7 @@ if (!"${AKS_PERS_SHARE_NAME}") {
 $AZURE_STORAGE_CONNECTION_STRING = az storage account show-connection-string -n $AKS_PERS_STORAGE_ACCOUNT_NAME -g $AKS_PERS_RESOURCE_GROUP -o tsv
 
 # Write-Output "Create the file share"
-az storage share create -n $AKS_PERS_SHARE_NAME --connection-string $AZURE_STORAGE_CONNECTION_STRING
+az storage share create -n $AKS_PERS_SHARE_NAME --connection-string $AZURE_STORAGE_CONNECTION_STRING --quota 512
 
 Write-Output "Get storage account key"
 $STORAGE_KEY = az storage account keys list --resource-group $AKS_PERS_RESOURCE_GROUP --account-name $AKS_PERS_STORAGE_ACCOUNT_NAME --query "[0].value" --output tsv

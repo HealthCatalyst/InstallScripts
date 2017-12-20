@@ -1,4 +1,4 @@
-Write-output "Version 2017.12.20.1"
+Write-output "Version 2017.12.20.2"
 
 #
 # This script is meant for quick & easy install via:
@@ -8,7 +8,7 @@ $GITHUB_URL = "https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/m
 # $GITHUB_URL = "."
 
 $AKS_OPEN_TO_PUBLIC = ""
-$AKS_USE_SSL=""
+$AKS_USE_SSL = ""
 
 $loggedInUser = az account show --query "user.name"  --output tsv
 
@@ -45,10 +45,10 @@ while ([string]::IsNullOrWhiteSpace($AKS_USE_SSL))
 
 kubectl delete 'pods,services,configMaps,deployments,ingress' -l k8s-traefik=traefik -n kube-system
 
-if($AKS_USE_SSL -eq "y" ){
+if ($AKS_USE_SSL -eq "y" ) {
     # ask for tls cert files
     Do { $AKS_SSL_CERT_FOLDER = Read-Host "What folder has the tls.crt and tls.key files? (absolute path e.g., c:\temp\certs)"}
-    while ([string]::IsNullOrWhiteSpace($AKS_SSL_CERT_FOLDER) -or  (!(Test-Path -Path "$AKS_SSL_CERT_FOLDER")))
+    while ([string]::IsNullOrWhiteSpace($AKS_SSL_CERT_FOLDER) -or (!(Test-Path -Path "$AKS_SSL_CERT_FOLDER")))
       
     $AKS_SSL_CERT_FOLDER_UNIX_PATH = (($AKS_SSL_CERT_FOLDER -replace "\\", "/")).ToLower().Trim("/")    
 
@@ -71,7 +71,7 @@ if ("$AKS_OPEN_TO_PUBLIC" -eq "y") {
     Write-Output "Setting up a public load balancer"
 
     $publicip = az network public-ip show -g $AKS_PERS_RESOURCE_GROUP -n IngressPublicIP --query "ipAddress" -o tsv;
-    if ([string]::IsNullOrWhiteSpace($publicip)){
+    if ([string]::IsNullOrWhiteSpace($publicip)) {
         az network public-ip create -g $AKS_PERS_RESOURCE_GROUP -n IngressPublicIP --location $AKS_PERS_LOCATION --allocation-method Static
         $publicip = az network public-ip show -g $AKS_PERS_RESOURCE_GROUP -n IngressPublicIP --query "ipAddress" -o tsv;
     }  
@@ -119,8 +119,21 @@ else {
     kubectl create -f "$GITHUB_URL/azure/loadbalancer-internal.yml"
 }
 
-if ("$AKS_OPEN_TO_PUBLIC" -eq "y"){
-    Write-Output "To get IP of cluster, run (Note: It can take a minute or so to get the IP from azure):"
+$startDate = Get-Date
+$timeoutInMinutes = 10
+if ("$AKS_OPEN_TO_PUBLIC" -eq "y") {
+
+    Write-Output "Waiting for IP to get assigned to the load balancer (Note: It can take 5 minutes or so to get the IP from azure)"
+    Do { 
+        Start-Sleep -Seconds 10
+        Write-Output "."
+        $EXTERNAL_IP = $(kubectl get svc traefik-ingress-service-public -n kube-system -o jsonpath='{.status.loadBalancer.ingress[].ip}')
+    }
+    while ([string]::IsNullOrWhiteSpace($EXTERNAL_IP) -and ($startDate.AddMinutes($timeoutInMinutes) -gt (Get-Date)))
+
+    Write-Output "External IP: $EXTERNAL_IP"
+
+    Write-Output "To get IP of cluster later:"
     Write-Output "kubectl get svc traefik-ingress-service-public -n kube-system -o jsonpath='{.status.loadBalancer.ingress[].ip}'"
 }
 else {

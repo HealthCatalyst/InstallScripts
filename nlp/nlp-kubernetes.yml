@@ -153,15 +153,15 @@ spec:
     spec:
       containers:
         - name: jobserver
-          image: healthcatalyst/fabric.nlp.docker.jobs:latest
+          image: healthcatalyst/fabric.nlp.docker.jobs:1
           imagePullPolicy: Always          
           env:
-            # - name: NLPWEB_EXTERNAL_URL
-            #   value: nlp.ahmn.healthcatalyst.net
-            # - name: JOBSERVER_EXTERNAL_URL
-            #   value: nlpjobs.ahmn.healthcatalyst.net
-            - name: EXTERNAL_HOSTNAME
-              value: localhost
+            - name: NLPWEB_EXTERNAL_URL
+              value: nlp.ahmn.healthcatalyst.net
+            - name: JOBSERVER_EXTERNAL_URL
+              value: nlpjobs.ahmn.healthcatalyst.net
+            # - name: EXTERNAL_HOSTNAME
+            #   value: localhost
             - name: MYSQL_PASSWORD
               valueFrom:
                 secretKeyRef:

@@ -315,7 +315,22 @@ spec:
       containers:
         - name: smtpserver
           image: healthcatalyst/fabric.smtp.agent:latest
-          imagePullPolicy: Always          
+          imagePullPolicy: Always       
+          # environment variables
+          env:
+            - name: SMTP_RELAY_PASSWORD
+              # set the value of this environment variable from a secret called smtprelaypassword
+              valueFrom:
+                secretKeyRef:
+                  name: smtprelaypassword
+                  key: password
+            - name: SMTP_RELAY_USERNAME
+              # set the value of this environment variable directly
+              value: apikey
+            - name: SMTP_RELAY_SERVER
+              value: smtp.sendgrid.net
+            - name: SMTP_RELAY_PORT
+              value: 587
 ---
 # Service
 kind: Service

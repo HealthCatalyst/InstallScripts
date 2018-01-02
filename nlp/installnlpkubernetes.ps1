@@ -63,6 +63,19 @@ else {
     Write-Output "mysqlpassword secret already set so will reuse it"
 }
 
+if ([string]::IsNullOrWhiteSpace($(kubectl get secret smtprelaypassword -n fabricnlp -o jsonpath='{.data.password}'))) {
+
+    Do {
+        $smtprelaypassword = Read-host "SMTP (SendGrid) Relay Key"
+    }
+    while (($smtprelaypassword.Length -lt 8 ))
+
+    kubectl create secret generic smtprelaypassword --namespace=fabricnlp --from-literal=password=$smtprelaypassword
+}
+else {
+    Write-Output "smtprelaypassword secret already set so will reuse it"
+}
+
 Write-Output "Cleaning out any old resources in fabricnlp"
 
 # note kubectl doesn't like spaces in between commas below

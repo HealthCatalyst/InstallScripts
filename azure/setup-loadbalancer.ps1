@@ -45,6 +45,7 @@ while ([string]::IsNullOrWhiteSpace($AKS_USE_SSL))
 
 kubectl delete 'pods,services,configMaps,deployments,ingress' -l k8s-traefik=traefik -n kube-system
 
+# http://blog.kubernetes.io/2017/04/configuring-private-dns-zones-upstream-nameservers-kubernetes.html
 kubectl delete -f "$GITHUB_URL/azure/cafe-kube-dns.yml"
 Start-Sleep -Seconds 10
 kubectl create -f "$GITHUB_URL/azure/cafe-kube-dns.yml"

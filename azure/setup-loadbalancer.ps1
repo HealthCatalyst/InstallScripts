@@ -49,6 +49,7 @@ kubectl delete 'pods,services,configMaps,deployments,ingress' -l k8s-traefik=tra
 kubectl delete -f "$GITHUB_URL/azure/cafe-kube-dns.yml"
 Start-Sleep -Seconds 10
 kubectl create -f "$GITHUB_URL/azure/cafe-kube-dns.yml"
+# to debug dns: https://kubernetes.io/docs/tasks/administer-cluster/dns-custom-nameservers/#inheriting-dns-from-the-node
 
 if ($AKS_USE_SSL -eq "y" ) {
     # ask for tls cert files

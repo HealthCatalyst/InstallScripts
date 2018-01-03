@@ -8,4 +8,4 @@ data:
   stubDomains: |
     {"cafe.healthcatalyst.com": ["10.5.2.4","10.5.2.15"]}
   upstreamNameservers: |
-    ["10.5.2.4","10.5.2.15","8.8.8.8", "8.8.4.4"]
+    ["10.5.2.4","8.8.8.8"]

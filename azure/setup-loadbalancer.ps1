@@ -45,6 +45,10 @@ while ([string]::IsNullOrWhiteSpace($AKS_USE_SSL))
 
 kubectl delete 'pods,services,configMaps,deployments,ingress' -l k8s-traefik=traefik -n kube-system
 
+kubectl delete -f "$GITHUB_URL/azure/cafe-kube-dns.yml"
+Start-Sleep -Seconds 10
+kubectl create -f "$GITHUB_URL/azure/cafe-kube-dns.yml"
+
 if ($AKS_USE_SSL -eq "y" ) {
     # ask for tls cert files
     Do { $AKS_SSL_CERT_FOLDER = Read-Host "What folder has the tls.crt and tls.key files? (absolute path e.g., c:\temp\certs)"}

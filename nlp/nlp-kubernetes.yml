@@ -331,6 +331,9 @@ spec:
               value: smtp.sendgrid.net
             - name: SMTP_RELAY_PORT
               value: "587"
+          ports:
+            - containerPort: 25
+              name: smtp              
 ---
 # Service
 kind: Service

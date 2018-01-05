@@ -36,62 +36,47 @@ else {
 
 kubectl create namespace fabricrealtime
 
-if ([string]::IsNullOrWhiteSpace($(kubectl get secret mysqlrootpassword -n fabricrealtime -o jsonpath='{.data.password}'))) {
+function AskForPassword ($secretname, $prompt) {
+    if ([string]::IsNullOrWhiteSpace($(kubectl get secret $secretname -n fabricrealtime -o jsonpath='{.data.password}'))) {
 
-    # MySQL password requirements: https://dev.mysql.com/doc/refman/5.6/en/validate-password-plugin.html
-    # we also use sed to replace configs: https://unix.stackexchange.com/questions/32907/what-characters-do-i-need-to-escape-when-using-sed-in-a-sh-script
-    Do {
-        $mysqlrootpasswordsecure = Read-host "MySQL root password (> 8 chars, min 1 number, 1 lowercase, 1 uppercase, 1 special [!.*@] )" -AsSecureString 
-        $mysqlrootpassword = [Runtime.InteropServices.Marshal]::PtrToStringAuto([Runtime.InteropServices.Marshal]::SecureStringToBSTR($mysqlrootpasswordsecure))
+        # MySQL password requirements: https://dev.mysql.com/doc/refman/5.6/en/validate-password-plugin.html
+        # we also use sed to replace configs: https://unix.stackexchange.com/questions/32907/what-characters-do-i-need-to-escape-when-using-sed-in-a-sh-script
+        Do {
+            $mysqlrootpasswordsecure = Read-host "$prompt" -AsSecureString 
+            $mysqlrootpassword = [Runtime.InteropServices.Marshal]::PtrToStringAuto([Runtime.InteropServices.Marshal]::SecureStringToBSTR($mysqlrootpasswordsecure))
+        }
+        while (($mysqlrootpassword -notmatch "^[a-z0-9!.*@\s]+$") -or ($mysqlrootpassword.Length -lt 8 ))
+        kubectl create secret generic $secretname --namespace=fabricrealtime --from-literal=password=$mysqlrootpassword
     }
-    while (($mysqlrootpassword -notmatch "^[a-z0-9!.*@\s]+$") -or ($mysqlrootpassword.Length -lt 8 ))
-    kubectl create secret generic mysqlrootpassword --namespace=fabricrealtime --from-literal=password=$mysqlrootpassword
-}
-else {
-    Write-Output "mysqlrootpassword secret already set so will reuse it"
-}
-
-if ([string]::IsNullOrWhiteSpace($(kubectl get secret mysqlpassword -n fabricrealtime -o jsonpath='{.data.password}'))) {
-
-    Do {
-        $mysqlpasswordsecure = Read-host "MySQL NLP_APP_USER password (> 8 chars, min 1 number, 1 lowercase, 1 uppercase, 1 special [!.*@] )" -AsSecureString 
-        $mysqlpassword = [Runtime.InteropServices.Marshal]::PtrToStringAuto([Runtime.InteropServices.Marshal]::SecureStringToBSTR($mysqlpasswordsecure))
+    else {
+        Write-Output "$secretname secret already set so will reuse it"
     }
-    while (($mysqlpassword -notmatch "^[a-z0-9!.*@\s]+$") -or ($mysqlpassword.Length -lt 8 ))
-
-    kubectl create secret generic mysqlpassword --namespace=fabricrealtime --from-literal=password=$mysqlpassword
-    Write-Warning "Be sure to keep the passwords in a secure place or you won't be able to access the data in the cluster afterwards"
-}
-else {
-    Write-Output "mysqlpassword secret already set so will reuse it"
 }
 
-if ([string]::IsNullOrWhiteSpace($(kubectl get secret certhostname -n fabricrealtime -o jsonpath='{.data.value}'))) {
+function AskForSecretValue ($secretname, $prompt) {
+    if ([string]::IsNullOrWhiteSpace($(kubectl get secret $secretname -n fabricrealtime -o jsonpath='{.data.value}'))) {
 
-    Do {
-        $certhostname = Read-host "Client Certificate hostname"
+        Do {
+            $certhostname = Read-host "$prompt"
+        }
+        while ($certhostname.Length -lt 8 )
+    
+        kubectl create secret generic $secretname --namespace=fabricrealtime --from-literal=value=$certhostname
     }
-    while ($certhostname.Length -lt 8 )
-
-    kubectl create secret generic certhostname --namespace=fabricrealtime --from-literal=value=$certhostname
-}
-else {
-    Write-Output "certhostname secret already set so will reuse it"
+    else {
+        Write-Output "certhostname secret already set so will reuse it"
+    }    
 }
 
-if ([string]::IsNullOrWhiteSpace($(kubectl get secret certpassword -n fabricrealtime -o jsonpath='{.data.password}'))) {
+AskForPassword -secretname "mysqlrootpassword"  -prompt "MySQL root password (> 8 chars, min 1 number, 1 lowercase, 1 uppercase, 1 special [!.*@] )"
 
-    Do {
-        $certpasswordsecure = Read-host "Client Certificate password (> 8 chars, min 1 number, 1 lowercase, 1 uppercase, 1 special [!.*@] )" -AsSecureString 
-        $certpassword = [Runtime.InteropServices.Marshal]::PtrToStringAuto([Runtime.InteropServices.Marshal]::SecureStringToBSTR($certpasswordsecure))
-    }
-    while (($certpassword -notmatch "^[a-z0-9!.*@\s]+$") -or ($certpassword.Length -lt 8 ))
+AskForPassword -secretname "mysqlpassword"  -prompt "MySQL root password (> 8 chars, min 1 number, 1 lowercase, 1 uppercase, 1 special [!.*@] )"
 
-    kubectl create secret generic certpassword --namespace=fabricrealtime --from-literal=password=$certpassword
-}
-else {
-    Write-Output "certpassword secret already set so will reuse it"
-}
+AskForSecretValue -secretname "certhostname" -prompt "Client Certificate hostname"
+
+AskForPassword -secretname "certpassword"  -prompt "Client Certificate password (> 8 chars, min 1 number, 1 lowercase, 1 uppercase, 1 special [!.*@] )"
+
+AskForPassword -secretname "rabbitmqmgmtuipassword"  -prompt "Admin password for RabbitMqMgmt"
 
 Write-Output "Cleaning out any old resources in fabricrealtime"
 

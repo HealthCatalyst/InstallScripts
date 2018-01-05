@@ -277,3 +277,94 @@ spec:
     app: rabbitmq
 ---
 # -- end of rabbitmq ---
+
+# --- Interface Engine ---
+# Pod
+kind: Deployment
+apiVersion: extensions/v1beta1
+metadata:
+# name for this pod
+  name: interfaceengine
+# namespace for this pod
+  namespace: fabricrealtime  
+  labels:
+    app: interfaceengine
+spec:
+  replicas: 1
+  revisionHistoryLimit: 3  # Clean-up old Replica Sets deployed; only keep previous 3.
+  strategy:
+    # We need to kill the existing Pod before creating an new one
+    # for the new one to be able to attach the persistent disk.
+    type: Recreate        
+  selector:
+    matchLabels:
+      app: interfaceengine
+  template:
+    metadata:
+      labels:
+        app: interfaceengine
+    spec:
+      containers:
+        # name of this pod
+        - name: interfaceengine
+          # image to pull
+          image: healthcatalyst/fabric.docker.interfaceengine:latest
+          # specify to always pull a new image
+          imagePullPolicy: Always
+          # environment variables
+          env:
+            - name: MYSQL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mysqlpassword
+                  key: password
+            - name: MYSQL_DATABASE
+              value: mirthdb
+            - name: MYSQL_USER
+              value: mirthuser
+          ports:
+            # expose port 3000
+            - containerPort: 8080
+              # name of the port
+              name: http
+            - containerPort: 8443
+              # name of the port
+              name: https 
+            - containerPort: 6661
+              # name of the port
+              name: channel 
+---
+# Service
+kind: Service
+apiVersion: v1
+metadata:
+# this service shows up in the UI with this name
+  name: interfaceengine
+# namespace should match other services in this file  
+  namespace: fabricrealtime  
+# labels allows you to use selectors to find this service
+  labels:
+    app: interfaceengine
+spec:
+  ports:
+# port that other services can use to connect to this service
+  - port: 8080
+# port in the pod we map to  
+    targetPort: 8080
+    protocol: TCP
+    name: "http"
+  - port: 8443
+# port in the pod we map to  
+    targetPort: 8443
+    protocol: TCP
+    name: "https"
+  - port: 8443
+# port in the pod we map to  
+    targetPort: 6661
+    protocol: TCP
+    name: "https"
+# selector says this service should use a pod that has the "app: mysqlserver" label
+  selector:
+    app: interfaceengine
+---
+# -- end of interfaceengine ---

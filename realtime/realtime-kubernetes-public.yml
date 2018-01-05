@@ -3,38 +3,12 @@
 kind: Service
 apiVersion: v1
 metadata:
-  name: solrserverpublic
+  name: certificateserverpublic
   namespace: fabricrealtime
 spec:
   selector:
-    app: solrserver
+    app: certificateserver
   ports:
   - port: 80
-    targetPort: 8085
----
-# nlp web server
-kind: Service
-apiVersion: v1
-metadata:
-  name: nlpserverpublic
-  namespace: fabricrealtime
-spec:
-  selector:
-    app: nlpwebserver
-  ports:
-  - port: 80
-    targetPort: 8083
----
-# nlp jobs web server
-kind: Service
-apiVersion: v1
-metadata:
-  name: nlpjobsserverpublic
-  namespace: fabricrealtime
-spec:
-  selector:
-    app: jobserver
-  ports:
-  - port: 80
-    targetPort: 8084
+    targetPort: 8081
 ---

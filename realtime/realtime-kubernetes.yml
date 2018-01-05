@@ -164,7 +164,7 @@ metadata:
 spec:
   ports:
 # port that other services can use to connect to this service
-  - port: 8801
+  - port: 8081
 # port in the pod we map to  
     targetPort: 3000
     protocol: TCP

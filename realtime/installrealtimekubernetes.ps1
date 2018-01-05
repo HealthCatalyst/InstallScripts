@@ -96,6 +96,16 @@ if ([string]::IsNullOrWhiteSpace($publicip)) {
 } 
 Write-Host "Using Interface Engine Public IP: [$publicip]"
 
+# Write-Output "Checking if DNS entries exist"
+# https://kubernetes.io/docs/reference/kubectl/jsonpath/
+
+# setup DNS
+# az network dns zone create -g $AKS_PERS_RESOURCE_GROUP -n nlp.allina.healthcatalyst.net
+# az network dns record-set a add-record --ipv4-address j `
+#                                        --record-set-name nlp.allina.healthcatalyst.net `
+#                                        --resource-group $AKS_PERS_RESOURCE_GROUP `
+#                                        --zone-name 
+
 $serviceyaml = @"
 kind: Service
 apiVersion: v1
@@ -122,38 +132,25 @@ spec:
     Write-Output $serviceyaml | kubectl create -f -
 
 
-# $serviceyaml = @"
-# apiVersion: extensions/v1beta1
-# kind: Ingress
-# metadata:
-#   name: realtime-ingress
-#   namespace: fabricrealtime
-#   annotations:
-#     kubernetes.io/ingress.class: traefik
-# spec:
-#   rules:
-#   - host: solr.ahmn.healthcatalyst.net
-#     http:
-#       paths:
-#       - backend:
-#           serviceName: solrserverpublic
-#           servicePort: 80
-#   - host: nlp.ahmn.healthcatalyst.net
-#     http:
-#       paths:
-#       - backend:
-#           serviceName: nlpserverpublic
-#           servicePort: 80
-#   - host: nlpjobs.ahmn.healthcatalyst.net
-#     http:
-#       paths:
-#       - backend:
-#           serviceName: nlpjobsserverpublic
-#           servicePort: 80
-# ---
-# "@
+$serviceyaml = @"
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: realtime-ingress
+  namespace: fabricrealtime
+  annotations:
+    kubernetes.io/ingress.class: traefik
+spec:
+  rules:
+  - http:
+      paths:
+      - backend:
+          serviceName: certificateserverpublic
+          servicePort: 80
+---
+"@
 
-#     Write-Output $serviceyaml | kubectl create -f -
+    Write-Output $serviceyaml | kubectl create -f -
 
 kubectl get 'deployments,pods,services,ingress,secrets,persistentvolumeclaims,persistentvolumes,nodes' --namespace=fabricrealtime
 
@@ -174,6 +171,10 @@ if([string]::IsNullOrWhiteSpace($loadBalancerIP)){
     $loadBalancerIP = kubectl get svc traefik-ingress-service-private -n kube-system -o jsonpath='{.status.loadBalancer.ingress[].ip}'
 }
 
-Write-Output "To test out the NLP services, open Git Bash and run:"
-Write-Output "curl -L --verbose --header 'Host: solr.ahmn.healthcatalyst.net' 'http://$loadBalancerIP/solr'"
-Write-Output "curl -L --verbose --header 'Host: nlp.ahmn.healthcatalyst.net' 'http://$loadBalancerIP/nlpweb'"
+Write-Output "if you want, you can download the CA (Certificate Authority) cert from this url"
+Write-Output "http://$loadBalancerIP/client/fabric_ca_cert.p12"
+
+Write-Output "-------------------------------"
+Write-Output "you can download the client certificate from this url:"
+Write-Output "http://$loadBalancerIP/client/fabricrabbitmquser_client_cert.p12"
+Write-Output "-------------------------------"

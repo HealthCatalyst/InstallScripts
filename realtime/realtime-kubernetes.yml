@@ -358,11 +358,11 @@ spec:
     targetPort: 8443
     protocol: TCP
     name: "https"
-  - port: 8443
+  - port: 6661
 # port in the pod we map to  
     targetPort: 6661
     protocol: TCP
-    name: "https"
+    name: "channel"
 # selector says this service should use a pod that has the "app: mysqlserver" label
   selector:
     app: interfaceengine

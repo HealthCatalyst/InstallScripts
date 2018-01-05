@@ -25,14 +25,8 @@ else {
     az login
 }
 
-# https://kubernetes.io/docs/reference/kubectl/jsonpath/
-
-# setup DNS
-# az network dns zone create -g $AKS_PERS_RESOURCE_GROUP -n nlp.allina.healthcatalyst.net
-# az network dns record-set a add-record --ipv4-address j `
-#                                        --record-set-name nlp.allina.healthcatalyst.net `
-#                                        --resource-group $AKS_PERS_RESOURCE_GROUP `
-#                                        --zone-name 
+Do { $AKS_PERS_RESOURCE_GROUP = Read-Host "Resource Group (e.g., fabricnlp-rg)"}
+while ([string]::IsNullOrWhiteSpace($AKS_PERS_RESOURCE_GROUP))
 
 kubectl create namespace fabricrealtime
 
@@ -91,6 +85,75 @@ while (![string]::IsNullOrWhiteSpace($CLEANUP_DONE))
 kubectl create -f $GITHUB_URL/realtime/realtime-kubernetes-storage.yml
 
 kubectl create -f $GITHUB_URL/realtime/realtime-kubernetes.yml
+
+kubectl create -f $GITHUB_URL/realtime/realtime-kubernetes-public.yml
+
+$ipname="InterfaceEnginePublicIP"
+$publicip = az network public-ip show -g $AKS_PERS_RESOURCE_GROUP -n $ipname --query "ipAddress" -o tsv;
+if ([string]::IsNullOrWhiteSpace($publicip)) {
+    az network public-ip create -g $AKS_PERS_RESOURCE_GROUP -n $ipname --allocation-method Static
+    $publicip = az network public-ip show -g $AKS_PERS_RESOURCE_GROUP -n $ipname --query "ipAddress" -o tsv;
+} 
+Write-Host "Using Interface Engine Public IP: [$publicip]"
+
+$serviceyaml = @"
+kind: Service
+apiVersion: v1
+metadata:
+  name: interfaceengine-direct-port
+  namespace: fabricrealtime
+spec:
+  selector:
+    app: interfaceengine
+  ports:
+  - name: interfaceengine
+    protocol: TCP
+    port: 6661
+    targetPort: 6661
+  type: LoadBalancer  
+  # Special notes for Azure: To use user-specified public type loadBalancerIP, a static type public IP address resource needs to be created first, 
+  # and it should be in the same resource group of the cluster. 
+  # Then you could specify the assigned IP address as loadBalancerIP
+  # https://kubernetes.io/docs/concepts/services-networking/service/#type-loadbalancer
+  loadBalancerIP: $publicip
+---
+"@
+
+    Write-Output $serviceyaml | kubectl create -f -
+
+
+# $serviceyaml = @"
+# apiVersion: extensions/v1beta1
+# kind: Ingress
+# metadata:
+#   name: realtime-ingress
+#   namespace: fabricrealtime
+#   annotations:
+#     kubernetes.io/ingress.class: traefik
+# spec:
+#   rules:
+#   - host: solr.ahmn.healthcatalyst.net
+#     http:
+#       paths:
+#       - backend:
+#           serviceName: solrserverpublic
+#           servicePort: 80
+#   - host: nlp.ahmn.healthcatalyst.net
+#     http:
+#       paths:
+#       - backend:
+#           serviceName: nlpserverpublic
+#           servicePort: 80
+#   - host: nlpjobs.ahmn.healthcatalyst.net
+#     http:
+#       paths:
+#       - backend:
+#           serviceName: nlpjobsserverpublic
+#           servicePort: 80
+# ---
+# "@
+
+#     Write-Output $serviceyaml | kubectl create -f -
 
 kubectl get 'deployments,pods,services,ingress,secrets,persistentvolumeclaims,persistentvolumes,nodes' --namespace=fabricrealtime
 

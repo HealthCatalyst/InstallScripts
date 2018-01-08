@@ -31,50 +31,50 @@ else {
 #                                        --resource-group $AKS_PERS_RESOURCE_GROUP `
 #                                        --zone-name 
 
-kubectl create namespace fabricnlp
+if ([string]::IsNullOrWhiteSpace($(kubectl get namespace fabricnlp))) {
+    kubectl create namespace fabricnlp
+}
 
-if ([string]::IsNullOrWhiteSpace($(kubectl get secret mysqlrootpassword -n fabricnlp -o jsonpath='{.data.password}'))) {
+function AskForPassword ($secretname, $prompt, $namespace) {
+    if ([string]::IsNullOrWhiteSpace($(kubectl get secret $secretname -n $namespace -o jsonpath='{.data.password}'))) {
 
+        # MySQL password requirements: https://dev.mysql.com/doc/refman/5.6/en/validate-password-plugin.html
+        # we also use sed to replace configs: https://unix.stackexchange.com/questions/32907/what-characters-do-i-need-to-escape-when-using-sed-in-a-sh-script
+        Do {
+            $mysqlrootpasswordsecure = Read-host "$prompt" -AsSecureString 
+            $mysqlrootpassword = [Runtime.InteropServices.Marshal]::PtrToStringAuto([Runtime.InteropServices.Marshal]::SecureStringToBSTR($mysqlrootpasswordsecure))
+        }
+        while (($mysqlrootpassword -notmatch "^[a-z0-9!.*@\s]+$") -or ($mysqlrootpassword.Length -lt 8 ))
+        kubectl create secret generic $secretname --namespace=$namespace --from-literal=password=$mysqlrootpassword
+    }
+    else {
+        Write-Output "$secretname secret already set so will reuse it"
+    }
+}
+
+function AskForSecretValue ($secretname, $prompt, $namespace) {
+    if ([string]::IsNullOrWhiteSpace($(kubectl get secret $secretname -n $namespace -o jsonpath='{.data.value}'))) {
+
+        Do {
+            $certhostname = Read-host "$prompt"
+        }
+        while ($certhostname.Length -lt 8 )
+    
+        kubectl create secret generic $secretname --namespace=$namespace --from-literal=value=$certhostname
+    }
+    else {
+        Write-Output "$secretname secret already set so will reuse it"
+    }    
+}
+
+
+AskForPassword -secretname "mysqlrootpassword" -prompt "MySQL root password (> 8 chars, min 1 number, 1 lowercase, 1 uppercase, 1 special [!.*@] )" -namespace "fabricnlp"
     # MySQL password requirements: https://dev.mysql.com/doc/refman/5.6/en/validate-password-plugin.html
     # we also use sed to replace configs: https://unix.stackexchange.com/questions/32907/what-characters-do-i-need-to-escape-when-using-sed-in-a-sh-script
-    Do {
-        $mysqlrootpasswordsecure = Read-host "MySQL root password (> 8 chars, min 1 number, 1 lowercase, 1 uppercase, 1 special [!.*@] )" -AsSecureString 
-        $mysqlrootpassword = [Runtime.InteropServices.Marshal]::PtrToStringAuto([Runtime.InteropServices.Marshal]::SecureStringToBSTR($mysqlrootpasswordsecure))
-    }
-    while (($mysqlrootpassword -notmatch "^[a-z0-9!.*@\s]+$") -or ($mysqlrootpassword.Length -lt 8 ))
-    kubectl create secret generic mysqlrootpassword --namespace=fabricnlp --from-literal=password=$mysqlrootpassword
-}
-else {
-    Write-Output "mysqlrootpassword secret already set so will reuse it"
-}
 
-if ([string]::IsNullOrWhiteSpace($(kubectl get secret mysqlpassword -n fabricnlp -o jsonpath='{.data.password}'))) {
+AskForPassword -secretname "mysqlpassword" -prompt "MySQL NLP_APP_USER password (> 8 chars, min 1 number, 1 lowercase, 1 uppercase, 1 special [!.*@] )" -namespace "fabricnlp"
 
-    Do {
-        $mysqlpasswordsecure = Read-host "MySQL NLP_APP_USER password (> 8 chars, min 1 number, 1 lowercase, 1 uppercase, 1 special [!.*@] )" -AsSecureString 
-        $mysqlpassword = [Runtime.InteropServices.Marshal]::PtrToStringAuto([Runtime.InteropServices.Marshal]::SecureStringToBSTR($mysqlpasswordsecure))
-    }
-    while (($mysqlpassword -notmatch "^[a-z0-9!.*@\s]+$") -or ($mysqlpassword.Length -lt 8 ))
-
-    kubectl create secret generic mysqlpassword --namespace=fabricnlp --from-literal=password=$mysqlpassword
-    Write-Warning "Be sure to keep the passwords in a secure place or you won't be able to access the data in the cluster afterwards"
-}
-else {
-    Write-Output "mysqlpassword secret already set so will reuse it"
-}
-
-if ([string]::IsNullOrWhiteSpace($(kubectl get secret smtprelaypassword -n fabricnlp -o jsonpath='{.data.password}'))) {
-
-    Do {
-        $smtprelaypassword = Read-host "SMTP (SendGrid) Relay Key"
-    }
-    while (($smtprelaypassword.Length -lt 8 ))
-
-    kubectl create secret generic smtprelaypassword --namespace=fabricnlp --from-literal=password=$smtprelaypassword
-}
-else {
-    Write-Output "smtprelaypassword secret already set so will reuse it"
-}
+AskForPassword -secretname "smtprelaypassword" -prompt "SMTP (SendGrid) Relay Key" -namespace "fabricnlp"
 
 Write-Output "Cleaning out any old resources in fabricnlp"
 
@@ -93,6 +93,55 @@ kubectl create -f https://healthcatalyst.github.io/InstallScripts/nlp/nlp-kubern
 kubectl create -f https://healthcatalyst.github.io/InstallScripts/nlp/nlp-kubernetes-public.yml
 
 kubectl create -f https://healthcatalyst.github.io/InstallScripts/nlp/nlp-mysql-private.yml
+
+Write-Output "Setting up SSL reverse proxy"
+
+AskForSecretValue -secretname "customerid" -prompt "Health Catalyst Customer ID (e.g., ahmn)" -namespace "fabricnlp"
+
+$customeridbase64 = kubectl get secret customerid -n fabricnlp -o jsonpath='{.data.value}'
+$customerid = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($customeridbase64))
+Write-Output "Customer ID:" $customerid
+
+# $customerid="ahmn"
+# ingress for web services
+# for SSL, from: https://github.com/containous/traefik/issues/2329
+$serviceyaml = @"
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: nlp-ingress
+  namespace: fabricnlp
+  annotations:
+    kubernetes.io/ingress.class: traefik
+spec:
+  tls:
+    - secretName: ssl-ahmn
+      hosts:
+        - solr.$customerid.healthcatalyst.net
+        - nlp.$customerid.healthcatalyst.net
+        - nlpjobs.$customerid.healthcatalyst.net
+  rules:
+  - host: solr.$customerid.healthcatalyst.net
+    http:
+      paths:
+      - backend:
+          serviceName: solrserverpublic
+          servicePort: 80
+  - host: nlp.$customerid.healthcatalyst.net
+    http:
+      paths:
+      - backend:
+          serviceName: nlpserverpublic
+          servicePort: 80
+  - host: nlpjobs.$customerid.healthcatalyst.net
+    http:
+      paths:
+      - backend:
+          serviceName: nlpjobsserverpublic
+          servicePort: 80---
+"@
+
+    Write-Output $serviceyaml | kubectl create -f -
 
 kubectl get 'deployments,pods,services,ingress,secrets,persistentvolumeclaims,persistentvolumes,nodes' --namespace=fabricnlp
 
@@ -114,5 +163,5 @@ if([string]::IsNullOrWhiteSpace($loadBalancerIP)){
 }
 
 Write-Output "To test out the NLP services, open Git Bash and run:"
-Write-Output "curl -L --verbose --header 'Host: solr.ahmn.healthcatalyst.net' 'http://$loadBalancerIP/solr'"
-Write-Output "curl -L --verbose --header 'Host: nlp.ahmn.healthcatalyst.net' 'http://$loadBalancerIP/nlpweb'"
+Write-Output "curl -L --verbose --header 'Host: solr.$customerid.healthcatalyst.net' 'http://$loadBalancerIP/solr'"
+Write-Output "curl -L --verbose --header 'Host: nlp.$customerid.healthcatalyst.net' 'http://$loadBalancerIP/nlpweb'"

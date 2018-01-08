@@ -1,0 +1,277 @@
+{
+  "kind": "Deployment",
+  "apiVersion": "extensions/v1beta1",
+  "metadata": {
+    "name": "kube-dns-v20",
+    "namespace": "kube-system",
+    "selfLink": "/apis/extensions/v1beta1/namespaces/kube-system/deployments/kube-dns-v20",
+    "uid": "c80ab806-f1a1-11e7-9e1b-000d3a1514a8",
+    "resourceVersion": "100050",
+    "generation": 1,
+    "creationTimestamp": "2018-01-04T22:51:20Z",
+    "labels": {
+      "k8s-app": "kube-dns",
+      "kubernetes.io/cluster-service": "true",
+      "version": "v20"
+    },
+    "annotations": {
+      "deployment.kubernetes.io/revision": "1",
+      "kubectl.kubernetes.io/last-applied-configuration": "{\"apiVersion\":\"apps/v1beta1\",\"kind\":\"Deployment\",\"metadata\":{\"annotations\":{},\"labels\":{\"k8s-app\":\"kube-dns\",\"kubernetes.io/cluster-service\":\"true\",\"version\":\"v20\"},\"name\":\"kube-dns-v20\",\"namespace\":\"kube-system\"},\"spec\":{\"replicas\":2,\"selector\":{\"matchLabels\":{\"k8s-app\":\"kube-dns\",\"version\":\"v20\"}},\"template\":{\"metadata\":{\"annotations\":{\"scheduler.alpha.kubernetes.io/critical-pod\":\"\"},\"labels\":{\"k8s-app\":\"kube-dns\",\"kubernetes.io/cluster-service\":\"true\",\"version\":\"v20\"}},\"spec\":{\"affinity\":{\"podAntiAffinity\":{\"preferredDuringSchedulingIgnoredDuringExecution\":[{\"podAffinityTerm\":{\"labelSelector\":{\"matchExpressions\":[{\"key\":\"k8s-app\",\"operator\":\"In\",\"values\":[\"kube-dns\"]}]},\"topologyKey\":\"kubernetes.io/hostname\"},\"weight\":100}]}},\"containers\":[{\"args\":[\"--domain=cluster.local.\",\"--dns-port=10053\",\"--v=2\",\"--config-dir=/kube-dns-config\"],\"image\":\"gcrio.azureedge.net/google_containers/k8s-dns-kube-dns-amd64:1.14.5\",\"livenessProbe\":{\"failureThreshold\":5,\"httpGet\":{\"path\":\"/healthz-kubedns\",\"port\":8080,\"scheme\":\"HTTP\"},\"initialDelaySeconds\":60,\"successThreshold\":1,\"timeoutSeconds\":5},\"name\":\"kubedns\",\"ports\":[{\"containerPort\":10053,\"name\":\"dns-local\",\"protocol\":\"UDP\"},{\"containerPort\":10053,\"name\":\"dns-tcp-local\",\"protocol\":\"TCP\"}],\"readinessProbe\":{\"httpGet\":{\"path\":\"/readiness\",\"port\":8081,\"scheme\":\"HTTP\"},\"initialDelaySeconds\":30,\"timeoutSeconds\":5},\"resources\":{\"limits\":{\"memory\":\"170Mi\"},\"requests\":{\"cpu\":\"100m\",\"memory\":\"70Mi\"}},\"volumeMounts\":[{\"mountPath\":\"/kube-dns-config\",\"name\":\"kube-dns-config\"}]},{\"args\":[\"-v=2\",\"-logtostderr\",\"-configDir=/kube-dns-config\",\"-restartDnsmasq=true\",\"--\",\"-k\",\"--cache-size=1000\",\"--no-resolv\",\"--server=127.0.0.1#10053\",\"--server=/in-addr.arpa/127.0.0.1#10053\",\"--server=/ip6.arpa/127.0.0.1#10053\",\"--log-facility=-\"],\"image\":\"gcrio.azureedge.net/google_containers/k8s-dns-dnsmasq-nanny-amd64:1.14.5\",\"name\":\"dnsmasq\",\"ports\":[{\"containerPort\":53,\"name\":\"dns\",\"protocol\":\"UDP\"},{\"containerPort\":53,\"name\":\"dns-tcp\",\"protocol\":\"TCP\"}],\"volumeMounts\":[{\"mountPath\":\"/kube-dns-config\",\"name\":\"kube-dns-config\"}]},{\"args\":[\"--cmd=nslookup kubernetes.default.svc.cluster.local 127.0.0.1 \\u003e/dev/null\",\"--url=/healthz-dnsmasq\",\"--cmd=nslookup kubernetes.default.svc.cluster.local 127.0.0.1:10053 \\u003e/dev/null\",\"--url=/healthz-kubedns\",\"--port=8080\",\"--quiet\"],\"image\":\"gcrio.azureedge.net/google_containers/exechealthz-amd64:1.2\",\"livenessProbe\":{\"failureThreshold\":5,\"httpGet\":{\"path\":\"/healthz-dnsmasq\",\"port\":8080,\"scheme\":\"HTTP\"},\"initialDelaySeconds\":60,\"successThreshold\":1,\"timeoutSeconds\":5},\"name\":\"healthz\",\"ports\":[{\"containerPort\":8080,\"protocol\":\"TCP\"}],\"resources\":{\"limits\":{\"memory\":\"50Mi\"},\"requests\":{\"cpu\":\"10m\",\"memory\":\"50Mi\"}}}],\"dnsPolicy\":\"Default\",\"nodeSelector\":{\"beta.kubernetes.io/os\":\"linux\"},\"serviceAccountName\":\"kube-dns\",\"tolerations\":[{\"key\":\"CriticalAddonsOnly\",\"operator\":\"Exists\"}],\"volumes\":[{\"configMap\":{\"name\":\"kube-dns\",\"optional\":true},\"name\":\"kube-dns-config\"}]}}}}\n"
+    }
+  },
+  "spec": {
+    "replicas": 2,
+    "selector": {
+      "matchLabels": {
+        "k8s-app": "kube-dns",
+        "version": "v20"
+      }
+    },
+    "template": {
+      "metadata": {
+        "creationTimestamp": null,
+        "labels": {
+          "k8s-app": "kube-dns",
+          "kubernetes.io/cluster-service": "true",
+          "version": "v20"
+        },
+        "annotations": {
+          "scheduler.alpha.kubernetes.io/critical-pod": ""
+        }
+      },
+      "spec": {
+        "volumes": [
+          {
+            "name": "kube-dns-config",
+            "configMap": {
+              "name": "kube-dns",
+              "defaultMode": 420,
+              "optional": true
+            }
+          }
+        ],
+        "containers": [
+          {
+            "name": "kubedns",
+            "image": "gcrio.azureedge.net/google_containers/k8s-dns-kube-dns-amd64:1.14.5",
+            "args": [
+              "--domain=cluster.local.",
+              "--dns-port=10053",
+              "--v=2",
+              "--config-dir=/kube-dns-config"
+            ],
+            "ports": [
+              {
+                "name": "dns-local",
+                "containerPort": 10053,
+                "protocol": "UDP"
+              },
+              {
+                "name": "dns-tcp-local",
+                "containerPort": 10053,
+                "protocol": "TCP"
+              }
+            ],
+            "resources": {
+              "limits": {
+                "memory": "170Mi"
+              },
+              "requests": {
+                "cpu": "100m",
+                "memory": "70Mi"
+              }
+            },
+            "volumeMounts": [
+              {
+                "name": "kube-dns-config",
+                "mountPath": "/kube-dns-config"
+              }
+            ],
+            "livenessProbe": {
+              "httpGet": {
+                "path": "/healthz-kubedns",
+                "port": 8080,
+                "scheme": "HTTP"
+              },
+              "initialDelaySeconds": 60,
+              "timeoutSeconds": 5,
+              "periodSeconds": 10,
+              "successThreshold": 1,
+              "failureThreshold": 5
+            },
+            "readinessProbe": {
+              "httpGet": {
+                "path": "/readiness",
+                "port": 8081,
+                "scheme": "HTTP"
+              },
+              "initialDelaySeconds": 30,
+              "timeoutSeconds": 5,
+              "periodSeconds": 10,
+              "successThreshold": 1,
+              "failureThreshold": 3
+            },
+            "terminationMessagePath": "/dev/termination-log",
+            "terminationMessagePolicy": "File",
+            "imagePullPolicy": "IfNotPresent"
+          },
+          {
+            "name": "dnsmasq",
+            "image": "gcrio.azureedge.net/google_containers/k8s-dns-dnsmasq-nanny-amd64:1.14.5",
+            "args": [
+              "-v=2",
+              "-logtostderr",
+              "-configDir=/kube-dns-config",
+              "-restartDnsmasq=true",
+              "--",
+              "-k",
+              "--cache-size=1000",
+              "--no-resolv",
+              "--server=127.0.0.1#10053",
+              "--server=/in-addr.arpa/127.0.0.1#10053",
+              "--server=/ip6.arpa/127.0.0.1#10053",
+              "--log-facility=-"
+            ],
+            "ports": [
+              {
+                "name": "dns",
+                "containerPort": 53,
+                "protocol": "UDP"
+              },
+              {
+                "name": "dns-tcp",
+                "containerPort": 53,
+                "protocol": "TCP"
+              }
+            ],
+            "resources": {},
+            "volumeMounts": [
+              {
+                "name": "kube-dns-config",
+                "mountPath": "/kube-dns-config"
+              }
+            ],
+            "terminationMessagePath": "/dev/termination-log",
+            "terminationMessagePolicy": "File",
+            "imagePullPolicy": "IfNotPresent"
+          },
+          {
+            "name": "healthz",
+            "image": "gcrio.azureedge.net/google_containers/exechealthz-amd64:1.2",
+            "args": [
+              "--cmd=nslookup kubernetes.default.svc.cluster.local 127.0.0.1 >/dev/null",
+              "--url=/healthz-dnsmasq",
+              "--cmd=nslookup kubernetes.default.svc.cluster.local 127.0.0.1:10053 >/dev/null",
+              "--url=/healthz-kubedns",
+              "--port=8080",
+              "--quiet"
+            ],
+            "ports": [
+              {
+                "containerPort": 8080,
+                "protocol": "TCP"
+              }
+            ],
+            "resources": {
+              "limits": {
+                "memory": "50Mi"
+              },
+              "requests": {
+                "cpu": "10m",
+                "memory": "50Mi"
+              }
+            },
+            "livenessProbe": {
+              "httpGet": {
+                "path": "/healthz-dnsmasq",
+                "port": 8080,
+                "scheme": "HTTP"
+              },
+              "initialDelaySeconds": 60,
+              "timeoutSeconds": 5,
+              "periodSeconds": 10,
+              "successThreshold": 1,
+              "failureThreshold": 5
+            },
+            "terminationMessagePath": "/dev/termination-log",
+            "terminationMessagePolicy": "File",
+            "imagePullPolicy": "IfNotPresent"
+          }
+        ],
+        "restartPolicy": "Always",
+        "terminationGracePeriodSeconds": 30,
+        "dnsPolicy": "Default",
+        "nodeSelector": {
+          "beta.kubernetes.io/os": "linux"
+        },
+        "serviceAccountName": "kube-dns",
+        "serviceAccount": "kube-dns",
+        "securityContext": {},
+        "affinity": {
+          "podAntiAffinity": {
+            "preferredDuringSchedulingIgnoredDuringExecution": [
+              {
+                "weight": 100,
+                "podAffinityTerm": {
+                  "labelSelector": {
+                    "matchExpressions": [
+                      {
+                        "key": "k8s-app",
+                        "operator": "In",
+                        "values": [
+                          "kube-dns"
+                        ]
+                      }
+                    ]
+                  },
+                  "topologyKey": "kubernetes.io/hostname"
+                }
+              }
+            ]
+          }
+        },
+        "schedulerName": "default-scheduler",
+        "tolerations": [
+          {
+            "key": "CriticalAddonsOnly",
+            "operator": "Exists"
+          }
+        ]
+      }
+    },
+    "strategy": {
+      "type": "RollingUpdate",
+      "rollingUpdate": {
+        "maxUnavailable": "25%",
+        "maxSurge": "25%"
+      }
+    },
+    "revisionHistoryLimit": 2,
+    "progressDeadlineSeconds": 600
+  },
+  "status": {
+    "observedGeneration": 1,
+    "replicas": 2,
+    "updatedReplicas": 2,
+    "readyReplicas": 2,
+    "availableReplicas": 2,
+    "conditions": [
+      {
+        "type": "Progressing",
+        "status": "True",
+        "lastUpdateTime": "2018-01-04T22:56:05Z",
+        "lastTransitionTime": "2018-01-04T22:51:20Z",
+        "reason": "NewReplicaSetAvailable",
+        "message": "ReplicaSet \"kube-dns-v20-568b85b8b\" has successfully progressed."
+      },
+      {
+        "type": "Available",
+        "status": "True",
+        "lastUpdateTime": "2018-01-05T18:14:51Z",
+        "lastTransitionTime": "2018-01-05T18:14:51Z",
+        "reason": "MinimumReplicasAvailable",
+        "message": "Deployment has minimum availability."
+      }
+    ]
+  }
+}

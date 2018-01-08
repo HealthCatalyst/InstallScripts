@@ -1,4 +1,4 @@
-Write-output "Version 2017.12.18.23"
+Write-output "Version 2018.01.08.1"
 
 #
 # This script is meant for quick & easy install via:
@@ -369,6 +369,10 @@ if (!(Test-Path -Path "$AKS_LOCAL_TEMP_FOLDER")) {
     New-Item -ItemType directory -Path "$AKS_LOCAL_TEMP_FOLDER"
 }
 
+# sometimes powershell starts in a strange folder where the current user doesn't have permissions
+# so CD into the temp folder to avoid errors
+Set-Location -Path $AKS_LOCAL_TEMP_FOLDER
+
 $output = "$AKS_LOCAL_TEMP_FOLDER\acs.json"
 Write-Output "Downloading parameters file from github to $output"
 if (Test-Path $output) {
@@ -485,6 +489,9 @@ $Utf8NoBomEncoding = New-Object System.Text.UTF8Encoding $False
 [System.IO.File]::WriteAllLines($output, $MyFile, $Utf8NoBomEncoding)
 
 $acsoutputfolder = "$AKS_LOCAL_TEMP_FOLDER\_output\$dnsNamePrefix"
+if (!(Test-Path -Path "$acsoutputfolder")) {
+    New-Item -ItemType directory -Path "$acsoutputfolder"
+}
 
 Write-Output "Generating ACS engine template"
 

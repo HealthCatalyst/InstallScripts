@@ -58,7 +58,7 @@ sudo chmod 750 /var/lib/boot2docker/certs
 printf "\nCopying certificate info for Docker.\n"
 printf "######################################\n\n"
 sudo cp /etc/letsencrypt/live/$FQDN/cert.pem /var/lib/boot2docker/certs/cert.pem
-sudo cp /etc/letsencrypt/live/$FQDN/privkey.pem /var/lib/boot2docker/certs/privkey.pem
+sudo cp /etc/letsencrypt/live/$FQDN/privkey.pem /var/lib/boot2docker/certs/key.pem
 
 printf "\nCreating Docker Traefik overlay network\n"
 printf "#########################################\n\n"

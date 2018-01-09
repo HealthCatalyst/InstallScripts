@@ -1,10 +1,13 @@
 
+#
+# This script is meant for quick & easy install via:
+#   curl -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/azure/setup-coredns.ps1 | iex;
 
 
 $CLUSTER_DNS_IP=kubectl get service --namespace kube-system kube-dns -o jsonpath="{.spec.clusterIP}"
 $CLUSTER_DOMAIN="cluster.local"
 $SERVICE_CIDR="10.0.0.0/16"
-$POD_CIDR=""
+$POD_CIDR="10.244.0.0/24"
 
 $serviceyaml = @"
 apiVersion: v1
@@ -57,8 +60,11 @@ data:
   Corefile: |
     .:53 {
         errors
+        log
         health
-        kubernetes $CLUSTER_DOMAIN $SERVICE_CIDR 
+        kubernetes $CLUSTER_DOMAIN $SERVICE_CIDR {
+          pods insecure
+        }
         prometheus :9153
         proxy . /etc/resolv.conf
         cache 30
@@ -148,5 +154,5 @@ spec:
 ---
 "@
 
-    Write-Output $serviceyaml | kubectl create -f -
+    Write-Output $serviceyaml | kubectl apply -f -
 

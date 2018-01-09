@@ -5,7 +5,7 @@
             "orchestratorType": "Kubernetes",
             "orchestratorRelease": "1.8",
             "kubernetesConfig": {
-                "networkPolicy": "none"
+                "networkPolicy": "azure"
             }
         },
         "masterProfile": {
@@ -14,16 +14,27 @@
             "vmSize": "Standard_D2_v2",
             "vnetSubnetId": "REPLACE-SUBNET",
             "firstConsecutiveStaticIP": "REPLACE-FIRST-STATIC-IP",
+            "vnetCidr": "REPLACE_VNET_CIDR",
             "storageProfile": "ManagedDisks"
         },
         "agentPoolProfiles": [{
-            "name": "linuxagent",
-            "count": 2,
-            "vmSize": "Standard_D2_v2",
-            "vnetSubnetId": "REPLACE-SUBNET",
-            "availabilityProfile": "AvailabilitySet",
-            "storageProfile": "ManagedDisks"
-        }],
+                "name": "linuxagent",
+                "count": 2,
+                "vmSize": "Standard_D2_v2",
+                "vnetSubnetId": "REPLACE-SUBNET",
+                "availabilityProfile": "AvailabilitySet",
+                "storageProfile": "ManagedDisks"
+            },
+            {
+                "name": "windowsagent",
+                "osType": "Windows",
+                "count": 2,
+                "vmSize": "Standard_D2_v2",
+                "vnetSubnetId": "REPLACE-SUBNET",
+                "availabilityProfile": "AvailabilitySet",
+                "storageProfile": "ManagedDisks"
+            }
+        ],
         "linuxProfile": {
             "adminUsername": "azureuser",
             "ssh": {
@@ -31,6 +42,10 @@
                     "keyData": "REPLACE-SSH-KEY"
                 }]
             }
+        },
+        "windowsProfile": {
+            "adminUsername": "azureuser",
+            "adminPassword": "REPLACE-WINDOWS-PASSWORD"
         },
         "servicePrincipalProfile": {
             "clientId": "REPLACE-CLIENTID",

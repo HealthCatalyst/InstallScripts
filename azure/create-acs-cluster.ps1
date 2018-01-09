@@ -1,11 +1,11 @@
-Write-output "Version 2018.01.08.1"
+Write-output "Version 2018.01.08.02"
 
 #
 # This script is meant for quick & easy install via:
 #   curl -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/azure/create-acs-cluster.ps1 | iex;
 
 $GITHUB_URL = "https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master"
-#$GITHUB_URL = "."
+# $GITHUB_URL = "C:\Catalyst\git\Installscripts"
 
 $AKS_PERS_RESOURCE_GROUP = ""
 $AKS_PERS_LOCATION = ""
@@ -48,6 +48,11 @@ $AKS_SUBSCRIPTION_ID = az account show --query "id" --output tsv
 
 Do { $AKS_PERS_RESOURCE_GROUP = Read-Host "Resource Group (e.g., fabricnlp-rg)"}
 while ([string]::IsNullOrWhiteSpace($AKS_PERS_RESOURCE_GROUP))
+
+$AKS_USE_AZURE_NETWORKING = Read-Host "Use Azure networking (default: yes)"
+if ([string]::IsNullOrWhiteSpace($AKS_USE_AZURE_NETWORKING)) {
+    $AKS_USE_AZURE_NETWORKING = "yes"
+}
 
 $AKS_SERVICE_PRINCIPAL_NAME = Read-Host "Service account to use (default: ${AKS_PERS_RESOURCE_GROUP}Kubernetes)"
 if ([string]::IsNullOrWhiteSpace($AKS_SERVICE_PRINCIPAL_NAME)) {
@@ -123,16 +128,22 @@ else {
 
 # echo download as-engine
 $ACS_ENGINE_FILE = "$AKS_LOCAL_FOLDER\acs-engine.exe"
-if (!(Test-Path "$ACS_ENGINE_FILE")) {
+$acsengineversion = acs-engine version
+$acsengineversion = $acsengineversion -match "^Version: v[0-9.]+"
+$acsengineversion = "[$acsengineversion]"
+if ((!(Test-Path "$ACS_ENGINE_FILE")) -or !$acsengineversion.equals("[Version: v0.11.0]")) {
     Write-Output "Downloading acs-engine.exe to $ACS_ENGINE_FILE"
-    $url = "https://github.com/Azure/acs-engine/releases/download/v0.10.0/acs-engine-v0.10.0-windows-amd64.zip"
+    $url = "https://github.com/Azure/acs-engine/releases/download/v0.11.0/acs-engine-v0.11.0-windows-amd64.zip"
     (New-Object System.Net.WebClient).DownloadFile($url, "$AKS_LOCAL_FOLDER\acs-engine.zip")
     Expand-Archive -Path "$AKS_LOCAL_FOLDER\acs-engine.zip" -DestinationPath "$AKS_LOCAL_FOLDER" -Force
-    Copy-Item -Path "$AKS_LOCAL_FOLDER\acs-engine-v0.10.0-windows-amd64\acs-engine.exe" -Destination $ACS_ENGINE_FILE
+    Copy-Item -Path "$AKS_LOCAL_FOLDER\acs-engine-v0.11.0-windows-amd64\acs-engine.exe" -Destination $ACS_ENGINE_FILE
 }
 else {
     Write-Output "acs-engine.exe already exists at $ACS_ENGINE_FILE"    
 }
+
+Write-Output "ACS Engine version"
+acs-engine version
 
 Do { $AKS_PERS_LOCATION = Read-Host "Location: (e.g., eastus)"}
 while ([string]::IsNullOrWhiteSpace($AKS_PERS_LOCATION))
@@ -260,7 +271,7 @@ if ($resourceGroupExists -eq "true") {
         az resource delete --ids $(az resource list --resource-group $AKS_PERS_RESOURCE_GROUP --resource-type "Microsoft.Network/publicIPAddresses" --query "[].id" -o tsv | Where-Object {!"$_".EndsWith("IngressPublicIP")} )
     }
     
-    if ("$AKS_VNET_NAME") {
+    if (("$AKS_VNET_NAME") -and ("$AKS_USE_AZURE_NETWORKING" -eq "no")) {
         Write-Output "Switching the subnet to a temp route table and tempnsg so we can delete the old route table and nsg"
 
         $routeid = $(az network route-table show --name temproutetable --resource-group $AKS_PERS_RESOURCE_GROUP --query "id" -o tsv)
@@ -363,6 +374,11 @@ $templateFile = "acs.template.json"
 if (!"$AKS_VNET_NAME") {
     $templateFile = "acs.template.nosubnet.json"    
 }
+elseif ("$AKS_USE_AZURE_NETWORKING" -eq "yes") {
+    $templateFile = "acs.template.azurenetwork.json"     
+}
+
+Write-Output "Using template: $templateFile"
 
 $AKS_LOCAL_TEMP_FOLDER = "$AKS_LOCAL_FOLDER\$AKS_PERS_RESOURCE_GROUP\temp"
 if (!(Test-Path -Path "$AKS_LOCAL_TEMP_FOLDER")) {

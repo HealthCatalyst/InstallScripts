@@ -216,7 +216,7 @@ kubectl get 'deployments,pods,services,ingress,secrets,persistentvolumeclaims,pe
 # kubectl create secret generic azure-secret --namespace=fabricnlp --from-literal=azurestorageaccountname="fabricnlp7storage" --from-literal=azurestorageaccountkey="/bYhXNstTodg3MdOvTMog/vDLSFrQDpxG/Zgkp2MlnjtOWhDBNQ2xOs6zjRoZYNjmJHya34MfzqdfOwXkMDN2A=="
 
 Write-Output "To get status of Fabric.NLP run:"
-Write-Output "kubectl get deployments,pods,services,ingress,secrets,persistentvolumeclaims,persistentvolumes,nodes --namespace=fabricnlp"
+Write-Output "kubectl get deployments,pods,services,ingress,secrets,persistentvolumeclaims,persistentvolumes,nodes --namespace=fabricnlp -o wide"
 
 Write-Output "To launch the dashboard UI, run:"
 Write-Output "kubectl proxy"

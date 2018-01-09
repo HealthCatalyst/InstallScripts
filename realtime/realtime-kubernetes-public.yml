@@ -10,5 +10,5 @@ spec:
     app: certificateserver
   ports:
   - port: 80
-    targetPort: 8081
+    targetPort: 3000
 ---

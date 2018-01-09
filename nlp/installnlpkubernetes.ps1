@@ -3,6 +3,7 @@ Write-Output "Version 2017.12.20.1"
 # curl -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/nlp/installnlpkubernetes.ps1 | iex;
 
 $loggedInUser = az account show --query "user.name"  --output tsv
+$AKS_USE_SSL = ""
 
 Write-Output "user: $loggedInUser"
 
@@ -22,6 +23,9 @@ else {
     az login
 }
 
+Do { $AKS_USE_SSL = Read-Host "Do you want to setup SSL? (y/n)"}
+while ([string]::IsNullOrWhiteSpace($AKS_USE_SSL))
+
 # https://kubernetes.io/docs/reference/kubectl/jsonpath/
 
 # setup DNS
@@ -38,6 +42,7 @@ if ([string]::IsNullOrWhiteSpace($(kubectl get namespace fabricnlp))) {
 function AskForPassword ($secretname, $prompt, $namespace) {
     if ([string]::IsNullOrWhiteSpace($(kubectl get secret $secretname -n $namespace -o jsonpath='{.data.password}'))) {
 
+        $mysqlrootpassword=""
         # MySQL password requirements: https://dev.mysql.com/doc/refman/5.6/en/validate-password-plugin.html
         # we also use sed to replace configs: https://unix.stackexchange.com/questions/32907/what-characters-do-i-need-to-escape-when-using-sed-in-a-sh-script
         Do {
@@ -52,13 +57,32 @@ function AskForPassword ($secretname, $prompt, $namespace) {
     }
 }
 
+function AskForPasswordAnyCharacters ($secretname, $prompt, $namespace) {
+    if ([string]::IsNullOrWhiteSpace($(kubectl get secret $secretname -n $namespace -o jsonpath='{.data.password}'))) {
+
+        $mysqlrootpassword=""
+        # MySQL password requirements: https://dev.mysql.com/doc/refman/5.6/en/validate-password-plugin.html
+        # we also use sed to replace configs: https://unix.stackexchange.com/questions/32907/what-characters-do-i-need-to-escape-when-using-sed-in-a-sh-script
+        Do {
+            $mysqlrootpasswordsecure = Read-host "$prompt" -AsSecureString 
+            $mysqlrootpassword = [Runtime.InteropServices.Marshal]::PtrToStringAuto([Runtime.InteropServices.Marshal]::SecureStringToBSTR($mysqlrootpasswordsecure))
+        }
+        while ($mysqlrootpassword.Length -lt 8 )
+        kubectl create secret generic $secretname --namespace=$namespace --from-literal=password=$mysqlrootpassword
+    }
+    else {
+        Write-Output "$secretname secret already set so will reuse it"
+    }
+}
+
 function AskForSecretValue ($secretname, $prompt, $namespace) {
     if ([string]::IsNullOrWhiteSpace($(kubectl get secret $secretname -n $namespace -o jsonpath='{.data.value}'))) {
 
+        $certhostname=""
         Do {
             $certhostname = Read-host "$prompt"
         }
-        while ($certhostname.Length -lt 8 )
+        while ($certhostname.Length -lt 1 )
     
         kubectl create secret generic $secretname --namespace=$namespace --from-literal=value=$certhostname
     }
@@ -74,7 +98,7 @@ AskForPassword -secretname "mysqlrootpassword" -prompt "MySQL root password (> 8
 
 AskForPassword -secretname "mysqlpassword" -prompt "MySQL NLP_APP_USER password (> 8 chars, min 1 number, 1 lowercase, 1 uppercase, 1 special [!.*@] )" -namespace "fabricnlp"
 
-AskForPassword -secretname "smtprelaypassword" -prompt "SMTP (SendGrid) Relay Key" -namespace "fabricnlp"
+AskForPasswordAnyCharacters -secretname "smtprelaypassword" -prompt "SMTP (SendGrid) Relay Key" -namespace "fabricnlp"
 
 Write-Output "Cleaning out any old resources in fabricnlp"
 
@@ -102,6 +126,7 @@ $customeridbase64 = kubectl get secret customerid -n fabricnlp -o jsonpath='{.da
 $customerid = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($customeridbase64))
 Write-Output "Customer ID:" $customerid
 
+if ($AKS_USE_SSL -eq "y" ) {
 # $customerid="ahmn"
 # ingress for web services
 # for SSL, from: https://github.com/containous/traefik/issues/2329
@@ -109,41 +134,81 @@ $serviceyaml = @"
 apiVersion: extensions/v1beta1
 kind: Ingress
 metadata:
-  name: nlp-ingress
-  namespace: fabricnlp
-  annotations:
-    kubernetes.io/ingress.class: traefik
+    name: nlp-ingress
+    namespace: fabricnlp
+    annotations:
+        kubernetes.io/ingress.class: traefik
 spec:
-  tls:
+    tls:
     - secretName: ssl-ahmn
-      hosts:
-        - solr.$customerid.healthcatalyst.net
-        - nlp.$customerid.healthcatalyst.net
-        - nlpjobs.$customerid.healthcatalyst.net
-  rules:
-  - host: solr.$customerid.healthcatalyst.net
-    http:
-      paths:
-      - backend:
-          serviceName: solrserverpublic
-          servicePort: 80
-  - host: nlp.$customerid.healthcatalyst.net
-    http:
-      paths:
-      - backend:
-          serviceName: nlpserverpublic
-          servicePort: 80
-  - host: nlpjobs.$customerid.healthcatalyst.net
-    http:
-      paths:
-      - backend:
-          serviceName: nlpjobsserverpublic
-          servicePort: 80---
+        hosts:
+            - solr.$customerid.healthcatalyst.net
+            - nlp.$customerid.healthcatalyst.net
+            - nlpjobs.$customerid.healthcatalyst.net
+    rules:
+    - host: solr.$customerid.healthcatalyst.net
+      http:
+          paths:
+          - backend:
+              serviceName: solrserverpublic
+              servicePort: 80
+    - host: nlp.$customerid.healthcatalyst.net
+      http:
+          paths:
+          - backend:
+              serviceName: nlpserverpublic
+              servicePort: 80
+    - host: nlpjobs.$customerid.healthcatalyst.net
+      http:
+          paths:
+          - backend:
+              serviceName: nlpjobsserverpublic
+              servicePort: 80
+---
 "@
 
+    Write-Output $serviceyaml
     Write-Output $serviceyaml | kubectl create -f -
+}
+else {
 
-kubectl get 'deployments,pods,services,ingress,secrets,persistentvolumeclaims,persistentvolumes,nodes' --namespace=fabricnlp
+$serviceyaml = @"
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+    name: nlp-ingress
+    namespace: fabricnlp
+    annotations:
+        kubernetes.io/ingress.class: traefik
+spec:
+    rules:
+    - host: solr.$customerid.healthcatalyst.net
+      http:
+          paths:
+          - backend:
+              serviceName: solrserverpublic
+              servicePort: 80
+    - host: nlp.$customerid.healthcatalyst.net
+      http:
+          paths:
+          - backend:
+              serviceName: nlpserverpublic
+              servicePort: 80
+    - host: nlpjobs.$customerid.healthcatalyst.net
+      http:
+          paths:
+          - backend:
+              serviceName: nlpjobsserverpublic
+              servicePort: 80
+---
+"@    
+
+Write-Output $serviceyaml
+Write-Output $serviceyaml | kubectl create -f -
+
+}
+
+kubectl get 'deployments,pods,services,ingress,secrets,persistentvolumeclaims,persistentvolumes,nodes' --namespace=fabricnlp -o wide
 
 # to get a shell
 # kubectl exec -it fabric.nlp.nlpwebserver-85c8cb86b5-gkphh bash --namespace=fabricnlp

@@ -3,7 +3,7 @@ Write-Output "Version 2018.01.09.1"
 # curl -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/realtime/installrealtimekubernetes.ps1 | iex;
 
 $GITHUB_URL = "https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master"
-$GITHUB_URL = "."
+# $GITHUB_URL = "."
 
 $loggedInUser = az account show --query "user.name"  --output tsv
 

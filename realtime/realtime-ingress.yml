@@ -1,0 +1,16 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: realtime-ingress
+  namespace: fabricrealtime
+  annotations:
+    kubernetes.io/ingress.class: traefik
+spec:
+  rules:
+    - host: certificates.CUSTOMERID.healthcatalyst.net
+      http:
+        paths:
+        - backend:
+            serviceName: certificateserverpublic
+            servicePort: 80
+---

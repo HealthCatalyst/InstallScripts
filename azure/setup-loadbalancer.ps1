@@ -31,8 +31,16 @@ else {
 
 $AKS_SUBSCRIPTION_ID = az account show --query "id" --output tsv
 
-Do { $AKS_PERS_RESOURCE_GROUP = Read-Host "Resource Group (e.g., fabricnlp-rg)"}
-while ([string]::IsNullOrWhiteSpace($AKS_PERS_RESOURCE_GROUP))
+$AKS_PERS_RESOURCE_GROUP_BASE64 = kubectl get secret azure-secret -o jsonpath='{.data.resourcegroup}'
+$AKS_PERS_RESOURCE_GROUP = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($AKS_PERS_RESOURCE_GROUP_BASE64))
+
+if ([string]::IsNullOrWhiteSpace($AKS_PERS_RESOURCE_GROUP)) {
+    Do { $AKS_PERS_RESOURCE_GROUP = Read-Host "Resource Group (e.g., fabricnlp-rg)"}
+    while ([string]::IsNullOrWhiteSpace($AKS_PERS_RESOURCE_GROUP))
+}
+else {
+    Write-Output "Using resource group: $AKS_PERS_RESOURCE_GROUP"        
+}
 
 $AKS_PERS_LOCATION = az group show --name $AKS_PERS_RESOURCE_GROUP --query "location" -o tsv
 Write-Output "Using location: [$AKS_PERS_LOCATION]"

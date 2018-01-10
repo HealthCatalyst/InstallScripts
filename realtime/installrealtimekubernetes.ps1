@@ -3,7 +3,7 @@ Write-Output "Version 2018.01.09.1"
 # curl -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/realtime/installrealtimekubernetes.ps1 | iex;
 
 $GITHUB_URL = "https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master"
-# $GITHUB_URL = "."
+$GITHUB_URL = "."
 
 $loggedInUser = az account show --query "user.name"  --output tsv
 
@@ -39,6 +39,9 @@ else {
 if ([string]::IsNullOrWhiteSpace($(kubectl get namespace fabricrealtime))) {
     kubectl create namespace fabricrealtime
 }
+
+Do { $AKS_USE_SSL = Read-Host "Do you want to setup SSL? (y/n)"}
+while ([string]::IsNullOrWhiteSpace($AKS_USE_SSL))
 
 function AskForPassword ($secretname, $prompt, $namespace) {
     if ([string]::IsNullOrWhiteSpace($(kubectl get secret $secretname -n $namespace -o jsonpath='{.data.password}'))) {
@@ -157,27 +160,24 @@ $customeridbase64 = kubectl get secret customerid -n fabricrealtime -o jsonpath=
 $customerid = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($customeridbase64))
 Write-Output "Customer ID:" $customerid
 
-$serviceyaml = @"
-apiVersion: extensions/v1beta1
-kind: Ingress
-metadata:
-    name: realtime-ingress
-    namespace: fabricrealtime
-    annotations:
-        kubernetes.io/ingress.class: traefik
-spec:
-    rules:
-    - host: certificates.$customerid.healthcatalyst.net
-      http:
-          paths:
-          - backend:
-              serviceName: certificateserverpublic
-              servicePort: 80
----
-"@    
+$templateFile="realtime-ingress.yml"
+if ($AKS_USE_SSL -eq "y" ){
+    $templateFile="realtime-ingress-ssl.yml"    
+}
 
-Write-Output $serviceyaml
-Write-Output $serviceyaml | kubectl create -f -
+Write-Output "Using template: $templateFile"
+
+if ($GITHUB_URL.StartsWith("http")) { 
+    Invoke-WebRequest -Uri "$GITHUB_URL/realtime/$templateFile" -ContentType "text/plain; charset=utf-8" `
+    | Select-Object -Expand Content `
+    | Foreach-Object {$_ -replace 'CUSTOMERID', "${customerid}"} `
+    | kubectl create -f -
+}
+else {
+    Get-Content -Path "$GITHUB_URL/realtime/$templateFile" `
+        | Foreach-Object {$_ -replace 'CUSTOMERID', "${customerid}"} `
+        | kubectl create -f -    
+}
 
 kubectl get 'deployments,pods,services,ingress,secrets,persistentvolumeclaims,persistentvolumes,nodes' --namespace=fabricrealtime -o wide
 
@@ -201,7 +201,7 @@ if ([string]::IsNullOrWhiteSpace($loadBalancerIP)) {
 Write-Output "To test out the NLP services, open Git Bash and run:"
 Write-Output "curl -L --verbose --header 'Host: certificates.$customerid.healthcatalyst.net' 'http://$loadBalancerIP/client'"
 
-Write-Output "Connect to interface engine at: $publicip:6661"
+Write-Output "Connect to interface engine at: $publicip port 6661"
 
 Write-Output "if you want, you can download the CA (Certificate Authority) cert from this url"
 Write-Output "http://certificates.$customerid.healthcatalyst.net/client/fabric_ca_cert.p12"

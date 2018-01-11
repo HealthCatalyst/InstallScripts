@@ -219,4 +219,4 @@ Do {
 }
 while ([string]::IsNullOrWhiteSpace($loadBalancerIP))
 
-
+Write-Output "Load Balancer IP: $loadBalancerIP"

@@ -135,25 +135,25 @@ else {
 
 $startDate = Get-Date
 $timeoutInMinutes = 10
+
 if ("$AKS_OPEN_TO_PUBLIC" -eq "y") {
-
-    Write-Output "Waiting for IP to get assigned to the load balancer (Note: It can take 5 minutes or so to get the IP from azure)"
-    Do { 
-        Start-Sleep -Seconds 10
-        Write-Output "."
-        $EXTERNAL_IP = $(kubectl get svc traefik-ingress-service-public -n kube-system -o jsonpath='{.status.loadBalancer.ingress[].ip}')
-    }
-    while ([string]::IsNullOrWhiteSpace($EXTERNAL_IP) -and ($startDate.AddMinutes($timeoutInMinutes) -gt (Get-Date)))
-
-    Write-Output "External IP: $EXTERNAL_IP"
-
-    Write-Output "To get IP of cluster later:"
-    Write-Output "kubectl get svc traefik-ingress-service-public -n kube-system -o jsonpath='{.status.loadBalancer.ingress[].ip}'"
+    $loadbalancer = "traefik-ingress-service-public"
 }
 else {
-    Write-Output "To get IP of cluster, run:"
-    Write-Output "kubectl get svc traefik-ingress-service-private -n kube-system -o jsonpath='{.status.loadBalancer.ingress[].ip}'"       
+    $loadbalancer = "traefik-ingress-service-private"    
 }
+
+Write-Output "Waiting for IP to get assigned to the load balancer (Note: It can take 5 minutes or so to get the IP from azure)"
+Do { 
+    Start-Sleep -Seconds 10
+    Write-Output "."
+    $EXTERNAL_IP = $(kubectl get svc $loadbalancer -n kube-system -o jsonpath='{.status.loadBalancer.ingress[].ip}')
+}
+while ([string]::IsNullOrWhiteSpace($EXTERNAL_IP) -and ($startDate.AddMinutes($timeoutInMinutes) -gt (Get-Date)))
+
+Write-Output "External IP: $EXTERNAL_IP"
+
+
 
 
 

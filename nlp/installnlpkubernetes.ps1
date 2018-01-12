@@ -146,11 +146,18 @@ function ReadYmlAndReplaceCustomer($templateFile, $customerid ) {
     }
 }
 
+function ReadSecret($secretname, $namespace){
+    if ([string]::IsNullOrWhiteSpace($namespace)) { $namespace = "default"}
+
+    $secretbase64 = kubectl get secret $secretname -o jsonpath='{.data.value}' -n $namespace
+    $secretvalue = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($secretbase64))
+    return $secretvalue
+}
+
 AskForSecretValue -secretname "customerid" -prompt "Health Catalyst Customer ID (e.g., ahmn)"
 
-$customeridbase64 = kubectl get secret customerid -o jsonpath='{.data.value}' 
-$customerid = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($customeridbase64))
-Write-Output "Customer ID:" $customerid
+$customerid = ReadSecret -secretname customerid
+Write-Output "Customer ID: $customerid"
 
 AskForPassword -secretname "mysqlrootpassword" -prompt "MySQL root password (> 8 chars, min 1 number, 1 lowercase, 1 uppercase, 1 special [!.*@] )" -namespace "fabricnlp"
 # MySQL password requirements: https://dev.mysql.com/doc/refman/5.6/en/validate-password-plugin.html

@@ -1,4 +1,4 @@
-Write-output "Version 2018.01.08.02"
+Write-output "Version 2018.01.12.03"
 
 #
 # This script is meant for quick & easy install via:
@@ -46,8 +46,40 @@ else {
 
 $AKS_SUBSCRIPTION_ID = az account show --query "id" --output tsv
 
-Do { $AKS_PERS_RESOURCE_GROUP = Read-Host "Resource Group (e.g., fabricnlp-rg)"}
+function AskForSecretValue ($secretname, $prompt, $namespace) {
+    if ([string]::IsNullOrWhiteSpace($namespace)) { $namespace = "default"}
+    if ([string]::IsNullOrWhiteSpace($(kubectl get secret $secretname -n $namespace -o jsonpath='{.data.value}' --ignore-not-found=true))) {
+
+        $certhostname = ""
+        Do {
+            $certhostname = Read-host "$prompt"
+        }
+        while ($certhostname.Length -lt 1 )
+    
+        kubectl create secret generic $secretname --namespace=$namespace --from-literal=value=$certhostname
+    }
+    else {
+        Write-Output "$secretname secret already set so will reuse it"
+    }    
+}
+
+
+Do { $customerid = Read-Host "Health Catalyst Customer ID (e.g., ahmn)"}
+while ([string]::IsNullOrWhiteSpace($customerid))
+
+Write-Output "Customer ID: $customerid"
+
+$DEFAULT_RESOURCE_GROUP="Prod-Kub-$($customerid.ToUpper())-RG"
+Do { 
+    $AKS_PERS_RESOURCE_GROUP = Read-Host "Resource Group (leave empty for $DEFAULT_RESOURCE_GROUP)"
+    if([string]::IsNullOrWhiteSpace($AKS_PERS_RESOURCE_GROUP))
+    {
+        $AKS_PERS_RESOURCE_GROUP = $DEFAULT_RESOURCE_GROUP
+    }
+}
 while ([string]::IsNullOrWhiteSpace($AKS_PERS_RESOURCE_GROUP))
+
+Write-Output "Using resource group [$AKS_PERS_RESOURCE_GROUP]"
 
 $AKS_USE_AZURE_NETWORKING = Read-Host "Use Azure networking (default: yes)"
 if ([string]::IsNullOrWhiteSpace($AKS_USE_AZURE_NETWORKING)) {
@@ -169,13 +201,21 @@ while ([string]::IsNullOrWhiteSpace($confirmation))
 
 if ($confirmation -eq 'y') {
     Write-Output "Finding existing vnets..."
-    Write-Output "------  Existing vnets -------"
     Write-Output " vnet `t resourcegroup"
-    az network vnet list --query "[].[name,resourceGroup ]" -o tsv    
-    Write-Output "------  End vnets -------"
+    # az network vnet list --query "[].[name,resourceGroup ]" -o tsv    
 
-    
-    Do { $AKS_VNET_NAME = Read-Host "Virtual Network Name"}
+    $vnets=az network vnet list --query "[].[name]" -o tsv
+
+    Do { 
+        Write-Output "------  Existing vnets -------"
+        for ($i=1;$i -le $vnets.count; $i++) {
+            Write-Host "$i. $($vnets[$i-1])"
+        }    
+        Write-Output "------  End vnets -------"
+
+        $index = Read-Host "Enter number of vnet to use (1 - $($vnets.count))"
+        $AKS_VNET_NAME = $($vnets[$index-1])
+    }
     while ([string]::IsNullOrWhiteSpace($AKS_VNET_NAME))    
 
     if ("$AKS_VNET_NAME") {
@@ -187,11 +227,18 @@ if ($confirmation -eq 'y') {
         Write-Output "Using subnet resource group: [$AKS_SUBNET_RESOURCE_GROUP]"
 
         Write-Output "Finding existing subnets in $AKS_VNET_NAME ..."
-        Write-Output "------  Subnets in $AKS_VNET_NAME -------"
-        az network vnet subnet list --resource-group $AKS_SUBNET_RESOURCE_GROUP --vnet-name $AKS_VNET_NAME --query "[].name" -o tsv
-        Write-Output "------  End Subnets -------"
+        $subnets = az network vnet subnet list --resource-group $AKS_SUBNET_RESOURCE_GROUP --vnet-name $AKS_VNET_NAME --query "[].name" -o tsv
         
-        Do { $AKS_SUBNET_NAME = Read-Host "Subnet Name"}
+        Do { 
+            Write-Output "------  Subnets in $AKS_VNET_NAME -------"
+            for ($i=1;$i -le $subnets.count; $i++) {
+                Write-Host "$i. $($subnets[$i-1])"
+            }    
+            Write-Output "------  End Subnets -------"
+
+            $index = Read-Host "Enter number of subnet to use (1 - $($subnets.count))"
+            $AKS_SUBNET_NAME = $($subnets[$index-1])
+        }
         while ([string]::IsNullOrWhiteSpace($AKS_SUBNET_NAME)) 
 
         # verify the subnet exists
@@ -654,6 +701,7 @@ Write-Output "Storagekey: [$STORAGE_KEY]"
 
 Write-Output "Creating kubernetes secret"
 kubectl create secret generic azure-secret --from-literal=resourcegroup="${AKS_PERS_RESOURCE_GROUP}" --from-literal=azurestorageaccountname="${AKS_PERS_STORAGE_ACCOUNT_NAME}" --from-literal=azurestorageaccountkey="${STORAGE_KEY}"
+kubectl create secret generic customerid --from-literal=value=$customerid
 
 kubectl get "deployments,pods,services,ingress,secrets" --namespace=kube-system -o wide
 

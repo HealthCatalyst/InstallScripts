@@ -236,6 +236,7 @@ if ($confirmation -eq 'y') {
             }    
             Write-Output "------  End Subnets -------"
 
+            Write-Host "NOTE: Each customer should have their own subnet.  Do not put multiple customers in the same subnet"
             $index = Read-Host "Enter number of subnet to use (1 - $($subnets.count))"
             $AKS_SUBNET_NAME = $($subnets[$index-1])
         }

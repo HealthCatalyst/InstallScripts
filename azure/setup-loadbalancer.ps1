@@ -31,7 +31,7 @@ else {
 
 $AKS_SUBSCRIPTION_ID = az account show --query "id" --output tsv
 
-$AKS_PERS_RESOURCE_GROUP_BASE64 = kubectl get secret azure-secret -o jsonpath='{.data.resourcegroup}'
+$AKS_PERS_RESOURCE_GROUP_BASE64 = kubectl get secret azure-secret -o jsonpath='{.data.resourcegroup}' --ignore-not-found=true
 if (![string]::IsNullOrWhiteSpace($AKS_PERS_RESOURCE_GROUP_BASE64)) {
     $AKS_PERS_RESOURCE_GROUP = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($AKS_PERS_RESOURCE_GROUP_BASE64))
 }
@@ -53,10 +53,10 @@ while ([string]::IsNullOrWhiteSpace($AKS_OPEN_TO_PUBLIC))
 Do { $AKS_USE_SSL = Read-Host "Do you want to setup SSL? (y/n)"}
 while ([string]::IsNullOrWhiteSpace($AKS_USE_SSL))
 
-kubectl delete 'pods,services,configMaps,deployments,ingress' -l k8s-traefik=traefik -n kube-system
+kubectl delete 'pods,services,configMaps,deployments,ingress' -l k8s-traefik=traefik -n kube-system --ignore-not-found=true
 
 # http://blog.kubernetes.io/2017/04/configuring-private-dns-zones-upstream-nameservers-kubernetes.html
-kubectl delete -f "$GITHUB_URL/azure/cafe-kube-dns.yml"
+kubectl delete -f "$GITHUB_URL/azure/cafe-kube-dns.yml" --ignore-not-found=true
 Start-Sleep -Seconds 10
 kubectl create -f "$GITHUB_URL/azure/cafe-kube-dns.yml"
 # to debug dns: https://kubernetes.io/docs/tasks/administer-cluster/dns-custom-nameservers/#inheriting-dns-from-the-node
@@ -154,6 +154,8 @@ Do {
 while ([string]::IsNullOrWhiteSpace($EXTERNAL_IP) -and ($startDate.AddMinutes($timeoutInMinutes) -gt (Get-Date)))
 
 Write-Output "External IP: $EXTERNAL_IP"
+Write-Output "To test out the load balancer, open Git Bash and run:"
+Write-Output "curl -L --verbose --header 'Host: traefik-ui.minikube' 'http://$EXTERNAL_IP/'"
 
 
 

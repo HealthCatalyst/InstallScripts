@@ -78,6 +78,19 @@ function AskForSecretValue ($secretname, $prompt, $namespace) {
     }    
 }
 
+function ReadYmlAndReplaceCustomer($templateFile, $customerid ) {
+    if ($GITHUB_URL.StartsWith("http")) { 
+        Invoke-WebRequest -Uri "$GITHUB_URL/$templateFile" -ContentType "text/plain; charset=utf-8" `
+            | Select-Object -Expand Content `
+            | Foreach-Object {$_ -replace 'CUSTOMERID', "$customerid"}
+    }
+    else {
+        Get-Content -Path "$GITHUB_URL/$templateFile" `
+            | Foreach-Object {$_ -replace 'CUSTOMERID', "$customerid"} 
+    }
+}
+
+
 AskForPassword -secretname "mysqlrootpassword"  -prompt "MySQL root password (> 8 chars, min 1 number, 1 lowercase, 1 uppercase, 1 special [!.*@] )" -namespace "fabricrealtime"
 
 AskForPassword -secretname "mysqlpassword"  -prompt "MySQL root password (> 8 chars, min 1 number, 1 lowercase, 1 uppercase, 1 special [!.*@] )" -namespace "fabricrealtime"
@@ -91,7 +104,7 @@ AskForPassword -secretname "rabbitmqmgmtuipassword"  -prompt "Admin password for
 Write-Output "Cleaning out any old resources in fabricrealtime"
 
 # note kubectl doesn't like spaces in between commas below
-kubectl delete --all 'deployments,pods,services,ingress,persistentvolumeclaims,persistentvolumes' --namespace=fabricrealtime
+kubectl delete --all 'deployments,pods,services,ingress,persistentvolumeclaims,persistentvolumes' --namespace=fabricrealtime --ignore-not-found=true
 
 Write-Output "Waiting until all the resources are cleared up"
 
@@ -162,24 +175,14 @@ $customeridbase64 = kubectl get secret customerid -n fabricrealtime -o jsonpath=
 $customerid = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($customeridbase64))
 Write-Output "Customer ID:" $customerid
 
-$templateFile="realtime-ingress.yml"
-if ($AKS_USE_SSL -eq "y" ){
-    $templateFile="realtime-ingress-ssl.yml"    
+$templateFile = "realtime/realtime-ingress.yml"
+if ($AKS_USE_SSL -eq "y" ) {
+    $templateFile = "realtime/realtime-ingress-ssl.yml"    
 }
 
 Write-Output "Using template: $templateFile"
 
-if ($GITHUB_URL.StartsWith("http")) { 
-    Invoke-WebRequest -Uri "$GITHUB_URL/realtime/$templateFile" -ContentType "text/plain; charset=utf-8" `
-    | Select-Object -Expand Content `
-    | Foreach-Object {$_ -replace 'CUSTOMERID', "${customerid}"} `
-    | kubectl create -f -
-}
-else {
-    Get-Content -Path "$GITHUB_URL/realtime/$templateFile" `
-        | Foreach-Object {$_ -replace 'CUSTOMERID', "${customerid}"} `
-        | kubectl create -f -    
-}
+ReadYmlAndReplaceCustomer -templateFile $templateFile -customerid $customerid
 
 kubectl get 'deployments,pods,services,ingress,secrets,persistentvolumeclaims,persistentvolumes,nodes' --namespace=fabricrealtime -o wide
 

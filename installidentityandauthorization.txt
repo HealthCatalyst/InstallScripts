@@ -34,6 +34,14 @@ if ! [ $identityversion ]; then
 	identityversion="latest"
 fi
 
+if [ $7 ]; then
+	allowunsafeeval=$7
+fi
+
+if ! [ $allowunsafeeval ]; then
+	allowunsafeeval="false"
+fi
+
 #
 # This script is meant for quick & easy install via:
 #   curl -sSL https://healthcatalyst.github.io/InstallScripts/installidentityandauthorization.txt | sh /dev/stdin [couchdb_username] [couchdb_password]
@@ -71,7 +79,8 @@ sleep 20
 
 echo "starting fabric.identity"
 docker run -d --name fabric.identity \
-    -e "HostingOptions__UseInMemoryStores=false" \
+    -e "HostingOptions__StorageProvider=CouchDB" \
+    -e "HostingOptions__AllowUnsafeEval=$allowunsafeeval" \
     -e "CouchDbSettings__Server=http://couchdb:5984" \
     -e "CouchDbSettings__Username=$couchdb_username" \
     -e "CouchDbSettings__Password=$couchdb_password" \

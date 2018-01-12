@@ -3,6 +3,7 @@
 #   curl -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/azure/main.ps1 | iex;
 
 do {
+    Clear-Host
     Write-Host "================ Health Catalyst ================"
 
     Write-Host "1: Create a new Azure Container Service"

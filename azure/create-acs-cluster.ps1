@@ -655,10 +655,10 @@ Write-Output "Storagekey: [$STORAGE_KEY]"
 Write-Output "Creating kubernetes secret"
 kubectl create secret generic azure-secret --from-literal=resourcegroup="${AKS_PERS_RESOURCE_GROUP}" --from-literal=azurestorageaccountname="${AKS_PERS_STORAGE_ACCOUNT_NAME}" --from-literal=azurestorageaccountkey="${STORAGE_KEY}"
 
-kubectl get "deployments,pods,services,ingress,secrets" --namespace=kube-system
+kubectl get "deployments,pods,services,ingress,secrets" --namespace=kube-system -o wide
 
 Write-Output "Run the following to see status of the cluster"
-Write-Output "kubectl get deployments,pods,services,ingress,secrets --namespace=kube-system"
+Write-Output "kubectl get deployments,pods,services,ingress,secrets --namespace=kube-system -o wide"
 
 Write-Output "------------------------"
 Write-Output "To launch the dashboard UI, run:"

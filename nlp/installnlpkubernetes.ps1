@@ -158,7 +158,7 @@ AskForPassword -secretname "mysqlrootpassword" -prompt "MySQL root password (> 8
 
 AskForPassword -secretname "mysqlpassword" -prompt "MySQL NLP_APP_USER password (> 8 chars, min 1 number, 1 lowercase, 1 uppercase, 1 special [!.*@] )" -namespace "fabricnlp"
 
-AskForPasswordAnyCharacters -secretname "smtprelaypassword" -prompt "SMTP (SendGrid) Relay Key" -namespace "fabricnlp" -defaultvalue "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"
+AskForPasswordAnyCharacters -secretname "smtprelaypassword" -prompt "SMTP (SendGrid) Relay Key" -namespace "fabricnlp" 
 
 Write-Output "Cleaning out any old resources in fabricnlp"
 

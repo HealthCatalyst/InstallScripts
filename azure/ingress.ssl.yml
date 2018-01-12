@@ -123,4 +123,21 @@ spec:
           serviceName: traefik-web-ui
           servicePort: 80
 ---
-
+# default backend so if no rules match it goes here
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: traefik-default-route
+  namespace: kube-system
+  labels:
+    k8s-traefik: traefik    
+  annotations:
+    kubernetes.io/ingress.class: traefik
+spec:
+  rules:
+  - http:
+      paths:
+      - backend:
+          serviceName: traefik-web-ui
+          servicePort: 80         
+---

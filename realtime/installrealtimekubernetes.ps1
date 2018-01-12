@@ -115,7 +115,7 @@ function AskForSecretValue ($secretname, $prompt, $namespace) {
 
 function ReadYmlAndReplaceCustomer($templateFile, $customerid ) {
     if ($GITHUB_URL.StartsWith("http")) { 
-        Invoke-WebRequest -Uri "$GITHUB_URL/$templateFile" -ContentType "text/plain; charset=utf-8" `
+        Invoke-WebRequest -Uri "$GITHUB_URL/$templateFile" -UseBasicParsing -ContentType "text/plain; charset=utf-8" `
             | Select-Object -Expand Content `
             | Foreach-Object {$_ -replace 'CUSTOMERID', "$customerid"}
     }

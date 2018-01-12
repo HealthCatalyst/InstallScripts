@@ -1,3 +1,4 @@
+Write-output "Version 2018.01.12.2"
 
 # This script is meant for quick & easy install via:
 #   curl -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/azure/main.ps1 | iex;

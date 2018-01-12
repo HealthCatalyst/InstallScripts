@@ -37,20 +37,51 @@ while ([string]::IsNullOrWhiteSpace($AKS_USE_SSL))
 #                                        --resource-group $AKS_PERS_RESOURCE_GROUP `
 #                                        --zone-name 
 
-if ([string]::IsNullOrWhiteSpace($(kubectl get namespace fabricnlp))) {
+if ([string]::IsNullOrWhiteSpace($(kubectl get namespace fabricnlp --ignore-not-found=true))) {
     kubectl create namespace fabricnlp
+}
+else {
+    Do { $deleteSecrets = Read-Host "Namespace exists.  Do you want to delete passwords stored in this namespace? (y/n)"}
+    while ([string]::IsNullOrWhiteSpace($deleteSecrets))    
+    
+    if ($deleteSecrets -eq "y" ) {
+        kubectl delete secret mysqlrootpassword -n fabricnlp --ignore-not-found=true
+        kubectl delete secret mysqlpassword -n fabricnlp --ignore-not-found=true
+        kubectl delete secret smtprelaypassword -n fabricnlp --ignore-not-found=true
+    }
+}
+
+function GeneratePassword() {
+    $Length = 3
+    $set1 = "abcdefghijklmnopqrstuvwxyz".ToCharArray()
+    $set2 = "0123456789".ToCharArray()
+    $set3 = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".ToCharArray()
+    $set4 = "!.*@".ToCharArray()        
+    $result = ""
+    for ($x = 0; $x -lt $Length; $x++) {
+        $result += $set1 | Get-Random
+        $result += $set2 | Get-Random
+        $result += $set3 | Get-Random
+        $result += $set4 | Get-Random
+    }
+    return $result
 }
 
 function AskForPassword ($secretname, $prompt, $namespace) {
     if ([string]::IsNullOrWhiteSpace($namespace)) { $namespace = "default"}
-    if ([string]::IsNullOrWhiteSpace($(kubectl get secret $secretname -n $namespace -o jsonpath='{.data.password}'))) {
+    if ([string]::IsNullOrWhiteSpace($(kubectl get secret $secretname -n $namespace -o jsonpath='{.data.password}' --ignore-not-found=true))) {
 
         $mysqlrootpassword = ""
         # MySQL password requirements: https://dev.mysql.com/doc/refman/5.6/en/validate-password-plugin.html
         # we also use sed to replace configs: https://unix.stackexchange.com/questions/32907/what-characters-do-i-need-to-escape-when-using-sed-in-a-sh-script
         Do {
-            $mysqlrootpasswordsecure = Read-host "$prompt" -AsSecureString 
-            $mysqlrootpassword = [Runtime.InteropServices.Marshal]::PtrToStringAuto([Runtime.InteropServices.Marshal]::SecureStringToBSTR($mysqlrootpasswordsecure))
+            $mysqlrootpasswordsecure = Read-host "$prompt (leave empty for auto-generated)" -AsSecureString 
+            if ($mysqlrootpasswordsecure.Length -lt 1) {
+                $mysqlrootpassword = GeneratePassword
+            }
+            else {
+                $mysqlrootpassword = [Runtime.InteropServices.Marshal]::PtrToStringAuto([Runtime.InteropServices.Marshal]::SecureStringToBSTR($mysqlrootpasswordsecure))                
+            }
         }
         while (($mysqlrootpassword -notmatch "^[a-z0-9!.*@\s]+$") -or ($mysqlrootpassword.Length -lt 8 ))
         kubectl create secret generic $secretname --namespace=$namespace --from-literal=password=$mysqlrootpassword
@@ -60,16 +91,21 @@ function AskForPassword ($secretname, $prompt, $namespace) {
     }
 }
 
-function AskForPasswordAnyCharacters ($secretname, $prompt, $namespace) {
+function AskForPasswordAnyCharacters ($secretname, $prompt, $namespace, $defaultvalue) {
     if ([string]::IsNullOrWhiteSpace($namespace)) { $namespace = "default"}
-    if ([string]::IsNullOrWhiteSpace($(kubectl get secret $secretname -n $namespace -o jsonpath='{.data.password}'))) {
+    if ([string]::IsNullOrWhiteSpace($(kubectl get secret $secretname -n $namespace -o jsonpath='{.data.password}' --ignore-not-found=true))) {
 
         $mysqlrootpassword = ""
         # MySQL password requirements: https://dev.mysql.com/doc/refman/5.6/en/validate-password-plugin.html
         # we also use sed to replace configs: https://unix.stackexchange.com/questions/32907/what-characters-do-i-need-to-escape-when-using-sed-in-a-sh-script
         Do {
-            $mysqlrootpasswordsecure = Read-host "$prompt" -AsSecureString 
-            $mysqlrootpassword = [Runtime.InteropServices.Marshal]::PtrToStringAuto([Runtime.InteropServices.Marshal]::SecureStringToBSTR($mysqlrootpasswordsecure))
+            $mysqlrootpasswordsecure = Read-host "$prompt (leave empty for default)" -AsSecureString 
+            if ($mysqlrootpasswordsecure.Length -lt 1) {
+                $mysqlrootpassword = $defaultvalue
+            }
+            else {
+                $mysqlrootpassword = [Runtime.InteropServices.Marshal]::PtrToStringAuto([Runtime.InteropServices.Marshal]::SecureStringToBSTR($mysqlrootpasswordsecure))                
+            }
         }
         while ($mysqlrootpassword.Length -lt 8 )
         kubectl create secret generic $secretname --namespace=$namespace --from-literal=password=$mysqlrootpassword
@@ -81,7 +117,7 @@ function AskForPasswordAnyCharacters ($secretname, $prompt, $namespace) {
 
 function AskForSecretValue ($secretname, $prompt, $namespace) {
     if ([string]::IsNullOrWhiteSpace($namespace)) { $namespace = "default"}
-    if ([string]::IsNullOrWhiteSpace($(kubectl get secret $secretname -n $namespace -o jsonpath='{.data.value}'))) {
+    if ([string]::IsNullOrWhiteSpace($(kubectl get secret $secretname -n $namespace -o jsonpath='{.data.value}' --ignore-not-found=true))) {
 
         $certhostname = ""
         Do {
@@ -98,13 +134,13 @@ function AskForSecretValue ($secretname, $prompt, $namespace) {
 
 function ReadYmlAndReplaceCustomer($templateFile, $customerid ) {
     if ($GITHUB_URL.StartsWith("http")) { 
-#        Write-Output "Reading from url: $GITHUB_URL/$templateFile"
+        #        Write-Output "Reading from url: $GITHUB_URL/$templateFile"
         Invoke-WebRequest -Uri "$GITHUB_URL/$templateFile" -ContentType "text/plain; charset=utf-8" `
             | Select-Object -Expand Content `
             | Foreach-Object {$_ -replace 'CUSTOMERID', "$customerid"}
     }
     else {
-#        Write-Output "Reading from local file: $GITHUB_URL/$templateFile"
+        #        Write-Output "Reading from local file: $GITHUB_URL/$templateFile"
         Get-Content -Path "$GITHUB_URL/$templateFile" `
             | Foreach-Object {$_ -replace 'CUSTOMERID', "$customerid"} 
     }
@@ -122,7 +158,7 @@ AskForPassword -secretname "mysqlrootpassword" -prompt "MySQL root password (> 8
 
 AskForPassword -secretname "mysqlpassword" -prompt "MySQL NLP_APP_USER password (> 8 chars, min 1 number, 1 lowercase, 1 uppercase, 1 special [!.*@] )" -namespace "fabricnlp"
 
-AskForPasswordAnyCharacters -secretname "smtprelaypassword" -prompt "SMTP (SendGrid) Relay Key" -namespace "fabricnlp"
+AskForPasswordAnyCharacters -secretname "smtprelaypassword" -prompt "SMTP (SendGrid) Relay Key" -namespace "fabricnlp" -defaultvalue "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"
 
 Write-Output "Cleaning out any old resources in fabricnlp"
 

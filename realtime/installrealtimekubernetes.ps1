@@ -38,21 +38,56 @@ else {
     Write-Output "Using resource group: $AKS_PERS_RESOURCE_GROUP"        
 }
 
-if ([string]::IsNullOrWhiteSpace($(kubectl get namespace fabricrealtime))) {
+if ([string]::IsNullOrWhiteSpace($(kubectl get namespace fabricrealtime --ignore-not-found=true))) {
     kubectl create namespace fabricrealtime
+}
+else {
+    Do { $deleteSecrets = Read-Host "Namespace exists.  Do you want to delete passwords stored in this namespace? (y/n)"}
+    while ([string]::IsNullOrWhiteSpace($deleteSecrets))    
+    
+    if ($deleteSecrets -eq "y" ) {
+        kubectl delete secret mysqlrootpassword -n fabricrealtime --ignore-not-found=true
+        kubectl delete secret mysqlpassword -n fabricrealtime --ignore-not-found=true
+        kubectl delete secret certhostname -n fabricrealtime --ignore-not-found=true
+        kubectl delete secret certpassword -n fabricrealtime --ignore-not-found=true
+        kubectl delete secret rabbitmqmgmtuipassword -n fabricrealtime --ignore-not-found=true
+    }
 }
 
 Do { $AKS_USE_SSL = Read-Host "Do you want to setup SSL? (y/n)"}
 while ([string]::IsNullOrWhiteSpace($AKS_USE_SSL))
 
-function AskForPassword ($secretname, $prompt, $namespace) {
-    if ([string]::IsNullOrWhiteSpace($(kubectl get secret $secretname -n $namespace -o jsonpath='{.data.password}'))) {
+function GeneratePassword() {
+    $Length = 3
+    $set1 = "abcdefghijklmnopqrstuvwxyz".ToCharArray()
+    $set2 = "0123456789".ToCharArray()
+    $set3 = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".ToCharArray()
+    $set4 = "!.*@".ToCharArray()        
+    $result = ""
+    for ($x = 0; $x -lt $Length; $x++) {
+        $result += $set1 | Get-Random
+        $result += $set2 | Get-Random
+        $result += $set3 | Get-Random
+        $result += $set4 | Get-Random
+    }
+    return $result
+}
 
+function AskForPassword ($secretname, $prompt, $namespace) {
+    if ([string]::IsNullOrWhiteSpace($namespace)) { $namespace = "default"}
+    if ([string]::IsNullOrWhiteSpace($(kubectl get secret $secretname -n $namespace -o jsonpath='{.data.password}' --ignore-not-found=true))) {
+
+        $mysqlrootpassword = ""
         # MySQL password requirements: https://dev.mysql.com/doc/refman/5.6/en/validate-password-plugin.html
         # we also use sed to replace configs: https://unix.stackexchange.com/questions/32907/what-characters-do-i-need-to-escape-when-using-sed-in-a-sh-script
         Do {
-            $mysqlrootpasswordsecure = Read-host "$prompt" -AsSecureString 
-            $mysqlrootpassword = [Runtime.InteropServices.Marshal]::PtrToStringAuto([Runtime.InteropServices.Marshal]::SecureStringToBSTR($mysqlrootpasswordsecure))
+            $mysqlrootpasswordsecure = Read-host "$prompt (leave empty for auto-generated)" -AsSecureString 
+            if ($mysqlrootpasswordsecure.Length -lt 1) {
+                $mysqlrootpassword = GeneratePassword
+            }
+            else {
+                $mysqlrootpassword = [Runtime.InteropServices.Marshal]::PtrToStringAuto([Runtime.InteropServices.Marshal]::SecureStringToBSTR($mysqlrootpasswordsecure))                
+            }
         }
         while (($mysqlrootpassword -notmatch "^[a-z0-9!.*@\s]+$") -or ($mysqlrootpassword.Length -lt 8 ))
         kubectl create secret generic $secretname --namespace=$namespace --from-literal=password=$mysqlrootpassword
@@ -120,11 +155,11 @@ $AZURE_STORAGE_CONNECTION_STRING = az storage account show-connection-string -n 
 Write-Output "Create the file share: $AKS_PERS_SHARE_NAME"
 az storage share create -n $AKS_PERS_SHARE_NAME --connection-string $AZURE_STORAGE_CONNECTION_STRING --quota 512
 
-kubectl create -f $GITHUB_URL/realtime/realtime-kubernetes-storage.yml
+ReadYmlAndReplaceCustomer -templateFile "realtime/realtime-kubernetes-storage.yml" -customerid $customerid | kubectl create -f -
 
-kubectl create -f $GITHUB_URL/realtime/realtime-kubernetes.yml
+ReadYmlAndReplaceCustomer -templateFile "realtime/realtime-kubernetes.yml" -customerid $customerid | kubectl create -f -
 
-kubectl create -f $GITHUB_URL/realtime/realtime-kubernetes-public.yml
+ReadYmlAndReplaceCustomer -templateFile "realtime/realtime-kubernetes-public.yml" -customerid $customerid | kubectl create -f -
 
 $ipname = "InterfaceEnginePublicIP"
 $publicip = az network public-ip show -g $AKS_PERS_RESOURCE_GROUP -n $ipname --query "ipAddress" -o tsv;

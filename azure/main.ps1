@@ -7,11 +7,14 @@ do {
 
     Write-Host "1: Create a new Azure Container Service"
     Write-Host "2: Setup Load Balancer"
-    Write-Host "3: Install NLP"
-    Write-Host "4: Install Realtime"
-    Write-Host "5: Show status of cluster"
-    Write-Host "6: Show status of NLP"
+    Write-Host "3: Show status of cluster"
+    Write-Host "------ NLP -----"
+    Write-Host "4: Install NLP"
+    Write-Host "5: Show status of NLP"
+    Write-Host "------ Realtime -----"
+    Write-Host "6: Install Realtime"
     Write-Host "7: Show status of realtime"
+    Write-Host "-----------"
     Write-Host "q: Quit"
     $input = Read-Host "Please make a selection"
     switch ($input) {
@@ -22,16 +25,16 @@ do {
             Invoke-WebRequest -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/azure/setup-loadbalancer.ps1 | Invoke-Expression;
         } 
         '3' {
-            Invoke-WebRequest -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/nlp/installnlpkubernetes.ps1 | Invoke-Expression;
-        } 
-        '4' {
-            Invoke-WebRequest -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/realtime/installrealtimekubernetes.ps1 | Invoke-Expression;
-        } 
-        '5' {
             kubectl get "deployments,pods,services,ingress,secrets" --namespace=kube-system -o wide
         } 
-        '6' {
+        '4' {
+            Invoke-WebRequest -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/nlp/installnlpkubernetes.ps1 | Invoke-Expression;
+        } 
+        '5' {
             kubectl get 'deployments,pods,services,ingress,secrets,persistentvolumeclaims,persistentvolumes,nodes' --namespace=fabricnlp -o wide
+        } 
+        '6' {
+            Invoke-WebRequest -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/realtime/installrealtimekubernetes.ps1 | Invoke-Expression;
         } 
         '7' {
             kubectl get 'deployments,pods,services,ingress,secrets,persistentvolumeclaims,persistentvolumes,nodes' --namespace=fabricrealtime -o wide

@@ -13,6 +13,6 @@ spec:
       http:
         paths:
         - backend:
-            serviceName: certificateserverpublic
-            servicePort: 80
+          serviceName: certificateserverpublic
+          servicePort: 80
 ---

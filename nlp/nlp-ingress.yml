@@ -11,18 +11,18 @@ spec:
       http:
           paths:
           - backend:
-              serviceName: solrserverpublic
-              servicePort: 80
+            serviceName: solrserverpublic
+            servicePort: 80
     - host: nlp.CUSTOMERID.healthcatalyst.net
       http:
           paths:
           - backend:
-              serviceName: nlpserverpublic
-              servicePort: 80
+            serviceName: nlpserverpublic
+            servicePort: 80
     - host: nlpjobs.CUSTOMERID.healthcatalyst.net
       http:
           paths:
           - backend:
-              serviceName: nlpjobsserverpublic
-              servicePort: 80
+            serviceName: nlpjobsserverpublic
+            servicePort: 80
 ---

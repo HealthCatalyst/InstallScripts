@@ -61,6 +61,8 @@ Start-Sleep -Seconds 10
 kubectl create -f "$GITHUB_URL/azure/cafe-kube-dns.yml"
 # to debug dns: https://kubernetes.io/docs/tasks/administer-cluster/dns-custom-nameservers/#inheriting-dns-from-the-node
 
+kubectl delete ServiceAccount traefik-ingress-controller-serviceaccount -n kube-system --ignore-not-found=true
+
 if ($AKS_USE_SSL -eq "y" ) {
     # ask for tls cert files
     Do { $AKS_SSL_CERT_FOLDER = Read-Host "What folder has the tls.crt and tls.key files? (absolute path e.g., c:\temp\certs)"}
@@ -68,7 +70,7 @@ if ($AKS_USE_SSL -eq "y" ) {
       
     $AKS_SSL_CERT_FOLDER_UNIX_PATH = (($AKS_SSL_CERT_FOLDER -replace "\\", "/")).ToLower().Trim("/")    
 
-    kubectl delete secret traefik-cert-ahmn -n kube-system
+    kubectl delete secret traefik-cert-ahmn -n kube-system --ignore-not-found=true
 
     Write-Output "Storing TLS certs as kubernetes secret"
     kubectl create secret generic traefik-cert-ahmn -n kube-system --from-file="$AKS_SSL_CERT_FOLDER_UNIX_PATH/tls.crt" --from-file="$AKS_SSL_CERT_FOLDER_UNIX_PATH/tls.key"

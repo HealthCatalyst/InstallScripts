@@ -1,4 +1,4 @@
-Write-output "Version 2018.01.16.1"
+Write-output "Version 2018.01.16.2"
 
 # This script is meant for quick & easy install via:
 #   curl -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/azure/main.ps1 | iex;
@@ -40,9 +40,8 @@ do {
             kubectl get "deployments,pods,services,ingress,secrets" --namespace=kube-system -o wide
         } 
         '4' {
-            Start-Process -FilePath http://localhost:8001/ui
             Start-Job -Name "KubDashboard" -ScriptBlock {kubectl proxy}
-        } 
+            Start-Process -FilePath http://localhost:8001/ui        } 
         '5' {
             Invoke-WebRequest -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/nlp/installnlpkubernetes.ps1 | Invoke-Expression;
         } 
@@ -58,10 +57,12 @@ do {
             $customerid = ReadSecret -secretname customerid
             $customerid = $customerid.ToLower().Trim()
                                     
+            Invoke-WebRequest -Headers @{"Host" = "nlp.$customerid.healthcatalyst.net"} -Uri http://$loadBalancerIP/nlpweb | Select-Object -Expand Content
+
             Write-Output "To test out the NLP services, open Git Bash and run:"
-            Write-Output "curl -L --verbose --header 'Host: solr.$customerid.healthcatalyst.net' 'http://$loadBalancerIP/solr'"
-            Write-Output "curl -L --verbose --header 'Host: nlp.$customerid.healthcatalyst.net' 'http://$loadBalancerIP/nlpweb'"
-            Write-Output "curl -L --verbose --header 'Host: nlpjobs.$customerid.healthcatalyst.net' 'http://$loadBalancerIP/nlp'"
+            Write-Output "curl -L --verbose --header 'Host: solr.$customerid.healthcatalyst.net' 'http://$loadBalancerIP/solr' -k" 
+            Write-Output "curl -L --verbose --header 'Host: nlp.$customerid.healthcatalyst.net' 'http://$loadBalancerIP/nlpweb' -k" 
+            Write-Output "curl -L --verbose --header 'Host: nlpjobs.$customerid.healthcatalyst.net' 'http://$loadBalancerIP/nlp' -k"
         } 
         '8' {
             Invoke-WebRequest -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/realtime/installrealtimekubernetes.ps1 | Invoke-Expression;

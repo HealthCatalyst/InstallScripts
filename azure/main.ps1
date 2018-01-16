@@ -1,9 +1,9 @@
-$version ="2018.01.16.3"
+$version = "2018.01.16.4"
 
 # This script is meant for quick & easy install via:
 #   curl -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/azure/main.ps1 | iex;
 
-function ReadSecret($secretname, $namespace){
+function ReadSecret($secretname, $namespace) {
     if ([string]::IsNullOrWhiteSpace($namespace)) { $namespace = "default"}
 
     $secretbase64 = kubectl get secret $secretname -o jsonpath='{.data.value}' -n $namespace
@@ -19,13 +19,14 @@ do {
     Write-Host "2: Setup Load Balancer"
     Write-Host "3: Show status of cluster"
     Write-Host "4: Launch Kubernetes Dashboard"
+    Write-Host "5: SSH to Master VM"
     Write-Host "------ NLP -----"
-    Write-Host "5: Install NLP"
-    Write-Host "6: Show status of NLP"
-    Write-Host "7: Test web sites"
+    Write-Host "6: Install NLP"
+    Write-Host "7: Show status of NLP"
+    Write-Host "8: Test web sites"
     Write-Host "------ Realtime -----"
-    Write-Host "8: Install Realtime"
-    Write-Host "9: Show status of realtime"
+    Write-Host "9: Install Realtime"
+    Write-Host "10: Show status of realtime"
     Write-Host "-----------"
     Write-Host "q: Quit"
     $input = Read-Host "Please make a selection"
@@ -41,14 +42,33 @@ do {
         } 
         '4' {
             Start-Job -Name "KubDashboard" -ScriptBlock {kubectl proxy}
-            Start-Process -FilePath http://localhost:8001/ui        } 
-        '5' {
-            Invoke-WebRequest -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/nlp/installnlpkubernetes.ps1 | Invoke-Expression;
+            Start-Process -FilePath http://localhost:8001/ui        
+        } 
+        '5' {        
+            $AKS_PERS_RESOURCE_GROUP_BASE64 = kubectl get secret azure-secret -o jsonpath='{.data.resourcegroup}'
+            if (![string]::IsNullOrWhiteSpace($AKS_PERS_RESOURCE_GROUP_BASE64)) {
+                $AKS_PERS_RESOURCE_GROUP = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($AKS_PERS_RESOURCE_GROUP_BASE64))
+            }
+                            
+            $AKS_PERS_LOCATION = az group show --name $AKS_PERS_RESOURCE_GROUP --query "location" -o tsv
+    
+            $AKS_LOCAL_FOLDER = Read-Host "Folder to store SSH keys (default: c:\kubernetes)"
+            if ([string]::IsNullOrWhiteSpace($AKS_LOCAL_FOLDER)) {$AKS_LOCAL_FOLDER = "C:\kubernetes"}
+    
+            $AKS_FOLDER_FOR_SSH_KEY = "$AKS_LOCAL_FOLDER\ssh\$AKS_PERS_RESOURCE_GROUP"
+            $SSH_PRIVATE_KEY_FILE = "$AKS_FOLDER_FOR_SSH_KEY\id_rsa"
+            $SSH_PRIVATE_KEY_FILE_UNIX_PATH = "/" + (($SSH_PRIVATE_KEY_FILE -replace "\\", "/") -replace ":", "").ToLower().Trim("/")                                       
+            $MASTER_VM_NAME = "${AKS_PERS_RESOURCE_GROUP}.${AKS_PERS_LOCATION}.cloudapp.azure.com"
+            Write-Output "You can connect to master VM in Git Bash for debugging using:"
+            Write-Output "ssh -i ${SSH_PRIVATE_KEY_FILE_UNIX_PATH} azureuser@${MASTER_VM_NAME}"            
         } 
         '6' {
-            kubectl get 'deployments,pods,services,ingress,secrets,persistentvolumeclaims,persistentvolumes,nodes' --namespace=fabricnlp -o wide
+            Invoke-WebRequest -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/nlp/installnlpkubernetes.ps1 | Invoke-Expression;
         } 
         '7' {
+            kubectl get 'deployments,pods,services,ingress,secrets,persistentvolumeclaims,persistentvolumes,nodes' --namespace=fabricnlp -o wide
+        } 
+        '8' {
            
             $loadBalancerIP = kubectl get svc traefik-ingress-service-public -n kube-system -o jsonpath='{.status.loadBalancer.ingress[].ip}' --ignore-not-found=true
             if ([string]::IsNullOrWhiteSpace($loadBalancerIP)) {
@@ -64,10 +84,10 @@ do {
             Write-Output "curl -L --verbose --header 'Host: nlp.$customerid.healthcatalyst.net' 'http://$loadBalancerIP/nlpweb' -k" 
             Write-Output "curl -L --verbose --header 'Host: nlpjobs.$customerid.healthcatalyst.net' 'http://$loadBalancerIP/nlp' -k"
         } 
-        '8' {
+        '9' {
             Invoke-WebRequest -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/realtime/installrealtimekubernetes.ps1 | Invoke-Expression;
         } 
-        '9' {
+        '10' {
             kubectl get 'deployments,pods,services,ingress,secrets,persistentvolumeclaims,persistentvolumes,nodes' --namespace=fabricrealtime -o wide
         } 
         'q' {

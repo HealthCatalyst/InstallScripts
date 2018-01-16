@@ -1,4 +1,4 @@
-$version = "2018.01.16.6"
+$version = "2018.01.16.7"
 
 # This script is meant for quick & easy install via:
 #   curl -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/azure/main.ps1 | iex;
@@ -13,14 +13,15 @@ do {
     Write-Host "3: Show status of cluster"
     Write-Host "4: Launch Kubernetes Dashboard"
     Write-Host "5: SSH to Master VM"
+    Write-Host "6: Restart any failed DNS pods"
     Write-Host "------ NLP -----"
-    Write-Host "6: Install NLP"
-    Write-Host "7: Show status of NLP"
-    Write-Host "8: Test web sites"
-    Write-Host "9: Show passwords"
+    Write-Host "7: Install NLP"
+    Write-Host "8: Show status of NLP"
+    Write-Host "9: Test web sites"
+    Write-Host "10: Show passwords"
     Write-Host "------ Realtime -----"
-    Write-Host "10: Install Realtime"
-    Write-Host "11: Show status of realtime"
+    Write-Host "11: Install Realtime"
+    Write-Host "12: Show status of realtime"
     Write-Host "-----------"
     Write-Host "q: Quit"
     $input = Read-Host "Please make a selection"
@@ -57,12 +58,21 @@ do {
             Write-Output "ssh -i ${SSH_PRIVATE_KEY_FILE_UNIX_PATH} azureuser@${MASTER_VM_NAME}"            
         } 
         '6' {
-            Invoke-WebRequest -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/nlp/installnlpkubernetes.ps1 | Invoke-Expression;
+            kubectl get pods -l k8s-app=kube-dns -n kube-system -o wide
+            $failedItems=kubectl get pods -l k8s-app=kube-dns -n kube-system -o jsonpath='{range.items[?(@.status.phase!=\"Running\")]}{.metadata.name}{\"\n\"}{end}'
+            ForEach ($line in $failedItems)
+            {
+                Write-Host "Deleting pod $line"
+                kubectl delete pod $line -n kube-system
+            } 
         } 
         '7' {
-            kubectl get 'deployments,pods,services,ingress,secrets,persistentvolumeclaims,persistentvolumes,nodes' --namespace=fabricnlp -o wide
+            Invoke-WebRequest -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/nlp/installnlpkubernetes.ps1 | Invoke-Expression;
         } 
         '8' {
+            kubectl get 'deployments,pods,services,ingress,secrets,persistentvolumeclaims,persistentvolumes,nodes' --namespace=fabricnlp -o wide
+        } 
+        '9' {
            
             $loadBalancerIP = kubectl get svc traefik-ingress-service-public -n kube-system -o jsonpath='{.status.loadBalancer.ingress[].ip}' --ignore-not-found=true
             if ([string]::IsNullOrWhiteSpace($loadBalancerIP)) {
@@ -78,15 +88,15 @@ do {
             Write-Output "curl -L --verbose --header 'Host: nlp.$customerid.healthcatalyst.net' 'http://$loadBalancerIP/nlpweb' -k" 
             Write-Output "curl -L --verbose --header 'Host: nlpjobs.$customerid.healthcatalyst.net' 'http://$loadBalancerIP/nlp' -k"
         } 
-        '9' {
+        '10' {
             Write-Host "MySql root password: $(ReadSecretPassword -secretname mysqlrootpassword -namespace fabricnlp)"
             Write-Host "MySql NLP_APP_USER password: $(ReadSecretPassword -secretname mysqlpassword -namespace fabricnlp)"
             Write-Host "SendGrid SMTP Relay key: $(ReadSecretPassword -secretname smtprelaypassword -namespace fabricnlp)"
         } 
-        '10' {
+        '11' {
             Invoke-WebRequest -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/realtime/installrealtimekubernetes.ps1 | Invoke-Expression;
         } 
-        '11' {
+        '12' {
             kubectl get 'deployments,pods,services,ingress,secrets,persistentvolumeclaims,persistentvolumes,nodes' --namespace=fabricrealtime -o wide
         } 
         'q' {

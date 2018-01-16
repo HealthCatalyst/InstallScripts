@@ -1,7 +1,15 @@
-Write-output "Version 2018.01.12.2"
+Write-output "Version 2018.01.16.1"
 
 # This script is meant for quick & easy install via:
 #   curl -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/azure/main.ps1 | iex;
+
+function ReadSecret($secretname, $namespace){
+    if ([string]::IsNullOrWhiteSpace($namespace)) { $namespace = "default"}
+
+    $secretbase64 = kubectl get secret $secretname -o jsonpath='{.data.value}' -n $namespace
+    $secretvalue = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($secretbase64))
+    return $secretvalue
+}
 
 do {
     Clear-Host
@@ -14,9 +22,10 @@ do {
     Write-Host "------ NLP -----"
     Write-Host "5: Install NLP"
     Write-Host "6: Show status of NLP"
+    Write-Host "7: Test web sites"
     Write-Host "------ Realtime -----"
-    Write-Host "7: Install Realtime"
-    Write-Host "8: Show status of realtime"
+    Write-Host "8: Install Realtime"
+    Write-Host "9: Show status of realtime"
     Write-Host "-----------"
     Write-Host "q: Quit"
     $input = Read-Host "Please make a selection"
@@ -32,7 +41,7 @@ do {
         } 
         '4' {
             Start-Process -FilePath http://localhost:8001/ui
-            kubectl proxy
+            Start-Job -Name "KubDashboard" -ScriptBlock {kubectl proxy}
         } 
         '5' {
             Invoke-WebRequest -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/nlp/installnlpkubernetes.ps1 | Invoke-Expression;
@@ -41,9 +50,23 @@ do {
             kubectl get 'deployments,pods,services,ingress,secrets,persistentvolumeclaims,persistentvolumes,nodes' --namespace=fabricnlp -o wide
         } 
         '7' {
-            Invoke-WebRequest -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/realtime/installrealtimekubernetes.ps1 | Invoke-Expression;
+           
+            $loadBalancerIP = kubectl get svc traefik-ingress-service-public -n kube-system -o jsonpath='{.status.loadBalancer.ingress[].ip}' --ignore-not-found=true
+            if ([string]::IsNullOrWhiteSpace($loadBalancerIP)) {
+                $loadBalancerIP = kubectl get svc traefik-ingress-service-private -n kube-system -o jsonpath='{.status.loadBalancer.ingress[].ip}'
+            }
+            $customerid = ReadSecret -secretname customerid
+            $customerid = $customerid.ToLower().Trim()
+                                    
+            Write-Output "To test out the NLP services, open Git Bash and run:"
+            Write-Output "curl -L --verbose --header 'Host: solr.$customerid.healthcatalyst.net' 'http://$loadBalancerIP/solr'"
+            Write-Output "curl -L --verbose --header 'Host: nlp.$customerid.healthcatalyst.net' 'http://$loadBalancerIP/nlpweb'"
+            Write-Output "curl -L --verbose --header 'Host: nlpjobs.$customerid.healthcatalyst.net' 'http://$loadBalancerIP/nlp'"
         } 
         '8' {
+            Invoke-WebRequest -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/realtime/installrealtimekubernetes.ps1 | Invoke-Expression;
+        } 
+        '9' {
             kubectl get 'deployments,pods,services,ingress,secrets,persistentvolumeclaims,persistentvolumes,nodes' --namespace=fabricrealtime -o wide
         } 
         'q' {

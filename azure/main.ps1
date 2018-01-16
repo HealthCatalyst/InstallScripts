@@ -1,4 +1,4 @@
-$version = "2018.01.16.8"
+$version = "2018.01.16.9"
 
 # This script is meant for quick & easy install via:
 #   curl -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/azure/main.ps1 | iex;
@@ -8,6 +8,7 @@ Invoke-WebRequest -useb https://raw.githubusercontent.com/HealthCatalyst/Install
 
 do {
     Write-Host "================ Health Catalyst version $version, common functions $(GetCommonVersion) ================"
+    Write-Host "0: Change kube to point to another cluster"
     Write-Host "1: Create a new Azure Container Service"
     Write-Host "2: Setup Load Balancer"
     Write-Host "3: Show status of cluster"
@@ -26,6 +27,19 @@ do {
     Write-Host "q: Quit"
     $input = Read-Host "Please make a selection"
     switch ($input) {
+        '0' {
+            Write-Host "Current cluster: $(kubectl config current-context)"
+            $folders = Get-ChildItem "C:\kubernetes" -directory
+            for ($i = 1; $i -le $folders.count; $i++) {
+                Write-Host "$i. $($folders[$i-1])"
+            }              
+            $index = Read-Host "Enter number of folder to use (1 - $($folders.count))"
+            $folderToUse = $($folders[$index - 1])
+            $fileToUse = "C:\kubernetes\$folderToUse\temp\.kube\config"
+            Write-Host "Copying $fileToUse to $env:userprofile\.kube\config"
+            Copy-Item -Path $fileToUse -Destination "$env:userprofile\.kube\config"
+            Write-Host "Current cluster: $(kubectl config current-context)"            
+        } 
         '1' {
             Invoke-WebRequest -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/azure/create-acs-cluster.ps1 | Invoke-Expression;
         } 
@@ -33,6 +47,7 @@ do {
             Invoke-WebRequest -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/azure/setup-loadbalancer.ps1 | Invoke-Expression;
         } 
         '3' {
+            Write-Host "Current cluster: $(kubectl config current-context)"
             kubectl get "deployments,pods,services,ingress,secrets" --namespace=kube-system -o wide
         } 
         '4' {

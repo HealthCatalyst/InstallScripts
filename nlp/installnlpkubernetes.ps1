@@ -1,8 +1,10 @@
-Write-Output "Version 2018.01.12.1"
+Write-Output "Version 2018.01.16.1"
 
 # curl -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/nlp/installnlpkubernetes.ps1 | iex;
 $GITHUB_URL = "https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master"
 # $GITHUB_URL = "."
+
+Invoke-WebRequest -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/azure/common.ps1 | Invoke-Expression;
 
 $loggedInUser = az account show --query "user.name"  --output tsv
 $AKS_USE_SSL = ""
@@ -37,122 +39,38 @@ while ([string]::IsNullOrWhiteSpace($AKS_USE_SSL))
 #                                        --resource-group $AKS_PERS_RESOURCE_GROUP `
 #                                        --zone-name 
 
+
+
 if ([string]::IsNullOrWhiteSpace($(kubectl get namespace fabricnlp --ignore-not-found=true))) {
     kubectl create namespace fabricnlp
 }
 else {
-    Do { $deleteSecrets = Read-Host "Namespace exists.  Do you want to delete passwords stored in this namespace? (y/n)"}
+    Do { $deleteSecrets = Read-Host "Namespace exists.  Do you want to delete passwords and ALL data stored in this namespace? (y/n)"}
     while ([string]::IsNullOrWhiteSpace($deleteSecrets))    
     
     if ($deleteSecrets -eq "y" ) {
         kubectl delete secret mysqlrootpassword -n fabricnlp --ignore-not-found=true
         kubectl delete secret mysqlpassword -n fabricnlp --ignore-not-found=true
         kubectl delete secret smtprelaypassword -n fabricnlp --ignore-not-found=true
-    }
-}
 
-function GeneratePassword() {
-    $Length = 3
-    $set1 = "abcdefghijklmnopqrstuvwxyz".ToCharArray()
-    $set2 = "0123456789".ToCharArray()
-    $set3 = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".ToCharArray()
-    $set4 = "!.*@".ToCharArray()        
-    $result = ""
-    for ($x = 0; $x -lt $Length; $x++) {
-        $result += $set1 | Get-Random
-        $result += $set2 | Get-Random
-        $result += $set3 | Get-Random
-        $result += $set4 | Get-Random
-    }
-    return $result
-}
-
-function AskForPassword ($secretname, $prompt, $namespace) {
-    if ([string]::IsNullOrWhiteSpace($namespace)) { $namespace = "default"}
-    if ([string]::IsNullOrWhiteSpace($(kubectl get secret $secretname -n $namespace -o jsonpath='{.data.password}' --ignore-not-found=true))) {
-
-        $mysqlrootpassword = ""
-        # MySQL password requirements: https://dev.mysql.com/doc/refman/5.6/en/validate-password-plugin.html
-        # we also use sed to replace configs: https://unix.stackexchange.com/questions/32907/what-characters-do-i-need-to-escape-when-using-sed-in-a-sh-script
-        Do {
-            $mysqlrootpasswordsecure = Read-host "$prompt (leave empty for auto-generated)" -AsSecureString 
-            if ($mysqlrootpasswordsecure.Length -lt 1) {
-                $mysqlrootpassword = GeneratePassword
-            }
-            else {
-                $mysqlrootpassword = [Runtime.InteropServices.Marshal]::PtrToStringAuto([Runtime.InteropServices.Marshal]::SecureStringToBSTR($mysqlrootpasswordsecure))                
-            }
+        $AKS_PERS_RESOURCE_GROUP_BASE64 = kubectl get secret azure-secret -o jsonpath='{.data.resourcegroup}'
+        if (![string]::IsNullOrWhiteSpace($AKS_PERS_RESOURCE_GROUP_BASE64)) {
+            $AKS_PERS_RESOURCE_GROUP = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($AKS_PERS_RESOURCE_GROUP_BASE64))
         }
-        while (($mysqlrootpassword -notmatch "^[a-z0-9!.*@\s]+$") -or ($mysqlrootpassword.Length -lt 8 ))
-        kubectl create secret generic $secretname --namespace=$namespace --from-literal=password=$mysqlrootpassword
-    }
-    else {
-        Write-Output "$secretname secret already set so will reuse it"
-    }
-}
-
-function AskForPasswordAnyCharacters ($secretname, $prompt, $namespace, $defaultvalue) {
-    if ([string]::IsNullOrWhiteSpace($namespace)) { $namespace = "default"}
-    if ([string]::IsNullOrWhiteSpace($(kubectl get secret $secretname -n $namespace -o jsonpath='{.data.password}' --ignore-not-found=true))) {
-
-        $mysqlrootpassword = ""
-        # MySQL password requirements: https://dev.mysql.com/doc/refman/5.6/en/validate-password-plugin.html
-        # we also use sed to replace configs: https://unix.stackexchange.com/questions/32907/what-characters-do-i-need-to-escape-when-using-sed-in-a-sh-script
-        Do {
-            $mysqlrootpasswordsecure = Read-host "$prompt (leave empty for default)" -AsSecureString 
-            if ($mysqlrootpasswordsecure.Length -lt 1) {
-                $mysqlrootpassword = $defaultvalue
-            }
-            else {
-                $mysqlrootpassword = [Runtime.InteropServices.Marshal]::PtrToStringAuto([Runtime.InteropServices.Marshal]::SecureStringToBSTR($mysqlrootpasswordsecure))                
-            }
+        
+        if ([string]::IsNullOrWhiteSpace($AKS_PERS_RESOURCE_GROUP)) {
+            Do { $AKS_PERS_RESOURCE_GROUP = Read-Host "Resource Group (e.g., fabricnlp-rg)"}
+            while ([string]::IsNullOrWhiteSpace($AKS_PERS_RESOURCE_GROUP))
         }
-        while ($mysqlrootpassword.Length -lt 8 )
-        kubectl create secret generic $secretname --namespace=$namespace --from-literal=password=$mysqlrootpassword
-    }
-    else {
-        Write-Output "$secretname secret already set so will reuse it"
-    }
-}
-
-function AskForSecretValue ($secretname, $prompt, $namespace) {
-    if ([string]::IsNullOrWhiteSpace($namespace)) { $namespace = "default"}
-    if ([string]::IsNullOrWhiteSpace($(kubectl get secret $secretname -n $namespace -o jsonpath='{.data.value}' --ignore-not-found=true))) {
-
-        $certhostname = ""
-        Do {
-            $certhostname = Read-host "$prompt"
+        else {
+            Write-Output "Using resource group: $AKS_PERS_RESOURCE_GROUP"        
         }
-        while ($certhostname.Length -lt 1 )
-    
-        kubectl create secret generic $secretname --namespace=$namespace --from-literal=value=$certhostname
-    }
-    else {
-        Write-Output "$secretname secret already set so will reuse it"
-    }    
-}
-
-function ReadYmlAndReplaceCustomer($templateFile, $customerid ) {
-    if ($GITHUB_URL.StartsWith("http")) { 
-        #        Write-Output "Reading from url: $GITHUB_URL/$templateFile"
-        Invoke-WebRequest -Uri "$GITHUB_URL/$templateFile" -UseBasicParsing -ContentType "text/plain; charset=utf-8" `
-            | Select-Object -Expand Content `
-            | Foreach-Object {$_ -replace 'CUSTOMERID', "$customerid"}
-    }
-    else {
-        #        Write-Output "Reading from local file: $GITHUB_URL/$templateFile"
-        Get-Content -Path "$GITHUB_URL/$templateFile" `
-            | Foreach-Object {$_ -replace 'CUSTOMERID', "$customerid"} 
+                
+        $AKS_PERS_SHARE_NAME = "fabricnlp"
+        CreateShare -resourceGroup $AKS_PERS_RESOURCE_GROUP -sharename $AKS_PERS_SHARE_NAME -deleteExisting true
     }
 }
 
-function ReadSecret($secretname, $namespace){
-    if ([string]::IsNullOrWhiteSpace($namespace)) { $namespace = "default"}
-
-    $secretbase64 = kubectl get secret $secretname -o jsonpath='{.data.value}' -n $namespace
-    $secretvalue = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($secretbase64))
-    return $secretvalue
-}
 
 AskForSecretValue -secretname "customerid" -prompt "Health Catalyst Customer ID (e.g., ahmn)"
 

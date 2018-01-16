@@ -1,9 +1,11 @@
-Write-Output "Version 2018.01.09.1"
+Write-Output "Version 2018.01.16.1"
 
 # curl -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/realtime/installrealtimekubernetes.ps1 | iex;
 
 $GITHUB_URL = "https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master"
 # $GITHUB_URL = "."
+
+Invoke-WebRequest -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/azure/common.ps1 | Invoke-Expression;
 
 $loggedInUser = az account show --query "user.name"  --output tsv
 
@@ -57,73 +59,6 @@ else {
 Do { $AKS_USE_SSL = Read-Host "Do you want to setup SSL? (y/n)"}
 while ([string]::IsNullOrWhiteSpace($AKS_USE_SSL))
 
-function GeneratePassword() {
-    $Length = 3
-    $set1 = "abcdefghijklmnopqrstuvwxyz".ToCharArray()
-    $set2 = "0123456789".ToCharArray()
-    $set3 = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".ToCharArray()
-    $set4 = "!.*@".ToCharArray()        
-    $result = ""
-    for ($x = 0; $x -lt $Length; $x++) {
-        $result += $set1 | Get-Random
-        $result += $set2 | Get-Random
-        $result += $set3 | Get-Random
-        $result += $set4 | Get-Random
-    }
-    return $result
-}
-
-function AskForPassword ($secretname, $prompt, $namespace) {
-    if ([string]::IsNullOrWhiteSpace($namespace)) { $namespace = "default"}
-    if ([string]::IsNullOrWhiteSpace($(kubectl get secret $secretname -n $namespace -o jsonpath='{.data.password}' --ignore-not-found=true))) {
-
-        $mysqlrootpassword = ""
-        # MySQL password requirements: https://dev.mysql.com/doc/refman/5.6/en/validate-password-plugin.html
-        # we also use sed to replace configs: https://unix.stackexchange.com/questions/32907/what-characters-do-i-need-to-escape-when-using-sed-in-a-sh-script
-        Do {
-            $mysqlrootpasswordsecure = Read-host "$prompt (leave empty for auto-generated)" -AsSecureString 
-            if ($mysqlrootpasswordsecure.Length -lt 1) {
-                $mysqlrootpassword = GeneratePassword
-            }
-            else {
-                $mysqlrootpassword = [Runtime.InteropServices.Marshal]::PtrToStringAuto([Runtime.InteropServices.Marshal]::SecureStringToBSTR($mysqlrootpasswordsecure))                
-            }
-        }
-        while (($mysqlrootpassword -notmatch "^[a-z0-9!.*@\s]+$") -or ($mysqlrootpassword.Length -lt 8 ))
-        kubectl create secret generic $secretname --namespace=$namespace --from-literal=password=$mysqlrootpassword
-    }
-    else {
-        Write-Output "$secretname secret already set so will reuse it"
-    }
-}
-
-function AskForSecretValue ($secretname, $prompt, $namespace) {
-    if ([string]::IsNullOrWhiteSpace($(kubectl get secret $secretname -n $namespace -o jsonpath='{.data.value}'))) {
-
-        $certhostname = ""
-        Do {
-            $certhostname = Read-host "$prompt"
-        }
-        while ($certhostname.Length -lt 1 )
-    
-        kubectl create secret generic $secretname --namespace=$namespace --from-literal=value=$certhostname
-    }
-    else {
-        Write-Output "$secretname secret already set so will reuse it"
-    }    
-}
-
-function ReadYmlAndReplaceCustomer($templateFile, $customerid ) {
-    if ($GITHUB_URL.StartsWith("http")) { 
-        Invoke-WebRequest -Uri "$GITHUB_URL/$templateFile" -UseBasicParsing -ContentType "text/plain; charset=utf-8" `
-            | Select-Object -Expand Content `
-            | Foreach-Object {$_ -replace 'CUSTOMERID', "$customerid"}
-    }
-    else {
-        Get-Content -Path "$GITHUB_URL/$templateFile" `
-            | Foreach-Object {$_ -replace 'CUSTOMERID', "$customerid"} 
-    }
-}
 
 
 AskForPassword -secretname "mysqlrootpassword"  -prompt "MySQL root password (> 8 chars, min 1 number, 1 lowercase, 1 uppercase, 1 special [!.*@] )" -namespace "fabricrealtime"

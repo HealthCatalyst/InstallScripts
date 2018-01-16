@@ -1,4 +1,4 @@
-Write-output "Version 2018.01.12.03"
+Write-output "Version 2018.01.16.01"
 
 #
 # This script is meant for quick & easy install via:
@@ -6,6 +6,8 @@ Write-output "Version 2018.01.12.03"
 
 $GITHUB_URL = "https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master"
 # $GITHUB_URL = "C:\Catalyst\git\Installscripts"
+Invoke-WebRequest -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/azure/common.ps1 | Invoke-Expression;
+
 
 $AKS_PERS_RESOURCE_GROUP = ""
 $AKS_PERS_LOCATION = ""
@@ -45,24 +47,6 @@ else {
 }
 
 $AKS_SUBSCRIPTION_ID = az account show --query "id" --output tsv
-
-function AskForSecretValue ($secretname, $prompt, $namespace) {
-    if ([string]::IsNullOrWhiteSpace($namespace)) { $namespace = "default"}
-    if ([string]::IsNullOrWhiteSpace($(kubectl get secret $secretname -n $namespace -o jsonpath='{.data.value}' --ignore-not-found=true))) {
-
-        $certhostname = ""
-        Do {
-            $certhostname = Read-host "$prompt"
-        }
-        while ($certhostname.Length -lt 1 )
-    
-        kubectl create secret generic $secretname --namespace=$namespace --from-literal=value=$certhostname
-    }
-    else {
-        Write-Output "$secretname secret already set so will reuse it"
-    }    
-}
-
 
 Do { $customerid = Read-Host "Health Catalyst Customer ID (e.g., ahmn)"}
 while ([string]::IsNullOrWhiteSpace($customerid))
@@ -459,67 +443,6 @@ if ("$AKS_VNET_NAME") {
     Write-Output "Subnet CIDR=[$AKS_SUBNET_CIDR]"
 }
 
-# helper functions for subnet match
-# from https://gallery.technet.microsoft.com/scriptcenter/Start-and-End-IP-addresses-bcccc3a9
-function Get-FirstIP {
-    <# 
-  .SYNOPSIS  
-    Get the IP addresses in a range 
-  .EXAMPLE 
-   Get-IPrange -start 192.168.8.2 -end 192.168.8.20 
-  .EXAMPLE 
-   Get-IPrange -ip 192.168.8.2 -mask 255.255.255.0 
-  .EXAMPLE 
-   Get-IPrange -ip 192.168.8.3 -cidr 24 
-#> 
- 
-    param 
-    ( 
-        [string]$start, 
-        [string]$end, 
-        [string]$ip, 
-        [string]$mask, 
-        [int]$cidr 
-    ) 
- 
-    function IP-toINT64 () { 
-        param ($ip) 
- 
-        $octets = $ip.split(".") 
-        return [int64]([int64]$octets[0] * 16777216 + [int64]$octets[1] * 65536 + [int64]$octets[2] * 256 + [int64]$octets[3]) 
-    } 
- 
-    function INT64-toIP() { 
-        param ([int64]$int) 
-
-        return (([math]::truncate($int / 16777216)).tostring() + "." + ([math]::truncate(($int % 16777216) / 65536)).tostring() + "." + ([math]::truncate(($int % 65536) / 256)).tostring() + "." + ([math]::truncate($int % 256)).tostring() )
-    } 
- 
-    if ($ip.Contains("/")) {
-        $Temp = $ip.Split("/")
-        $ip = $Temp[0]
-        $cidr = $Temp[1]
-    }
-
-    if ($ip) {$ipaddr = [Net.IPAddress]::Parse($ip)} 
-    if ($cidr) {$maskaddr = [Net.IPAddress]::Parse((INT64-toIP -int ([convert]::ToInt64(("1" * $cidr + "0" * (32 - $cidr)), 2)))) } 
-    if ($mask) {$maskaddr = [Net.IPAddress]::Parse($mask)} 
-    if ($ip) {$networkaddr = new-object net.ipaddress ($maskaddr.address -band $ipaddr.address)} 
-    if ($ip) {$broadcastaddr = new-object net.ipaddress (([system.net.ipaddress]::parse("255.255.255.255").address -bxor $maskaddr.address -bor $networkaddr.address))} 
- 
-    if ($ip) { 
-        $startaddr = IP-toINT64 -ip $networkaddr.ipaddresstostring 
-        $endaddr = IP-toINT64 -ip $broadcastaddr.ipaddresstostring 
-    }
-    else { 
-        $startaddr = IP-toINT64 -ip $start 
-        $endaddr = IP-toINT64 -ip $end 
-    } 
- 
-    # https://github.com/Azure/acs-engine/blob/master/docs/kubernetes/features.md#feat-custom-vnet
-    $startaddr = $startaddr + 239 # skip the first few since they are reserved
-    INT64-toIP -int $startaddr
-}
 
 $AKS_FIRST_STATIC_IP = ""
 if ("$AKS_VNET_NAME") {

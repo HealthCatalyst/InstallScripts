@@ -1,15 +1,10 @@
-$version = "2018.01.16.4"
+$version = "2018.01.16.5"
 
 # This script is meant for quick & easy install via:
 #   curl -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/azure/main.ps1 | iex;
+Invoke-WebRequest -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/azure/common.ps1 | Invoke-Expression;
 
-function ReadSecret($secretname, $namespace) {
-    if ([string]::IsNullOrWhiteSpace($namespace)) { $namespace = "default"}
-
-    $secretbase64 = kubectl get secret $secretname -o jsonpath='{.data.value}' -n $namespace
-    $secretvalue = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($secretbase64))
-    return $secretvalue
-}
+# Get-Content -Path "./azure/common.ps1" | Invoke-Expression;
 
 do {
     Clear-Host
@@ -24,9 +19,10 @@ do {
     Write-Host "6: Install NLP"
     Write-Host "7: Show status of NLP"
     Write-Host "8: Test web sites"
+    Write-Host "9: Show passwords"
     Write-Host "------ Realtime -----"
-    Write-Host "9: Install Realtime"
-    Write-Host "10: Show status of realtime"
+    Write-Host "10: Install Realtime"
+    Write-Host "11: Show status of realtime"
     Write-Host "-----------"
     Write-Host "q: Quit"
     $input = Read-Host "Please make a selection"
@@ -85,9 +81,14 @@ do {
             Write-Output "curl -L --verbose --header 'Host: nlpjobs.$customerid.healthcatalyst.net' 'http://$loadBalancerIP/nlp' -k"
         } 
         '9' {
-            Invoke-WebRequest -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/realtime/installrealtimekubernetes.ps1 | Invoke-Expression;
+            Write-Host "MySql root password: $(ReadSecretPassword -secretname mysqlrootpassword -namespace fabricnlp)"
+            Write-Host "MySql NLP_APP_USER password: $(ReadSecretPassword -secretname mysqlpassword -namespace fabricnlp)"
+            Write-Host "SendGrid SMTP Relay key: $(ReadSecretPassword -secretname smtprelaypassword -namespace fabricnlp)"
         } 
         '10' {
+            Invoke-WebRequest -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/realtime/installrealtimekubernetes.ps1 | Invoke-Expression;
+        } 
+        '11' {
             kubectl get 'deployments,pods,services,ingress,secrets,persistentvolumeclaims,persistentvolumes,nodes' --namespace=fabricrealtime -o wide
         } 
         'q' {

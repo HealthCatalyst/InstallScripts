@@ -1,4 +1,4 @@
-$version = "2018.01.16.5"
+$version = "2018.01.16.6"
 
 # This script is meant for quick & easy install via:
 #   curl -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/azure/main.ps1 | iex;
@@ -7,9 +7,7 @@ Invoke-WebRequest -useb https://raw.githubusercontent.com/HealthCatalyst/Install
 # Get-Content -Path "./azure/common.ps1" | Invoke-Expression;
 
 do {
-    Clear-Host
-    Write-Host "================ Health Catalyst version $version ================"
-
+    Write-Host "================ Health Catalyst version $version, common functions $(GetCommonVersion) ================"
     Write-Host "1: Create a new Azure Container Service"
     Write-Host "2: Setup Load Balancer"
     Write-Host "3: Show status of cluster"
@@ -96,6 +94,7 @@ do {
         }
     }
     pause
+    Clear-Host
 }
 until ($input -eq 'q')
 

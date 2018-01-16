@@ -1,8 +1,8 @@
 $version = "2018.01.16.1"
 
 Write-Host "Installed Common functions version $version"
-function global:ShowCommonVersion(){
-    Write-Host $version
+function global:GetCommonVersion(){
+    return $version
 }
 
 function global:CreateShare($resourceGroup, $sharename, $deleteExisting) {

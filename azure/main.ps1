@@ -10,12 +10,13 @@ do {
     Write-Host "1: Create a new Azure Container Service"
     Write-Host "2: Setup Load Balancer"
     Write-Host "3: Show status of cluster"
+    Write-Host "4: Launch Kubernetes Dashboard"
     Write-Host "------ NLP -----"
-    Write-Host "4: Install NLP"
-    Write-Host "5: Show status of NLP"
+    Write-Host "5: Install NLP"
+    Write-Host "6: Show status of NLP"
     Write-Host "------ Realtime -----"
-    Write-Host "6: Install Realtime"
-    Write-Host "7: Show status of realtime"
+    Write-Host "7: Install Realtime"
+    Write-Host "8: Show status of realtime"
     Write-Host "-----------"
     Write-Host "q: Quit"
     $input = Read-Host "Please make a selection"
@@ -30,15 +31,19 @@ do {
             kubectl get "deployments,pods,services,ingress,secrets" --namespace=kube-system -o wide
         } 
         '4' {
-            Invoke-WebRequest -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/nlp/installnlpkubernetes.ps1 | Invoke-Expression;
+            Start-Process -FilePath http://localhost:8001/ui
+            kubectl proxy
         } 
         '5' {
-            kubectl get 'deployments,pods,services,ingress,secrets,persistentvolumeclaims,persistentvolumes,nodes' --namespace=fabricnlp -o wide
+            Invoke-WebRequest -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/nlp/installnlpkubernetes.ps1 | Invoke-Expression;
         } 
         '6' {
-            Invoke-WebRequest -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/realtime/installrealtimekubernetes.ps1 | Invoke-Expression;
+            kubectl get 'deployments,pods,services,ingress,secrets,persistentvolumeclaims,persistentvolumes,nodes' --namespace=fabricnlp -o wide
         } 
         '7' {
+            Invoke-WebRequest -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/realtime/installrealtimekubernetes.ps1 | Invoke-Expression;
+        } 
+        '8' {
             kubectl get 'deployments,pods,services,ingress,secrets,persistentvolumeclaims,persistentvolumes,nodes' --namespace=fabricrealtime -o wide
         } 
         'q' {

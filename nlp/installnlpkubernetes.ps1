@@ -157,6 +157,7 @@ function ReadSecret($secretname, $namespace){
 AskForSecretValue -secretname "customerid" -prompt "Health Catalyst Customer ID (e.g., ahmn)"
 
 $customerid = ReadSecret -secretname customerid
+$customerid = $customerid.ToLower().Trim()
 Write-Output "Customer ID: $customerid"
 
 AskForPassword -secretname "mysqlrootpassword" -prompt "MySQL root password (> 8 chars, min 1 number, 1 lowercase, 1 uppercase, 1 special [!.*@] )" -namespace "fabricnlp"

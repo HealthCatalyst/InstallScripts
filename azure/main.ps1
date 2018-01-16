@@ -1,4 +1,4 @@
-$version = "2018.01.16.7"
+$version = "2018.01.16.8"
 
 # This script is meant for quick & easy install via:
 #   curl -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/azure/main.ps1 | iex;
@@ -13,7 +13,7 @@ do {
     Write-Host "3: Show status of cluster"
     Write-Host "4: Launch Kubernetes Dashboard"
     Write-Host "5: SSH to Master VM"
-    Write-Host "6: Restart any failed DNS pods"
+    Write-Host "6: View status of DNS pods"
     Write-Host "------ NLP -----"
     Write-Host "7: Install NLP"
     Write-Host "8: Show status of NLP"
@@ -59,12 +59,16 @@ do {
         } 
         '6' {
             kubectl get pods -l k8s-app=kube-dns -n kube-system -o wide
-            $failedItems=kubectl get pods -l k8s-app=kube-dns -n kube-system -o jsonpath='{range.items[?(@.status.phase!=\"Running\")]}{.metadata.name}{\"\n\"}{end}'
-            ForEach ($line in $failedItems)
-            {
-                Write-Host "Deleting pod $line"
-                kubectl delete pod $line -n kube-system
-            } 
+            Do { $confirmation = Read-Host "Do you want to restart DNS pods? (y/n)"}
+            while ([string]::IsNullOrWhiteSpace($confirmation))
+            
+            if ($confirmation -eq 'y') {
+                $failedItems = kubectl get pods -l k8s-app=kube-dns -n kube-system -o jsonpath='{range.items[*]}{.metadata.name}{\"\n\"}{end}'
+                ForEach ($line in $failedItems) {
+                    Write-Host "Deleting pod $line"
+                    kubectl delete pod $line -n kube-system
+                } 
+            }             
         } 
         '7' {
             Invoke-WebRequest -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/nlp/installnlpkubernetes.ps1 | Invoke-Expression;

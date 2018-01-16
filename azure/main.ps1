@@ -1,4 +1,4 @@
-Write-output "Version 2018.01.16.3"
+$version ="2018.01.16.3"
 
 # This script is meant for quick & easy install via:
 #   curl -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/azure/main.ps1 | iex;
@@ -13,7 +13,7 @@ function ReadSecret($secretname, $namespace){
 
 do {
     Clear-Host
-    Write-Host "================ Health Catalyst ================"
+    Write-Host "================ Health Catalyst version $version ================"
 
     Write-Host "1: Create a new Azure Container Service"
     Write-Host "2: Setup Load Balancer"

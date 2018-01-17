@@ -1,4 +1,4 @@
-Write-output "Version 2018.01.16.1"
+Write-output "Version 2018.01.16.2"
 
 #
 # This script is meant for quick & easy install via:
@@ -168,10 +168,10 @@ $customerid = ReadSecret -secretname customerid
 $customerid = $customerid.ToLower().Trim()
 Write-Output "Customer ID: $customerid"
 
-if ([string]::IsNullOrWhiteSpace($(az network dns zone show --name $customerid.healthcatalyst.net -g $DNS_RESOURCE_GROUP))) {
-    az network dns zone create --name $customerid.healthcatalyst.net -g $DNS_RESOURCE_GROUP
+if ([string]::IsNullOrWhiteSpace($(az network dns zone show --name "$customerid.healthcatalyst.net" -g $DNS_RESOURCE_GROUP))) {
+    az network dns zone create --name "$customerid.healthcatalyst.net" -g $DNS_RESOURCE_GROUP
 
-    az network dns record-set a add-record --ipv4-address $EXTERNAL_IP --record-set-name * --resource-group $DNS_RESOURCE_GROUP --zone-name $customerid.healthcatalyst.net
+    az network dns record-set a add-record --ipv4-address $EXTERNAL_IP --record-set-name "*" --resource-group $DNS_RESOURCE_GROUP --zone-name "$customerid.healthcatalyst.net"
 }
 
 Write-Output "External IP: $EXTERNAL_IP"

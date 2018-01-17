@@ -1,4 +1,4 @@
-Write-Output "Version 2018.01.16.1"
+Write-Output "Version 2018.01.17.1"
 
 # curl -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/nlp/installnlpkubernetes.ps1 | iex;
 $GITHUB_URL = "https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master"
@@ -39,7 +39,22 @@ while ([string]::IsNullOrWhiteSpace($AKS_USE_SSL))
 #                                        --resource-group $AKS_PERS_RESOURCE_GROUP `
 #                                        --zone-name 
 
+$AKS_PERS_SHARE_NAME = "fabricnlp"
 
+$AKS_PERS_RESOURCE_GROUP_BASE64 = kubectl get secret azure-secret -o jsonpath='{.data.resourcegroup}'
+if (![string]::IsNullOrWhiteSpace($AKS_PERS_RESOURCE_GROUP_BASE64)) {
+    $AKS_PERS_RESOURCE_GROUP = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($AKS_PERS_RESOURCE_GROUP_BASE64))
+}
+
+if ([string]::IsNullOrWhiteSpace($AKS_PERS_RESOURCE_GROUP)) {
+    Do { $AKS_PERS_RESOURCE_GROUP = Read-Host "Resource Group (e.g., fabricnlp-rg)"}
+    while ([string]::IsNullOrWhiteSpace($AKS_PERS_RESOURCE_GROUP))
+}
+else {
+    Write-Output "Using resource group: $AKS_PERS_RESOURCE_GROUP"        
+}
+
+CreateShare -resourceGroup $AKS_PERS_RESOURCE_GROUP -sharename $AKS_PERS_SHARE_NAME
 
 if ([string]::IsNullOrWhiteSpace($(kubectl get namespace fabricnlp --ignore-not-found=true))) {
     kubectl create namespace fabricnlp
@@ -52,21 +67,8 @@ else {
         kubectl delete secret mysqlrootpassword -n fabricnlp --ignore-not-found=true
         kubectl delete secret mysqlpassword -n fabricnlp --ignore-not-found=true
         kubectl delete secret smtprelaypassword -n fabricnlp --ignore-not-found=true
-
-        $AKS_PERS_RESOURCE_GROUP_BASE64 = kubectl get secret azure-secret -o jsonpath='{.data.resourcegroup}'
-        if (![string]::IsNullOrWhiteSpace($AKS_PERS_RESOURCE_GROUP_BASE64)) {
-            $AKS_PERS_RESOURCE_GROUP = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($AKS_PERS_RESOURCE_GROUP_BASE64))
-        }
-        
-        if ([string]::IsNullOrWhiteSpace($AKS_PERS_RESOURCE_GROUP)) {
-            Do { $AKS_PERS_RESOURCE_GROUP = Read-Host "Resource Group (e.g., fabricnlp-rg)"}
-            while ([string]::IsNullOrWhiteSpace($AKS_PERS_RESOURCE_GROUP))
-        }
-        else {
-            Write-Output "Using resource group: $AKS_PERS_RESOURCE_GROUP"        
-        }
-                
-        $AKS_PERS_SHARE_NAME = "fabricnlp"
+               
+        # need to recreate the file share when we change passwords otherwise the new password will not work with the old password stored in the share
         CreateShare -resourceGroup $AKS_PERS_RESOURCE_GROUP -sharename $AKS_PERS_SHARE_NAME -deleteExisting true
     }
 }
@@ -96,13 +98,13 @@ Write-Output "Waiting until all the resources are cleared up"
 Do { $CLEANUP_DONE = $(kubectl get 'deployments,pods,services,ingress,persistentvolumeclaims,persistentvolumes' --namespace=fabricnlp)}
 while (![string]::IsNullOrWhiteSpace($CLEANUP_DONE))
 
-ReadYmlAndReplaceCustomer -templateFile "nlp/nlp-kubernetes-storage.yml" -customerid $customerid | kubectl create -f -
+ReadYmlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "nlp/nlp-kubernetes-storage.yml" -customerid $customerid | kubectl create -f -
 
-ReadYmlAndReplaceCustomer -templateFile "nlp/nlp-kubernetes.yml" -customerid $customerid | kubectl create -f -
+ReadYmlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "nlp/nlp-kubernetes.yml" -customerid $customerid | kubectl create -f -
 
-ReadYmlAndReplaceCustomer -templateFile "nlp/nlp-kubernetes-public.yml" -customerid $customerid | kubectl create -f -
+ReadYmlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "nlp/nlp-kubernetes-public.yml" -customerid $customerid | kubectl create -f -
 
-ReadYmlAndReplaceCustomer -templateFile "nlp/nlp-mysql-private.yml" -customerid $customerid | kubectl create -f -
+ReadYmlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "nlp/nlp-mysql-private.yml" -customerid $customerid | kubectl create -f -
 
 Write-Output "Setting up SSL reverse proxy"
 
@@ -111,7 +113,7 @@ if ($AKS_USE_SSL -eq "y" ) {
     $ingressTemplate = "nlp/nlp-ingress-ssl.yml"
 }
 
-ReadYmlAndReplaceCustomer -templateFile $ingressTemplate -customerid $customerid | kubectl create -f -
+ReadYmlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile $ingressTemplate -customerid $customerid | kubectl create -f -
 
 kubectl get 'deployments,pods,services,ingress,secrets,persistentvolumeclaims,persistentvolumes,nodes' --namespace=fabricnlp -o wide
 
@@ -119,13 +121,6 @@ kubectl get 'deployments,pods,services,ingress,secrets,persistentvolumeclaims,pe
 # kubectl exec -it fabric.nlp.nlpwebserver-85c8cb86b5-gkphh bash --namespace=fabricnlp
 
 # kubectl create secret generic azure-secret --namespace=fabricnlp --from-literal=azurestorageaccountname="fabricnlp7storage" --from-literal=azurestorageaccountkey="/bYhXNstTodg3MdOvTMog/vDLSFrQDpxG/Zgkp2MlnjtOWhDBNQ2xOs6zjRoZYNjmJHya34MfzqdfOwXkMDN2A=="
-
-Write-Output "To get status of Fabric.NLP run:"
-Write-Output "kubectl get deployments,pods,services,ingress,secrets,persistentvolumeclaims,persistentvolumes,nodes --namespace=fabricnlp -o wide"
-
-Write-Output "To launch the dashboard UI, run:"
-Write-Output "kubectl proxy"
-Write-Output "and then in your browser, navigate to: http://127.0.0.1:8001/ui"
 
 $loadBalancerIP = kubectl get svc traefik-ingress-service-public -n kube-system -o jsonpath='{.status.loadBalancer.ingress[].ip}' --ignore-not-found=true
 if ([string]::IsNullOrWhiteSpace($loadBalancerIP)) {

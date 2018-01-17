@@ -1,4 +1,4 @@
-Write-output "Version 2018.01.16.3"
+Write-output "Version 2018.01.17.1"
 
 #
 # This script is meant for quick & easy install via:
@@ -14,6 +14,7 @@ $loggedInUser = az account show --query "user.name"  --output tsv
 
 Write-Output "user: $loggedInUser"
 
+# choose Azure login and subscription
 if ( "$loggedInUser" ) {
     $SUBSCRIPTION_NAME = az account show --query "name"  --output tsv
     Write-Output "You are currently logged in as [$loggedInUser] into subscription [$SUBSCRIPTION_NAME]"
@@ -29,8 +30,7 @@ else {
     az login
 }
 
-$AKS_SUBSCRIPTION_ID = az account show --query "id" --output tsv
-
+# Get resource group name from kube secrets
 $AKS_PERS_RESOURCE_GROUP_BASE64 = kubectl get secret azure-secret -o jsonpath='{.data.resourcegroup}' --ignore-not-found=true
 if (![string]::IsNullOrWhiteSpace($AKS_PERS_RESOURCE_GROUP_BASE64)) {
     $AKS_PERS_RESOURCE_GROUP = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($AKS_PERS_RESOURCE_GROUP_BASE64))
@@ -44,22 +44,33 @@ else {
     Write-Output "Using resource group: $AKS_PERS_RESOURCE_GROUP"        
 }
 
+# Get location name from resource group
 $AKS_PERS_LOCATION = az group show --name $AKS_PERS_RESOURCE_GROUP --query "location" -o tsv
 Write-Output "Using location: [$AKS_PERS_LOCATION]"
 
+# Ask input from user
 Do { $AKS_OPEN_TO_PUBLIC = Read-Host "Do you want this cluster open to public? (y/n)"}
 while ([string]::IsNullOrWhiteSpace($AKS_OPEN_TO_PUBLIC))
 
 Do { $AKS_USE_SSL = Read-Host "Do you want to setup SSL? (y/n)"}
 while ([string]::IsNullOrWhiteSpace($AKS_USE_SSL))
 
-$DNS_RESOURCE_GROUP = Read-Host "Resource group containing DNS zones? (default: dns)"
-if ([string]::IsNullOrWhiteSpace($DNS_RESOURCE_GROUP)) {
-    $DNS_RESOURCE_GROUP = "dns"
+Do { $SETUP_DNS = Read-Host "Do you want to setup DNS entries in Azure? (y/n)"}
+while ([string]::IsNullOrWhiteSpace($SETUP_DNS))
+
+# if we need to setup DNS then ask which resourceGroup to use
+if ($SETUP_DNS -eq "y") {
+    $DNS_RESOURCE_GROUP = Read-Host "Resource group containing DNS zones? (default: dns)"
+    if ([string]::IsNullOrWhiteSpace($DNS_RESOURCE_GROUP)) {
+        $DNS_RESOURCE_GROUP = "dns"
+    }
+    
 }
 
+# delete existing containers
 kubectl delete 'pods,services,configMaps,deployments,ingress' -l k8s-traefik=traefik -n kube-system --ignore-not-found=true
 
+# set Google DNS servers to resolve external  urls
 # http://blog.kubernetes.io/2017/04/configuring-private-dns-zones-upstream-nameservers-kubernetes.html
 kubectl delete -f "$GITHUB_URL/azure/cafe-kube-dns.yml" --ignore-not-found=true
 Start-Sleep -Seconds 10
@@ -69,6 +80,8 @@ kubectl create -f "$GITHUB_URL/azure/cafe-kube-dns.yml"
 kubectl delete ServiceAccount traefik-ingress-controller-serviceaccount -n kube-system --ignore-not-found=true
 
 if ($AKS_USE_SSL -eq "y" ) {
+
+    # if the SSL cert is not set in kube secrets then ask for the files
     if ([string]::IsNullOrWhiteSpace($(kubectl get secret traefik-cert-ahmn -o jsonpath='{.data}' -n kube-system --ignore-not-found=true))) {
         # ask for tls cert files
         Do { $AKS_SSL_CERT_FOLDER = Read-Host "What folder has the tls.crt and tls.key files? (absolute path e.g., c:\temp\certs)"}
@@ -84,12 +97,12 @@ if ($AKS_USE_SSL -eq "y" ) {
 
     Write-Output "Deploy the SSL ingress controller"
     # kubectl delete -f "$GITHUB_URL/azure/ingress.ssl.yml"
-    kubectl create -f "$GITHUB_URL/azure/ingress.ssl.yml"
+    ReadYmlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "azure/ingress.ssl.yml" -customerid $customerid | kubectl create -f -
 }
 else {
     Write-Output "Deploy the non-SSL ingress controller"
     # kubectl delete -f "$GITHUB_URL/azure/ingress.yml"
-    kubectl create -f "$GITHUB_URL/azure/ingress.yml"
+    ReadYmlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "azure/ingress.yml" -customerid $customerid | kubectl create -f -
 }
 
 if ("$AKS_OPEN_TO_PUBLIC" -eq "y") {
@@ -162,26 +175,32 @@ Do {
 }
 while ([string]::IsNullOrWhiteSpace($EXTERNAL_IP) -and ($startDate.AddMinutes($timeoutInMinutes) -gt (Get-Date)))
 
-# set up DNS zones
-Write-Output "Creating DNS zones"
-$customerid = ReadSecret -secretname customerid
-$customerid = $customerid.ToLower().Trim()
-Write-Output "Customer ID: $customerid"
-$dnsrecordname="$customerid.healthcatalyst.net"
+if ($SETUP_DNS -eq "y") {
+    # set up DNS zones
+    Write-Output "Creating DNS zones"
+    $customerid = ReadSecret -secretname customerid
+    $customerid = $customerid.ToLower().Trim()
+    Write-Output "Customer ID: $customerid"
+    $dnsrecordname = "$customerid.healthcatalyst.net"
 
-if ([string]::IsNullOrWhiteSpace($(az network dns zone show --name "$dnsrecordname" -g $DNS_RESOURCE_GROUP))) {
-    az network dns zone create --name "$dnsrecordname" -g $DNS_RESOURCE_GROUP
+    if ([string]::IsNullOrWhiteSpace($(az network dns zone show --name "$dnsrecordname" -g $DNS_RESOURCE_GROUP))) {
+        az network dns zone create --name "$dnsrecordname" -g $DNS_RESOURCE_GROUP
 
-    az network dns record-set a add-record --ipv4-address $EXTERNAL_IP --record-set-name "*" --resource-group $DNS_RESOURCE_GROUP --zone-name "$dnsrecordname"
+        az network dns record-set a add-record --ipv4-address $EXTERNAL_IP --record-set-name "*" --resource-group $DNS_RESOURCE_GROUP --zone-name "$dnsrecordname"
+    }
+
+    # list out the name servers
+    Write-Output "Name servers to set in GoDaddy for *.$dnsrecordname"
+    az network dns zone show -g $DNS_RESOURCE_GROUP -n "$dnsrecordname" --query "nameServers" -o tsv
 }
-
-# list out the name servers
-Write-Output "Name servers to set in GoDaddy for *.$dnsrecordname"
-az network dns zone show -g $DNS_RESOURCE_GROUP -n "$dnsrecordname" --query "nameServers" -o tsv
+else {
+    Write-Output "To access the urls from your browser, add the following entries in your c:\windows\system32\drivers\etc\hosts file"
+    Write-Output "$EXTERNAL_IP dashboard.$dnsrecordname"
+}
 
 Write-Output "External IP: $EXTERNAL_IP"
 Write-Output "To test out the load balancer, open Git Bash and run:"
-Write-Output "curl -L --verbose --header 'Host: traefik-ui.minikube' 'http://$EXTERNAL_IP/'"
+Write-Output "curl -L --verbose --header 'Host: dashboard.$dnsrecordname' 'http://$EXTERNAL_IP/'"
 
 
 

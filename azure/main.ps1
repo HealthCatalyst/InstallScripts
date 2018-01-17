@@ -1,4 +1,4 @@
-$version = "2018.01.16.9"
+$version = "2018.01.17.1"
 
 # This script is meant for quick & easy install via:
 #   curl -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/azure/main.ps1 | iex;
@@ -38,6 +38,7 @@ do {
             $fileToUse = "C:\kubernetes\$folderToUse\temp\.kube\config"
             Write-Host "Copying $fileToUse to $env:userprofile\.kube\config"
             Copy-Item -Path $fileToUse -Destination "$env:userprofile\.kube\config"
+            $env:KUBECONFIG = "${HOME}\.kube\config"
             Write-Host "Current cluster: $(kubectl config current-context)"            
         } 
         '1' {

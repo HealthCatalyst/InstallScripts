@@ -1,4 +1,4 @@
-$version = "2018.01.16.1"
+$version = "2018.01.17.1"
 
 Write-Host "Installed Common functions version $version"
 function global:GetCommonVersion(){
@@ -131,16 +131,16 @@ function global:AskForSecretValue ($secretname, $prompt, $namespace) {
     }    
 }
 
-function global:ReadYmlAndReplaceCustomer($templateFile, $customerid ) {
-    if ($GITHUB_URL.StartsWith("http")) { 
+function global:ReadYmlAndReplaceCustomer($baseUrl, $templateFile, $customerid ) {
+    if ($baseUrl.StartsWith("http")) { 
         #        Write-Output "Reading from url: $GITHUB_URL/$templateFile"
-        Invoke-WebRequest -Uri "$GITHUB_URL/$templateFile" -UseBasicParsing -ContentType "text/plain; charset=utf-8" `
+        Invoke-WebRequest -Uri "$baseUrl/$templateFile" -UseBasicParsing -ContentType "text/plain; charset=utf-8" `
             | Select-Object -Expand Content `
             | Foreach-Object {$_ -replace 'CUSTOMERID', "$customerid"}
     }
     else {
         #        Write-Output "Reading from local file: $GITHUB_URL/$templateFile"
-        Get-Content -Path "$GITHUB_URL/$templateFile" `
+        Get-Content -Path "$baseUrl/$templateFile" `
             | Foreach-Object {$_ -replace 'CUSTOMERID', "$customerid"} 
     }
 }

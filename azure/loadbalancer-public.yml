@@ -3,6 +3,8 @@ apiVersion: v1
 metadata:
   name: traefik-ingress-service-public
   namespace: kube-system
+  labels:
+    k8s-traefik: traefik    
 spec:
   selector:
     k8s-app: traefik-ingress-lb
@@ -19,5 +21,5 @@ spec:
   # note that in the case of AKS, that resource group is MC_<resourcegroup>_<cluster>
   # Then you could specify the assigned IP address as loadBalancerIP
   # https://kubernetes.io/docs/concepts/services-networking/service/#type-loadbalancer
-  loadBalancerIP: 52.191.114.114
+  loadBalancerIP: $publicip
 ---

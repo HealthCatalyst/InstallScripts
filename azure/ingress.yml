@@ -58,7 +58,7 @@ metadata:
     kubernetes.io/ingress.class: traefik
 spec:
   rules:
-  - host: traefik-ui.minikube
+  - host: dashboard.CUSTOMERID.healthcatalyst.net
     http:
       paths:
       - backend:

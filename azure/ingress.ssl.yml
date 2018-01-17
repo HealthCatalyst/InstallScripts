@@ -58,7 +58,6 @@ spec:
     spec:
       serviceAccountName: traefik-ingress-controller-serviceaccount
       terminationGracePeriodSeconds: 60
-      terminationGracePeriodSeconds: 60
       volumes:
         - name: ssl-ahmn
           secret:
@@ -116,7 +115,7 @@ metadata:
     kubernetes.io/ingress.class: traefik
 spec:
   rules:
-  - host: traefik-ui.minikube
+  - host: dashboard.CUSTOMERID.healthcatalyst.net
     http:
       paths:
       - backend:

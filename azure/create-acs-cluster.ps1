@@ -1,4 +1,4 @@
-Write-output "Version 2018.01.16.01"
+Write-output "Version 2018.01.17.01"
 
 #
 # This script is meant for quick & easy install via:
@@ -13,7 +13,6 @@ $AKS_PERS_RESOURCE_GROUP = ""
 $AKS_PERS_LOCATION = ""
 $AKS_CLUSTER_NAME = ""
 $AKS_PERS_STORAGE_ACCOUNT_NAME = ""
-$AKS_PERS_SHARE_NAME = ""
 $AKS_SUBSCRIPTION_ID = ""
 $AKS_VNET_NAME = ""
 $AKS_SUBNET_NAME = ""
@@ -28,6 +27,7 @@ write-output "Checking if you're already logged in..."
 # to print out the result to screen also use: <command> | Tee-Object -Variable cmdOutput
 $loggedInUser = az account show --query "user.name"  --output tsv
 
+# get azure login and subscription
 Write-Output "user: $loggedInUser"
 
 if ( "$loggedInUser" ) {
@@ -48,11 +48,13 @@ else {
 
 $AKS_SUBSCRIPTION_ID = az account show --query "id" --output tsv
 
+# ask for customerid
 Do { $customerid = Read-Host "Health Catalyst Customer ID (e.g., ahmn)"}
 while ([string]::IsNullOrWhiteSpace($customerid))
 
 Write-Output "Customer ID: $customerid"
 
+# ask for resource group name to create
 $DEFAULT_RESOURCE_GROUP="Prod-Kub-$($customerid.ToUpper())-RG"
 Do { 
     $AKS_PERS_RESOURCE_GROUP = Read-Host "Resource Group (leave empty for $DEFAULT_RESOURCE_GROUP)"
@@ -65,16 +67,22 @@ while ([string]::IsNullOrWhiteSpace($AKS_PERS_RESOURCE_GROUP))
 
 Write-Output "Using resource group [$AKS_PERS_RESOURCE_GROUP]"
 
+Do { $AKS_PERS_LOCATION = Read-Host "Location: (e.g., eastus)"}
+while ([string]::IsNullOrWhiteSpace($AKS_PERS_LOCATION))
+
+# do we want to use azure networking or kube networking
 $AKS_USE_AZURE_NETWORKING = Read-Host "Use Azure networking (default: yes)"
 if ([string]::IsNullOrWhiteSpace($AKS_USE_AZURE_NETWORKING)) {
     $AKS_USE_AZURE_NETWORKING = "yes"
 }
 
+# service account to own the resources
 $AKS_SERVICE_PRINCIPAL_NAME = Read-Host "Service account to use (default: ${AKS_PERS_RESOURCE_GROUP}Kubernetes)"
 if ([string]::IsNullOrWhiteSpace($AKS_SERVICE_PRINCIPAL_NAME)) {
     $AKS_SERVICE_PRINCIPAL_NAME = "${AKS_PERS_RESOURCE_GROUP}Kubernetes"
 }
 
+# where to store the SSH keys on local machine
 $AKS_LOCAL_FOLDER = Read-Host "Folder to store SSH keys (default: c:\kubernetes)"
 
 if ([string]::IsNullOrWhiteSpace($AKS_LOCAL_FOLDER)) {$AKS_LOCAL_FOLDER = "C:\kubernetes"}
@@ -84,6 +92,7 @@ if (!(Test-Path -Path "$AKS_LOCAL_FOLDER")) {
     New-Item -ItemType directory -Path $AKS_LOCAL_FOLDER
 }
 
+# add the c:\kubernetes folder to system PATH
 Write-Output "Checking if $AKS_LOCAL_FOLDER is in PATH"
 $pathItems = ($env:path).split(";")
 if ( $pathItems -notcontains "$AKS_LOCAL_FOLDER") {
@@ -114,7 +123,7 @@ if (!(Test-Path -Path "$AKS_FOLDER_FOR_SSH_KEY")) {
     New-Item -ItemType directory -Path "$AKS_FOLDER_FOR_SSH_KEY"
 }
 
-# check if SSH key is present
+# check if SSH key is present.  If not, generate it
 $SSH_PRIVATE_KEY_FILE = "$AKS_FOLDER_FOR_SSH_KEY\id_rsa"
 $SSH_PRIVATE_KEY_FILE_UNIX_PATH = "/" + (($SSH_PRIVATE_KEY_FILE -replace "\\", "/") -replace ":", "").ToLower().Trim("/")    
 
@@ -132,6 +141,7 @@ $SSH_PUBLIC_KEY_FILE = "$AKS_FOLDER_FOR_SSH_KEY\id_rsa.pub"
 $AKS_SSH_KEY = Get-Content "$SSH_PUBLIC_KEY_FILE" -First 1
 Write-Output "SSH Public Key=$AKS_SSH_KEY"
 
+# download kubectl
 $KUBECTL_FILE = "$AKS_LOCAL_FOLDER\kubectl.exe"
 if (!(Test-Path "$KUBECTL_FILE")) {
     Write-Output "Downloading kubectl.exe to $KUBECTL_FILE"
@@ -142,7 +152,7 @@ else {
     Write-Output "kubectl already exists at $KUBECTL_FILE"    
 }
 
-# echo download as-engine
+# download acs-engine
 $ACS_ENGINE_FILE = "$AKS_LOCAL_FOLDER\acs-engine.exe"
 $acsengineversion = acs-engine version
 $acsengineversion = $acsengineversion -match "^Version: v[0-9.]+"
@@ -161,12 +171,10 @@ else {
 Write-Output "ACS Engine version"
 acs-engine version
 
-Do { $AKS_PERS_LOCATION = Read-Host "Location: (e.g., eastus)"}
-while ([string]::IsNullOrWhiteSpace($AKS_PERS_LOCATION))
-
 $AKS_CLUSTER_NAME = "kubcluster"
 # $AKS_CLUSTER_NAME = Read-Host "Cluster Name: (e.g., fabricnlpcluster)"
 
+# create storage account to store data
 $AKS_PERS_STORAGE_ACCOUNT_NAME = Read-Host "Storage Account Name (leave empty for default)"
 if ([string]::IsNullOrWhiteSpace($AKS_PERS_STORAGE_ACCOUNT_NAME)) {
     $AKS_PERS_STORAGE_ACCOUNT_NAME = "${AKS_PERS_RESOURCE_GROUP}storage"
@@ -176,10 +184,8 @@ if ([string]::IsNullOrWhiteSpace($AKS_PERS_STORAGE_ACCOUNT_NAME)) {
     Write-Output "Using storage account: [$AKS_PERS_STORAGE_ACCOUNT_NAME]"
 }
 
-# $AKS_PERS_SHARE_NAME = Read-Host "Storage File share Name: (leave empty for default)"
 
 # see if the user wants to use a specific virtual network
-
 Do { $confirmation = Read-Host "Would you like to connect to an existing virtual network? (y/n)"}
 while ([string]::IsNullOrWhiteSpace($confirmation))
 
@@ -402,6 +408,7 @@ $dnsNamePrefix = "$AKS_PERS_RESOURCE_GROUP"
 # az acs create --orchestrator-type kubernetes --resource-group $AKS_PERS_RESOURCE_GROUP --name $AKS_CLUSTER_NAME --generate-ssh-keys --agent-count=3 --agent-vm-size Standard_B2ms
 #az acs create --orchestrator-type kubernetes --resource-group fabricnlpcluster --name cluster1 --service-principal="$AKS_SERVICE_PRINCIPAL_CLIENTID" --client-secret="$AKS_SERVICE_PRINCIPAL_CLIENTSECRET"  --generate-ssh-keys --agent-count=3 --agent-vm-size Standard_D2 --master-vnet-subnet-id="$mysubnetid" --agent-vnet-subnet-id="$mysubnetid"
 
+# choose the right template based on user choice
 $templateFile = "acs.template.json"
 if (!"$AKS_VNET_NAME") {
     $templateFile = "acs.template.nosubnet.json"    
@@ -427,7 +434,7 @@ if (Test-Path $output) {
     Remove-Item $output
 }
 
-# Write-Output "Invoke-WebRequest -Uri $url -OutFile $output -ContentType 'text/plain; charset=utf-8'"
+# download the template file from github
 if ($GITHUB_URL.StartsWith("http")) { 
     Write-Output "Downloading file: $GITHUB_URL/azure/$templateFile"
     Invoke-WebRequest -Uri "$GITHUB_URL/azure/$templateFile" -OutFile $output -ContentType "text/plain; charset=utf-8"
@@ -436,6 +443,7 @@ else {
     Copy-Item -Path "$GITHUB_URL/azure/$templateFile" -Destination "$output"
 }
 
+# find CIDR for subnet
 if ("$AKS_VNET_NAME") {
     Write-Output "Looking up CIDR for Subnet: [${AKS_SUBNET_NAME}]"
     $AKS_SUBNET_CIDR = az network vnet subnet show --name ${AKS_SUBNET_NAME} --resource-group ${AKS_SUBNET_RESOURCE_GROUP} --vnet-name ${AKS_VNET_NAME} --query "addressPrefix" --output tsv
@@ -443,7 +451,7 @@ if ("$AKS_VNET_NAME") {
     Write-Output "Subnet CIDR=[$AKS_SUBNET_CIDR]"
 }
 
-
+# suggest and ask for the first static IP to use
 $AKS_FIRST_STATIC_IP = ""
 if ("$AKS_VNET_NAME") {
     $suggestedFirstStaticIP = Get-FirstIP -ip ${AKS_SUBNET_CIDR}
@@ -515,6 +523,7 @@ az group deployment create `
 
 # Write-Output "Saved to $acsoutputfolder\azuredeploy.json"
 
+# if joining a vnet, and not using azure networking then we have to manually set the route-table
 if ("$AKS_VNET_NAME") {
     if ("$AKS_USE_AZURE_NETWORKING" -eq "no") {
         Write-Output "Attaching route table"
@@ -557,6 +566,7 @@ if ("$AKS_VNET_NAME") {
 # Get-SCPFile -LocalFile "$env:userprofile\.kube\config" -RemoteFile "./.kube/config" -ComputerName ${MASTER_VM_NAME} -KeyFile "${SSH_PRIVATE_KEY_FILE}" -Credential $Credential -AcceptKey -Verbose -Force
 # Remove-SSHSession -SessionId 0
 
+# store kube config in local folder
 if (!(Test-Path -Path "$env:userprofile\.kube")) {
     Write-Output "$env:userprofile\.kube does not exist.  Creating it..."
     New-Item -ItemType directory -Path "$env:userprofile\.kube"
@@ -578,6 +588,7 @@ Write-Output "Check nodes via kubectl"
 $env:KUBECONFIG = "${HOME}\.kube\config"
 kubectl get nodes -o=name
 
+# wait until the nodes are up
 $nodeCount = 0
 
 while ($nodeCount -lt 3) {
@@ -586,7 +597,7 @@ while ($nodeCount -lt 3) {
     Start-Sleep -s 10
 }
 
-
+# create storage account
 Write-Output "Checking to see if storage account exists"
 $storageAccountCanBeCreated = az storage account check-name --name $AKS_PERS_STORAGE_ACCOUNT_NAME --query "nameAvailable" --output tsv
 
@@ -607,21 +618,10 @@ else {
     az storage account create -n $AKS_PERS_STORAGE_ACCOUNT_NAME -g $AKS_PERS_RESOURCE_GROUP -l $AKS_PERS_LOCATION --sku Standard_LRS            
 }
 
-if (!"${AKS_PERS_SHARE_NAME}") {
-    $AKS_PERS_SHARE_NAME = "fabricnlp"
-    Write-Output "Using share name: ${AKS_PERS_SHARE_NAME}"
-}
-
-# Export the connection string as an environment variable, this is used when creating the Azure file share
-$AZURE_STORAGE_CONNECTION_STRING = az storage account show-connection-string -n $AKS_PERS_STORAGE_ACCOUNT_NAME -g $AKS_PERS_RESOURCE_GROUP -o tsv
-
-# Write-Output "Create the file share"
-az storage share create -n $AKS_PERS_SHARE_NAME --connection-string $AZURE_STORAGE_CONNECTION_STRING --quota 512
-
 Write-Output "Get storage account key"
 $STORAGE_KEY = az storage account keys list --resource-group $AKS_PERS_RESOURCE_GROUP --account-name $AKS_PERS_STORAGE_ACCOUNT_NAME --query "[0].value" --output tsv
 
-Write-Output "Storagekey: [$STORAGE_KEY]"
+# Write-Output "Storagekey: [$STORAGE_KEY]"
 
 Write-Output "Creating kubernetes secret"
 kubectl create secret generic azure-secret --from-literal=resourcegroup="${AKS_PERS_RESOURCE_GROUP}" --from-literal=azurestorageaccountname="${AKS_PERS_STORAGE_ACCOUNT_NAME}" --from-literal=azurestorageaccountkey="${STORAGE_KEY}"
@@ -631,8 +631,3 @@ kubectl get "deployments,pods,services,ingress,secrets" --namespace=kube-system 
 
 Write-Output "Run the following to see status of the cluster"
 Write-Output "kubectl get deployments,pods,services,ingress,secrets --namespace=kube-system -o wide"
-
-Write-Output "------------------------"
-Write-Output "To launch the dashboard UI, run:"
-Write-Output "kubectl proxy"
-Write-Output "and then in your browser, navigate to: http://127.0.0.1:8001/ui"

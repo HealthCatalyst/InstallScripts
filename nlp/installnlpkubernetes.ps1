@@ -106,12 +106,13 @@ ReadYmlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "nlp/nlp-kubernetes
 
 ReadYmlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "nlp/nlp-mysql-private.yml" -customerid $customerid | kubectl create -f -
 
-Write-Output "Setting up SSL reverse proxy"
+Write-Output "Setting up reverse proxy"
 
 $ingressTemplate = "nlp/nlp-ingress.yml"
 if ($AKS_USE_SSL -eq "y" ) {
     $ingressTemplate = "nlp/nlp-ingress-ssl.yml"
 }
+Write-Output "Using template: $ingressTemplate"
 
 ReadYmlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile $ingressTemplate -customerid $customerid | kubectl create -f -
 

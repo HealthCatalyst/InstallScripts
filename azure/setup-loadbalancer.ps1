@@ -201,6 +201,9 @@ else {
 }
 
 Write-Output "External IP: $EXTERNAL_IP"
+Write-Output "Testing load balancer"
+Invoke-WebRequest -useb -Headers @{"Host" = "dashboard.$dnsrecordname"} -Uri http://$EXTERNAL_IP/ | Select-Object -Expand Content
+
 Write-Output "To test out the load balancer, open Git Bash and run:"
 Write-Output "curl -L --verbose --header 'Host: dashboard.$dnsrecordname' 'http://$EXTERNAL_IP/'"
 

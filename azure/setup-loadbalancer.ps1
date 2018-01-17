@@ -1,4 +1,4 @@
-Write-output "Version 2018.01.16.2"
+Write-output "Version 2018.01.16.3"
 
 #
 # This script is meant for quick & easy install via:
@@ -167,12 +167,17 @@ Write-Output "Creating DNS zones"
 $customerid = ReadSecret -secretname customerid
 $customerid = $customerid.ToLower().Trim()
 Write-Output "Customer ID: $customerid"
+$dnsrecordname="$customerid.healthcatalyst.net"
 
-if ([string]::IsNullOrWhiteSpace($(az network dns zone show --name "$customerid.healthcatalyst.net" -g $DNS_RESOURCE_GROUP))) {
-    az network dns zone create --name "$customerid.healthcatalyst.net" -g $DNS_RESOURCE_GROUP
+if ([string]::IsNullOrWhiteSpace($(az network dns zone show --name "$dnsrecordname" -g $DNS_RESOURCE_GROUP))) {
+    az network dns zone create --name "$dnsrecordname" -g $DNS_RESOURCE_GROUP
 
-    az network dns record-set a add-record --ipv4-address $EXTERNAL_IP --record-set-name "*" --resource-group $DNS_RESOURCE_GROUP --zone-name "$customerid.healthcatalyst.net"
+    az network dns record-set a add-record --ipv4-address $EXTERNAL_IP --record-set-name "*" --resource-group $DNS_RESOURCE_GROUP --zone-name "$dnsrecordname"
 }
+
+# list out the name servers
+Write-Output "Name servers to set in GoDaddy for *.$dnsrecordname"
+az network dns zone show -g $DNS_RESOURCE_GROUP -n "$dnsrecordname" --query "nameServers" -o tsv
 
 Write-Output "External IP: $EXTERNAL_IP"
 Write-Output "To test out the load balancer, open Git Bash and run:"

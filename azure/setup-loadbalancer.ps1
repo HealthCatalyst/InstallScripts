@@ -1,4 +1,4 @@
-Write-output "Version 2017.12.20.2"
+Write-output "Version 2018.01.16.1"
 
 #
 # This script is meant for quick & easy install via:
@@ -53,6 +53,11 @@ while ([string]::IsNullOrWhiteSpace($AKS_OPEN_TO_PUBLIC))
 Do { $AKS_USE_SSL = Read-Host "Do you want to setup SSL? (y/n)"}
 while ([string]::IsNullOrWhiteSpace($AKS_USE_SSL))
 
+$DNS_RESOURCE_GROUP = Read-Host "Resource group containing DNS zones? (default: dns)"
+if ([string]::IsNullOrWhiteSpace($DNS_RESOURCE_GROUP)) {
+    $DNS_RESOURCE_GROUP = "dns"
+}
+
 kubectl delete 'pods,services,configMaps,deployments,ingress' -l k8s-traefik=traefik -n kube-system --ignore-not-found=true
 
 # http://blog.kubernetes.io/2017/04/configuring-private-dns-zones-upstream-nameservers-kubernetes.html
@@ -64,16 +69,18 @@ kubectl create -f "$GITHUB_URL/azure/cafe-kube-dns.yml"
 kubectl delete ServiceAccount traefik-ingress-controller-serviceaccount -n kube-system --ignore-not-found=true
 
 if ($AKS_USE_SSL -eq "y" ) {
-    # ask for tls cert files
-    Do { $AKS_SSL_CERT_FOLDER = Read-Host "What folder has the tls.crt and tls.key files? (absolute path e.g., c:\temp\certs)"}
-    while ([string]::IsNullOrWhiteSpace($AKS_SSL_CERT_FOLDER) -or (!(Test-Path -Path "$AKS_SSL_CERT_FOLDER")))
+    if ([string]::IsNullOrWhiteSpace($(kubectl get secret traefik-cert-ahmn -o jsonpath='{.data}' -n kube-system --ignore-not-found=true))) {
+        # ask for tls cert files
+        Do { $AKS_SSL_CERT_FOLDER = Read-Host "What folder has the tls.crt and tls.key files? (absolute path e.g., c:\temp\certs)"}
+        while ([string]::IsNullOrWhiteSpace($AKS_SSL_CERT_FOLDER) -or (!(Test-Path -Path "$AKS_SSL_CERT_FOLDER")))
       
-    $AKS_SSL_CERT_FOLDER_UNIX_PATH = (($AKS_SSL_CERT_FOLDER -replace "\\", "/")).ToLower().Trim("/")    
+        $AKS_SSL_CERT_FOLDER_UNIX_PATH = (($AKS_SSL_CERT_FOLDER -replace "\\", "/")).ToLower().Trim("/")    
 
-    kubectl delete secret traefik-cert-ahmn -n kube-system --ignore-not-found=true
+        kubectl delete secret traefik-cert-ahmn -n kube-system --ignore-not-found=true
 
-    Write-Output "Storing TLS certs as kubernetes secret"
-    kubectl create secret generic traefik-cert-ahmn -n kube-system --from-file="$AKS_SSL_CERT_FOLDER_UNIX_PATH/tls.crt" --from-file="$AKS_SSL_CERT_FOLDER_UNIX_PATH/tls.key"
+        Write-Output "Storing TLS certs as kubernetes secret"
+        kubectl create secret generic traefik-cert-ahmn -n kube-system --from-file="$AKS_SSL_CERT_FOLDER_UNIX_PATH/tls.crt" --from-file="$AKS_SSL_CERT_FOLDER_UNIX_PATH/tls.key"
+    }
 
     Write-Output "Deploy the SSL ingress controller"
     # kubectl delete -f "$GITHUB_URL/azure/ingress.ssl.yml"
@@ -154,6 +161,18 @@ Do {
     $EXTERNAL_IP = $(kubectl get svc $loadbalancer -n kube-system -o jsonpath='{.status.loadBalancer.ingress[].ip}')
 }
 while ([string]::IsNullOrWhiteSpace($EXTERNAL_IP) -and ($startDate.AddMinutes($timeoutInMinutes) -gt (Get-Date)))
+
+# set up DNS zones
+Write-Output "Creating DNS zones"
+$customerid = ReadSecret -secretname customerid
+$customerid = $customerid.ToLower().Trim()
+Write-Output "Customer ID: $customerid"
+
+if ([string]::IsNullOrWhiteSpace($(az network dns zone show --name $customerid.healthcatalyst.net -g $DNS_RESOURCE_GROUP))) {
+    az network dns zone create --name $customerid.healthcatalyst.net -g $DNS_RESOURCE_GROUP
+
+    az network dns record-set a add-record --ipv4-address $EXTERNAL_IP --record-set-name * --resource-group $DNS_RESOURCE_GROUP --zone-name $customerid.healthcatalyst.net
+}
 
 Write-Output "External IP: $EXTERNAL_IP"
 Write-Output "To test out the load balancer, open Git Bash and run:"

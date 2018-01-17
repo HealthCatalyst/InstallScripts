@@ -1,4 +1,4 @@
-$version = "2018.01.17.1"
+$version = "2018.01.17.2"
 
 # This script is meant for quick & easy install via:
 #   curl -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/azure/main.ps1 | iex;
@@ -107,6 +107,11 @@ do {
             Write-Output "curl -L --verbose --header 'Host: solr.$customerid.healthcatalyst.net' 'http://$loadBalancerIP/solr' -k" 
             Write-Output "curl -L --verbose --header 'Host: nlp.$customerid.healthcatalyst.net' 'http://$loadBalancerIP/nlpweb' -k" 
             Write-Output "curl -L --verbose --header 'Host: nlpjobs.$customerid.healthcatalyst.net' 'http://$loadBalancerIP/nlp' -k"
+
+            Write-Output "If you didn't setup DNS, add the following entries in your c:\windows\system32\drivers\etc\hosts file to access the urls from your browser"
+            Write-Output "$loadBalancerIP solr.$customerid.healthcatalyst.net"            
+            Write-Output "$loadBalancerIP nlp.$customerid.healthcatalyst.net"            
+            Write-Output "$loadBalancerIP nlpjobs.$customerid.healthcatalyst.net"            
         } 
         '10' {
             Write-Host "MySql root password: $(ReadSecretPassword -secretname mysqlrootpassword -namespace fabricnlp)"

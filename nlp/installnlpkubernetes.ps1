@@ -1,4 +1,4 @@
-Write-Output "Version 2018.01.17.1"
+Write-Output "Version 2018.01.17.2"
 
 # curl -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/nlp/installnlpkubernetes.ps1 | iex;
 $GITHUB_URL = "https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master"
@@ -132,3 +132,8 @@ Write-Output "To test out the NLP services, open Git Bash and run:"
 Write-Output "curl -L --verbose --header 'Host: solr.$customerid.healthcatalyst.net' 'http://$loadBalancerIP/solr' -k"
 Write-Output "curl -L --verbose --header 'Host: nlp.$customerid.healthcatalyst.net' 'http://$loadBalancerIP/nlpweb' -k"
 Write-Output "curl -L --verbose --header 'Host: nlpjobs.$customerid.healthcatalyst.net' 'http://$loadBalancerIP/nlp' -k"
+
+Write-Output "If you didn't setup DNS, add the following entries in your c:\windows\system32\drivers\etc\hosts file to access the urls from your browser"
+Write-Output "$loadBalancerIP solr.$customerid.healthcatalyst.net"            
+Write-Output "$loadBalancerIP nlp.$customerid.healthcatalyst.net"            
+Write-Output "$loadBalancerIP nlpjobs.$customerid.healthcatalyst.net"            

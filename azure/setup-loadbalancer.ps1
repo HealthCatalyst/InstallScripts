@@ -1,4 +1,4 @@
-Write-output "Version 2018.01.17.1"
+Write-output "Version 2018.01.17.2"
 
 #
 # This script is meant for quick & easy install via:
@@ -47,6 +47,10 @@ else {
 # Get location name from resource group
 $AKS_PERS_LOCATION = az group show --name $AKS_PERS_RESOURCE_GROUP --query "location" -o tsv
 Write-Output "Using location: [$AKS_PERS_LOCATION]"
+
+$customerid = ReadSecret -secretname customerid
+$customerid = $customerid.ToLower().Trim()
+Write-Output "Customer ID: $customerid"
 
 # Ask input from user
 Do { $AKS_OPEN_TO_PUBLIC = Read-Host "Do you want this cluster open to public? (y/n)"}
@@ -175,13 +179,11 @@ Do {
 }
 while ([string]::IsNullOrWhiteSpace($EXTERNAL_IP) -and ($startDate.AddMinutes($timeoutInMinutes) -gt (Get-Date)))
 
+$dnsrecordname = "$customerid.healthcatalyst.net"
+
 if ($SETUP_DNS -eq "y") {
     # set up DNS zones
     Write-Output "Creating DNS zones"
-    $customerid = ReadSecret -secretname customerid
-    $customerid = $customerid.ToLower().Trim()
-    Write-Output "Customer ID: $customerid"
-    $dnsrecordname = "$customerid.healthcatalyst.net"
 
     if ([string]::IsNullOrWhiteSpace($(az network dns zone show --name "$dnsrecordname" -g $DNS_RESOURCE_GROUP))) {
         az network dns zone create --name "$dnsrecordname" -g $DNS_RESOURCE_GROUP

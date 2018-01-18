@@ -298,6 +298,11 @@ if ($resourceGroupExists -eq "true") {
         az resource delete --ids $(az resource list --resource-group $AKS_PERS_RESOURCE_GROUP --resource-type "Microsoft.Network/loadBalancers" --query "[].id" -o tsv )
     }
 
+    if ($(az resource list --resource-group $AKS_PERS_RESOURCE_GROUP --resource-type "Microsoft.Network/applicationGateways" --query "[].id" -o tsv ).length -ne 0) {
+        Write-Output "delete the application gateways"
+        az resource delete --ids $(az resource list --resource-group $AKS_PERS_RESOURCE_GROUP --resource-type "Microsoft.Network/applicationGateways" --query "[].id" -o tsv )
+    }
+    
     if ($(az resource list --resource-group $AKS_PERS_RESOURCE_GROUP --resource-type "Microsoft.Storage/storageAccounts" --query "[].id" -o tsv | Where-Object {!"$_".EndsWith("$AKS_PERS_STORAGE_ACCOUNT_NAME")}).length -ne 0) {
         Write-Output "delete the storage accounts EXCEPT storage account we created in the past"
         az resource delete --ids $(az resource list --resource-group $AKS_PERS_RESOURCE_GROUP --resource-type "Microsoft.Storage/storageAccounts" --query "[].id" -o tsv | Where-Object {!"$_".EndsWith("${AKS_PERS_STORAGE_ACCOUNT_NAME}")} )

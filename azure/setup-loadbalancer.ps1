@@ -1,4 +1,4 @@
-Write-output "Version 2018.01.17.2"
+Write-output "Version 2018.01.18.1"
 
 #
 # This script is meant for quick & easy install via:
@@ -6,6 +6,7 @@ Write-output "Version 2018.01.17.2"
 
 $GITHUB_URL = "https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master"
 # $GITHUB_URL = "."
+Invoke-WebRequest -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/azure/common.ps1 | Invoke-Expression;
 
 $AKS_OPEN_TO_PUBLIC = ""
 $AKS_USE_SSL = ""
@@ -53,12 +54,19 @@ $customerid = $customerid.ToLower().Trim()
 Write-Output "Customer ID: $customerid"
 
 # Ask input from user
-Do { $AKS_USE_WAF = Read-Host "Do you want to use Azure Application Gateway with WAF? (y/n)"}
-while ([string]::IsNullOrWhiteSpace($AKS_USE_WAF))
+$AKS_USE_WAF = Read-Host "Do you want to use Azure Application Gateway with WAF? (y/n) (default: n)"
+
+if ([string]::IsNullOrWhiteSpace($AKS_USE_WAF)) {
+    $AKS_USE_WAF = "n"
+}
 
 if ($AKS_USE_WAF -eq "n") {
-    Do { $AKS_OPEN_TO_PUBLIC = Read-Host "Do you want this cluster open to public? (y/n)"}
-    while ([string]::IsNullOrWhiteSpace($AKS_OPEN_TO_PUBLIC))
+    $AKS_OPEN_TO_PUBLIC = Read-Host "Do you want this cluster open to public? (y/n) (default: y)"
+
+    if ([string]::IsNullOrWhiteSpace($AKS_OPEN_TO_PUBLIC)) {
+        $AKS_OPEN_TO_PUBLIC = "y"
+    }
+
 }
 else {
     $AKS_OPEN_TO_PUBLIC = "n"
@@ -120,6 +128,17 @@ else {
 
 }
 
+if ("$AKS_OPEN_TO_PUBLIC" -eq "y") {
+    $AKS_IP_WHITELIST = Read-Host "Do you want to restrict the IPs able to connect to this cluster: ( ex: 127.0.0.1/32 or 192.168.1.7 ) leave empty for no restriction"
+    if ([string]::IsNullOrWhiteSpace($AKS_IP_WHITELIST)) {
+        $AKS_IP_WHITELIST = ""
+    }
+    else {
+        $AKS_IP_WHITELIST = "whiteListSourceRange = [`"$AKS_IP_WHITELIST`"]"
+        Write-Output "Whitelist: $AKS_IP_WHITELIST"
+    }
+}
+
 Do { $AKS_USE_SSL = Read-Host "Do you want to setup SSL? (y/n)"}
 while ([string]::IsNullOrWhiteSpace($AKS_USE_SSL))
 
@@ -165,12 +184,12 @@ if ($AKS_USE_SSL -eq "y" ) {
 
     Write-Output "Deploy the SSL ingress controller"
     # kubectl delete -f "$GITHUB_URL/azure/ingress.ssl.yml"
-    ReadYmlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "azure/ingress.ssl.yml" -customerid $customerid | kubectl create -f -
+    ReadYmlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "azure/ingress.ssl.yml" -customerid $customerid | Foreach-Object {$_ -replace 'WHITELISTIP', "$AKS_IP_WHITELIST"} | kubectl create -f -
 }
 else {
     Write-Output "Deploy the non-SSL ingress controller"
     # kubectl delete -f "$GITHUB_URL/azure/ingress.yml"
-    ReadYmlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "azure/ingress.yml" -customerid $customerid | kubectl create -f -
+    ReadYmlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "azure/ingress.yml" -customerid $customerid | Foreach-Object {$_ -replace 'WHITELISTIP', "$AKS_IP_WHITELIST"} | kubectl create -f -
 }
 
 if ("$AKS_OPEN_TO_PUBLIC" -eq "y") {
@@ -184,36 +203,10 @@ if ("$AKS_OPEN_TO_PUBLIC" -eq "y") {
 
     Write-Host "Using Public IP: [$publicip]"
 
-    # kubectl delete svc traefik-ingress-service-public -n kube-system
-    $serviceyaml = @"
-kind: Service
-apiVersion: v1
-metadata:
-  name: traefik-ingress-service-public
-  namespace: kube-system
-  labels:
-    k8s-traefik: traefik    
-spec:
-  selector:
-    k8s-app: traefik-ingress-lb
-  ports:
-    - protocol: TCP
-      port: 80
-      name: web
-    - protocol: TCP
-      port: 443
-      name: ssl      
-  type: LoadBalancer
-  # Special notes for Azure: To use user-specified public type loadBalancerIP, a static type public IP address resource needs to be created first, 
-  # and it should be in the same resource group of the cluster. 
-  # note that in the case of AKS, that resource group is MC_<resourcegroup>_<cluster>
-  # Then you could specify the assigned IP address as loadBalancerIP
-  # https://kubernetes.io/docs/concepts/services-networking/service/#type-loadbalancer
-  loadBalancerIP: $publicip
----
-"@
+    ReadYmlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "azure/loadbalancer-public.yml" -customerid $customerid `
+            | Foreach-Object {$_ -replace 'PUBLICIP', "$publicip"} `
+            | kubectl create -f -
 
-    Write-Output $serviceyaml | kubectl create -f -
     #kubectl create -f "$GITHUB_URL/azure/loadbalancer-public.yml"
 
     #kubectl patch service traefik-ingress-service-public --loadBalancerIP=52.191.114.120
@@ -265,6 +258,27 @@ else {
 }
 
 if ($AKS_USE_WAF -eq "y") {
+
+    $nsgname = "IngressNSG"
+    $iprangetoallow = ""
+    if ([string]::IsNullOrEmpty($(az network nsg show --name "$nsgname" --resource-group "$AKS_PERS_RESOURCE_GROUP" ))) {
+        az network nsg create --name "$nsgname" --resource-group "$AKS_PERS_RESOURCE_GROUP"
+    }
+
+    if ([string]::IsNullOrEmpty($(az network nsg rule show --nsg-name "$nsgname" --name "IPFilter" --resource-group "$AKS_PERS_RESOURCE_GROUP" ))) {
+        # Rule priority, between 100 (highest priority) and 4096 (lowest priority). Must be unique for each rule in the collection.
+        # Space-separated list of CIDR prefixes or IP ranges. Alternatively, specify ONE of 'VirtualNetwork', 'AzureLoadBalancer', 'Internet' or '*' to match all IPs.
+        az network nsg rule create --name "IPFilter" `
+            --nsg-name "$nsgname" `
+            --priority 220 `
+            --resource-group "$AKS_PERS_RESOURCE_GROUP" `
+            --description "IP Filtering" `
+            --access "Allow" `
+            --source-address-prefixes "$iprangetoallow"
+    }
+
+    Write-Output "Creating network security group to restrict IP address"
+
     Write-Output "Setting up Azure Application Gateway"
 
     $gatewayName = "${customerid}Gateway"
@@ -285,6 +299,8 @@ if ($AKS_USE_WAF -eq "y") {
             --public-ip-address "IngressPublicIP" `
             --servers "$EXTERNAL_IP"  `
     
+        # https://docs.microsoft.com/en-us/azure/application-gateway/application-gateway-faq
+
         Write-Output "Waiting for Azure Application Gateway to be created.  (This can take 10-15 minutes)"
         az network application-gateway wait `
             --name "$gatewayName" `

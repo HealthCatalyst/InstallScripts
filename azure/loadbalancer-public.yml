@@ -8,6 +8,8 @@ metadata:
 spec:
   selector:
     k8s-app: traefik-ingress-lb
+# https://kubernetes.io/docs/tutorials/services/source-ip/
+  externalTrafficPolicy: "Local"
   ports:
     - protocol: TCP
       port: 80
@@ -21,5 +23,5 @@ spec:
   # note that in the case of AKS, that resource group is MC_<resourcegroup>_<cluster>
   # Then you could specify the assigned IP address as loadBalancerIP
   # https://kubernetes.io/docs/concepts/services-networking/service/#type-loadbalancer
-  loadBalancerIP: $publicip
+  loadBalancerIP: PUBLICIP
 ---

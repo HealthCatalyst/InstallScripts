@@ -13,9 +13,11 @@ data:
   traefik.toml: |
     # traefik.toml
     defaultEntryPoints = ["http","https"]
+    [accessLog]
     [entryPoints]
       [entryPoints.http]
       address = ":80"
+      WHITELISTIP      
         [entryPoints.http.redirect]
           entryPoint = "https"
       [entryPoints.https]

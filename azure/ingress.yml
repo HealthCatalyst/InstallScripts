@@ -1,3 +1,22 @@
+# format: https://docs.traefik.io/configuration/backends/kubernetes/
+# the config for Traefik so it knows where the certificates are
+# https://docs.traefik.io/configuration/commons/
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: traefik-conf
+  namespace: kube-system
+  labels:
+    k8s-traefik: traefik  
+data:
+  traefik.toml: |
+    # traefik.toml
+    defaultEntryPoints = ["http"]
+    [accessLog]
+    [entryPoints]
+      [entryPoints.http]
+      address = ":80"
+      WHITELISTIP
 ---
 apiVersion: v1
 kind: ServiceAccount
@@ -26,12 +45,25 @@ spec:
     spec:
       serviceAccountName: traefik-ingress-controller-serviceaccount
       terminationGracePeriodSeconds: 60
+      volumes:
+        - name: config
+          configMap:
+            name: traefik-conf
       containers:
       - image: traefik
         name: traefik-ingress-lb
+        volumeMounts:
+          - mountPath: "/config"
+            name: "config"        
+        ports:
+          - containerPort: 80
+          - containerPort: 443
+          - containerPort: 8080
         args:
         - --web
         - --kubernetes
+        - --configfile=/config/traefik.toml
+        - --logLevel=DEBUG
 ---
 apiVersion: v1
 kind: Service

@@ -1,0 +1,14 @@
+{
+    "customerId": "",
+    "resourceGroup": "",
+    "deleteExisting": "",
+    "location": "",
+    "UseAzureNetworking": true,
+    "serviceAccount": "",
+    "folderToStoreSSHKeys": "",
+    "storageAccount": "",
+    "deleteStorageAccountIfExists": "",
+    "vnet": "",
+    "subnet": "",
+    "firstStaticIP": ""
+}

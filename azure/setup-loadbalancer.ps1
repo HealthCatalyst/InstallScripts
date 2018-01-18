@@ -53,8 +53,72 @@ $customerid = $customerid.ToLower().Trim()
 Write-Output "Customer ID: $customerid"
 
 # Ask input from user
-Do { $AKS_OPEN_TO_PUBLIC = Read-Host "Do you want this cluster open to public? (y/n)"}
-while ([string]::IsNullOrWhiteSpace($AKS_OPEN_TO_PUBLIC))
+Do { $AKS_USE_WAF = Read-Host "Do you want to use Azure Application Gateway with WAF? (y/n)"}
+while ([string]::IsNullOrWhiteSpace($AKS_USE_WAF))
+
+if ($AKS_USE_WAF -eq "n") {
+    Do { $AKS_OPEN_TO_PUBLIC = Read-Host "Do you want this cluster open to public? (y/n)"}
+    while ([string]::IsNullOrWhiteSpace($AKS_OPEN_TO_PUBLIC))
+}
+else {
+    $AKS_OPEN_TO_PUBLIC = "n"
+    $publicip = az network public-ip show -g $AKS_PERS_RESOURCE_GROUP -n IngressPublicIP --query "ipAddress" -o tsv;
+    if ([string]::IsNullOrWhiteSpace($publicip)) {
+        az network public-ip create -g $AKS_PERS_RESOURCE_GROUP -n IngressPublicIP --location $AKS_PERS_LOCATION --allocation-method Static
+        $publicip = az network public-ip show -g $AKS_PERS_RESOURCE_GROUP -n IngressPublicIP --query "ipAddress" -o tsv;
+    }  
+
+    Write-Host "Using Public IP: [$publicip]"
+    # get vnet and subnet name
+    Do { $confirmation = Read-Host "Would you like to connect the Azure WAF to an existing virtual network? (y/n)"}
+    while ([string]::IsNullOrWhiteSpace($confirmation))
+
+    if ($confirmation -eq 'y') {
+        Write-Output "Finding existing vnets..."
+        # az network vnet list --query "[].[name,resourceGroup ]" -o tsv    
+
+        $vnets = az network vnet list --query "[].[name]" -o tsv
+
+        Do { 
+            Write-Output "------  Existing vnets -------"
+            for ($i = 1; $i -le $vnets.count; $i++) {
+                Write-Host "$i. $($vnets[$i-1])"
+            }    
+            Write-Output "------  End vnets -------"
+
+            $index = Read-Host "Enter number of vnet to use (1 - $($vnets.count))"
+            $AKS_VNET_NAME = $($vnets[$index - 1])
+        }
+        while ([string]::IsNullOrWhiteSpace($AKS_VNET_NAME))    
+
+        if ("$AKS_VNET_NAME") {
+        
+            # Do { $AKS_SUBNET_RESOURCE_GROUP = Read-Host "Resource Group of Virtual Network"}
+            # while ([string]::IsNullOrWhiteSpace($AKS_SUBNET_RESOURCE_GROUP)) 
+
+            $AKS_SUBNET_RESOURCE_GROUP = az network vnet list --query "[?name == '$AKS_VNET_NAME'].resourceGroup" -o tsv
+            Write-Output "Using subnet resource group: [$AKS_SUBNET_RESOURCE_GROUP]"
+
+            Write-Output "Finding existing subnets in $AKS_VNET_NAME ..."
+            $subnets = az network vnet subnet list --resource-group $AKS_SUBNET_RESOURCE_GROUP --vnet-name $AKS_VNET_NAME --query "[].name" -o tsv
+        
+            Do { 
+                Write-Output "------  Subnets in $AKS_VNET_NAME -------"
+                for ($i = 1; $i -le $subnets.count; $i++) {
+                    Write-Host "$i. $($subnets[$i-1])"
+                }    
+                Write-Output "------  End Subnets -------"
+
+                Write-Host "NOTE: Each customer should have their own gateway subnet.  This subnet should be different than the cluster subnet"
+                $index = Read-Host "Enter number of subnet to use (1 - $($subnets.count))"
+                $AKS_SUBNET_NAME = $($subnets[$index - 1])
+            }
+            while ([string]::IsNullOrWhiteSpace($AKS_SUBNET_NAME)) 
+
+        }
+    }  
+
+}
 
 Do { $AKS_USE_SSL = Read-Host "Do you want to setup SSL? (y/n)"}
 while ([string]::IsNullOrWhiteSpace($AKS_USE_SSL))
@@ -200,6 +264,74 @@ else {
     Write-Output "$EXTERNAL_IP dashboard.$dnsrecordname"
 }
 
+if ($AKS_USE_WAF -eq "y") {
+    Write-Output "Setting up Azure Application Gateway"
+
+    $gatewayName = "${customerid}Gateway"
+
+    az network application-gateway show --name "$gatewayName" --resource-group "$AKS_PERS_RESOURCE_GROUP"
+
+    Write-Output "Checking if Application Gateway already exists"
+    if ([string]::IsNullOrEmpty($(az network application-gateway show --name "$gatewayName" --resource-group "$AKS_PERS_RESOURCE_GROUP" ))) {
+        Write-Output "Creating new application gateway with WAF"
+        # https://docs.microsoft.com/en-us/cli/azure/network/application-gateway?view=azure-cli-latest#az_network_application_gateway_create
+        az network application-gateway create `
+            --sku WAF_Medium `
+            --name "$gatewayName" `
+            --location "$AKS_PERS_LOCATION" `
+            --resource-group "$AKS_PERS_RESOURCE_GROUP" `
+            --vnet-name "$AKS_VNET_NAME" `
+            --subnet "$AKS_SUBNET_NAME" `
+            --public-ip-address "IngressPublicIP" `
+            --servers "$EXTERNAL_IP"  `
+    
+        Write-Output "Waiting for Azure Application Gateway to be created.  (This can take 10-15 minutes)"
+        az network application-gateway wait `
+            --name "$gatewayName" `
+            --resource-group "$AKS_PERS_RESOURCE_GROUP" `
+            --created
+    }
+    else {
+
+        # # set public IP
+        # $frontendPoolName = az network application-gateway show --name "$gatewayName" --resource-group "$AKS_PERS_RESOURCE_GROUP" --query "frontendIpConfigurations[0].name" -o tsv
+        # Write-Output "Setting $publicip as IP for frontend pool $frontendPoolName"
+        # az network application-gateway frontend-ip update `
+        #     --gateway-name "$gatewayName" `
+        #     --resource-group "$AKS_PERS_RESOURCE_GROUP" `
+        #     --name "$frontendPoolName" `
+        #     --public-ip-address "IngressPublicIP"
+
+        $backendPoolName = az network application-gateway show --name "$gatewayName" --resource-group "$AKS_PERS_RESOURCE_GROUP" --query "backendAddressPools[0].name" -o tsv
+        Write-Output "Setting $EXTERNAL_IP as IP for backend pool $backendPoolName"
+        # set backend private IP
+        az network application-gateway address-pool update  `
+            --gateway-name "$gatewayName" `
+            --resource-group "$AKS_PERS_RESOURCE_GROUP" `
+            --name "$backendPoolName" `
+            --servers "$EXTERNAL_IP"
+
+        az network application-gateway wait `
+            --name "$gatewayName" `
+            --resource-group "$AKS_PERS_RESOURCE_GROUP" `
+            --updated            
+    }
+
+    Write-Output "Enabling Prevention mode of firewall"
+    az network application-gateway waf-config set `
+        --enabled true `
+        --firewall-mode Prevention `
+        --gateway-name "$gatewayName" `
+        --resource-group "$AKS_PERS_RESOURCE_GROUP" `
+        --rule-set-type "OWASP" `
+        --rule-set-version "3.0"
+        
+    Write-Output "Checking for health of backend pool"
+    az network application-gateway show-backend-health `
+        --name "$gatewayName" `
+        --resource-group "$AKS_PERS_RESOURCE_GROUP" `
+        --query "backendAddressPools[0].backendHttpSettingsCollection[0].servers[0].health"
+}
 Write-Output "External IP: $EXTERNAL_IP"
 Write-Output "Testing load balancer"
 Invoke-WebRequest -useb -Headers @{"Host" = "dashboard.$dnsrecordname"} -Uri http://$EXTERNAL_IP/ | Select-Object -Expand Content

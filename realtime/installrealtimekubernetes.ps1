@@ -44,7 +44,7 @@ if ([string]::IsNullOrWhiteSpace($(kubectl get namespace fabricrealtime --ignore
     kubectl create namespace fabricrealtime
 }
 else {
-    Do { $deleteSecrets = Read-Host "Namespace exists.  Do you want to delete passwords stored in this namespace? (y/n)"}
+    Do { $deleteSecrets = Read-Host "Namespace exists.  Do you want to delete passwords and data stored in this namespace? (y/n)"}
     while ([string]::IsNullOrWhiteSpace($deleteSecrets))    
     
     if ($deleteSecrets -eq "y" ) {

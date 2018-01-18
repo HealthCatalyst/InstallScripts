@@ -191,7 +191,6 @@ while ([string]::IsNullOrWhiteSpace($confirmation))
 
 if ($confirmation -eq 'y') {
     Write-Output "Finding existing vnets..."
-    Write-Output " vnet `t resourcegroup"
     # az network vnet list --query "[].[name,resourceGroup ]" -o tsv    
 
     $vnets=az network vnet list --query "[].[name]" -o tsv

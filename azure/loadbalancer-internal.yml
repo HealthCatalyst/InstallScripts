@@ -8,6 +8,9 @@ metadata:
   annotations:
     # from https://radu-matei.com/blog/k8s-appsvc/
     service.beta.kubernetes.io/azure-load-balancer-internal: "true"
+    # https://gowalker.org/k8s.io/kubernetes/pkg/cloudprovider/providers/azure
+    # service.beta.kubernetes.io/azure-load-balancer-internal-subnet": ""
+
 spec:
   selector:
     k8s-app: traefik-ingress-lb

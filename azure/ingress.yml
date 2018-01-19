@@ -63,7 +63,7 @@ spec:
         - --web
         - --kubernetes
         - --configfile=/config/traefik.toml
-        - --logLevel=DEBUG
+        - --logLevel=INFO
 ---
 apiVersion: v1
 kind: Service

@@ -1,4 +1,4 @@
-Write-output "Version 2018.01.18.1"
+Write-output "Version 2018.01.18.3"
 
 #
 # This script is meant for quick & easy install via:
@@ -10,6 +10,7 @@ Invoke-WebRequest -useb https://raw.githubusercontent.com/HealthCatalyst/Install
 
 $AKS_OPEN_TO_PUBLIC = ""
 $AKS_USE_SSL = ""
+$AKS_IP_WHITELIST = ""
 
 $loggedInUser = az account show --query "user.name"  --output tsv
 
@@ -30,6 +31,8 @@ if ( "$loggedInUser" ) {
 else {
     az login
 }
+
+$AKS_SUBSCRIPTION_ID = az account show --query "id" --output tsv
 
 # Get resource group name from kube secrets
 $AKS_PERS_RESOURCE_GROUP_BASE64 = kubectl get secret azure-secret -o jsonpath='{.data.resourcegroup}' --ignore-not-found=true
@@ -54,6 +57,17 @@ $customerid = $customerid.ToLower().Trim()
 Write-Output "Customer ID: $customerid"
 
 # Ask input from user
+Do { 
+    Write-Host "How do you want to control access to this cluster:"
+    Write-Host "1: Allow anyone to access it"
+    Write-Host "2: Only allow certain IP ranges to access it"
+    Write-Host "3: Only allow computers inside the subnet to access it"
+    Write-Host "-------------"
+
+    $AKS_CLUSTER_ACCESS_TYPE = Read-Host "Enter number of option to use (1 - 3)"
+}
+while ([string]::IsNullOrWhiteSpace($AKS_CLUSTER_ACCESS_TYPE))  
+
 $AKS_USE_WAF = Read-Host "Do you want to use Azure Application Gateway with WAF? (y/n) (default: n)"
 
 if ([string]::IsNullOrWhiteSpace($AKS_USE_WAF)) {
@@ -61,12 +75,9 @@ if ([string]::IsNullOrWhiteSpace($AKS_USE_WAF)) {
 }
 
 if ($AKS_USE_WAF -eq "n") {
-    $AKS_OPEN_TO_PUBLIC = Read-Host "Do you want this cluster open to public? (y/n) (default: y)"
-
-    if ([string]::IsNullOrWhiteSpace($AKS_OPEN_TO_PUBLIC)) {
+    if (($AKS_CLUSTER_ACCESS_TYPE -eq "1" ) -or ($AKS_CLUSTER_ACCESS_TYPE -eq "2")) {
         $AKS_OPEN_TO_PUBLIC = "y"
     }
-
 }
 else {
     $AKS_OPEN_TO_PUBLIC = "n"
@@ -128,15 +139,43 @@ else {
 
 }
 
-if ("$AKS_OPEN_TO_PUBLIC" -eq "y") {
-    $AKS_IP_WHITELIST = Read-Host "Do you want to restrict the IPs able to connect to this cluster: ( ex: 127.0.0.1/32 or 192.168.1.7 ) leave empty for no restriction"
-    if ([string]::IsNullOrWhiteSpace($AKS_IP_WHITELIST)) {
-        $AKS_IP_WHITELIST = ""
+if ($AKS_CLUSTER_ACCESS_TYPE -eq "2") {
+
+    Do { $AKS_IP_WHITELIST = Read-Host "Enter IP range that should be able to access this cluster: ( ex: 127.0.0.1/32 or 192.168.1.7 )"}
+    while ([string]::IsNullOrWhiteSpace($AKS_IP_WHITELIST))
+
+    $vnets = az network vnet list --query "[].[name]" -o tsv
+
+    Do { 
+        Write-Output "------  Existing vnets -------"
+        for ($i = 1; $i -le $vnets.count; $i++) {
+            Write-Host "$i. $($vnets[$i-1])"
+        }    
+        Write-Output "------  End vnets -------"
+
+        $index = Read-Host "Enter number of vnet of this cluster so we can whitelist it (1 - $($vnets.count))"
+        $AKS_VNET_NAME = $($vnets[$index - 1])
     }
-    else {
-        $AKS_IP_WHITELIST = "whiteListSourceRange = [`"$AKS_IP_WHITELIST`"]"
-        Write-Output "Whitelist: $AKS_IP_WHITELIST"
+    while ([string]::IsNullOrWhiteSpace($AKS_VNET_NAME))    
+
+    $AKS_SUBNET_RESOURCE_GROUP = az network vnet list --query "[?name == '$AKS_VNET_NAME'].resourceGroup" -o tsv
+    Write-Output "Using vnet resource group: [$AKS_SUBNET_RESOURCE_GROUP]"
+
+    Write-Output "Looking up CIDR for Vnet: [${AKS_VNET_NAME}] to add to whitelist"
+    $AKS_VNET_CIDR_LIST = az network vnet show --name ${AKS_VNET_NAME} --resource-group ${AKS_SUBNET_RESOURCE_GROUP} --query "addressSpace.addressPrefixes" --output tsv
+
+    $WHITELIST = ""
+
+    foreach ($cidr in $AKS_VNET_CIDR_LIST) {
+        $WHITELIST = "${WHITELIST}`"${cidr}`","
     }
+  
+    $WHITELIST = "${WHITELIST}`"$AKS_IP_WHITELIST`""
+
+    $WHITELIST = "${WHITELIST}"
+
+    $AKS_IP_WHITELIST = "whiteListSourceRange = [$WHITELIST]"
+    Write-Output "Whitelist: $AKS_IP_WHITELIST"
 }
 
 Do { $AKS_USE_SSL = Read-Host "Do you want to setup SSL? (y/n)"}
@@ -204,8 +243,8 @@ if ("$AKS_OPEN_TO_PUBLIC" -eq "y") {
     Write-Host "Using Public IP: [$publicip]"
 
     ReadYmlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "azure/loadbalancer-public.yml" -customerid $customerid `
-            | Foreach-Object {$_ -replace 'PUBLICIP', "$publicip"} `
-            | kubectl create -f -
+        | Foreach-Object {$_ -replace 'PUBLICIP', "$publicip"} `
+        | kubectl create -f -
 
     #kubectl create -f "$GITHUB_URL/azure/loadbalancer-public.yml"
 
@@ -228,7 +267,7 @@ else {
     $loadbalancer = "traefik-ingress-service-private"    
 }
 
-Write-Output "Waiting for IP to get assigned to the load balancer (Note: It can take 5 minutes or so to get the IP from azure)"
+Write-Output "Waiting for IP to get assigned to the load balancer (Note: It can take upto 5 minutes for Azure to finish creating the load balancer)"
 Do { 
     Start-Sleep -Seconds 10
     Write-Output "."
@@ -237,6 +276,148 @@ Do {
 while ([string]::IsNullOrWhiteSpace($EXTERNAL_IP) -and ($startDate.AddMinutes($timeoutInMinutes) -gt (Get-Date)))
 
 $dnsrecordname = "$customerid.healthcatalyst.net"
+
+if ($AKS_USE_WAF -eq "y") {
+
+    # $nsgname = "IngressNSG"
+    # $iprangetoallow = ""
+    # if ([string]::IsNullOrEmpty($(az network nsg show --name "$nsgname" --resource-group "$AKS_PERS_RESOURCE_GROUP" ))) {
+    #     az network nsg create --name "$nsgname" --resource-group "$AKS_PERS_RESOURCE_GROUP"
+    # }
+
+    # if ([string]::IsNullOrEmpty($(az network nsg rule show --nsg-name "$nsgname" --name "IPFilter" --resource-group "$AKS_PERS_RESOURCE_GROUP" ))) {
+    #     # Rule priority, between 100 (highest priority) and 4096 (lowest priority). Must be unique for each rule in the collection.
+    #     # Space-separated list of CIDR prefixes or IP ranges. Alternatively, specify ONE of 'VirtualNetwork', 'AzureLoadBalancer', 'Internet' or '*' to match all IPs.
+    #     az network nsg rule create --name "IPFilter" `
+    #         --nsg-name "$nsgname" `
+    #         --priority 220 `
+    #         --resource-group "$AKS_PERS_RESOURCE_GROUP" `
+    #         --description "IP Filtering" `
+    #         --access "Allow" `
+    #         --source-address-prefixes "$iprangetoallow"
+    # }
+
+    # Write-Output "Creating network security group to restrict IP address"
+
+    Write-Output "Setting up Azure Application Gateway"
+
+    $gatewayName = "${customerid}Gateway"
+
+    az network application-gateway show --name "$gatewayName" --resource-group "$AKS_PERS_RESOURCE_GROUP"
+    $gatewayipName = "${gatewayName}PublicIP"
+
+    Write-Output "Checking if Application Gateway already exists"
+    if ([string]::IsNullOrEmpty($(az network application-gateway show --name "$gatewayName" --resource-group "$AKS_PERS_RESOURCE_GROUP" ))) {
+
+        # note application gateway provides no way to specify the resourceGroup of the vnet so we HAVE to create the App Gateway in the same resourceGroup
+        # as the vnet and NOT in the resourceGroup of the cluster
+        $gatewayip = az network public-ip show -g $AKS_PERS_RESOURCE_GROUP -n "$gatewayipName" --query "ipAddress" -o tsv;
+        if ([string]::IsNullOrWhiteSpace($gatewayip)) {
+            az network public-ip create -g $AKS_PERS_RESOURCE_GROUP -n "$gatewayipName" --location $AKS_PERS_LOCATION --allocation-method Dynamic
+
+            # Write-Output "Waiting for IP address to get assigned to $gatewayipName"
+            # Do { 
+            #     Start-Sleep -Seconds 10
+            #     Write-Output "."                
+            #     $gatewayip = az network public-ip show -g $AKS_PERS_RESOURCE_GROUP -n "$gatewayipName" --query "ipAddress" -o tsv; 
+            # }
+            # while ([string]::IsNullOrWhiteSpace($gatewayip))
+        }  
+    
+        # Write-Host "Using Gateway IP: [$gatewayip]"
+
+        $mysubnetid = "/subscriptions/${AKS_SUBSCRIPTION_ID}/resourceGroups/${AKS_SUBNET_RESOURCE_GROUP}/providers/Microsoft.Network/virtualNetworks/${AKS_VNET_NAME}/subnets/${AKS_SUBNET_NAME}"
+            
+        Write-Output "Using subnet id: $mysubnetid"
+
+        Write-Output "Creating new application gateway with WAF (This can take 10-15 minutes)"
+        # https://docs.microsoft.com/en-us/cli/azure/network/application-gateway?view=azure-cli-latest#az_network_application_gateway_create
+
+        az network application-gateway create `
+            --sku WAF_Medium `
+            --name "$gatewayName" `
+            --location "$AKS_PERS_LOCATION" `
+            --resource-group "$AKS_PERS_RESOURCE_GROUP" `
+            --vnet-name "$AKS_VNET_NAME" `
+            --subnet "$mysubnetid" `
+            --public-ip-address "$gatewayipName" `
+            --servers "$EXTERNAL_IP"  `
+    
+        # https://docs.microsoft.com/en-us/azure/application-gateway/application-gateway-faq
+
+        Write-Output "Waiting for Azure Application Gateway to be created."
+        az network application-gateway wait `
+            --name "$gatewayName" `
+            --resource-group "$AKS_PERS_RESOURCE_GROUP" `
+            --created
+    }
+    else {
+
+        # # set public IP
+        $frontendPoolName = az network application-gateway show --name "$gatewayName" --resource-group "$AKS_SUBNET_RESOURCE_GROUP" --query "frontendIpConfigurations[0].name" -o tsv
+        Write-Output "Setting $gatewayipName as IP for frontend pool $frontendPoolName"
+        az network application-gateway frontend-ip update `
+            --gateway-name "$gatewayName" `
+            --resource-group "$AKS_PERS_RESOURCE_GROUP" `
+            --name "$frontendPoolName" `
+            --public-ip-address "$gatewayipName"
+
+        $backendPoolName = az network application-gateway show --name "$gatewayName" --resource-group "$AKS_SUBNET_RESOURCE_GROUP" --query "backendAddressPools[0].name" -o tsv
+        Write-Output "Setting $EXTERNAL_IP as IP for backend pool $backendPoolName"
+        # set backend private IP
+        az network application-gateway address-pool update  `
+            --gateway-name "$gatewayName" `
+            --resource-group "$AKS_PERS_RESOURCE_GROUP" `
+            --name "$backendPoolName" `
+            --servers "$EXTERNAL_IP"
+
+        az network application-gateway wait `
+            --name "$gatewayName" `
+            --resource-group "$AKS_PERS_RESOURCE_GROUP" `
+            --updated            
+    }
+
+    if ($(az network application-gateway waf-config show --gateway-name "$gatewayName" --resource-group "$AKS_PERS_RESOURCE_GROUP" --query "firewallMode" -o tsv) -eq "Prevention") {
+    }
+    else {
+        Write-Output "Enabling Prevention mode of firewall"
+        az network application-gateway waf-config set `
+            --enabled true `
+            --firewall-mode Prevention `
+            --gateway-name "$gatewayName" `
+            --resource-group "$AKS_PERS_RESOURCE_GROUP" `
+            --rule-set-type "OWASP" `
+            --rule-set-version "3.0"            
+    }
+    
+    # if ([string]::IsNullOrEmpty($(az network application-gateway probe show --gateway-name "$gatewayName" --name "MyCustomProbe" --resource-group "$AKS_SUBNET_RESOURCE_GROUP"))) {
+    #     # create a custom probe
+    #     az network application-gateway probe create --gateway-name "$gatewayName" `
+    #         --resource-group "$AKS_SUBNET_RESOURCE_GROUP" `
+    #         --name "MyCustomProbe" `
+    #         --path "/" `
+    #         --protocol "Http" `
+    #         --host "dashboard.${dnsrecordname}"
+
+    #     # associate custom probe with HttpSettings: appGatewayBackendHttpSettings
+    #     az network application-gateway http-settings update --gateway-name "$gatewayName" `
+    #         --name "appGatewayBackendHttpSettings" `
+    #         --resource-group "$AKS_SUBNET_RESOURCE_GROUP" `
+    #         --probe "MyCustomProbe" `
+    #         --enable-probe true `
+    #         --host-name "dashboard.${dnsrecordname}"
+    # }
+
+
+    Write-Output "Checking for health of backend pool"
+    az network application-gateway show-backend-health `
+        --name "$gatewayName" `
+        --resource-group "$AKS_PERS_RESOURCE_GROUP" `
+        --query "backendAddressPools[0].backendHttpSettingsCollection[0].servers[0].health"
+
+    # set EXTERNAL_IP to be the IP of the Application Gateway
+    $EXTERNAL_IP = az network public-ip show -g $AKS_PERS_RESOURCE_GROUP -n "$gatewayipName" --query "ipAddress" -o tsv;
+}
 
 if ($SETUP_DNS -eq "y") {
     # set up DNS zones
@@ -257,98 +438,8 @@ else {
     Write-Output "$EXTERNAL_IP dashboard.$dnsrecordname"
 }
 
-if ($AKS_USE_WAF -eq "y") {
-
-    $nsgname = "IngressNSG"
-    $iprangetoallow = ""
-    if ([string]::IsNullOrEmpty($(az network nsg show --name "$nsgname" --resource-group "$AKS_PERS_RESOURCE_GROUP" ))) {
-        az network nsg create --name "$nsgname" --resource-group "$AKS_PERS_RESOURCE_GROUP"
-    }
-
-    if ([string]::IsNullOrEmpty($(az network nsg rule show --nsg-name "$nsgname" --name "IPFilter" --resource-group "$AKS_PERS_RESOURCE_GROUP" ))) {
-        # Rule priority, between 100 (highest priority) and 4096 (lowest priority). Must be unique for each rule in the collection.
-        # Space-separated list of CIDR prefixes or IP ranges. Alternatively, specify ONE of 'VirtualNetwork', 'AzureLoadBalancer', 'Internet' or '*' to match all IPs.
-        az network nsg rule create --name "IPFilter" `
-            --nsg-name "$nsgname" `
-            --priority 220 `
-            --resource-group "$AKS_PERS_RESOURCE_GROUP" `
-            --description "IP Filtering" `
-            --access "Allow" `
-            --source-address-prefixes "$iprangetoallow"
-    }
-
-    Write-Output "Creating network security group to restrict IP address"
-
-    Write-Output "Setting up Azure Application Gateway"
-
-    $gatewayName = "${customerid}Gateway"
-
-    az network application-gateway show --name "$gatewayName" --resource-group "$AKS_PERS_RESOURCE_GROUP"
-
-    Write-Output "Checking if Application Gateway already exists"
-    if ([string]::IsNullOrEmpty($(az network application-gateway show --name "$gatewayName" --resource-group "$AKS_PERS_RESOURCE_GROUP" ))) {
-        Write-Output "Creating new application gateway with WAF"
-        # https://docs.microsoft.com/en-us/cli/azure/network/application-gateway?view=azure-cli-latest#az_network_application_gateway_create
-        az network application-gateway create `
-            --sku WAF_Medium `
-            --name "$gatewayName" `
-            --location "$AKS_PERS_LOCATION" `
-            --resource-group "$AKS_PERS_RESOURCE_GROUP" `
-            --vnet-name "$AKS_VNET_NAME" `
-            --subnet "$AKS_SUBNET_NAME" `
-            --public-ip-address "IngressPublicIP" `
-            --servers "$EXTERNAL_IP"  `
-    
-        # https://docs.microsoft.com/en-us/azure/application-gateway/application-gateway-faq
-
-        Write-Output "Waiting for Azure Application Gateway to be created.  (This can take 10-15 minutes)"
-        az network application-gateway wait `
-            --name "$gatewayName" `
-            --resource-group "$AKS_PERS_RESOURCE_GROUP" `
-            --created
-    }
-    else {
-
-        # # set public IP
-        # $frontendPoolName = az network application-gateway show --name "$gatewayName" --resource-group "$AKS_PERS_RESOURCE_GROUP" --query "frontendIpConfigurations[0].name" -o tsv
-        # Write-Output "Setting $publicip as IP for frontend pool $frontendPoolName"
-        # az network application-gateway frontend-ip update `
-        #     --gateway-name "$gatewayName" `
-        #     --resource-group "$AKS_PERS_RESOURCE_GROUP" `
-        #     --name "$frontendPoolName" `
-        #     --public-ip-address "IngressPublicIP"
-
-        $backendPoolName = az network application-gateway show --name "$gatewayName" --resource-group "$AKS_PERS_RESOURCE_GROUP" --query "backendAddressPools[0].name" -o tsv
-        Write-Output "Setting $EXTERNAL_IP as IP for backend pool $backendPoolName"
-        # set backend private IP
-        az network application-gateway address-pool update  `
-            --gateway-name "$gatewayName" `
-            --resource-group "$AKS_PERS_RESOURCE_GROUP" `
-            --name "$backendPoolName" `
-            --servers "$EXTERNAL_IP"
-
-        az network application-gateway wait `
-            --name "$gatewayName" `
-            --resource-group "$AKS_PERS_RESOURCE_GROUP" `
-            --updated            
-    }
-
-    Write-Output "Enabling Prevention mode of firewall"
-    az network application-gateway waf-config set `
-        --enabled true `
-        --firewall-mode Prevention `
-        --gateway-name "$gatewayName" `
-        --resource-group "$AKS_PERS_RESOURCE_GROUP" `
-        --rule-set-type "OWASP" `
-        --rule-set-version "3.0"
-        
-    Write-Output "Checking for health of backend pool"
-    az network application-gateway show-backend-health `
-        --name "$gatewayName" `
-        --resource-group "$AKS_PERS_RESOURCE_GROUP" `
-        --query "backendAddressPools[0].backendHttpSettingsCollection[0].servers[0].health"
-}
 Write-Output "External IP: $EXTERNAL_IP"
+
 Write-Output "Testing load balancer"
 Invoke-WebRequest -useb -Headers @{"Host" = "dashboard.$dnsrecordname"} -Uri http://$EXTERNAL_IP/ | Select-Object -Expand Content
 

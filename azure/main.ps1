@@ -129,6 +129,7 @@ do {
         }
     }
     pause
+    [Console]::ResetColor()
     Clear-Host
 }
 until ($input -eq 'q')

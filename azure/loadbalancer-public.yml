@@ -8,6 +8,7 @@ metadata:
 spec:
   selector:
     k8s-app: traefik-ingress-lb
+# k8s-app: nginx-ingress-lb    
 # https://kubernetes.io/docs/tutorials/services/source-ip/
   externalTrafficPolicy: "Local"
   ports:

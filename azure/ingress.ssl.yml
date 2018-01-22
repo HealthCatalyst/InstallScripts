@@ -31,13 +31,6 @@ data:
           # CertFile = "/ssl/ahmn/tls.crt"
           # KeyFile = "/ssl/ahmn/tls.key"        
 ---
-# service account to use for running the traefik ingress service
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-  name: traefik-ingress-controller-serviceaccount
-  namespace: kube-system
----
 # deployment of the pods for traefik service
 kind: Deployment
 apiVersion: extensions/v1beta1
@@ -58,7 +51,7 @@ spec:
         k8s-app: traefik-ingress-lb
         name: traefik-ingress-lb
     spec:
-      serviceAccountName: traefik-ingress-controller-serviceaccount
+      serviceAccountName: traefik-ingress-serviceaccount
       terminationGracePeriodSeconds: 60
       volumes:
         - name: ssl-ahmn

@@ -1,4 +1,4 @@
-Write-output "Version 2018.01.18.3"
+Write-output "Version 2018.01.19.1"
 
 #
 # This script is meant for quick & easy install via:
@@ -204,6 +204,8 @@ kubectl create -f "$GITHUB_URL/azure/cafe-kube-dns.yml"
 # to debug dns: https://kubernetes.io/docs/tasks/administer-cluster/dns-custom-nameservers/#inheriting-dns-from-the-node
 
 kubectl delete ServiceAccount traefik-ingress-controller-serviceaccount -n kube-system --ignore-not-found=true
+
+ReadYmlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "azure/ingress-roles.yml" -customerid $customerid | kubectl apply -f -
 
 if ($AKS_USE_SSL -eq "y" ) {
 

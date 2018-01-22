@@ -21,6 +21,7 @@ $AKS_SSH_KEY = ""
 $AKS_FIRST_STATIC_IP = ""
 $AKS_USE_AZURE_NETWORKING = "no"
 $AKS_SERVICE_PRINCIPAL_NAME = ""
+$AKS_SUPPORT_WINDOWS_CONTAINERS = "n"
 
 write-output "Checking if you're already logged in..."
 
@@ -55,11 +56,10 @@ while ([string]::IsNullOrWhiteSpace($customerid))
 Write-Output "Customer ID: $customerid"
 
 # ask for resource group name to create
-$DEFAULT_RESOURCE_GROUP="Prod-Kub-$($customerid.ToUpper())-RG"
+$DEFAULT_RESOURCE_GROUP = "Prod-Kub-$($customerid.ToUpper())-RG"
 Do { 
     $AKS_PERS_RESOURCE_GROUP = Read-Host "Resource Group (leave empty for $DEFAULT_RESOURCE_GROUP)"
-    if([string]::IsNullOrWhiteSpace($AKS_PERS_RESOURCE_GROUP))
-    {
+    if ([string]::IsNullOrWhiteSpace($AKS_PERS_RESOURCE_GROUP)) {
         $AKS_PERS_RESOURCE_GROUP = $DEFAULT_RESOURCE_GROUP
     }
 }
@@ -70,10 +70,18 @@ Write-Output "Using resource group [$AKS_PERS_RESOURCE_GROUP]"
 Do { $AKS_PERS_LOCATION = Read-Host "Location: (e.g., eastus)"}
 while ([string]::IsNullOrWhiteSpace($AKS_PERS_LOCATION))
 
-# do we want to use azure networking or kube networking
-$AKS_USE_AZURE_NETWORKING = Read-Host "Use Azure networking (default: yes)"
-if ([string]::IsNullOrWhiteSpace($AKS_USE_AZURE_NETWORKING)) {
-    $AKS_USE_AZURE_NETWORKING = "yes"
+$AKS_SUPPORT_WINDOWS_CONTAINERS = Read-Host "Support Windows containers (y/n) (default: n)"
+if ([string]::IsNullOrWhiteSpace($AKS_SUPPORT_WINDOWS_CONTAINERS)) {
+    $AKS_SUPPORT_WINDOWS_CONTAINERS = "n"
+}
+
+if ("$AKS_SUPPORT_WINDOWS_CONTAINERS" -eq "n") {
+    # azure networking is not supported with windows containers
+    # do we want to use azure networking or kube networking
+    $AKS_USE_AZURE_NETWORKING = Read-Host "Use Azure networking (default: yes)"
+    if ([string]::IsNullOrWhiteSpace($AKS_USE_AZURE_NETWORKING)) {
+        $AKS_USE_AZURE_NETWORKING = "yes"
+    }
 }
 
 # service account to own the resources
@@ -157,12 +165,13 @@ $ACS_ENGINE_FILE = "$AKS_LOCAL_FOLDER\acs-engine.exe"
 $acsengineversion = acs-engine version
 $acsengineversion = $acsengineversion -match "^Version: v[0-9.]+"
 $acsengineversion = "[$acsengineversion]"
-if ((!(Test-Path "$ACS_ENGINE_FILE")) -or !$acsengineversion.equals("[Version: v0.11.0]")) {
+$desiredversion="v0.11.0"
+if ((!(Test-Path "$ACS_ENGINE_FILE")) -or !$acsengineversion.equals("[Version: $desiredversion]")) {
     Write-Output "Downloading acs-engine.exe to $ACS_ENGINE_FILE"
-    $url = "https://github.com/Azure/acs-engine/releases/download/v0.11.0/acs-engine-v0.11.0-windows-amd64.zip"
+    $url = "https://github.com/Azure/acs-engine/releases/download/${desiredversion}/acs-engine-${desiredversion}-windows-amd64.zip"
     (New-Object System.Net.WebClient).DownloadFile($url, "$AKS_LOCAL_FOLDER\acs-engine.zip")
     Expand-Archive -Path "$AKS_LOCAL_FOLDER\acs-engine.zip" -DestinationPath "$AKS_LOCAL_FOLDER" -Force
-    Copy-Item -Path "$AKS_LOCAL_FOLDER\acs-engine-v0.11.0-windows-amd64\acs-engine.exe" -Destination $ACS_ENGINE_FILE
+    Copy-Item -Path "$AKS_LOCAL_FOLDER\acs-engine-${desiredversion}-windows-amd64\acs-engine.exe" -Destination $ACS_ENGINE_FILE
 }
 else {
     Write-Output "acs-engine.exe already exists at $ACS_ENGINE_FILE"    
@@ -193,17 +202,17 @@ if ($confirmation -eq 'y') {
     Write-Output "Finding existing vnets..."
     # az network vnet list --query "[].[name,resourceGroup ]" -o tsv    
 
-    $vnets=az network vnet list --query "[].[name]" -o tsv
+    $vnets = az network vnet list --query "[].[name]" -o tsv
 
     Do { 
         Write-Output "------  Existing vnets -------"
-        for ($i=1;$i -le $vnets.count; $i++) {
+        for ($i = 1; $i -le $vnets.count; $i++) {
             Write-Host "$i. $($vnets[$i-1])"
         }    
         Write-Output "------  End vnets -------"
 
         $index = Read-Host "Enter number of vnet to use (1 - $($vnets.count))"
-        $AKS_VNET_NAME = $($vnets[$index-1])
+        $AKS_VNET_NAME = $($vnets[$index - 1])
     }
     while ([string]::IsNullOrWhiteSpace($AKS_VNET_NAME))    
 
@@ -220,14 +229,14 @@ if ($confirmation -eq 'y') {
         
         Do { 
             Write-Output "------  Subnets in $AKS_VNET_NAME -------"
-            for ($i=1;$i -le $subnets.count; $i++) {
+            for ($i = 1; $i -le $subnets.count; $i++) {
                 Write-Host "$i. $($subnets[$i-1])"
             }    
             Write-Output "------  End Subnets -------"
 
             Write-Host "NOTE: Each customer should have their own subnet.  Do not put multiple customers in the same subnet"
             $index = Read-Host "Enter number of subnet to use (1 - $($subnets.count))"
-            $AKS_SUBNET_NAME = $($subnets[$index-1])
+            $AKS_SUBNET_NAME = $($subnets[$index - 1])
         }
         while ([string]::IsNullOrWhiteSpace($AKS_SUBNET_NAME)) 
 
@@ -379,6 +388,8 @@ if ("$AKS_SERVICE_PRINCIPAL_CLIENTID") {
 
     Write-Output "Creating Service Principal: [$AKS_SERVICE_PRINCIPAL_NAME]"
     $AKS_SERVICE_PRINCIPAL_CLIENTSECRET = az ad sp create-for-rbac --role="Owner" --scopes="$myscope" --name ${AKS_SERVICE_PRINCIPAL_NAME} --query "password" --output tsv
+    # the above command changes the color because it retries role assignment creation
+    [Console]::ResetColor()
     # https://github.com/Azure/azure-cli/issues/1332
     Write-Output "Sleeping to wait for Service Principal to propagate"
     Start-Sleep -Seconds 30;
@@ -418,7 +429,11 @@ if (!"$AKS_VNET_NAME") {
     $templateFile = "acs.template.nosubnet.json"    
 }
 elseif ("$AKS_USE_AZURE_NETWORKING" -eq "yes") {
-    $templateFile = "acs.template.azurenetwork.json"     
+    $templateFile = "acs.template.azurenetwork.json"             
+}
+elseif ("$AKS_SUPPORT_WINDOWS_CONTAINERS" -eq "y") {
+    # https://github.com/Azure/acs-engine/issues/1767
+    $templateFile = "acs.template.linuxwindows.json"    
 }
 
 Write-Output "Using template: $templateFile"
@@ -471,7 +486,7 @@ if ("$AKS_VNET_NAME") {
 
 # subnet CIDR to mask
 # https://doc.m0n0.ch/quickstartpc/intro-CIDR.html
-
+$WINDOWS_PASSWORD="replacepassword1234$"
 Write-Output "replacing values in the acs.json file"
 $MyFile = (Get-Content $output) | 
     Foreach-Object {$_ -replace 'REPLACE-SSH-KEY', "${AKS_SSH_KEY}"}  | 
@@ -480,7 +495,10 @@ $MyFile = (Get-Content $output) |
     Foreach-Object {$_ -replace 'REPLACE-SUBNET', "${mysubnetid}"}  | 
     Foreach-Object {$_ -replace 'REPLACE-DNS-NAME-PREFIX', "${dnsNamePrefix}"}  | 
     Foreach-Object {$_ -replace 'REPLACE-FIRST-STATIC-IP', "${AKS_FIRST_STATIC_IP}"}  | 
+    Foreach-Object {$_ -replace 'REPLACE-WINDOWS-PASSWORD', "${WINDOWS_PASSWORD}"}  | 
     Foreach-Object {$_ -replace 'REPLACE_VNET_CIDR', "${AKS_SUBNET_CIDR}"}  
+
+    
 
 # have to do it this way instead of Outfile so we can get a UTF-8 file without BOM
 # from https://stackoverflow.com/questions/5596982/using-powershell-to-write-a-file-in-utf-8-without-the-bom

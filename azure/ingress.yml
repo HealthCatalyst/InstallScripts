@@ -18,12 +18,6 @@ data:
       address = ":80"
       WHITELISTIP
 ---
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-  name: traefik-ingress-controller-serviceaccount
-  namespace: kube-system
----
 kind: Deployment
 apiVersion: extensions/v1beta1
 metadata:
@@ -43,7 +37,7 @@ spec:
         k8s-app: traefik-ingress-lb
         name: traefik-ingress-lb
     spec:
-      serviceAccountName: traefik-ingress-controller-serviceaccount
+      serviceAccountName: traefik-ingress-serviceaccount
       terminationGracePeriodSeconds: 60
       volumes:
         - name: config

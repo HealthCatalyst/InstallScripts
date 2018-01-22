@@ -1,0 +1,10 @@
+kind: Deployment
+apiVersion: "extensions/v1beta1"
+metadata: 
+  name: "kube-dns-v20"
+  namespace": "kube-system"
+spec:
+  strategy:
+    # We need to kill the existing Pod before creating an new one
+    # for the new one to be able to attach the persistent disk.
+    type: Recreate 

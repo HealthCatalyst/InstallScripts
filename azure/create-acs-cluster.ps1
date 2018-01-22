@@ -1,4 +1,4 @@
-Write-output "Version 2018.01.17.01"
+Write-output "Version 2018.01.22.01"
 
 #
 # This script is meant for quick & easy install via:
@@ -650,6 +650,13 @@ kubectl create secret generic azure-secret --from-literal=resourcegroup="${AKS_P
 kubectl create secret generic customerid --from-literal=value=$customerid
 
 kubectl get "deployments,pods,services,ingress,secrets" --namespace=kube-system -o wide
+
+Write-Output "Restarting DNS Pods (sometimes they get in a CrashLoopBackoff loop)"
+$failedItems = kubectl get pods -l k8s-app=kube-dns -n kube-system -o jsonpath='{range.items[*]}{.metadata.name}{\"\n\"}{end}'
+ForEach ($line in $failedItems) {
+    Write-Host "Deleting pod $line"
+    kubectl delete pod $line -n kube-system
+} 
 
 Write-Output "Run the following to see status of the cluster"
 Write-Output "kubectl get deployments,pods,services,ingress,secrets --namespace=kube-system -o wide"

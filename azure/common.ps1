@@ -1,4 +1,4 @@
-$version = "2018.01.17.1"
+$version = "2018.01.22.1"
 
 Write-Host "Installed Common functions version $version"
 function global:GetCommonVersion(){
@@ -27,9 +27,12 @@ function global:CreateShare($resourceGroup, $sharename, $deleteExisting) {
         }
     }
 
-    if (!$(az storage share exists -n $sharename --connection-string $AZURE_STORAGE_CONNECTION_STRING --query "exists" -o tsv)) {
+    if ($(az storage share exists -n $sharename --connection-string $AZURE_STORAGE_CONNECTION_STRING --query "exists" -o tsv) -eq "false") {
         Write-Output "Creating the file share: $sharename"        
         az storage share create -n $sharename --connection-string $AZURE_STORAGE_CONNECTION_STRING --quota 512       
+    }
+    else {
+        Write-Output "File share already exists: $sharename"         
     }
 }
 
@@ -106,7 +109,7 @@ function global:AskForPasswordAnyCharacters ($secretname, $prompt, $namespace, $
                 $mysqlrootpassword = [Runtime.InteropServices.Marshal]::PtrToStringAuto([Runtime.InteropServices.Marshal]::SecureStringToBSTR($mysqlrootpasswordsecure))                
             }
         }
-        while ($mysqlrootpassword.Length -lt 8 )
+        while (($mysqlrootpassword.Length -lt 8 ) -and (!("$mysqlrootpassword" -eq "$defaultvalue")))
         kubectl create secret generic $secretname --namespace=$namespace --from-literal=password=$mysqlrootpassword
     }
     else {

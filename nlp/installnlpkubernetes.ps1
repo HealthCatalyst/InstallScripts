@@ -1,4 +1,4 @@
-Write-Output "Version 2018.01.17.2"
+Write-Output "Version 2018.01.22.1"
 
 # curl -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/nlp/installnlpkubernetes.ps1 | iex;
 $GITHUB_URL = "https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master"
@@ -86,7 +86,7 @@ AskForPassword -secretname "mysqlrootpassword" -prompt "MySQL root password (> 8
 
 AskForPassword -secretname "mysqlpassword" -prompt "MySQL NLP_APP_USER password (> 8 chars, min 1 number, 1 lowercase, 1 uppercase, 1 special [!.*@] )" -namespace "fabricnlp"
 
-AskForPasswordAnyCharacters -secretname "smtprelaypassword" -prompt "SMTP (SendGrid) Relay Key" -namespace "fabricnlp" 
+AskForPasswordAnyCharacters -secretname "smtprelaypassword" -prompt "SMTP (SendGrid) Relay Key" -namespace "fabricnlp" -defaultvalue "" 
 
 Write-Output "Cleaning out any old resources in fabricnlp"
 

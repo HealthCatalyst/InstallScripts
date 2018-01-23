@@ -62,7 +62,6 @@ function New-AppPool($appName, $userName, $credential){
 		$appPool = Get-Item $appName
 	}
 
-	Write-Host $userName $credential
 	if(!([string]::IsNullOrEmpty($userName) -and $credential -ne $null))
 	{
 		$appPool.processModel.userName = $userName

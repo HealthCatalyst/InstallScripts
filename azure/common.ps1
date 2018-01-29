@@ -75,6 +75,7 @@ function global:GeneratePassword() {
 }
 
 function global:SaveSecretValue($secretname, $valueName, $value, $namespace) {
+    # secretname must be lower case alphanumeric characters, '-' or '.', and must start and end with an alphanumeric character
     if ([string]::IsNullOrWhiteSpace($namespace)) { $namespace = "default"}
 
     if (![string]::IsNullOrWhiteSpace($(kubectl get secret $secretname -n $namespace -o jsonpath='{.data}' --ignore-not-found=true))) {

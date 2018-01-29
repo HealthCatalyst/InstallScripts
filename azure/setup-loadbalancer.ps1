@@ -1,4 +1,4 @@
-Write-output "Version 2018.01.29.07"
+Write-output "Version 2018.01.29.08"
 
 #
 # This script is meant for quick & easy install via:
@@ -84,7 +84,7 @@ if ([string]::IsNullOrWhiteSpace($AKS_ALLOW_ADMIN_ACCESS_OUTSIDE_VNET)) {
 $AKS_IP_WHITELIST = ""
 if ($AKS_CLUSTER_ACCESS_TYPE -eq "2") {
 
-    $currentWhitelistIP = ReadSecretValue -secretname WhiteListIP -valueName ip
+    $currentWhitelistIP = ReadSecretValue -secretname whitelistip -valueName iprange
 
     Do { 
         if (![string]::IsNullOrWhiteSpace($currentWhitelistIP)) {
@@ -113,7 +113,7 @@ if ($AKS_CLUSTER_ACCESS_TYPE -eq "2") {
     # $AKS_IP_WHITELIST = "$WHITELIST"
     Write-Output "Whitelist: $AKS_IP_WHITELIST"
 
-    SaveSecretValue -secretname WhiteListIP -valueName ip -value "'${AKS_IP_WHITELIST}'"
+    SaveSecretValue -secretname whitelistip -valueName iprange -value "${AKS_IP_WHITELIST}"
 }
 
 $AKS_USE_WAF = Read-Host "Do you want to use Azure Application Gateway with WAF? (y/n) (default: n)"

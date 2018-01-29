@@ -62,7 +62,7 @@ function New-AppPool($appName, $userName, $credential){
 		$appPool = Get-Item $appName
 	}
 
-	if(!([string]::IsNullOrEmpty($userName) -and $credential -ne $null))
+	if(![string]::IsNullOrEmpty($userName) -and $credential -ne $null)
 	{
 		$appPool.processModel.userName = $userName
 		$appPool.processModel.password = $credential.GetNetworkCredential().Password

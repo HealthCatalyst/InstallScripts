@@ -17,11 +17,9 @@ data:
     [entryPoints]
       [entryPoints.http]
       address = ":80"
-      WHITELISTIP      
         [entryPoints.http.redirect]
           entryPoint = "https"
       [entryPoints.https]
-      WHITELISTIP      
       address = ":443"
         [entryPoints.https.tls]
           [[entryPoints.https.tls.certificates]]
@@ -31,6 +29,8 @@ data:
           # [[entryPoints.https.tls.certificates]]
           # CertFile = "/ssl/ahmn/tls.crt"
           # KeyFile = "/ssl/ahmn/tls.key"        
+      WHITELISTIP      
+
 ---
 # deployment of the pods for traefik service
 kind: Deployment

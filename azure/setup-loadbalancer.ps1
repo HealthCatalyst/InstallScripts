@@ -1,4 +1,4 @@
-Write-output "Version 2018.01.28.02"
+Write-output "Version 2018.01.28.03"
 
 #
 # This script is meant for quick & easy install via:
@@ -170,14 +170,14 @@ if ($AKS_CLUSTER_ACCESS_TYPE -eq "2") {
 
     foreach ($cidr in $AKS_VNET_CIDR_LIST) {
         if (![string]::IsNullOrWhiteSpace($WHITELIST)) {
-            $WHITELIST = "${WHITELIST},"
+            $WHITELIST = "${WHITELIST}, "
         }
         $WHITELIST = "${WHITELIST}`"${cidr}`""
     }
 
     foreach ($cidr in $AKS_IP_WHITELIST_ITEMS) {
         if (![string]::IsNullOrWhiteSpace($WHITELIST)) {
-            $WHITELIST = "${WHITELIST},"
+            $WHITELIST = "${WHITELIST}, "
         }
         $WHITELIST = "${WHITELIST}`"${cidr}`""
     }

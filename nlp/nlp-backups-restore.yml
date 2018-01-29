@@ -1,19 +1,25 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: mysql-backup-onetime
+  name: mysql-restore
   namespace: fabricnlp 
 spec:
   template:
     spec:
       containers:
-      - name: mysql-backup-onetime
+      - name: mysql-restore
         image: healthcatalyst/fabric.mysqlclient
         imagePullPolicy: Always  
         # # this overrides the CMD command in docker
-        args: ["backup"]
+        args: ["restore"]
         # environment variables
         env:
+          - name: MYSQL_ROOT_PASSWORD
+            # set the value of this environment variable from a secret called mysqlrootpassword
+            valueFrom:
+              secretKeyRef:
+                name: mysqlrootpassword
+                key: password
           - name: MYSQL_PASSWORD
             valueFrom:
               secretKeyRef:
@@ -26,8 +32,8 @@ spec:
             value: NLP_APP_USER
           - name: MYSQL_SERVER
             value: mysqlserver
-          - name: BACKUP_NAME_PREFIX
-            value: "nlpsql"
+          - name: BACKUP_NAME
+            value: "<specify backup name here>"
         volumeMounts:
           - name: mysql-persistent-storage-backup
             # point the /var/lib/mysql folder inside the container to the volume called mysql-persistent-storage
@@ -40,3 +46,4 @@ spec:
           claimName: az-files-mysql-backup             
   # job failures: https://kubernetes.io/docs/concepts/workloads/controllers/jobs-run-to-completion/
   backoffLimit: 1
+

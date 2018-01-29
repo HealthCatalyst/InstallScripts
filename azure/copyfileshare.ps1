@@ -1,15 +1,15 @@
 
 
 # destination storage account name
-$destResourceGroup = "Prod-Kub-AHMN-RG"
-$destAccountName = "prodkubahmnrgstorage"
+$destResourceGroup = "Imran1"
+$destAccountName = "imranstoragetest"
 $destAccountKey = az storage account keys list -g $destResourceGroup -n $destAccountName --query "[0].value" -o tsv
 $destConnectionString = az storage account show-connection-string -n $destAccountName -g $destResourceGroup -o tsv
 az storage file generate-sas --path "" --share-name "fabricnlp" 
 
 # source storage account
-$srcResourceGroup = "Prod-NLP-RG"
-$sourceAccountName = "prodnlpstorage"
+$srcResourceGroup = "fabrickubernetes"
+$sourceAccountName = "fabrickubernetesstorage"
 $sourceAccountKey = az storage account keys list -g $srcResourceGroup -n $sourceAccountName --query "[0].value" -o tsv
 $sourceSASToken = az storage file generate-sas
 $sourceConnectionString = az storage account show-connection-string -n $sourceAccountName -g $srcResourceGroup -o tsv

@@ -1,19 +1,24 @@
 apiVersion: batch/v1beta1
 kind: CronJob
 metadata:
-  name: mysqlbackup
+  name: mysql-cron-backup
   namespace: fabricnlp
 spec:
   #crontab schedule: https://crontab.guru
-  schedule: "0 * * * *"
+  # run every day at 1am
+  schedule: "0 1 * * *"
+  # run every 5 minutes
+  # schedule: "*/5 * * * *"
   jobTemplate:
     spec:
       template:
         spec:
           containers:
-          - name: mysqlclient
+          - name: mysql-cron-backup
             image: healthcatalyst/fabric.mysqlclient
-            imagePullPolicy: Always       
+            imagePullPolicy: Always  
+            # # this overrides the CMD command in docker
+            args: ["backup"]
             # environment variables
             env:
               - name: MYSQL_PASSWORD
@@ -30,10 +35,13 @@ spec:
                 value: mysqlserver
               - name: BACKUP_NAME_PREFIX
                 value: "nlpsql"
-              - name: DOBACKUP
-                value: true
-            # args:
-            # - /bin/sh
-            # - -c
-            # - date; echo Hello from the Kubernetes cluster
+            volumeMounts:
+              - name: mysql-persistent-storage-backup
+                # point the /var/lib/mysql folder inside the container to the volume called mysql-persistent-storage
+                mountPath: /var/lib/mysql
+                subPath: mysqlbackups              
           restartPolicy: OnFailure
+          volumes:
+          - name: mysql-persistent-storage-backup
+            persistentVolumeClaim:
+              claimName: az-files-mysql-backup             

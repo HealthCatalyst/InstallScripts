@@ -1,4 +1,4 @@
-Write-output "Version 2018.01.28.03"
+Write-output "Version 2018.01.28.04"
 
 #
 # This script is meant for quick & easy install via:
@@ -193,6 +193,7 @@ if ([string]::IsNullOrWhiteSpace($(kubectl get secret traefik-cert-ahmn -o jsonp
     while ([string]::IsNullOrWhiteSpace($AKS_USE_SSL))
 }
 else {
+    $AKS_USE_SSL="y"
     Write-Output "SSL cert already stored as secret (traefik-cert-ahmn) so setting up SSL"
 }
 

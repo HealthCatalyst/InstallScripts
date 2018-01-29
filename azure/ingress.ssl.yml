@@ -21,6 +21,7 @@ data:
         [entryPoints.http.redirect]
           entryPoint = "https"
       [entryPoints.https]
+      WHITELISTIP      
       address = ":443"
         [entryPoints.https.tls]
           [[entryPoints.https.tls.certificates]]
@@ -109,6 +110,10 @@ metadata:
   annotations:
     kubernetes.io/ingress.class: traefik
 spec:
+  tls:
+  - secretName: ssl-ahmn
+    hosts:
+      - dashboard.CUSTOMERID.healthcatalyst.net
   rules:
   - host: dashboard.CUSTOMERID.healthcatalyst.net
     http:

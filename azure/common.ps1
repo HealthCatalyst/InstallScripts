@@ -1,7 +1,7 @@
-$version = "2018.01.29.1"
+$version = "2018.01.29.02"
 
 Write-Host "Including common.ps1 version $version"
-function global:GetCommonVersion(){
+function global:GetCommonVersion() {
     return $version
 }
 
@@ -39,9 +39,15 @@ function global:CreateShare($resourceGroup, $sharename, $deleteExisting) {
 function global:ReadSecretValue($secretname, $valueName, $namespace) {
     if ([string]::IsNullOrWhiteSpace($namespace)) { $namespace = "default"}
 
-    $secretbase64 = kubectl get secret $secretname -o jsonpath="{.data.${valueName}}" -n $namespace
-    $secretvalue = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($secretbase64))
-    return $secretvalue
+    $secretbase64 = kubectl get secret $secretname -o jsonpath="{.data.${valueName}}" -n $namespace --ignore-not-found=true
+
+    if (![string]::IsNullOrWhiteSpace($secretbase64)) {
+        $secretvalue = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($secretbase64))
+        return $secretvalue
+    }
+    
+    return "";
+
 }
 
 function global:ReadSecret($secretname, $namespace) {
@@ -66,6 +72,16 @@ function global:GeneratePassword() {
         $result += $set4 | Get-Random
     }
     return $result
+}
+
+function global:SaveSecretValue($secretname, $valueName, $value, $namespace) {
+    if ([string]::IsNullOrWhiteSpace($namespace)) { $namespace = "default"}
+
+    if (![string]::IsNullOrWhiteSpace($(kubectl get secret $secretname -n $namespace -o jsonpath='{.data}' --ignore-not-found=true))) {
+        kubectl delete secret $secretname -n $namespace
+    }
+
+    kubectl create secret generic $secretname --namespace=$namespace --from-literal=${valueName}=$value
 }
 
 function global:AskForPassword ($secretname, $prompt, $namespace) {

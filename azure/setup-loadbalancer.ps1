@@ -1,4 +1,4 @@
-Write-output "Version 2018.01.29.04"
+Write-output "Version 2018.01.29.05"
 
 #
 # This script is meant for quick & easy install via:
@@ -84,7 +84,19 @@ if ([string]::IsNullOrWhiteSpace($AKS_ALLOW_ADMIN_ACCESS_OUTSIDE_VNET)) {
 $AKS_IP_WHITELIST = ""
 if ($AKS_CLUSTER_ACCESS_TYPE -eq "2") {
 
-    Do { $AKS_IP_WHITELIST = Read-Host "Enter IP range that should be able to access this cluster: ( ex: 127.0.0.1/32 192.168.1.7. separate multiple IPs by a space.)"}
+    $currentWhitelistIP = ReadSecretValue -secretname WhiteListIP -valueName ip
+
+    Do { 
+        if (![string]::IsNullOrWhiteSpace($currentWhitelistIP)) {
+            $AKS_IP_WHITELIST = Read-Host "Enter IP range that should be able to access this cluster: ( ex: 127.0.0.1/32 192.168.1.7. separate multiple IPs by a space.) (default: $currentWhitelistIP)"
+            if ([string]::IsNullOrWhiteSpace($AKS_IP_WHITELIST)) {
+                $AKS_IP_WHITELIST = $currentWhitelistIP
+            }    
+        }
+        else {
+            $AKS_IP_WHITELIST = Read-Host "Enter IP range that should be able to access this cluster: ( ex: 127.0.0.1/32 192.168.1.7. separate multiple IPs by a space.)"            
+        }
+    }
     while ([string]::IsNullOrWhiteSpace($AKS_IP_WHITELIST))
 
     # $AKS_IP_WHITELIST_ITEMS = $AKS_IP_WHITELIST.split(" ")
@@ -100,7 +112,27 @@ if ($AKS_CLUSTER_ACCESS_TYPE -eq "2") {
 
     # $AKS_IP_WHITELIST = "$WHITELIST"
     Write-Output "Whitelist: $AKS_IP_WHITELIST"
+
+    SaveSecretValue -secretname WhiteListIP -valueName ip -value "\"${AKS_IP_WHITELIST}\""
 }
+
+$AKS_USE_WAF = Read-Host "Do you want to use Azure Application Gateway with WAF? (y/n) (default: n)"
+
+if ([string]::IsNullOrWhiteSpace($AKS_USE_WAF)) {
+    $AKS_USE_WAF = "n"
+}
+
+if ([string]::IsNullOrWhiteSpace($(kubectl get secret traefik-cert-ahmn -o jsonpath='{.data}' -n kube-system --ignore-not-found=true))) {
+    Do { $AKS_USE_SSL = Read-Host "Do you want to setup SSL? (y/n)"}
+    while ([string]::IsNullOrWhiteSpace($AKS_USE_SSL))
+}
+else {
+    $AKS_USE_SSL = "y"
+    Write-Output "SSL cert already stored as secret (traefik-cert-ahmn) so setting up SSL"
+}
+
+Do { $SETUP_DNS = Read-Host "Do you want to setup DNS entries in Azure? (y/n)"}
+while ([string]::IsNullOrWhiteSpace($SETUP_DNS))
 
 Write-Output "Setting up Network Security Group for the subnet"
 
@@ -232,13 +264,7 @@ Write-Output "Found ID for ${AKS_PERS_NETWORK_SECURITY_GROUP}: $nsgid"
 Write-Output "Setting NSG into subnet"
 az network vnet subnet update -n "${AKS_SUBNET_NAME}" -g "${AKS_SUBNET_RESOURCE_GROUP}" --vnet-name "${AKS_VNET_NAME}" --network-security-group "$nsgid"
 
-
-$AKS_USE_WAF = Read-Host "Do you want to use Azure Application Gateway with WAF? (y/n) (default: n)"
-
-if ([string]::IsNullOrWhiteSpace($AKS_USE_WAF)) {
-    $AKS_USE_WAF = "n"
-}
-
+# set up WAF if requested
 if ($AKS_USE_WAF -eq "n") {
     if (($AKS_CLUSTER_ACCESS_TYPE -eq "1" ) -or ($AKS_CLUSTER_ACCESS_TYPE -eq "2")) {
         $AKS_OPEN_TO_PUBLIC = "y"
@@ -303,19 +329,6 @@ else {
     }  
 
 }
-
-
-if ([string]::IsNullOrWhiteSpace($(kubectl get secret traefik-cert-ahmn -o jsonpath='{.data}' -n kube-system --ignore-not-found=true))) {
-    Do { $AKS_USE_SSL = Read-Host "Do you want to setup SSL? (y/n)"}
-    while ([string]::IsNullOrWhiteSpace($AKS_USE_SSL))
-}
-else {
-    $AKS_USE_SSL = "y"
-    Write-Output "SSL cert already stored as secret (traefik-cert-ahmn) so setting up SSL"
-}
-
-Do { $SETUP_DNS = Read-Host "Do you want to setup DNS entries in Azure? (y/n)"}
-while ([string]::IsNullOrWhiteSpace($SETUP_DNS))
 
 # if we need to setup DNS then ask which resourceGroup to use
 if ($SETUP_DNS -eq "y") {

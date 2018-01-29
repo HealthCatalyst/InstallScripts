@@ -1,4 +1,4 @@
-Write-output "Version 2018.01.29.01"
+Write-output "Version 2018.01.29.02"
 
 #
 # This script is meant for quick & easy install via:
@@ -123,26 +123,28 @@ if ($AKS_ALLOW_ADMIN_ACCESS_OUTSIDE_VNET -eq "y") {
     Write-Output "Enabling admin access to cluster from Internet"
 }
 
-if ([string]::IsNullOrWhiteSpace($(az network nsg rule show --name "allow-kube-tls" --nsg-name $AKS_PERS_NETWORK_SECURITY_GROUP --resource-group $AKS_PERS_RESOURCE_GROUP))) {
-    az network nsg rule create -g $AKS_PERS_RESOURCE_GROUP --nsg-name $AKS_PERS_NETWORK_SECURITY_GROUP -n allow-kube-tls --priority 100 `
+if ([string]::IsNullOrWhiteSpace($(az network nsg rule show --name "allow_kube_tls" --nsg-name $AKS_PERS_NETWORK_SECURITY_GROUP --resource-group $AKS_PERS_RESOURCE_GROUP))) {
+    Write-Output "Creating rule: allow_kube_tls"
+    az network nsg rule create -g $AKS_PERS_RESOURCE_GROUP --nsg-name $AKS_PERS_NETWORK_SECURITY_GROUP -n allow_kube_tls --priority 100 `
         --source-address-prefixes "${sourceTagForAdminAccess}" --source-port-ranges '*' `
         --destination-address-prefixes '*' --destination-port-ranges 443 --access Allow `
         --protocol Tcp --description "allow kubectl access from ${sourceTagForAdminAccess}."
 }
 else {
-    az network nsg rule update -g $AKS_PERS_RESOURCE_GROUP --nsg-name $AKS_PERS_NETWORK_SECURITY_GROUP -n allow-kube-tls --priority 100 `
+    az network nsg rule update -g $AKS_PERS_RESOURCE_GROUP --nsg-name $AKS_PERS_NETWORK_SECURITY_GROUP -n allow_kube_tls --priority 100 `
         --source-address-prefixes "${sourceTagForAdminAccess}" --source-port-ranges '*' `
         --destination-address-prefixes '*' --destination-port-ranges 443 --access Allow `
         --protocol Tcp --description "allow kubectl access from ${sourceTagForAdminAccess}."
 }
-if ([string]::IsNullOrWhiteSpace($(az network nsg rule show --name "allow-ssh" --nsg-name $AKS_PERS_NETWORK_SECURITY_GROUP --resource-group $AKS_PERS_RESOURCE_GROUP))) {
-    az network nsg rule create -g $AKS_PERS_RESOURCE_GROUP --nsg-name $AKS_PERS_NETWORK_SECURITY_GROUP -n allow-ssh --priority 101 `
+if ([string]::IsNullOrWhiteSpace($(az network nsg rule show --name "allow_ssh" --nsg-name $AKS_PERS_NETWORK_SECURITY_GROUP --resource-group $AKS_PERS_RESOURCE_GROUP))) {
+    Write-Output "Creating rule: allow_ssh"
+    az network nsg rule create -g $AKS_PERS_RESOURCE_GROUP --nsg-name $AKS_PERS_NETWORK_SECURITY_GROUP -n allow_ssh --priority 101 `
         --source-address-prefixes "${sourceTagForAdminAccess}" --source-port-ranges '*' `
         --destination-address-prefixes '*' --destination-port-ranges 22 --access Allow `
         --protocol Tcp --description "allow ssh access from ${sourceTagForAdminAccess}."
 }
 else {
-    az network nsg rule update -g $AKS_PERS_RESOURCE_GROUP --nsg-name $AKS_PERS_NETWORK_SECURITY_GROUP -n allow-ssh --priority 101 `
+    az network nsg rule update -g $AKS_PERS_RESOURCE_GROUP --nsg-name $AKS_PERS_NETWORK_SECURITY_GROUP -n allow_ssh --priority 101 `
         --source-address-prefixes "${sourceTagForAdminAccess}" --source-port-ranges '*' `
         --destination-address-prefixes '*' --destination-port-ranges 22 --access Allow `
         --protocol Tcp --description "allow ssh access from ${sourceTagForAdminAccess}."

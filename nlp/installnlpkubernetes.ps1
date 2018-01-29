@@ -1,4 +1,4 @@
-Write-Output "Version 2018.01.28.01"
+Write-Output "Version 2018.01.28.02"
 
 # curl -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/nlp/installnlpkubernetes.ps1 | iex;
 $GITHUB_URL = "https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master"
@@ -27,8 +27,12 @@ else {
     az login
 }
 
-Do { $AKS_USE_SSL = Read-Host "Do you want to setup SSL? (y/n)"}
-while ([string]::IsNullOrWhiteSpace($AKS_USE_SSL))
+if ([string]::IsNullOrWhiteSpace($(kubectl get secret traefik-cert-ahmn -o jsonpath='{.data}' -n kube-system --ignore-not-found=true))) {
+    $AKS_USE_SSL = ""
+}
+else {
+    $AKS_USE_SSL = "y"
+}
 
 # https://kubernetes.io/docs/reference/kubectl/jsonpath/
 
@@ -40,7 +44,7 @@ while ([string]::IsNullOrWhiteSpace($AKS_USE_SSL))
 #                                        --zone-name 
 
 $AKS_PERS_SHARE_NAME = "fabricnlp"
-$AKS_PERS_BACKUP_SHARE_NAME="${AKS_PERS_SHARE_NAME}backups"
+$AKS_PERS_BACKUP_SHARE_NAME = "${AKS_PERS_SHARE_NAME}backups"
 
 $AKS_PERS_RESOURCE_GROUP_BASE64 = kubectl get secret azure-secret -o jsonpath='{.data.resourcegroup}'
 if (![string]::IsNullOrWhiteSpace($AKS_PERS_RESOURCE_GROUP_BASE64)) {
@@ -108,7 +112,7 @@ ReadYmlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "nlp/nlp-kubernetes
 
 ReadYmlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "nlp/nlp-mysql-private.yml" -customerid $customerid | kubectl create -f -
 
-# ReadYmlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "nlp/nlp-backups-manual.yml" -customerid $customerid | kubectl create -f -
+ReadYmlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "nlp/nlp-backups-cronjob.yml" -customerid $customerid | kubectl create -f -
 
 Write-Output "Setting up reverse proxy"
 

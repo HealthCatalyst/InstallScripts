@@ -52,8 +52,10 @@ do {
             kubectl get "deployments,pods,services,ingress,secrets" --namespace=kube-system -o wide
         } 
         '4' {
-            Start-Job -Name "KubDashboard" -ScriptBlock {kubectl proxy}
+            $job = Start-Job -Name "KubDashboard" -ScriptBlock {kubectl proxy}
             Start-Process -FilePath "http://localhost:8001/api/v1/namespaces/kube-system/services/kubernetes-dashboard/proxy"
+            Start-Sleep -Seconds 5
+            Receive-Job -Job $job
         } 
         '5' {        
             $AKS_PERS_RESOURCE_GROUP_BASE64 = kubectl get secret azure-secret -o jsonpath='{.data.resourcegroup}'

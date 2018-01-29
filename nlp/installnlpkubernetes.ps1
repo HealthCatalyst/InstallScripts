@@ -97,7 +97,7 @@ AskForPasswordAnyCharacters -secretname "smtprelaypassword" -prompt "SMTP (SendG
 Write-Output "Cleaning out any old resources in fabricnlp"
 
 # note kubectl doesn't like spaces in between commas below
-kubectl delete --all 'deployments,pods,services,ingress,persistentvolumeclaims,persistentvolumes' --namespace=fabricnlp --ignore-not-found=true
+kubectl delete --all 'deployments,pods,services,ingress,persistentvolumeclaims,persistentvolumes,jobs,cronjobs' --namespace=fabricnlp --ignore-not-found=true
 
 Write-Output "Waiting until all the resources are cleared up"
 

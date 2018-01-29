@@ -20,9 +20,6 @@ spec:
       port: 80
       name: web
     - protocol: TCP
-      port: 8080
-      name: admin
-    - protocol: TCP
       port: 443
       name: ssl      
   type: LoadBalancer

@@ -6,12 +6,12 @@ metadata:
     annotations:
         kubernetes.io/ingress.class: traefik
 spec:
-    tls:
-    - secretName: ssl-ahmn
-      hosts:
-        - solr.CUSTOMERID.healthcatalyst.net
-        - nlp.CUSTOMERID.healthcatalyst.net
-        - nlpjobs.CUSTOMERID.healthcatalyst.net
+    # tls:
+    # - secretName: ssl-ahmn
+    #   hosts:
+    #     - solr.CUSTOMERID.healthcatalyst.net
+    #     - nlp.CUSTOMERID.healthcatalyst.net
+    #     - nlpjobs.CUSTOMERID.healthcatalyst.net
     rules:
     - host: solr.CUSTOMERID.healthcatalyst.net
       http:

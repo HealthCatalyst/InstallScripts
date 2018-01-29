@@ -21,7 +21,6 @@ data:
           entryPoint = "https"
       [entryPoints.https]
       address = ":443"
-      WHITELISTIP
         [entryPoints.https.tls]
           [[entryPoints.https.tls.certificates]]
           # TLS certs for Allina (AHMN): *.ahmn.healthcatalyst.net

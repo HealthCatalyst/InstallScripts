@@ -16,7 +16,6 @@ data:
     [entryPoints]
       [entryPoints.http]
       address = ":80"
-      WHITELISTIP
 ---
 kind: Deployment
 apiVersion: extensions/v1beta1

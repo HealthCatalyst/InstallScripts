@@ -1,4 +1,4 @@
-$version = "2018.01.22.1"
+$version = "2018.01.29.1"
 
 Write-Host "Installed Common functions version $version"
 function global:GetCommonVersion(){
@@ -36,21 +36,20 @@ function global:CreateShare($resourceGroup, $sharename, $deleteExisting) {
     }
 }
 
-
-function global:ReadSecret($secretname, $namespace) {
+function global:ReadSecretValue($secretname, $valueName, $namespace) {
     if ([string]::IsNullOrWhiteSpace($namespace)) { $namespace = "default"}
 
-    $secretbase64 = kubectl get secret $secretname -o jsonpath='{.data.value}' -n $namespace
+    $secretbase64 = kubectl get secret $secretname -o jsonpath="{.data.${valueName}}" -n $namespace
     $secretvalue = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($secretbase64))
     return $secretvalue
 }
 
-function global:ReadSecretPassword($secretname, $namespace) {
-    if ([string]::IsNullOrWhiteSpace($namespace)) { $namespace = "default"}
+function global:ReadSecret($secretname, $namespace) {
+    return ReadSecretValue -secretname $secretname -valueName "value" -namespace $namespace
+}
 
-    $secretbase64 = kubectl get secret $secretname -o jsonpath='{.data.password}' -n $namespace
-    $secretvalue = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($secretbase64))
-    return $secretvalue
+function global:ReadSecretPassword($secretname, $namespace) {
+    return ReadSecretValue -secretname $secretname -valueName "password" -namespace $namespace
 }
 
 function global:GeneratePassword() {

@@ -1,4 +1,4 @@
-Write-output "Version 2018.01.28.04"
+Write-output "Version 2018.01.29.01"
 
 #
 # This script is meant for quick & easy install via:
@@ -67,6 +67,138 @@ Do {
     $AKS_CLUSTER_ACCESS_TYPE = Read-Host "Enter number of option to use (1 - 3)"
 }
 while ([string]::IsNullOrWhiteSpace($AKS_CLUSTER_ACCESS_TYPE))  
+
+# read the vnet and subnet info from kubernetes secret
+$AKS_VNET_NAME = ReadSecretValue -secretname azure-vnet -valueName "vnet"
+$AKS_SUBNET_NAME = ReadSecretValue -secretname azure-vnet -valueName "subnet"
+$AKS_SUBNET_RESOURCE_GROUP = ReadSecretValue -secretname azure-vnet -valueName "subnetResourceGroup"
+
+Write-Output "Found vnet info from secret: vnet: $AKS_VNET_NAME, subnet: $AKS_SUBNET_NAME, subnetResourceGroup: $AKS_SUBNET_RESOURCE_GROUP"
+
+$AKS_ALLOW_ADMIN_ACCESS_OUTSIDE_VNET = Read-Host "Do you want to allow admin access to this cluster from outside the vnet: ${AKS_VNET_NAME}? (y/n) (default: n)"
+
+if ([string]::IsNullOrWhiteSpace($AKS_ALLOW_ADMIN_ACCESS_OUTSIDE_VNET)) {
+    $AKS_ALLOW_ADMIN_ACCESS_OUTSIDE_VNET = "n"
+}
+
+$AKS_IP_WHITELIST = ""
+if ($AKS_CLUSTER_ACCESS_TYPE -eq "2") {
+
+    Do { $AKS_IP_WHITELIST = Read-Host "Enter IP range that should be able to access this cluster: ( ex: 127.0.0.1/32 192.168.1.7. separate multiple IPs by a space.)"}
+    while ([string]::IsNullOrWhiteSpace($AKS_IP_WHITELIST))
+
+    # $AKS_IP_WHITELIST_ITEMS = $AKS_IP_WHITELIST.split(" ")
+
+    # $WHITELIST = ""
+
+    # foreach ($cidr in $AKS_IP_WHITELIST_ITEMS) {
+    #     if (![string]::IsNullOrWhiteSpace($WHITELIST)) {
+    #         $WHITELIST = "${WHITELIST} "
+    #     }
+    #     $WHITELIST = "${WHITELIST}${cidr}"
+    # }
+
+    # $AKS_IP_WHITELIST = "$WHITELIST"
+    Write-Output "Whitelist: $AKS_IP_WHITELIST"
+}
+
+Write-Output "Setting up Network Security Group for the subnet"
+
+# setup network security group
+$AKS_PERS_NETWORK_SECURITY_GROUP = "$($AKS_PERS_RESOURCE_GROUP.ToLower())-nsg"
+
+if ([string]::IsNullOrWhiteSpace($(az network nsg show -g $AKS_PERS_RESOURCE_GROUP -n $AKS_PERS_NETWORK_SECURITY_GROUP))) {
+
+    Write-Output "Creating the Network Security Group for the subnet"
+    az network nsg create -g $AKS_PERS_RESOURCE_GROUP -n $AKS_PERS_NETWORK_SECURITY_GROUP
+}
+else {
+    Write-Output "Network Security Group already exists: $AKS_PERS_NETWORK_SECURITY_GROUP"
+}
+
+Write-Output "Adding or updating rules to Network Security Group for the subnet"
+$sourceTagForAdminAccess = "VirtualNetwork"
+if ($AKS_ALLOW_ADMIN_ACCESS_OUTSIDE_VNET -eq "y") {
+    $sourceTagForAdminAccess = "Internet"
+    Write-Output "Enabling admin access to cluster from Internet"
+}
+
+if ([string]::IsNullOrWhiteSpace($(az network nsg rule show --name "allow-kube-tls" --nsg-name $AKS_PERS_NETWORK_SECURITY_GROUP --resource-group $AKS_PERS_RESOURCE_GROUP))) {
+    az network nsg rule create -g $AKS_PERS_RESOURCE_GROUP --nsg-name $AKS_PERS_NETWORK_SECURITY_GROUP -n allow-kube-tls --priority 100 `
+        --source-address-prefixes "${sourceTagForAdminAccess}" --source-port-ranges '*' `
+        --destination-address-prefixes '*' --destination-port-ranges 443 --access Allow `
+        --protocol Tcp --description "allow kubectl access from ${sourceTagForAdminAccess}."
+}
+else {
+    az network nsg rule update -g $AKS_PERS_RESOURCE_GROUP --nsg-name $AKS_PERS_NETWORK_SECURITY_GROUP -n allow-kube-tls --priority 100 `
+        --source-address-prefixes "${sourceTagForAdminAccess}" --source-port-ranges '*' `
+        --destination-address-prefixes '*' --destination-port-ranges 443 --access Allow `
+        --protocol Tcp --description "allow kubectl access from ${sourceTagForAdminAccess}."
+}
+if ([string]::IsNullOrWhiteSpace($(az network nsg rule show --name "allow-ssh" --nsg-name $AKS_PERS_NETWORK_SECURITY_GROUP --resource-group $AKS_PERS_RESOURCE_GROUP))) {
+    az network nsg rule create -g $AKS_PERS_RESOURCE_GROUP --nsg-name $AKS_PERS_NETWORK_SECURITY_GROUP -n allow-ssh --priority 101 `
+        --source-address-prefixes "${sourceTagForAdminAccess}" --source-port-ranges '*' `
+        --destination-address-prefixes '*' --destination-port-ranges 22 --access Allow `
+        --protocol Tcp --description "allow ssh access from ${sourceTagForAdminAccess}."
+}
+else {
+    az network nsg rule update -g $AKS_PERS_RESOURCE_GROUP --nsg-name $AKS_PERS_NETWORK_SECURITY_GROUP -n allow-ssh --priority 101 `
+        --source-address-prefixes "${sourceTagForAdminAccess}" --source-port-ranges '*' `
+        --destination-address-prefixes '*' --destination-port-ranges 22 --access Allow `
+        --protocol Tcp --description "allow ssh access from ${sourceTagForAdminAccess}."
+}
+
+if ([string]::IsNullOrWhiteSpace($(az network nsg rule show --name "mysql" --nsg-name $AKS_PERS_NETWORK_SECURITY_GROUP --resource-group $AKS_PERS_RESOURCE_GROUP))) {
+    az network nsg rule create -g $AKS_PERS_RESOURCE_GROUP --nsg-name $AKS_PERS_NETWORK_SECURITY_GROUP -n mysql --priority 105 `
+        --source-address-prefixes "${sourceTagForAdminAccess}" --source-port-ranges '*' `
+        --destination-address-prefixes '*' --destination-port-ranges 3306 --access Allow `
+        --protocol Tcp --description "allow mysql access from ${sourceTagForAdminAccess}."
+}
+else {
+    az network nsg rule update -g $AKS_PERS_RESOURCE_GROUP --nsg-name $AKS_PERS_NETWORK_SECURITY_GROUP -n mysql --priority 105 `
+        --source-address-prefixes "${sourceTagForAdminAccess}" --source-port-ranges '*' `
+        --destination-address-prefixes '*' --destination-port-ranges 3306 --access Allow `
+        --protocol Tcp --description "allow mysql access from ${sourceTagForAdminAccess}."
+}
+
+
+$sourceTagForHttpAccess = "Internet"
+if (![string]::IsNullOrWhiteSpace($AKS_IP_WHITELIST)) {
+    $sourceTagForHttpAccess = $AKS_IP_WHITELIST
+}
+
+if ([string]::IsNullOrWhiteSpace($(az network nsg rule show --name "HttpPort" --nsg-name $AKS_PERS_NETWORK_SECURITY_GROUP --resource-group $AKS_PERS_RESOURCE_GROUP))) {
+    az network nsg rule create -g $AKS_PERS_RESOURCE_GROUP --nsg-name $AKS_PERS_NETWORK_SECURITY_GROUP -n HttpPort --priority 500 `
+        --source-address-prefixes "$sourceTagForHttpAccess" --source-port-ranges '*' `
+        --destination-address-prefixes '*' --destination-port-ranges 80 --access Allow `
+        --protocol Tcp --description "allow HTTP access from $sourceTagForHttpAccess."
+}
+else {
+    az network nsg rule update -g $AKS_PERS_RESOURCE_GROUP --nsg-name $AKS_PERS_NETWORK_SECURITY_GROUP -n HttpPort --priority 500 `
+        --source-address-prefixes "$sourceTagForHttpAccess" --source-port-ranges '*' `
+        --destination-address-prefixes '*' --destination-port-ranges 80 --access Allow `
+        --protocol Tcp --description "allow HTTP access from $sourceTagForHttpAccess."
+}
+
+if ([string]::IsNullOrWhiteSpace($(az network nsg rule show --name "HttpsPort" --nsg-name $AKS_PERS_NETWORK_SECURITY_GROUP --resource-group $AKS_PERS_RESOURCE_GROUP))) {
+    az network nsg rule create -g $AKS_PERS_RESOURCE_GROUP --nsg-name $AKS_PERS_NETWORK_SECURITY_GROUP -n HttpsPort --priority 501 `
+        --source-address-prefixes "$sourceTagForHttpAccess" --source-port-ranges '*' `
+        --destination-address-prefixes '*' --destination-port-ranges 443 --access Allow `
+        --protocol Tcp --description "allow HTTPS access from $sourceTagForHttpAccess."
+}
+else {
+    az network nsg rule update -g $AKS_PERS_RESOURCE_GROUP --nsg-name $AKS_PERS_NETWORK_SECURITY_GROUP -n HttpsPort --priority 501 `
+        --source-address-prefixes "$sourceTagForHttpAccess" --source-port-ranges '*' `
+        --destination-address-prefixes '*' --destination-port-ranges 443 --access Allow `
+        --protocol Tcp --description "allow HTTPS access from $sourceTagForHttpAccess."
+}    
+
+$nsgid = az network nsg list --resource-group ${AKS_PERS_RESOURCE_GROUP} --query "[?name != '${AKS_PERS_NETWORK_SECURITY_GROUP}'].id" -o tsv
+Write-Output "Found ID for ${AKS_PERS_NETWORK_SECURITY_GROUP}: $nsgid"
+
+Write-Output "Setting NSG into subnet"
+az network vnet subnet update -n "${AKS_SUBNET_NAME}" -g "${AKS_SUBNET_RESOURCE_GROUP}" --vnet-name "${AKS_VNET_NAME}" --network-security-group "$nsgid"
+
 
 $AKS_USE_WAF = Read-Host "Do you want to use Azure Application Gateway with WAF? (y/n) (default: n)"
 
@@ -139,61 +271,13 @@ else {
 
 }
 
-if ($AKS_CLUSTER_ACCESS_TYPE -eq "2") {
-
-    Do { $AKS_IP_WHITELIST = Read-Host "Enter IP range that should be able to access this cluster: ( ex: 127.0.0.1/32 or 192.168.1.7. separate multiple by space. )"}
-    while ([string]::IsNullOrWhiteSpace($AKS_IP_WHITELIST))
-
-    $AKS_IP_WHITELIST_ITEMS = $AKS_IP_WHITELIST.split(" ")
-
-    $vnets = az network vnet list --query "[].[name]" -o tsv
-
-    Do { 
-        Write-Output "------  Existing vnets -------"
-        for ($i = 1; $i -le $vnets.count; $i++) {
-            Write-Host "$i. $($vnets[$i-1])"
-        }    
-        Write-Output "------  End vnets -------"
-
-        $index = Read-Host "Enter number of vnet of this cluster so we can whitelist it (1 - $($vnets.count))"
-        $AKS_VNET_NAME = $($vnets[$index - 1])
-    }
-    while ([string]::IsNullOrWhiteSpace($AKS_VNET_NAME))    
-
-    $AKS_SUBNET_RESOURCE_GROUP = az network vnet list --query "[?name == '$AKS_VNET_NAME'].resourceGroup" -o tsv
-    Write-Output "Using vnet resource group: [$AKS_SUBNET_RESOURCE_GROUP]"
-
-    Write-Output "Looking up CIDR for Vnet: [${AKS_VNET_NAME}] to add to whitelist"
-    $AKS_VNET_CIDR_LIST = az network vnet show --name ${AKS_VNET_NAME} --resource-group ${AKS_SUBNET_RESOURCE_GROUP} --query "addressSpace.addressPrefixes" --output tsv
-
-    $WHITELIST = ""
-
-    foreach ($cidr in $AKS_VNET_CIDR_LIST) {
-        if (![string]::IsNullOrWhiteSpace($WHITELIST)) {
-            $WHITELIST = "${WHITELIST}, "
-        }
-        $WHITELIST = "${WHITELIST}`"${cidr}`""
-    }
-
-    foreach ($cidr in $AKS_IP_WHITELIST_ITEMS) {
-        if (![string]::IsNullOrWhiteSpace($WHITELIST)) {
-            $WHITELIST = "${WHITELIST}, "
-        }
-        $WHITELIST = "${WHITELIST}`"${cidr}`""
-    }
-
-    $WHITELIST = "${WHITELIST}"
-
-    $AKS_IP_WHITELIST = "whiteListSourceRange = [$WHITELIST]"
-    Write-Output "Whitelist: $AKS_IP_WHITELIST"
-}
 
 if ([string]::IsNullOrWhiteSpace($(kubectl get secret traefik-cert-ahmn -o jsonpath='{.data}' -n kube-system --ignore-not-found=true))) {
     Do { $AKS_USE_SSL = Read-Host "Do you want to setup SSL? (y/n)"}
     while ([string]::IsNullOrWhiteSpace($AKS_USE_SSL))
 }
 else {
-    $AKS_USE_SSL="y"
+    $AKS_USE_SSL = "y"
     Write-Output "SSL cert already stored as secret (traefik-cert-ahmn) so setting up SSL"
 }
 
@@ -211,6 +295,7 @@ if ($SETUP_DNS -eq "y") {
 
 # delete existing containers
 kubectl delete 'pods,services,configMaps,deployments,ingress' -l k8s-traefik=traefik -n kube-system --ignore-not-found=true
+
 
 # set Google DNS servers to resolve external  urls
 # http://blog.kubernetes.io/2017/04/configuring-private-dns-zones-upstream-nameservers-kubernetes.html

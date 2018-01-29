@@ -1,4 +1,4 @@
-Write-output "Version 2018.01.28.01"
+Write-output "Version 2018.01.29.01"
 
 #
 # This script is meant for quick & easy install via:
@@ -646,9 +646,12 @@ $STORAGE_KEY = az storage account keys list --resource-group $AKS_PERS_RESOURCE_
 
 # Write-Output "Storagekey: [$STORAGE_KEY]"
 
-Write-Output "Creating kubernetes secret"
+Write-Output "Creating kubernetes secret for Azure Storage Account: azure-secret"
 kubectl create secret generic azure-secret --from-literal=resourcegroup="${AKS_PERS_RESOURCE_GROUP}" --from-literal=azurestorageaccountname="${AKS_PERS_STORAGE_ACCOUNT_NAME}" --from-literal=azurestorageaccountkey="${STORAGE_KEY}"
+Write-Output "Creating kubernetes secret for customerid: customerid"
 kubectl create secret generic customerid --from-literal=value=$customerid
+Write-Output "Creating kubernetes secret for vnet: azure-vnet"
+kubectl create secret generic azure-vnet --from-literal=vnet="${AKS_VNET_NAME}" --from-literal=subnet="${AKS_SUBNET_NAME}" --from-literal=subnetResourceGroup="${AKS_SUBNET_RESOURCE_GROUP}"
 
 kubectl get "deployments,pods,services,ingress,secrets" --namespace=kube-system -o wide
 

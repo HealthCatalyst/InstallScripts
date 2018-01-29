@@ -51,7 +51,6 @@ function New-AppRoot($appDirectory, $iisUser){
 
 function New-AppPool($appName, $userName, $credential){
 	Set-Location IIS:\AppPools
-
 	if(!(Test-Path $appName -PathType Container))
 	{
 		Write-Console "AppPool $appName does not exist...creating."
@@ -407,6 +406,46 @@ function Test-IsRunAsAdministrator()
 	return $currentPrincipal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
 }
 
+function Add-ServiceUserToDiscovery($userName, $connString)
+{
+
+    $query = "DECLARE @IdentityID int;
+                DECLARE @DiscoveryServiceUserRoleID int;
+
+				SELECT @IdentityID = IdentityID FROM CatalystAdmin.IdentityBASE WHERE IdentityNM = @userName;
+				IF (@IdentityID IS NULL)
+				BEGIN
+					print ''-- Adding Identity'';
+					INSERT INTO CatalystAdmin.IdentityBASE (IdentityNM) VALUES (@userName);
+					SELECT @IdentityID = SCOPE_IDENTITY();
+				END
+
+				SELECT @DiscoveryServiceUserRoleID = RoleID FROM CatalystAdmin.RoleBASE WHERE RoleNM = 'DiscoveryServiceUser';
+				IF (NOT EXISTS (SELECT 1 FROM CatalystAdmin.IdentityRoleBASE WHERE IdentityID = @IdentityID AND RoleID = @DiscoveryServiceUserRoleID))
+				BEGIN
+					print ''-- Assigning Discovery Service user'';
+					INSERT INTO CatalystAdmin.IdentityRoleBASE (IdentityID, RoleID) VALUES (@IdentityID, @DiscoveryServiceUserRoleID);
+				END"
+	Invoke-Sql $connString $query @{userName=$userName} | Out-Null
+}
+
+function Invoke-Sql($connectionString, $sql, $parameters=@{}){    
+    $connection = New-Object System.Data.SqlClient.SQLConnection($connectionString)
+    $command = New-Object System.Data.SqlClient.SqlCommand($sql, $connection)
+	
+    try {
+		foreach($p in $parameters.Keys){		
+		  $command.Parameters.AddWithValue("@$p",$parameters[$p])
+		 }
+
+        $connection.Open()    
+        $command.ExecuteNonQuery()
+        $connection.Close()        
+    }catch [System.Data.SqlClient.SqlException] {
+        Write-Error "An error ocurred while executing the command. Please ensure the connection string is correct and the identity database has been setup. Connection String: $($connectionString). Error $($_.Exception.Message)"  -ErrorAction Stop
+    }    
+}
+
 function Write-Success($message){
 	Write-Host $message -ForegroundColor Green
 }
@@ -414,7 +453,6 @@ function Write-Success($message){
 function Write-Console($message){
 	Write-Host $message -ForegroundColor Gray
 }
-
 
 Export-ModuleMember -function Add-EnvironmentVariable
 Export-ModuleMember -function New-AppRoot
@@ -442,3 +480,5 @@ Export-ModuleMember -Function Get-CertThumbprint
 Export-ModuleMember -Function Write-Success
 Export-ModuleMember -Function Write-Console
 Export-ModuleMember -Function Test-IsRunAsAdministrator
+Export-ModuleMember -Function Add-ServiceUserToDiscovery
+Export-ModuleMember -Function Invoke-Sql

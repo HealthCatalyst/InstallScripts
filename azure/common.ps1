@@ -1,6 +1,6 @@
 $version = "2018.01.29.1"
 
-Write-Host "Installed Common functions version $version"
+Write-Host "Including common.ps1 version $version"
 function global:GetCommonVersion(){
     return $version
 }

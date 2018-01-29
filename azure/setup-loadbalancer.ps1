@@ -1,4 +1,4 @@
-Write-output "Version 2018.01.29.06"
+Write-output "Version 2018.01.29.07"
 
 #
 # This script is meant for quick & easy install via:
@@ -113,7 +113,7 @@ if ($AKS_CLUSTER_ACCESS_TYPE -eq "2") {
     # $AKS_IP_WHITELIST = "$WHITELIST"
     Write-Output "Whitelist: $AKS_IP_WHITELIST"
 
-    SaveSecretValue -secretname WhiteListIP -valueName ip -value "\"${AKS_IP_WHITELIST}\""
+    SaveSecretValue -secretname WhiteListIP -valueName ip -value "'${AKS_IP_WHITELIST}'"
 }
 
 $AKS_USE_WAF = Read-Host "Do you want to use Azure Application Gateway with WAF? (y/n) (default: n)"
@@ -179,6 +179,8 @@ if ([string]::IsNullOrWhiteSpace($(az network nsg rule show --name "allow_kube_t
         --query "provisioningState" -o tsv
 }
 else {
+    Write-Output "Updating rule: allow_kube_tls"
+
     az network nsg rule update -g $AKS_PERS_RESOURCE_GROUP --nsg-name $AKS_PERS_NETWORK_SECURITY_GROUP -n allow_kube_tls --priority 100 `
         --source-address-prefixes "${sourceTagForAdminAccess}" --source-port-ranges '*' `
         --destination-address-prefixes '*' --destination-port-ranges 443 --access Allow `
@@ -194,6 +196,7 @@ if ([string]::IsNullOrWhiteSpace($(az network nsg rule show --name "allow_http" 
         --query "provisioningState" -o tsv
 }
 else {
+    Write-Output "Updating rule: allow_http"
     az network nsg rule update -g $AKS_PERS_RESOURCE_GROUP --nsg-name $AKS_PERS_NETWORK_SECURITY_GROUP -n allow_http --priority 101 `
         --source-address-prefixes "${sourceTagForAdminAccess}" --source-port-ranges '*' `
         --destination-address-prefixes '*' --destination-port-ranges 80 --access Allow `
@@ -210,6 +213,7 @@ if ([string]::IsNullOrWhiteSpace($(az network nsg rule show --name "allow_ssh" -
         --query "provisioningState" -o tsv
 }
 else {
+    Write-Output "Updating rule: allow_ssh"
     az network nsg rule update -g $AKS_PERS_RESOURCE_GROUP --nsg-name $AKS_PERS_NETWORK_SECURITY_GROUP -n allow_ssh --priority 104 `
         --source-address-prefixes "${sourceTagForAdminAccess}" --source-port-ranges '*' `
         --destination-address-prefixes '*' --destination-port-ranges 22 --access Allow `
@@ -218,6 +222,7 @@ else {
 }
 
 if ([string]::IsNullOrWhiteSpace($(az network nsg rule show --name "mysql" --nsg-name $AKS_PERS_NETWORK_SECURITY_GROUP --resource-group $AKS_PERS_RESOURCE_GROUP))) {
+    Write-Output "Creating rule: mysql"
     az network nsg rule create -g $AKS_PERS_RESOURCE_GROUP --nsg-name $AKS_PERS_NETWORK_SECURITY_GROUP -n mysql --priority 205 `
         --source-address-prefixes "${sourceTagForAdminAccess}" --source-port-ranges '*' `
         --destination-address-prefixes '*' --destination-port-ranges 3306 --access Allow `
@@ -225,6 +230,7 @@ if ([string]::IsNullOrWhiteSpace($(az network nsg rule show --name "mysql" --nsg
         --query "provisioningState" -o tsv
 }
 else {
+    Write-Output "Updating rule: mysql"
     az network nsg rule update -g $AKS_PERS_RESOURCE_GROUP --nsg-name $AKS_PERS_NETWORK_SECURITY_GROUP -n mysql --priority 205 `
         --source-address-prefixes "${sourceTagForAdminAccess}" --source-port-ranges '*' `
         --destination-address-prefixes '*' --destination-port-ranges 3306 --access Allow `
@@ -238,6 +244,7 @@ if (($sourceTagForHttpAccess -eq "Internet") -and ($sourceTagForAdminAccess -eq 
 }
 else {
     if ([string]::IsNullOrWhiteSpace($(az network nsg rule show --name "HttpPort" --nsg-name $AKS_PERS_NETWORK_SECURITY_GROUP --resource-group $AKS_PERS_RESOURCE_GROUP))) {
+        Write-Output "Creating rule: HttpPort"
         az network nsg rule create -g $AKS_PERS_RESOURCE_GROUP --nsg-name $AKS_PERS_NETWORK_SECURITY_GROUP -n HttpPort --priority 500 `
             --source-address-prefixes "$sourceTagForHttpAccess" --source-port-ranges '*' `
             --destination-address-prefixes '*' --destination-port-ranges 80 --access Allow `
@@ -245,6 +252,7 @@ else {
             --query "provisioningState" -o tsv
     }
     else {
+        Write-Output "Updating rule: HttpPort"
         az network nsg rule update -g $AKS_PERS_RESOURCE_GROUP --nsg-name $AKS_PERS_NETWORK_SECURITY_GROUP -n HttpPort --priority 500 `
             --source-address-prefixes "$sourceTagForHttpAccess" --source-port-ranges '*' `
             --destination-address-prefixes '*' --destination-port-ranges 80 --access Allow `
@@ -253,6 +261,7 @@ else {
     }
 
     if ([string]::IsNullOrWhiteSpace($(az network nsg rule show --name "HttpsPort" --nsg-name $AKS_PERS_NETWORK_SECURITY_GROUP --resource-group $AKS_PERS_RESOURCE_GROUP))) {
+        Write-Output "Creating rule: HttpsPort"
         az network nsg rule create -g $AKS_PERS_RESOURCE_GROUP --nsg-name $AKS_PERS_NETWORK_SECURITY_GROUP -n HttpsPort --priority 501 `
             --source-address-prefixes "$sourceTagForHttpAccess" --source-port-ranges '*' `
             --destination-address-prefixes '*' --destination-port-ranges 443 --access Allow `
@@ -260,6 +269,7 @@ else {
             --query "provisioningState" -o tsv
     }
     else {
+        Write-Output "Updating rule: HttpsPort"
         az network nsg rule update -g $AKS_PERS_RESOURCE_GROUP --nsg-name $AKS_PERS_NETWORK_SECURITY_GROUP -n HttpsPort --priority 501 `
             --source-address-prefixes "$sourceTagForHttpAccess" --source-port-ranges '*' `
             --destination-address-prefixes '*' --destination-port-ranges 443 --access Allow `
@@ -408,7 +418,7 @@ if ("$AKS_OPEN_TO_PUBLIC" -eq "y") {
 
     if ($AKS_CLUSTER_ACCESS_TYPE -eq "2") {
         # if we are restricting IPs then also deploy an internal load balancer
-        Write-Output "Setting up a internal load balancer since we are restricting IPs"
+        Write-Output "Setting up a internal load balancer also since we are restricting IPs"
         kubectl create -f "$GITHUB_URL/azure/loadbalancer-internal.yml"        
     }
     #kubectl create -f "$GITHUB_URL/azure/loadbalancer-public.yml"

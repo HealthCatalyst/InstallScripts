@@ -1,4 +1,4 @@
-Write-output "Version 2018.01.28.01"
+Write-output "Version 2018.01.28.02"
 
 #
 # This script is meant for quick & easy install via:
@@ -141,36 +141,46 @@ else {
 
 if ($AKS_CLUSTER_ACCESS_TYPE -eq "2") {
 
-    Do { $AKS_IP_WHITELIST = Read-Host "Enter IP range that should be able to access this cluster: ( ex: 127.0.0.1/32 or 192.168.1.7 )"}
+    Do { $AKS_IP_WHITELIST = Read-Host "Enter IP range that should be able to access this cluster: ( ex: 127.0.0.1/32 or 192.168.1.7. separate multiple by space. )"}
     while ([string]::IsNullOrWhiteSpace($AKS_IP_WHITELIST))
 
-    # $vnets = az network vnet list --query "[].[name]" -o tsv
+    $AKS_IP_WHITELIST_ITEMS = $AKS_IP_WHITELIST.split(" ")
 
-    # Do { 
-    #     Write-Output "------  Existing vnets -------"
-    #     for ($i = 1; $i -le $vnets.count; $i++) {
-    #         Write-Host "$i. $($vnets[$i-1])"
-    #     }    
-    #     Write-Output "------  End vnets -------"
+    $vnets = az network vnet list --query "[].[name]" -o tsv
 
-    #     $index = Read-Host "Enter number of vnet of this cluster so we can whitelist it (1 - $($vnets.count))"
-    #     $AKS_VNET_NAME = $($vnets[$index - 1])
-    # }
-    # while ([string]::IsNullOrWhiteSpace($AKS_VNET_NAME))    
+    Do { 
+        Write-Output "------  Existing vnets -------"
+        for ($i = 1; $i -le $vnets.count; $i++) {
+            Write-Host "$i. $($vnets[$i-1])"
+        }    
+        Write-Output "------  End vnets -------"
 
-    # $AKS_SUBNET_RESOURCE_GROUP = az network vnet list --query "[?name == '$AKS_VNET_NAME'].resourceGroup" -o tsv
-    # Write-Output "Using vnet resource group: [$AKS_SUBNET_RESOURCE_GROUP]"
+        $index = Read-Host "Enter number of vnet of this cluster so we can whitelist it (1 - $($vnets.count))"
+        $AKS_VNET_NAME = $($vnets[$index - 1])
+    }
+    while ([string]::IsNullOrWhiteSpace($AKS_VNET_NAME))    
 
-    # Write-Output "Looking up CIDR for Vnet: [${AKS_VNET_NAME}] to add to whitelist"
-    # $AKS_VNET_CIDR_LIST = az network vnet show --name ${AKS_VNET_NAME} --resource-group ${AKS_SUBNET_RESOURCE_GROUP} --query "addressSpace.addressPrefixes" --output tsv
+    $AKS_SUBNET_RESOURCE_GROUP = az network vnet list --query "[?name == '$AKS_VNET_NAME'].resourceGroup" -o tsv
+    Write-Output "Using vnet resource group: [$AKS_SUBNET_RESOURCE_GROUP]"
+
+    Write-Output "Looking up CIDR for Vnet: [${AKS_VNET_NAME}] to add to whitelist"
+    $AKS_VNET_CIDR_LIST = az network vnet show --name ${AKS_VNET_NAME} --resource-group ${AKS_SUBNET_RESOURCE_GROUP} --query "addressSpace.addressPrefixes" --output tsv
 
     $WHITELIST = ""
 
-    # foreach ($cidr in $AKS_VNET_CIDR_LIST) {
-    #     $WHITELIST = "${WHITELIST}`"${cidr}`","
-    # }
-  
-    $WHITELIST = "${WHITELIST}`"$AKS_IP_WHITELIST`""
+    foreach ($cidr in $AKS_VNET_CIDR_LIST) {
+        if (![string]::IsNullOrWhiteSpace($WHITELIST)) {
+            $WHITELIST = "${WHITELIST},"
+        }
+        $WHITELIST = "${WHITELIST}`"${cidr}`""
+    }
+
+    foreach ($cidr in $AKS_IP_WHITELIST_ITEMS) {
+        if (![string]::IsNullOrWhiteSpace($WHITELIST)) {
+            $WHITELIST = "${WHITELIST},"
+        }
+        $WHITELIST = "${WHITELIST}`"${cidr}`""
+    }
 
     $WHITELIST = "${WHITELIST}"
 
@@ -289,6 +299,7 @@ Do {
     $EXTERNAL_IP = $(kubectl get svc $loadbalancer -n kube-system -o jsonpath='{.status.loadBalancer.ingress[].ip}')
 }
 while ([string]::IsNullOrWhiteSpace($EXTERNAL_IP) -and ($startDate.AddMinutes($timeoutInMinutes) -gt (Get-Date)))
+Write-Output "External IP: $EXTERNAL_IP"
 
 if ($AKS_CLUSTER_ACCESS_TYPE -eq "2") {
     Write-Output "Waiting for IP to get assigned to the internal load balancer (Note: It can take upto 5 minutes for Azure to finish creating the load balancer)"
@@ -298,6 +309,7 @@ if ($AKS_CLUSTER_ACCESS_TYPE -eq "2") {
         $INTERNAL_IP = $(kubectl get svc traefik-ingress-service-private -n kube-system -o jsonpath='{.status.loadBalancer.ingress[].ip}')
     }
     while ([string]::IsNullOrWhiteSpace($INTERNAL_IP) -and ($startDate.AddMinutes($timeoutInMinutes) -gt (Get-Date)))
+    Write-Output "Internal IP: $INTERNAL_IP"
 }
 
 

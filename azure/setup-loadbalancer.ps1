@@ -1,4 +1,4 @@
-Write-output "Version 2018.01.29.03"
+Write-output "Version 2018.01.29.04"
 
 #
 # This script is meant for quick & easy install via:
@@ -153,40 +153,40 @@ else {
 }
 if ([string]::IsNullOrWhiteSpace($(az network nsg rule show --name "allow_http" --nsg-name $AKS_PERS_NETWORK_SECURITY_GROUP --resource-group $AKS_PERS_RESOURCE_GROUP))) {
     Write-Output "Creating rule: allow_http"
-    az network nsg rule create -g $AKS_PERS_RESOURCE_GROUP --nsg-name $AKS_PERS_NETWORK_SECURITY_GROUP -n allow_http --priority 100 `
+    az network nsg rule create -g $AKS_PERS_RESOURCE_GROUP --nsg-name $AKS_PERS_NETWORK_SECURITY_GROUP -n allow_http --priority 101 `
         --source-address-prefixes "${sourceTagForAdminAccess}" --source-port-ranges '*' `
         --destination-address-prefixes '*' --destination-port-ranges 80 --access Allow `
-        --protocol Tcp --description "allow kubectl and HTTPS access from ${sourceTagForAdminAccess}."
+        --protocol Tcp --description "allow HTTP access from ${sourceTagForAdminAccess}."
 }
 else {
-    az network nsg rule update -g $AKS_PERS_RESOURCE_GROUP --nsg-name $AKS_PERS_NETWORK_SECURITY_GROUP -n allow_http --priority 100 `
+    az network nsg rule update -g $AKS_PERS_RESOURCE_GROUP --nsg-name $AKS_PERS_NETWORK_SECURITY_GROUP -n allow_http --priority 101 `
         --source-address-prefixes "${sourceTagForAdminAccess}" --source-port-ranges '*' `
         --destination-address-prefixes '*' --destination-port-ranges 80 --access Allow `
-        --protocol Tcp --description "allow kubectl access and HTTPS from ${sourceTagForAdminAccess}."
+        --protocol Tcp --description "allow HTTP access from ${sourceTagForAdminAccess}."
 }
 
 if ([string]::IsNullOrWhiteSpace($(az network nsg rule show --name "allow_ssh" --nsg-name $AKS_PERS_NETWORK_SECURITY_GROUP --resource-group $AKS_PERS_RESOURCE_GROUP))) {
     Write-Output "Creating rule: allow_ssh"
-    az network nsg rule create -g $AKS_PERS_RESOURCE_GROUP --nsg-name $AKS_PERS_NETWORK_SECURITY_GROUP -n allow_ssh --priority 101 `
+    az network nsg rule create -g $AKS_PERS_RESOURCE_GROUP --nsg-name $AKS_PERS_NETWORK_SECURITY_GROUP -n allow_ssh --priority 104 `
         --source-address-prefixes "${sourceTagForAdminAccess}" --source-port-ranges '*' `
         --destination-address-prefixes '*' --destination-port-ranges 22 --access Allow `
         --protocol Tcp --description "allow ssh access from ${sourceTagForAdminAccess}."
 }
 else {
-    az network nsg rule update -g $AKS_PERS_RESOURCE_GROUP --nsg-name $AKS_PERS_NETWORK_SECURITY_GROUP -n allow_ssh --priority 101 `
+    az network nsg rule update -g $AKS_PERS_RESOURCE_GROUP --nsg-name $AKS_PERS_NETWORK_SECURITY_GROUP -n allow_ssh --priority 104 `
         --source-address-prefixes "${sourceTagForAdminAccess}" --source-port-ranges '*' `
         --destination-address-prefixes '*' --destination-port-ranges 22 --access Allow `
         --protocol Tcp --description "allow ssh access from ${sourceTagForAdminAccess}."
 }
 
 if ([string]::IsNullOrWhiteSpace($(az network nsg rule show --name "mysql" --nsg-name $AKS_PERS_NETWORK_SECURITY_GROUP --resource-group $AKS_PERS_RESOURCE_GROUP))) {
-    az network nsg rule create -g $AKS_PERS_RESOURCE_GROUP --nsg-name $AKS_PERS_NETWORK_SECURITY_GROUP -n mysql --priority 105 `
+    az network nsg rule create -g $AKS_PERS_RESOURCE_GROUP --nsg-name $AKS_PERS_NETWORK_SECURITY_GROUP -n mysql --priority 205 `
         --source-address-prefixes "${sourceTagForAdminAccess}" --source-port-ranges '*' `
         --destination-address-prefixes '*' --destination-port-ranges 3306 --access Allow `
         --protocol Tcp --description "allow mysql access from ${sourceTagForAdminAccess}."
 }
 else {
-    az network nsg rule update -g $AKS_PERS_RESOURCE_GROUP --nsg-name $AKS_PERS_NETWORK_SECURITY_GROUP -n mysql --priority 105 `
+    az network nsg rule update -g $AKS_PERS_RESOURCE_GROUP --nsg-name $AKS_PERS_NETWORK_SECURITY_GROUP -n mysql --priority 205 `
         --source-address-prefixes "${sourceTagForAdminAccess}" --source-port-ranges '*' `
         --destination-address-prefixes '*' --destination-port-ranges 3306 --access Allow `
         --protocol Tcp --description "allow mysql access from ${sourceTagForAdminAccess}."

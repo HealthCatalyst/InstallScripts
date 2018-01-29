@@ -1,4 +1,4 @@
-Write-output "Version 2018.01.22.01"
+Write-output "Version 2018.01.28.01"
 
 #
 # This script is meant for quick & easy install via:
@@ -632,12 +632,13 @@ if ($storageAccountCanBeCreated -ne "True" ) {
     if ($confirmation -eq 'y') {
         az storage account delete -n $AKS_PERS_STORAGE_ACCOUNT_NAME -g $AKS_PERS_RESOURCE_GROUP
         Write-Output "Creating storage account: [${AKS_PERS_STORAGE_ACCOUNT_NAME}]"
-        az storage account create -n $AKS_PERS_STORAGE_ACCOUNT_NAME -g $AKS_PERS_RESOURCE_GROUP -l $AKS_PERS_LOCATION --sku Standard_LRS                       
+        # https://docs.microsoft.com/en-us/azure/storage/common/storage-quickstart-create-account?tabs=azure-cli
+        az storage account create -n $AKS_PERS_STORAGE_ACCOUNT_NAME -g $AKS_PERS_RESOURCE_GROUP -l $AKS_PERS_LOCATION --kind StorageV2 --sku Standard_LRS                       
     }    
 }
 else {
     Write-Output "Creating storage account: [${AKS_PERS_STORAGE_ACCOUNT_NAME}]"
-    az storage account create -n $AKS_PERS_STORAGE_ACCOUNT_NAME -g $AKS_PERS_RESOURCE_GROUP -l $AKS_PERS_LOCATION --sku Standard_LRS            
+    az storage account create -n $AKS_PERS_STORAGE_ACCOUNT_NAME -g $AKS_PERS_RESOURCE_GROUP -l $AKS_PERS_LOCATION --kind StorageV2 --sku Standard_LRS            
 }
 
 Write-Output "Get storage account key"

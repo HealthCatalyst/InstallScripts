@@ -1,0 +1,44 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: mysqlbackup
+  namespace: fabricnlp 
+spec:
+  template:
+    spec:
+      containers:
+      - name: mysqlclient
+        image: healthcatalyst/fabric.mysqlclient
+        imagePullPolicy: Always  
+        # this overrides the CMD command in docker
+        command: ["/bin/sh"]
+        # args: ["shell"]
+        # environment variables
+        env:
+          - name: MYSQL_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: mysqlpassword
+                key: password
+          - name: MYSQL_DATABASE
+            # set the value of this environment variable directly
+            value: nlpmt
+          - name: MYSQL_USER
+            value: NLP_APP_USER
+          - name: MYSQL_SERVER
+            value: mysqlserver
+          - name: BACKUP_NAME_PREFIX
+            value: "nlpsql"
+          - name: DOBACKUP
+            value: "true"
+        volumeMounts:
+          - name: mysql-persistent-storage-backup
+            # point the /var/lib/mysql folder inside the container to the volume called mysql-persistent-storage
+            mountPath: /var/lib/mysql
+            subPath: mysqlbackups              
+      restartPolicy: Never
+      volumes:
+      - name: mysql-persistent-storage-backup
+        persistentVolumeClaim:
+          claimName: az-files-mysql-backup             
+  backoffLimit: 4

@@ -1,0 +1,41 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: mysqlclient
+  namespace: fabricnlp
+spec:
+  containers:
+  - image: healthcatalyst/fabric.mysqlclient:latest
+    command:
+      - sleep
+      - "3600"
+    imagePullPolicy: Always
+    name: mysqlclient
+    env:
+      - name: MYSQL_PASSWORD
+        valueFrom:
+          secretKeyRef:
+            name: mysqlpassword
+            key: password
+      - name: MYSQL_DATABASE
+        # set the value of this environment variable directly
+        value: nlpmt
+      - name: MYSQL_USER
+        value: NLP_APP_USER
+      - name: MYSQL_SERVER
+        value: mysqlserver
+      - name: BACKUP_NAME_PREFIX
+        value: "nlpsql"
+      - name: DOBACKUP
+        value: "true"
+    volumeMounts:
+      - name: mysql-persistent-storage-backup
+        # point the /var/lib/mysql folder inside the container to the volume called mysql-persistent-storage
+        mountPath: /var/lib/mysql
+        subPath: mysqlbackups              
+  volumes:
+  - name: mysql-persistent-storage-backup
+    persistentVolumeClaim:
+      claimName: az-files-mysql-backup             
+    
+  restartPolicy: OnFailure

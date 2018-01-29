@@ -1,4 +1,4 @@
-Write-Output "Version 2018.01.22.1"
+Write-Output "Version 2018.01.28.01"
 
 # curl -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/nlp/installnlpkubernetes.ps1 | iex;
 $GITHUB_URL = "https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master"
@@ -40,6 +40,7 @@ while ([string]::IsNullOrWhiteSpace($AKS_USE_SSL))
 #                                        --zone-name 
 
 $AKS_PERS_SHARE_NAME = "fabricnlp"
+$AKS_PERS_BACKUP_SHARE_NAME="${AKS_PERS_SHARE_NAME}backups"
 
 $AKS_PERS_RESOURCE_GROUP_BASE64 = kubectl get secret azure-secret -o jsonpath='{.data.resourcegroup}'
 if (![string]::IsNullOrWhiteSpace($AKS_PERS_RESOURCE_GROUP_BASE64)) {
@@ -55,6 +56,7 @@ else {
 }
 
 CreateShare -resourceGroup $AKS_PERS_RESOURCE_GROUP -sharename $AKS_PERS_SHARE_NAME
+CreateShare -resourceGroup $AKS_PERS_RESOURCE_GROUP -sharename $AKS_PERS_BACKUP_SHARE_NAME
 
 if ([string]::IsNullOrWhiteSpace($(kubectl get namespace fabricnlp --ignore-not-found=true))) {
     kubectl create namespace fabricnlp
@@ -105,6 +107,8 @@ ReadYmlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "nlp/nlp-kubernetes
 ReadYmlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "nlp/nlp-kubernetes-public.yml" -customerid $customerid | kubectl create -f -
 
 ReadYmlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "nlp/nlp-mysql-private.yml" -customerid $customerid | kubectl create -f -
+
+# ReadYmlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "nlp/nlp-backups-manual.yml" -customerid $customerid | kubectl create -f -
 
 Write-Output "Setting up reverse proxy"
 

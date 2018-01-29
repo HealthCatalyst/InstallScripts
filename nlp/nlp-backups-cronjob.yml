@@ -1,0 +1,39 @@
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  name: mysqlbackup
+  namespace: fabricnlp
+spec:
+  #crontab schedule: https://crontab.guru
+  schedule: "0 * * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: mysqlclient
+            image: healthcatalyst/fabric.mysqlclient
+            imagePullPolicy: Always       
+            # environment variables
+            env:
+              - name: MYSQL_PASSWORD
+                valueFrom:
+                  secretKeyRef:
+                    name: mysqlpassword
+                    key: password
+              - name: MYSQL_DATABASE
+                # set the value of this environment variable directly
+                value: nlpmt
+              - name: MYSQL_USER
+                value: NLP_APP_USER
+              - name: MYSQL_SERVER
+                value: mysqlserver
+              - name: BACKUP_NAME_PREFIX
+                value: "nlpsql"
+              - name: DOBACKUP
+                value: true
+            # args:
+            # - /bin/sh
+            # - -c
+            # - date; echo Hello from the Kubernetes cluster
+          restartPolicy: OnFailure

@@ -1,4 +1,4 @@
-Write-output "Version 2018.01.29.08"
+Write-output "Version 2018.01.29.09"
 
 #
 # This script is meant for quick & easy install via:
@@ -116,11 +116,12 @@ if ($AKS_CLUSTER_ACCESS_TYPE -eq "2") {
     SaveSecretValue -secretname whitelistip -valueName iprange -value "${AKS_IP_WHITELIST}"
 }
 
-$AKS_USE_WAF = Read-Host "Do you want to use Azure Application Gateway with WAF? (y/n) (default: n)"
+$AKS_USE_WAF = "n"
+# $AKS_USE_WAF = Read-Host "Do you want to use Azure Application Gateway with WAF? (y/n) (default: n)"
 
-if ([string]::IsNullOrWhiteSpace($AKS_USE_WAF)) {
-    $AKS_USE_WAF = "n"
-}
+# if ([string]::IsNullOrWhiteSpace($AKS_USE_WAF)) {
+#     $AKS_USE_WAF = "n"
+# }
 
 if ([string]::IsNullOrWhiteSpace($(kubectl get secret traefik-cert-ahmn -o jsonpath='{.data}' -n kube-system --ignore-not-found=true))) {
     Do { $AKS_USE_SSL = Read-Host "Do you want to setup SSL? (y/n)"}
@@ -611,13 +612,15 @@ if ($AKS_USE_WAF -eq "y") {
 
 if ($SETUP_DNS -eq "y") {
     # set up DNS zones
-    Write-Output "Creating DNS zones"
+    Write-Output "Setting DNS zones"
 
     if ([string]::IsNullOrWhiteSpace($(az network dns zone show --name "$dnsrecordname" -g $DNS_RESOURCE_GROUP))) {
+        Write-Output "Creating DNS zone: $dnsrecordname"
         az network dns zone create --name "$dnsrecordname" -g $DNS_RESOURCE_GROUP
-
-        az network dns record-set a add-record --ipv4-address $EXTERNAL_IP --record-set-name "*" --resource-group $DNS_RESOURCE_GROUP --zone-name "$dnsrecordname"
     }
+
+    Write-Output "Create A record for * in zone: $dnsrecordname"
+    az network dns record-set a add-record --ipv4-address $EXTERNAL_IP --record-set-name "*" --resource-group $DNS_RESOURCE_GROUP --zone-name "$dnsrecordname"
 
     # list out the name servers
     Write-Output "Name servers to set in GoDaddy for *.$dnsrecordname"
@@ -638,17 +641,17 @@ if ($AKS_CLUSTER_ACCESS_TYPE -eq "2") {
     Invoke-WebRequest -useb -Headers @{"Host" = "dashboard.$dnsrecordname"} -Uri http://$INTERNAL_IP/ | Select-Object -Expand Content
     
     Write-Output "To test out the load balancer since the vnet, open Git Bash and run:"
-    Write-Output "curl -L --verbose --header 'Host: dashboard.$dnsrecordname' 'http://$INTERNAL_IP/'"
+    Write-Output "curl -L --verbose --header 'Host: dashboard.$dnsrecordname' 'http://$INTERNAL_IP/' -k"
 
     Write-Output "To test out the load balancer from one of the whitelist IPs, open Git Bash and run:"
-    Write-Output "curl -L --verbose --header 'Host: dashboard.$dnsrecordname' 'http://$EXTERNAL_IP/'"        
+    Write-Output "curl -L --verbose --header 'Host: dashboard.$dnsrecordname' 'http://$EXTERNAL_IP/' -k"        
 }
 else {
     Write-Output "Testing load balancer"
     Invoke-WebRequest -useb -Headers @{"Host" = "dashboard.$dnsrecordname"} -Uri http://$EXTERNAL_IP/ | Select-Object -Expand Content
     
     Write-Output "To test out the load balancer, open Git Bash and run:"
-    Write-Output "curl -L --verbose --header 'Host: dashboard.$dnsrecordname' 'http://$EXTERNAL_IP/'"        
+    Write-Output "curl -L --verbose --header 'Host: dashboard.$dnsrecordname' 'http://$EXTERNAL_IP/' -k"        
 }
 
 

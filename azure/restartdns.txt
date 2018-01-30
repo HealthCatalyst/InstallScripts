@@ -1,0 +1,25 @@
+#!/bin/sh
+
+echo "Version 1.068"
+
+restartCounts=$(kubectl get pods -l k8s-app=kube-dns -n kube-system -o jsonpath='{.items[*].status.containerStatuses[*].restartCount}')
+needToRestart="n"
+for restartCount in $restartCounts
+do
+    if [[ $restartCount -gt "0" ]]; then
+        needToRestart="y"
+        echo $restartCount
+    fi
+done
+
+if [[ $needToRestart == "y" ]]; then
+    failedItems=$(kubectl get pods -l k8s-app=kube-dns -n kube-system -o jsonpath='{range.items[*]}{.metadata.name}{\" \"}{end}')
+
+    for item in $failedItems
+    do
+        echo "deleting $item"
+        kubectl delete pod $item -n kube-system
+    done
+fi
+
+

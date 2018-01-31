@@ -74,6 +74,12 @@ do {
             $MASTER_VM_NAME = "${AKS_PERS_RESOURCE_GROUP}.${AKS_PERS_LOCATION}.cloudapp.azure.com"
             Write-Output "You can connect to master VM in Git Bash for debugging using:"
             Write-Output "ssh -i ${SSH_PRIVATE_KEY_FILE_UNIX_PATH} azureuser@${MASTER_VM_NAME}"            
+
+            Write-Output "Command to show errors: sudo journalctl -xef"
+            Write-Output "Command to see apiserver logs: sudo journalctl -fu kube-apiserver"
+            # systemctl list-unit-files | grep .service | grep enabled
+            # https://askubuntu.com/questions/795226/how-to-list-all-enabled-services-from-systemctl
+
         } 
         '6' {
             kubectl get pods -l k8s-app=kube-dns -n kube-system -o wide

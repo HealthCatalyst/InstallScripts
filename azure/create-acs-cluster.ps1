@@ -1,4 +1,4 @@
-Write-output "Version 2018.01.29.01"
+Write-output "Version 2018.01.30.01"
 
 #
 # This script is meant for quick & easy install via:
@@ -165,7 +165,7 @@ $ACS_ENGINE_FILE = "$AKS_LOCAL_FOLDER\acs-engine.exe"
 $acsengineversion = acs-engine version
 $acsengineversion = $acsengineversion -match "^Version: v[0-9.]+"
 $acsengineversion = "[$acsengineversion]"
-$desiredversion="v0.11.0"
+$desiredversion="v0.12.4"
 if ((!(Test-Path "$ACS_ENGINE_FILE")) -or !$acsengineversion.equals("[Version: $desiredversion]")) {
     Write-Output "Downloading acs-engine.exe to $ACS_ENGINE_FILE"
     $url = "https://github.com/Azure/acs-engine/releases/download/${desiredversion}/acs-engine-${desiredversion}-windows-amd64.zip"
@@ -254,6 +254,29 @@ if ($confirmation -eq 'y') {
         }
     }
 }    
+
+
+# find CIDR for subnet
+if ("$AKS_VNET_NAME") {
+    Write-Output "Looking up CIDR for Subnet: [${AKS_SUBNET_NAME}]"
+    $AKS_SUBNET_CIDR = az network vnet subnet show --name ${AKS_SUBNET_NAME} --resource-group ${AKS_SUBNET_RESOURCE_GROUP} --vnet-name ${AKS_VNET_NAME} --query "addressPrefix" --output tsv
+
+    Write-Output "Subnet CIDR=[$AKS_SUBNET_CIDR]"
+}
+
+# suggest and ask for the first static IP to use
+$AKS_FIRST_STATIC_IP = ""
+if ("$AKS_VNET_NAME") {
+    $suggestedFirstStaticIP = Get-FirstIP -ip ${AKS_SUBNET_CIDR}
+
+    $AKS_FIRST_STATIC_IP = Read-Host "First static IP: (default: $suggestedFirstStaticIP )"
+    
+    if ([string]::IsNullOrWhiteSpace($AKS_FIRST_STATIC_IP)) {
+        $AKS_FIRST_STATIC_IP = "$suggestedFirstStaticIP"
+    }
+
+    Write-Output "First static IP=[${AKS_FIRST_STATIC_IP}]"
+}
 
 Write-Output "checking if resource group already exists"
 $resourceGroupExists = az group exists --name ${AKS_PERS_RESOURCE_GROUP}
@@ -462,28 +485,6 @@ else {
     Copy-Item -Path "$GITHUB_URL/azure/$templateFile" -Destination "$output"
 }
 
-# find CIDR for subnet
-if ("$AKS_VNET_NAME") {
-    Write-Output "Looking up CIDR for Subnet: [${AKS_SUBNET_NAME}]"
-    $AKS_SUBNET_CIDR = az network vnet subnet show --name ${AKS_SUBNET_NAME} --resource-group ${AKS_SUBNET_RESOURCE_GROUP} --vnet-name ${AKS_VNET_NAME} --query "addressPrefix" --output tsv
-
-    Write-Output "Subnet CIDR=[$AKS_SUBNET_CIDR]"
-}
-
-# suggest and ask for the first static IP to use
-$AKS_FIRST_STATIC_IP = ""
-if ("$AKS_VNET_NAME") {
-    $suggestedFirstStaticIP = Get-FirstIP -ip ${AKS_SUBNET_CIDR}
-
-    $AKS_FIRST_STATIC_IP = Read-Host "First static IP: (default: $suggestedFirstStaticIP )"
-    
-    if ([string]::IsNullOrWhiteSpace($AKS_FIRST_STATIC_IP)) {
-        $AKS_FIRST_STATIC_IP = "$suggestedFirstStaticIP"
-    }
-
-    Write-Output "First static IP=[${AKS_FIRST_STATIC_IP}]"
-}
-
 # subnet CIDR to mask
 # https://doc.m0n0.ch/quickstartpc/intro-CIDR.html
 $WINDOWS_PASSWORD="replacepassword1234$"
@@ -658,12 +659,39 @@ kubectl create secret generic azure-vnet --from-literal=vnet="${AKS_VNET_NAME}" 
 
 kubectl get "deployments,pods,services,ingress,secrets" --namespace=kube-system -o wide
 
+# kubectl patch deployment kube-dns-v20 -n kube-system -p '{"spec":{"template":{"spec":{"containers":[{"name":"myapp","image":"172.20.34.206:5000/myapp:img:3.0"}]}}}}'
+# kubectl patch deployment kube-dns-v20 -n kube-system -p '{"spec":{"template":{"spec":{"restartPolicy":"Never"}}}}'
+
 Write-Output "Restarting DNS Pods (sometimes they get in a CrashLoopBackoff loop)"
 $failedItems = kubectl get pods -l k8s-app=kube-dns -n kube-system -o jsonpath='{range.items[*]}{.metadata.name}{\"\n\"}{end}'
 ForEach ($line in $failedItems) {
     Write-Host "Deleting pod $line"
     kubectl delete pod $line -n kube-system
 } 
+
+Write-Host "hosts entries"
+$virtualmachines=az vm list -g $AKS_PERS_RESOURCE_GROUP --query "[].name" -o tsv
+ForEach ($vm in $virtualmachines) {
+    $firstprivateip=az vm list-ip-addresses -g $AKS_PERS_RESOURCE_GROUP -n $vm --query "[].virtualMachine.network.privateIpAddresses[0]" -o tsv
+    # $privateiplist= az vm show -g $AKS_PERS_RESOURCE_GROUP -n $vm -d --query privateIps -otsv
+    Write-Output "$firstprivateip $vm"
+    if($vm -match "master" ){
+        Write-Output "$firstprivateip $MASTER_VM_NAME"
+    }
+} 
+
+# /subscriptions/f8a42a3a-8b22-4be4-8413-0b6911c77242/resourceGroups/Prod-Kub-AHMN-RG/providers/Microsoft.Network/networkInterfaces/k8s-master-37819884-nic-0
+
+# copy the file into /etc/cron.hourly/
+# chmod +x ./restartkubedns.sh
+# sudo mv ./restartkubedns.sh /etc/cron.hourly/
+# grep CRON /var/log/syslog
+# * * * * * /etc/cron.hourly/restartkubedns.sh >>/tmp/restartkubedns.log
+# https://stackoverflow.com/questions/878600/how-to-create-a-cron-job-using-bash-automatically-without-the-interactive-editor
+# crontab -l | { cat; echo "*/10 * * * * /etc/cron.hourly/restartkubedns.sh >>/tmp/restartkubedns.log"; } | crontab -
+# az vm extension set --resource-group Prod-Kub-AHMN-RG --vm-name k8s-master-37819884-0 --name customScript --publisher Microsoft.Azure.Extensions --protected-settings "{'commandToExecute': 'whoami;touch /tmp/me.txt'}"
+# az vm run-command invoke -g Prod-Kub-AHMN-RG -n k8s-master-37819884-0 --command-id RunShellScript --scripts "whomai"
+# az vm run-command invoke -g Prod-Kub-AHMN-RG -n k8s-master-37819884-0 --command-id RunShellScript --scripts "crontab -l | { cat; echo '*/10 * * * * /etc/cron.hourly/restartkubedns.sh >>/tmp/restartkubedns.log'; } | crontab -"
 
 Write-Output "Run the following to see status of the cluster"
 Write-Output "kubectl get deployments,pods,services,ingress,secrets --namespace=kube-system -o wide"

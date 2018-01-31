@@ -135,6 +135,15 @@ else {
 Do { $SETUP_DNS = Read-Host "Do you want to setup DNS entries in Azure? (y/n)"}
 while ([string]::IsNullOrWhiteSpace($SETUP_DNS))
 
+# if we need to setup DNS then ask which resourceGroup to use
+if ($SETUP_DNS -eq "y") {
+    $DNS_RESOURCE_GROUP = Read-Host "Resource group containing DNS zones? (default: dns)"
+    if ([string]::IsNullOrWhiteSpace($DNS_RESOURCE_GROUP)) {
+        $DNS_RESOURCE_GROUP = "dns"
+    }
+}
+
+
 Write-Output "Setting up Network Security Group for the subnet"
 
 # setup network security group
@@ -349,15 +358,6 @@ else {
         }
     }  
 
-}
-
-# if we need to setup DNS then ask which resourceGroup to use
-if ($SETUP_DNS -eq "y") {
-    $DNS_RESOURCE_GROUP = Read-Host "Resource group containing DNS zones? (default: dns)"
-    if ([string]::IsNullOrWhiteSpace($DNS_RESOURCE_GROUP)) {
-        $DNS_RESOURCE_GROUP = "dns"
-    }
-    
 }
 
 # delete existing containers

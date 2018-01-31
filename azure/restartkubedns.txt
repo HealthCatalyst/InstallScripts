@@ -1,19 +1,23 @@
 #!/bin/sh
-
+PATH=$PATH:/usr/local/bin
+date
 echo "Version 1.068"
+
+# https://www.cyberciti.biz/faq/how-do-i-add-jobs-to-cron-under-linux-or-unix-oses/
+# put this script in /etc/cron.hourly/ so it runs every hourly
 
 restartCounts=$(kubectl get pods -l k8s-app=kube-dns -n kube-system -o jsonpath='{.items[*].status.containerStatuses[*].restartCount}')
 needToRestart="n"
 for restartCount in $restartCounts
 do
-    if [[ $restartCount -gt "0" ]]; then
+    if [ $restartCount -gt "0" ]; then
         needToRestart="y"
         echo $restartCount
     fi
 done
 
-if [[ $needToRestart == "y" ]]; then
-    failedItems=$(kubectl get pods -l k8s-app=kube-dns -n kube-system -o jsonpath='{range.items[*]}{.metadata.name}{\" \"}{end}')
+if [ $needToRestart = "y" ]; then
+    failedItems=$(kubectl get pods -l k8s-app=kube-dns -n kube-system -o jsonpath='{.items[*].metadata.name}')
 
     for item in $failedItems
     do
@@ -21,5 +25,3 @@ if [[ $needToRestart == "y" ]]; then
         kubectl delete pod $item -n kube-system
     done
 fi
-
-

@@ -1,4 +1,4 @@
-$version = "2018.01.29.02"
+$version = "2018.01.30.01"
 
 Write-Host "Including common.ps1 version $version"
 function global:GetCommonVersion() {
@@ -23,7 +23,7 @@ function global:CreateShare($resourceGroup, $sharename, $deleteExisting) {
                 $SHARE_EXISTS = $(az storage share exists -n $sharename --connection-string $AZURE_STORAGE_CONNECTION_STRING --query "exists" -o tsv)
                 Write-Host "."
             }
-            while ($SHARE_EXISTS)
+            while ($SHARE_EXISTS -ne "false")
         }
     }
 

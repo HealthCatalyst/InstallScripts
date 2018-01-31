@@ -1,10 +1,15 @@
 kind: Deployment
-apiVersion: "extensions/v1beta1"
+apiVersion: extensions/v1beta1
 metadata: 
-  name: "kube-dns-v20"
-  namespace": "kube-system"
+  name: kube-dns-v20
+  namespace": kube-system
 spec:
   strategy:
     # We need to kill the existing Pod before creating an new one
-    # for the new one to be able to attach the persistent disk.
-    type: Recreate 
+    type: Recreate
+  template:
+    spec:
+      # https://kubernetes-v1-4.github.io/docs/user-guide/pod-states/
+      # kube-dns seems to get into an infinite restart loop
+      # so don't restart containers but let the whole pod fail and the deployment will create a new one
+      restartPolicy: Never

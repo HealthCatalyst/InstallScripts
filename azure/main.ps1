@@ -1,4 +1,4 @@
-$version = "2018.02.01.1"
+$version = "2018.02.01.2"
 
 # This script is meant for quick & easy install via:
 #   curl -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/azure/main.ps1 | iex;
@@ -64,20 +64,42 @@ do {
             kubectl get "deployments,pods,services,ingress,secrets" --namespace=kube-system -o wide
         } 
         '6' {
-            $job = Start-Job -Name "KubDashboard" -ScriptBlock {kubectl proxy}
+            # launch Kubernetes dashboard
+            $launchJob = $true
+            $existingProcess = Get-ProcessByPort 8001
+            if (!([string]::IsNullOrWhiteSpace($existingProcess))) {
+                Do { $confirmation = Read-Host "Another process is listening on 8001.  Do you want to kill that process? (y/n)"}
+                while ([string]::IsNullOrWhiteSpace($confirmation))
+            
+                if ($confirmation = "y") {
+                    Stop-ProcessByPort 8001
+                }
+                else {
+                    $launchJob = $false
+                }
+            }
 
+            if ($launchJob) {
+                $job = Start-Job -Name "KubDashboard" -ScriptBlock {kubectl proxy} -ErrorAction Stop
+                Wait-Job $job -Timeout 5;
+                Write-Output "job state: $($job.state)"  
+                Receive-Job -Job $job 6>&1  
+            }
+
+            # if ($job.state -eq 'Failed') {
+            #     Receive-Job -Job $job
+            #     Stop-ProcessByPort 8001
+            # }
+            
             # Write-Host "Your kubeconfig file is here: $env:KUBECONFIG"
             $kubectlversion = kubectl version --client=true --short=true
             if ($kubectlversion -match "v1.9") {
-                Write-Host "Click Skip on login screen"
-                Start-Process -FilePath "http://localhost:8001/api/v1/namespaces/kube-system/services/https:kubernetes-dashboard:/proxy/"
+                Write-Host "Click Skip on login screen";
+                Start-Process -FilePath "http://localhost:8001/api/v1/namespaces/kube-system/services/https:kubernetes-dashboard:/proxy/";
             }
             else {
-                Start-Process -FilePath "http://localhost:8001/api/v1/namespaces/kube-system/services/kubernetes-dashboard/proxy"                
-            }
-            
-            Start-Sleep -Seconds 5
-            Receive-Job -Job $job
+                Start-Process -FilePath "http://localhost:8001/api/v1/namespaces/kube-system/services/kubernetes-dashboard/proxy";
+            }            
         } 
         '7' {        
             $AKS_PERS_RESOURCE_GROUP = ReadSecretValue -secretname azure-secret -valueName resourcegroup

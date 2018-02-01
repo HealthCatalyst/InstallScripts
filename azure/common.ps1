@@ -1,4 +1,4 @@
-$version = "2018.02.01.01"
+$version = "2018.02.01.02"
 
 Write-Host "Including common.ps1 version $version"
 function global:GetCommonVersion() {
@@ -299,4 +299,25 @@ function global:SetHostFileInVms( $resourceGroup) {
         Write-Output "Sending command to $vm"
         az vm run-command invoke -g $resourceGroup -n $vm --command-id RunShellScript --scripts "$fullCmdToUpdateHostsFiles"
     }
+}
+
+# from https://github.com/majkinetor/posh/blob/master/MM_Network/Stop-ProcessByPort.ps1
+function global:Stop-ProcessByPort( [ValidateNotNullOrEmpty()] [int] $Port ) {    
+    $netstat = netstat.exe -ano | Select-Object -Skip 4
+    $p_line  = $netstat | Where-Object { $p = (-split $_ | Select-Object -Index 1) -split ':' | Select-Object -Last 1; $p -eq $Port } | Select-Object -First 1
+    if (!$p_line) { Write-Host "No process found using port" $Port; return }    
+    $p_id = $p_line -split '\s+' | Select-Object -Last 1
+    if (!$p_id) { throw "Can't parse process id for port $Port" }
+    
+    Read-Host "There is another process running on this port.  Click ENTER to open an elevated prompt to stop that process."
+
+    Start-Process powershell -verb RunAs -ArgumentList "Stop-Process $p_id -Force"
+}
+
+function global:Get-ProcessByPort( [ValidateNotNullOrEmpty()] [int] $Port ) {    
+    $netstat = netstat.exe -ano | Select-Object -Skip 4
+    $p_line  = $netstat | Where-Object { $p = (-split $_ | Select-Object -Index 1) -split ':' | Select-Object -Last 1; $p -eq $Port } | Select-Object -First 1
+    if (!$p_line) { return; } 
+    $p_id = $p_line -split '\s+' | Select-Object -Last 1
+    return $p_id;
 }

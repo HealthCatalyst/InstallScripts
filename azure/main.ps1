@@ -20,13 +20,14 @@ do {
     Write-Host "6: Launch Kubernetes Admin Dashboard"
     Write-Host "7: SSH to Master VM"
     Write-Host "8: View status of DNS pods"
+    Write-Host "9: Restart all VMs"
     Write-Host "------ NLP -----"
-    Write-Host "9: Show status of NLP"
-    Write-Host "10: Test web sites"
-    Write-Host "11: Show passwords"
-    Write-Host "12: Show NLP logs"
+    Write-Host "10: Show status of NLP"
+    Write-Host "11: Test web sites"
+    Write-Host "12: Show passwords"
+    Write-Host "13: Show NLP logs"
     Write-Host "------ Realtime -----"
-    Write-Host "13: Show status of realtime"
+    Write-Host "14: Show status of realtime"
     Write-Host "-----------"
     Write-Host "q: Quit"
     $input = Read-Host "Please make a selection"
@@ -72,11 +73,8 @@ do {
             Receive-Job -Job $job
         } 
         '7' {        
-            $AKS_PERS_RESOURCE_GROUP_BASE64 = kubectl get secret azure-secret -o jsonpath='{.data.resourcegroup}'
-            if (![string]::IsNullOrWhiteSpace($AKS_PERS_RESOURCE_GROUP_BASE64)) {
-                $AKS_PERS_RESOURCE_GROUP = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($AKS_PERS_RESOURCE_GROUP_BASE64))
-            }
-                            
+            $AKS_PERS_RESOURCE_GROUP = ReadSecretValue -secretname azure-secret -valueName resourcegroup
+                           
             $AKS_PERS_LOCATION = az group show --name $AKS_PERS_RESOURCE_GROUP --query "location" -o tsv
     
             $AKS_LOCAL_FOLDER = Read-Host "Folder to store SSH keys (default: c:\kubernetes)"
@@ -112,9 +110,15 @@ do {
             }             
         } 
         '9' {
-            kubectl get 'deployments,pods,services,ingress,secrets,persistentvolumeclaims,persistentvolumes,nodes' --namespace=fabricnlp -o wide
+            $AKS_PERS_RESOURCE_GROUP = ReadSecretValue -secretname azure-secret -valueName resourcegroup
+            # az vm run-command invoke -g Prod-Kub-AHMN-RG -n k8s-master-37819884-0 --command-id RunShellScript --scripts "apt-get update && sudo apt-get upgrade"
+            Write-Host "Restarting VMs in resource group: $AKS_PERS_RESOURCE_GROUP"
+            az vm restart --ids $(az vm list -g $AKS_PERS_RESOURCE_GROUP --query "[].id" -o tsv)
         } 
         '10' {
+            kubectl get 'deployments,pods,services,ingress,secrets,persistentvolumeclaims,persistentvolumes,nodes' --namespace=fabricnlp -o wide
+        } 
+        '11' {
            
             $loadBalancerIP = kubectl get svc traefik-ingress-service-public -n kube-system -o jsonpath='{.status.loadBalancer.ingress[].ip}' --ignore-not-found=true
             if ([string]::IsNullOrWhiteSpace($loadBalancerIP)) {
@@ -136,19 +140,19 @@ do {
             Write-Output "$loadBalancerIP nlpjobs.$customerid.healthcatalyst.net"            
 
         } 
-        '11' {
+        '12' {
             Write-Host "MySql root password: $(ReadSecretPassword -secretname mysqlrootpassword -namespace fabricnlp)"
             Write-Host "MySql NLP_APP_USER password: $(ReadSecretPassword -secretname mysqlpassword -namespace fabricnlp)"
             Write-Host "SendGrid SMTP Relay key: $(ReadSecretPassword -secretname smtprelaypassword -namespace fabricnlp)"
         } 
-        '12' {
+        '13' {
             $pods=$(kubectl get pods -n fabricnlp -o jsonpath='{.items[*].metadata.name}')
             foreach ($pod in $pods.Split(" ")) {
                 Write-Output "=============== Pod: $pod ================="
                 kubectl logs --tail=20 $pod -n fabricnlp
             }
         } 
-        '13' {
+        '14' {
             kubectl get 'deployments,pods,services,ingress,secrets,persistentvolumeclaims,persistentvolumes,nodes' --namespace=fabricrealtime -o wide
         } 
         'q' {

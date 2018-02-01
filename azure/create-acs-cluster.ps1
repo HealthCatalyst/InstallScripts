@@ -5,7 +5,7 @@ Write-output "Version 2018.01.30.01"
 #   curl -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/azure/create-acs-cluster.ps1 | iex;
 
 $GITHUB_URL = "https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master"
-$GITHUB_URL = "C:\Catalyst\git\Installscripts"
+# $GITHUB_URL = "C:\Catalyst\git\Installscripts"
 Invoke-WebRequest -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/azure/common.ps1 | Invoke-Expression;
 
 
@@ -693,18 +693,13 @@ ForEach ($line in $failedItems) {
     kubectl delete pod $line -n kube-system
 } 
 
-Write-Host "hosts entries"
-$virtualmachines = az vm list -g $AKS_PERS_RESOURCE_GROUP --query "[].name" -o tsv
-ForEach ($vm in $virtualmachines) {
-    $firstprivateip = az vm list-ip-addresses -g $AKS_PERS_RESOURCE_GROUP -n $vm --query "[].virtualMachine.network.privateIpAddresses[0]" -o tsv
-    # $privateiplist= az vm show -g $AKS_PERS_RESOURCE_GROUP -n $vm -d --query privateIps -otsv
-    Write-Output "$firstprivateip $vm"
-    if ($vm -match "master" ) {
-        Write-Output "$firstprivateip $MASTER_VM_NAME"
-    }
-} 
 
 # /subscriptions/f8a42a3a-8b22-4be4-8413-0b6911c77242/resourceGroups/Prod-Kub-AHMN-RG/providers/Microsoft.Network/networkInterfaces/k8s-master-37819884-nic-0
+
+# command to update hosts
+# grep -v " k8s-master-37819884-0" /etc/hosts | grep -v "k8s-linuxagent-37819884-0" - | grep -v "k8s-linuxagent-37819884-1" - | grep -v "prod-kub-ahmn-rg.westus.cloudapp.azure.com" - | tee /etc/hosts
+# | ( cat - && echo "foo" && echo "bar")
+# | tee /etc/hosts
 
 # copy the file into /etc/cron.hourly/
 # chmod +x ./restartkubedns.sh
@@ -715,7 +710,7 @@ ForEach ($vm in $virtualmachines) {
 # crontab -l | { cat; echo "*/10 * * * * /etc/cron.hourly/restartkubedns.sh >>/tmp/restartkubedns.log"; } | crontab -
 # az vm extension set --resource-group Prod-Kub-AHMN-RG --vm-name k8s-master-37819884-0 --name customScript --publisher Microsoft.Azure.Extensions --protected-settings "{'commandToExecute': 'whoami;touch /tmp/me.txt'}"
 # az vm run-command invoke -g Prod-Kub-AHMN-RG -n k8s-master-37819884-0 --command-id RunShellScript --scripts "whomai"
-# az vm run-command invoke -g Prod-Kub-AHMN-RG -n k8s-master-37819884-0 --command-id RunShellScript --scripts "crontab -l | { cat; echo '*/10 * * * * /etc/cron.hourly/restartkubedns.sh >>/tmp/restartkubedns.log'; } | crontab -"
+# az vm run-command invoke -g Prod-Kub-AHMN-RG -n k8s-master-37819884-0 --command-id RunShellScript --scripts "crontab -l | { cat; echo '*/10 * * * * /etc/cron.hourly/restartkubedns.sh >>/tmp/restartkubedns.log 2>&1'; } | crontab -"
 
 Write-Output "Run the following to see status of the cluster"
 Write-Output "kubectl get deployments,pods,services,ingress,secrets --namespace=kube-system -o wide"

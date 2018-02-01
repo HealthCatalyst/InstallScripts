@@ -18,7 +18,7 @@ do
     done    
 
     if [ $needToRestart = "y" ]; then
-        echo "deleting pod $item with restartCounts: $restartCounts"
-        kubectl delete pod $item -n kube-system
+        echo "deleting pod $dnsPod with restartCounts: $restartCounts"
+        kubectl delete pod $dnsPod -n kube-system
     fi    
 done

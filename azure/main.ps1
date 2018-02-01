@@ -1,4 +1,4 @@
-$version = "2018.01.31.1"
+$version = "2018.02.01.1"
 
 # This script is meant for quick & easy install via:
 #   curl -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/azure/main.ps1 | iex;
@@ -20,7 +20,7 @@ do {
     Write-Host "6: Launch Kubernetes Admin Dashboard"
     Write-Host "7: SSH to Master VM"
     Write-Host "8: View status of DNS pods"
-    Write-Host "9: Restart all VMs"
+    Write-Host "9: Apply updates and restart all VMs"
     Write-Host "------ NLP -----"
     Write-Host "10: Show status of NLP"
     Write-Host "11: Test web sites"
@@ -64,10 +64,17 @@ do {
             kubectl get "deployments,pods,services,ingress,secrets" --namespace=kube-system -o wide
         } 
         '6' {
-            # Write-Host "Your kubeconfig file is here: $env:KUBECONFIG"
-            Write-Host "Click Skip on login screen"
             $job = Start-Job -Name "KubDashboard" -ScriptBlock {kubectl proxy}
-            Start-Process -FilePath "http://localhost:8001/api/v1/namespaces/kube-system/services/https:kubernetes-dashboard:/proxy/"
+
+            # Write-Host "Your kubeconfig file is here: $env:KUBECONFIG"
+            $kubectlversion = kubectl version --client=true --short=true
+            if ($kubectlversion -match "v1.9") {
+                Write-Host "Click Skip on login screen"
+                Start-Process -FilePath "http://localhost:8001/api/v1/namespaces/kube-system/services/https:kubernetes-dashboard:/proxy/"
+            }
+            else {
+                Start-Process -FilePath "http://localhost:8001/api/v1/namespaces/kube-system/services/kubernetes-dashboard/proxy"                
+            }
             
             Start-Sleep -Seconds 5
             Receive-Job -Job $job
@@ -110,10 +117,12 @@ do {
             }             
         } 
         '9' {
+            # restart VMs
             $AKS_PERS_RESOURCE_GROUP = ReadSecretValue -secretname azure-secret -valueName resourcegroup
-            # az vm run-command invoke -g Prod-Kub-AHMN-RG -n k8s-master-37819884-0 --command-id RunShellScript --scripts "apt-get update && sudo apt-get upgrade"
-            Write-Host "Restarting VMs in resource group: $AKS_PERS_RESOURCE_GROUP"
-            az vm restart --ids $(az vm list -g $AKS_PERS_RESOURCE_GROUP --query "[].id" -o tsv)
+            UpdateOSInVMs -resourceGroup $AKS_PERS_RESOURCE_GROUP
+            RestartVMsInResourceGroup -resourceGroup $AKS_PERS_RESOURCE_GROUP
+            SetHostFileInVms -resourceGroup $AKS_PERS_RESOURCE_GROUP
+            SetupCronTab -resourceGroup $AKS_PERS_RESOURCE_GROUP            
         } 
         '10' {
             kubectl get 'deployments,pods,services,ingress,secrets,persistentvolumeclaims,persistentvolumes,nodes' --namespace=fabricnlp -o wide
@@ -146,7 +155,7 @@ do {
             Write-Host "SendGrid SMTP Relay key: $(ReadSecretPassword -secretname smtprelaypassword -namespace fabricnlp)"
         } 
         '13' {
-            $pods=$(kubectl get pods -n fabricnlp -o jsonpath='{.items[*].metadata.name}')
+            $pods = $(kubectl get pods -n fabricnlp -o jsonpath='{.items[*].metadata.name}')
             foreach ($pod in $pods.Split(" ")) {
                 Write-Output "=============== Pod: $pod ================="
                 kubectl logs --tail=20 $pod -n fabricnlp

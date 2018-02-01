@@ -693,6 +693,8 @@ ForEach ($line in $failedItems) {
     kubectl delete pod $line -n kube-system
 } 
 
+SetHostFileInVms -resourceGroup $AKS_PERS_RESOURCE_GROUP
+SetupCronTab -resourceGroup $AKS_PERS_RESOURCE_GROUP
 
 # /subscriptions/f8a42a3a-8b22-4be4-8413-0b6911c77242/resourceGroups/Prod-Kub-AHMN-RG/providers/Microsoft.Network/networkInterfaces/k8s-master-37819884-nic-0
 

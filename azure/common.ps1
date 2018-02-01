@@ -1,4 +1,4 @@
-$version = "2018.01.30.01"
+$version = "2018.02.01.01"
 
 Write-Host "Including common.ps1 version $version"
 function global:GetCommonVersion() {
@@ -224,4 +224,79 @@ function global:Get-FirstIP {
     # https://github.com/Azure/acs-engine/blob/master/docs/kubernetes/features.md#feat-custom-vnet
     $startaddr = $startaddr + 239 # skip the first few since they are reserved
     INT64-toIP -int $startaddr
+}
+
+function global:SetupCronTab($resourceGroup) {
+    $virtualmachines = az vm list -g $resourceGroup --query "[].name" -o tsv
+    ForEach ($vm in $virtualmachines) {
+        if ($vm -match "master" ) {
+            $cmd = "mkdir -p /opt/healthcatalyst; curl -sSL https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/azure/restartkubedns.txt -o /opt/healthcatalyst/restartkubedns.sh; crontab -l | grep -v 'restartkubedns.sh' - | { cat; echo '*/10 * * * * /opt/healthcatalyst/restartkubedns.sh >> /tmp/restartkubedns.log 2>&1'; } | crontab -"
+            az vm run-command invoke -g $resourceGroup -n $vm --command-id RunShellScript --scripts "$cmd"
+        }
+    }
+}
+
+function global:UpdateOSInVMs($resourceGroup) {
+    $virtualmachines = az vm list -g $resourceGroup --query "[].name" -o tsv
+    ForEach ($vm in $virtualmachines) {
+        Write-Output "Updating OS in vm: $vm"
+        $cmd = "apt-get update && apt-get upgrade"
+        az vm run-command invoke -g $resourceGroup -n $vm --command-id RunShellScript --scripts "$cmd"
+    }
+}
+
+
+function global:RestartVMsInResourceGroup( $resourceGroup) {
+    # az vm run-command invoke -g Prod-Kub-AHMN-RG -n k8s-master-37819884-0 --command-id RunShellScript --scripts "apt-get update && sudo apt-get upgrade"
+    Write-Host "Restarting VMs in resource group: ${resourceGroup}: $(az vm list -g $resourceGroup --query "[].name" -o tsv)"
+    az vm restart --ids $(az vm list -g $resourceGroup --query "[].id" -o tsv)
+
+    Write-Output "Waiting for VMs to restart: $(az vm list -g $resourceGroup --query "[].name" -o tsv)"
+    $virtualmachines = az vm list -g $resourceGroup --query "[].name" -o tsv
+    ForEach ($vm in $virtualmachines) {
+        
+        Write-Output "Waiting on $vm"
+        Do { 
+            Start-Sleep -Seconds 1
+            $state = az vm show -g $resourceGroup -n $vm -d --query "powerState"; 
+            Write-Output "Status of ${vm}: ${state}"
+        }
+        while (!($state = "VM running"))      
+    }
+}
+
+function global:SetHostFileInVms( $resourceGroup) {
+    $AKS_PERS_LOCATION = az group show --name $resourceGroup --query "location" -o tsv
+
+    $MASTER_VM_NAME = "${resourceGroup}.${AKS_PERS_LOCATION}.cloudapp.azure.com"
+    $MASTER_VM_NAME = $MASTER_VM_NAME.ToLower()
+
+    Write-Host "Creating hosts entries"
+    $fullCmdToUpdateHostsFiles = ""
+    $cmdToRemovePreviousHostEntries = ""
+    $cmdToAddNewHostEntries = ""
+    $virtualmachines = az vm list -g $resourceGroup --query "[].name" -o tsv
+    ForEach ($vm in $virtualmachines) {
+        $firstprivateip = az vm list-ip-addresses -g $resourceGroup -n $vm --query "[].virtualMachine.network.privateIpAddresses[0]" -o tsv
+        # $privateiplist= az vm show -g $AKS_PERS_RESOURCE_GROUP -n $vm -d --query privateIps -otsv
+        Write-Output "$firstprivateip $vm"
+
+        $cmdToRemovePreviousHostEntries = $cmdToRemovePreviousHostEntries + "grep -v '${vm}' - | "
+        $cmdToAddNewHostEntries = $cmdToAddNewHostEntries + " && echo '$firstprivateip $vm'"
+        if ($vm -match "master" ) {
+            Write-Output "$firstprivateip $MASTER_VM_NAME"
+            $cmdToRemovePreviousHostEntries = $cmdToRemovePreviousHostEntries + "grep -v '${MASTER_VM_NAME}' - | "
+            $cmdToAddNewHostEntries = $cmdToAddNewHostEntries + " && echo '$firstprivateip ${MASTER_VM_NAME}'"
+        }
+    }
+
+    $fullCmdToUpdateHostsFiles = "cat /etc/hosts | $cmdToRemovePreviousHostEntries (cat $cmdToAddNewHostEntries ) | tee /etc/hosts; cat /etc/hosts"
+
+    Write-Host "Command to send to VM"
+    Write-Host "$fullCmdToUpdateHostsFiles"
+
+    ForEach ($vm in $virtualmachines) {
+        Write-Output "Sending command to $vm"
+        az vm run-command invoke -g $resourceGroup -n $vm --command-id RunShellScript --scripts "$fullCmdToUpdateHostsFiles"
+    }
 }

@@ -1,4 +1,4 @@
-$version = "2018.02.01.2"
+$version = "2018.02.01.3"
 
 # This script is meant for quick & easy install via:
 #   curl -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/azure/main.ps1 | iex;
@@ -71,7 +71,7 @@ do {
                 Do { $confirmation = Read-Host "Another process is listening on 8001.  Do you want to kill that process? (y/n)"}
                 while ([string]::IsNullOrWhiteSpace($confirmation))
             
-                if ($confirmation = "y") {
+                if ($confirmation -eq "y") {
                     Stop-ProcessByPort 8001
                 }
                 else {

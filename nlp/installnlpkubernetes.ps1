@@ -1,4 +1,4 @@
-Write-Output "Version 2018.01.28.02"
+Write-Output "Version 2018.01.31.01"
 
 # curl -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/nlp/installnlpkubernetes.ps1 | iex;
 $GITHUB_URL = "https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master"
@@ -10,6 +10,19 @@ $loggedInUser = az account show --query "user.name"  --output tsv
 $AKS_USE_SSL = ""
 
 Write-Output "user: $loggedInUser"
+
+$AKS_PERS_RESOURCE_GROUP_BASE64 = kubectl get secret azure-secret -o jsonpath='{.data.resourcegroup}'
+if (![string]::IsNullOrWhiteSpace($AKS_PERS_RESOURCE_GROUP_BASE64)) {
+    $AKS_PERS_RESOURCE_GROUP = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($AKS_PERS_RESOURCE_GROUP_BASE64))
+}
+
+if ([string]::IsNullOrWhiteSpace($AKS_PERS_RESOURCE_GROUP)) {
+    Do { $AKS_PERS_RESOURCE_GROUP = Read-Host "Resource Group (e.g., fabricnlp-rg)"}
+    while ([string]::IsNullOrWhiteSpace($AKS_PERS_RESOURCE_GROUP))
+}
+else {
+    Write-Output "Using resource group: $AKS_PERS_RESOURCE_GROUP"        
+}
 
 if ( "$loggedInUser" ) {
     $SUBSCRIPTION_NAME = az account show --query "name"  --output tsv
@@ -45,19 +58,6 @@ else {
 
 $AKS_PERS_SHARE_NAME = "fabricnlp"
 $AKS_PERS_BACKUP_SHARE_NAME = "${AKS_PERS_SHARE_NAME}backups"
-
-$AKS_PERS_RESOURCE_GROUP_BASE64 = kubectl get secret azure-secret -o jsonpath='{.data.resourcegroup}'
-if (![string]::IsNullOrWhiteSpace($AKS_PERS_RESOURCE_GROUP_BASE64)) {
-    $AKS_PERS_RESOURCE_GROUP = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($AKS_PERS_RESOURCE_GROUP_BASE64))
-}
-
-if ([string]::IsNullOrWhiteSpace($AKS_PERS_RESOURCE_GROUP)) {
-    Do { $AKS_PERS_RESOURCE_GROUP = Read-Host "Resource Group (e.g., fabricnlp-rg)"}
-    while ([string]::IsNullOrWhiteSpace($AKS_PERS_RESOURCE_GROUP))
-}
-else {
-    Write-Output "Using resource group: $AKS_PERS_RESOURCE_GROUP"        
-}
 
 CreateShare -resourceGroup $AKS_PERS_RESOURCE_GROUP -sharename $AKS_PERS_SHARE_NAME
 CreateShare -resourceGroup $AKS_PERS_RESOURCE_GROUP -sharename $AKS_PERS_BACKUP_SHARE_NAME

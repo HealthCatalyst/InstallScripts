@@ -3,7 +3,7 @@
     "properties": {
         "orchestratorProfile": {
             "orchestratorType": "Kubernetes",
-            "orchestratorRelease": "1.8",
+            "orchestratorRelease": "1.9",
             "kubernetesConfig": {
                 "networkPolicy": "azure"
             }
@@ -11,7 +11,7 @@
         "masterProfile": {
             "count": 1,
             "dnsPrefix": "REPLACE-DNS-NAME-PREFIX",
-            "vmSize": "Standard_D2_v2",
+            "vmSize": "Standard_DS2_v2",
             "vnetSubnetId": "REPLACE-SUBNET",
             "firstConsecutiveStaticIP": "REPLACE-FIRST-STATIC-IP",
             "vnetCidr": "REPLACE_VNET_CIDR",
@@ -20,7 +20,7 @@
         "agentPoolProfiles": [{
             "name": "linuxagent",
             "count": 2,
-            "vmSize": "Standard_D2_v2",
+            "vmSize": "Standard_DS2_v2",
             "vnetSubnetId": "REPLACE-SUBNET",
             "availabilityProfile": "AvailabilitySet",
             "storageProfile": "ManagedDisks"

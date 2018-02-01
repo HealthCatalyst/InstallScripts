@@ -5,7 +5,7 @@ Write-output "Version 2018.01.30.01"
 #   curl -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/azure/create-acs-cluster.ps1 | iex;
 
 $GITHUB_URL = "https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master"
-# $GITHUB_URL = "C:\Catalyst\git\Installscripts"
+$GITHUB_URL = "C:\Catalyst\git\Installscripts"
 Invoke-WebRequest -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/azure/common.ps1 | Invoke-Expression;
 
 
@@ -151,9 +151,23 @@ Write-Output "SSH Public Key=$AKS_SSH_KEY"
 
 # download kubectl
 $KUBECTL_FILE = "$AKS_LOCAL_FOLDER\kubectl.exe"
-if (!(Test-Path "$KUBECTL_FILE")) {
-    Write-Output "Downloading kubectl.exe to $KUBECTL_FILE"
-    $url = "https://storage.googleapis.com/kubernetes-release/release/v1.8.0/bin/windows/amd64/kubectl.exe"
+$DESIRED_KUBECTL_VERSION = "v1.9.2"
+$downloadkubectl = "n"
+if (!(Test-Path "$KUBECTL_FILE"))
+{
+    $downloadkubectl = "y"
+}
+else {
+    $kubectlversion=kubectl version --client=true --short=true
+    $kubectlversionMatches=$($kubectlversion -match "$DESIRED_KUBECTL_VERSION")
+    if(!$kubectlversionMatches){
+        $downloadkubectl = "y"
+    }
+}
+if ( $downloadkubectl -eq "y") {
+    $url = "https://storage.googleapis.com/kubernetes-release/release/${DESIRED_KUBECTL_VERSION}/bin/windows/amd64/kubectl.exe"
+    Write-Output "Downloading kubectl.exe from url $url to $KUBECTL_FILE"
+    Remove-Item -Path "$KUBECTL_FILE"
     (New-Object System.Net.WebClient).DownloadFile($url, $KUBECTL_FILE)
 }
 else {
@@ -162,16 +176,26 @@ else {
 
 # download acs-engine
 $ACS_ENGINE_FILE = "$AKS_LOCAL_FOLDER\acs-engine.exe"
-$acsengineversion = acs-engine version
-$acsengineversion = $acsengineversion -match "^Version: v[0-9.]+"
-$acsengineversion = "[$acsengineversion]"
-$desiredversion="v0.12.4"
-if ((!(Test-Path "$ACS_ENGINE_FILE")) -or !$acsengineversion.equals("[Version: $desiredversion]")) {
-    Write-Output "Downloading acs-engine.exe to $ACS_ENGINE_FILE"
-    $url = "https://github.com/Azure/acs-engine/releases/download/${desiredversion}/acs-engine-${desiredversion}-windows-amd64.zip"
+$DESIRED_ACS_ENGINE_VERSION = "v0.12.4"
+$downloadACSEngine = "n"
+if (!(Test-Path "$ACS_ENGINE_FILE")) {
+    $downloadACSEngine = "y"
+}
+else {
+    $acsengineversion = acs-engine version
+    $acsengineversion = $acsengineversion -match "^Version: v[0-9.]+"
+    $acsengineversion = "[$acsengineversion]"
+    if ( !$acsengineversion.equals("[Version: $DESIRED_ACS_ENGINE_VERSION]")) {
+        $downloadACSEngine = "y"
+    }
+}
+if ($downloadACSEngine -eq "y") {
+    $url = "https://github.com/Azure/acs-engine/releases/download/${DESIRED_ACS_ENGINE_VERSION}/acs-engine-${DESIRED_ACS_ENGINE_VERSION}-windows-amd64.zip"
+    Write-Output "Downloading acs-engine.exe from $url to $ACS_ENGINE_FILE"
+    Remove-Item -Path "$ACS_ENGINE_FILE"
     (New-Object System.Net.WebClient).DownloadFile($url, "$AKS_LOCAL_FOLDER\acs-engine.zip")
     Expand-Archive -Path "$AKS_LOCAL_FOLDER\acs-engine.zip" -DestinationPath "$AKS_LOCAL_FOLDER" -Force
-    Copy-Item -Path "$AKS_LOCAL_FOLDER\acs-engine-${desiredversion}-windows-amd64\acs-engine.exe" -Destination $ACS_ENGINE_FILE
+    Copy-Item -Path "$AKS_LOCAL_FOLDER\acs-engine-${DESIRED_ACS_ENGINE_VERSION}-windows-amd64\acs-engine.exe" -Destination $ACS_ENGINE_FILE
 }
 else {
     Write-Output "acs-engine.exe already exists at $ACS_ENGINE_FILE"    
@@ -192,7 +216,26 @@ if ([string]::IsNullOrWhiteSpace($AKS_PERS_STORAGE_ACCOUNT_NAME)) {
     $AKS_PERS_STORAGE_ACCOUNT_NAME = $AKS_PERS_STORAGE_ACCOUNT_NAME.ToLower()
     Write-Output "Using storage account: [$AKS_PERS_STORAGE_ACCOUNT_NAME]"
 }
+Write-Output "Checking to see if storage account exists"
+$storageAccountCanBeCreated = az storage account check-name --name $AKS_PERS_STORAGE_ACCOUNT_NAME --query "nameAvailable" --output tsv
 
+if ($storageAccountCanBeCreated -ne "True" ) {
+    az storage account check-name --name $AKS_PERS_STORAGE_ACCOUNT_NAME   
+    
+    Do { $confirmation = Read-Host "Storage account, [$AKS_PERS_STORAGE_ACCOUNT_NAME], already exists.  Delete it?  (WARNING: deletes data) (y/n)"}
+    while ([string]::IsNullOrWhiteSpace($confirmation)) 
+
+    if ($confirmation -eq 'y') {
+        az storage account delete -n $AKS_PERS_STORAGE_ACCOUNT_NAME -g $AKS_PERS_RESOURCE_GROUP
+        Write-Output "Creating storage account: [${AKS_PERS_STORAGE_ACCOUNT_NAME}]"
+        # https://docs.microsoft.com/en-us/azure/storage/common/storage-quickstart-create-account?tabs=azure-cli
+        az storage account create -n $AKS_PERS_STORAGE_ACCOUNT_NAME -g $AKS_PERS_RESOURCE_GROUP -l $AKS_PERS_LOCATION --kind StorageV2 --sku Standard_LRS                       
+    }    
+}
+else {
+    Write-Output "Creating storage account: [${AKS_PERS_STORAGE_ACCOUNT_NAME}]"
+    az storage account create -n $AKS_PERS_STORAGE_ACCOUNT_NAME -g $AKS_PERS_RESOURCE_GROUP -l $AKS_PERS_LOCATION --kind StorageV2 --sku Standard_LRS            
+}
 
 # see if the user wants to use a specific virtual network
 Do { $confirmation = Read-Host "Would you like to connect to an existing virtual network? (y/n)"}
@@ -382,9 +425,10 @@ if ($resourceGroupExists -eq "true") {
             Write-Output "delete the routes EXCEPT the temproutetable we just created"
             az resource delete --ids $(az resource list --resource-group $AKS_PERS_RESOURCE_GROUP --resource-type "Microsoft.Network/routeTables" --query "[].id" -o tsv)
         }
-        if ($(az resource list --resource-group $AKS_PERS_RESOURCE_GROUP --resource-type "Microsoft.Network/networkSecurityGroups" --query "[].id" -o tsv ).length -ne 0) {
+        $AKS_PERS_NETWORK_SECURITY_GROUP = "$($AKS_PERS_RESOURCE_GROUP.ToLower())-nsg"
+        if ($(az resource list --resource-group $AKS_PERS_RESOURCE_GROUP --resource-type "Microsoft.Network/networkSecurityGroups" --query "[?name != '${$AKS_PERS_NETWORK_SECURITY_GROUP}'].id" -o tsv ).length -ne 0) {
             Write-Output "delete the network security groups"
-            az resource delete --ids $(az resource list --resource-group $AKS_PERS_RESOURCE_GROUP --resource-type "Microsoft.Network/networkSecurityGroups" --query "[].id" -o tsv )
+            az resource delete --ids $(az resource list --resource-group $AKS_PERS_RESOURCE_GROUP --resource-type "Microsoft.Network/networkSecurityGroups" --query "[?name != '${$AKS_PERS_NETWORK_SECURITY_GROUP}'].id" -o tsv )
         }
     
     }
@@ -487,7 +531,7 @@ else {
 
 # subnet CIDR to mask
 # https://doc.m0n0.ch/quickstartpc/intro-CIDR.html
-$WINDOWS_PASSWORD="replacepassword1234$"
+$WINDOWS_PASSWORD = "replacepassword1234$"
 Write-Output "replacing values in the acs.json file"
 $MyFile = (Get-Content $output) | 
     Foreach-Object {$_ -replace 'REPLACE-SSH-KEY', "${AKS_SSH_KEY}"}  | 
@@ -624,26 +668,6 @@ while ($nodeCount -lt 3) {
 }
 
 # create storage account
-Write-Output "Checking to see if storage account exists"
-$storageAccountCanBeCreated = az storage account check-name --name $AKS_PERS_STORAGE_ACCOUNT_NAME --query "nameAvailable" --output tsv
-
-if ($storageAccountCanBeCreated -ne "True" ) {
-    az storage account check-name --name $AKS_PERS_STORAGE_ACCOUNT_NAME   
-    
-    Do { $confirmation = Read-Host "Storage account, [$AKS_PERS_STORAGE_ACCOUNT_NAME], already exists.  Delete it?  (Warning: deletes data) (y/n)"}
-    while ([string]::IsNullOrWhiteSpace($confirmation)) 
-
-    if ($confirmation -eq 'y') {
-        az storage account delete -n $AKS_PERS_STORAGE_ACCOUNT_NAME -g $AKS_PERS_RESOURCE_GROUP
-        Write-Output "Creating storage account: [${AKS_PERS_STORAGE_ACCOUNT_NAME}]"
-        # https://docs.microsoft.com/en-us/azure/storage/common/storage-quickstart-create-account?tabs=azure-cli
-        az storage account create -n $AKS_PERS_STORAGE_ACCOUNT_NAME -g $AKS_PERS_RESOURCE_GROUP -l $AKS_PERS_LOCATION --kind StorageV2 --sku Standard_LRS                       
-    }    
-}
-else {
-    Write-Output "Creating storage account: [${AKS_PERS_STORAGE_ACCOUNT_NAME}]"
-    az storage account create -n $AKS_PERS_STORAGE_ACCOUNT_NAME -g $AKS_PERS_RESOURCE_GROUP -l $AKS_PERS_LOCATION --kind StorageV2 --sku Standard_LRS            
-}
 
 Write-Output "Get storage account key"
 $STORAGE_KEY = az storage account keys list --resource-group $AKS_PERS_RESOURCE_GROUP --account-name $AKS_PERS_STORAGE_ACCOUNT_NAME --query "[0].value" --output tsv
@@ -670,12 +694,12 @@ ForEach ($line in $failedItems) {
 } 
 
 Write-Host "hosts entries"
-$virtualmachines=az vm list -g $AKS_PERS_RESOURCE_GROUP --query "[].name" -o tsv
+$virtualmachines = az vm list -g $AKS_PERS_RESOURCE_GROUP --query "[].name" -o tsv
 ForEach ($vm in $virtualmachines) {
-    $firstprivateip=az vm list-ip-addresses -g $AKS_PERS_RESOURCE_GROUP -n $vm --query "[].virtualMachine.network.privateIpAddresses[0]" -o tsv
+    $firstprivateip = az vm list-ip-addresses -g $AKS_PERS_RESOURCE_GROUP -n $vm --query "[].virtualMachine.network.privateIpAddresses[0]" -o tsv
     # $privateiplist= az vm show -g $AKS_PERS_RESOURCE_GROUP -n $vm -d --query privateIps -otsv
     Write-Output "$firstprivateip $vm"
-    if($vm -match "master" ){
+    if ($vm -match "master" ) {
         Write-Output "$firstprivateip $MASTER_VM_NAME"
     }
 } 

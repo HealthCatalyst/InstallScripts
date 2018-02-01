@@ -1,4 +1,4 @@
-$version = "2018.01.17.2"
+$version = "2018.01.31.1"
 
 # This script is meant for quick & easy install via:
 #   curl -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/azure/main.ps1 | iex;
@@ -8,21 +8,25 @@ Invoke-WebRequest -useb https://raw.githubusercontent.com/HealthCatalyst/Install
 
 do {
     Write-Host "================ Health Catalyst version $version, common functions $(GetCommonVersion) ================"
+    Write-Host "----- Choose Cluster -----"
     Write-Host "0: Change kube to point to another cluster"
+    Write-Host "------ Install -------"
     Write-Host "1: Create a new Azure Container Service"
     Write-Host "2: Setup Load Balancer"
-    Write-Host "3: Show status of cluster"
-    Write-Host "4: Launch Kubernetes Dashboard"
-    Write-Host "5: SSH to Master VM"
-    Write-Host "6: View status of DNS pods"
+    Write-Host "3: Install NLP"
+    Write-Host "4: Install Realtime"
+    Write-Host "----- Troubleshooting ----"
+    Write-Host "5: Show status of cluster"
+    Write-Host "6: Launch Kubernetes Admin Dashboard"
+    Write-Host "7: SSH to Master VM"
+    Write-Host "8: View status of DNS pods"
     Write-Host "------ NLP -----"
-    Write-Host "7: Install NLP"
-    Write-Host "8: Show status of NLP"
-    Write-Host "9: Test web sites"
-    Write-Host "10: Show passwords"
+    Write-Host "9: Show status of NLP"
+    Write-Host "10: Test web sites"
+    Write-Host "11: Show passwords"
+    Write-Host "12: Show NLP logs"
     Write-Host "------ Realtime -----"
-    Write-Host "11: Install Realtime"
-    Write-Host "12: Show status of realtime"
+    Write-Host "13: Show status of realtime"
     Write-Host "-----------"
     Write-Host "q: Quit"
     $input = Read-Host "Please make a selection"
@@ -48,16 +52,26 @@ do {
             Invoke-WebRequest -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/azure/setup-loadbalancer.ps1 | Invoke-Expression;
         } 
         '3' {
-            Write-Host "Current cluster: $(kubectl config current-context)"
-            kubectl get "deployments,pods,services,ingress,secrets" --namespace=kube-system -o wide
+            Invoke-WebRequest -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/nlp/installnlpkubernetes.ps1 | Invoke-Expression;
         } 
         '4' {
+            Invoke-WebRequest -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/realtime/installrealtimekubernetes.ps1 | Invoke-Expression;
+        } 
+        '5' {
+            Write-Host "Current cluster: $(kubectl config current-context)"
+            kubectl version --short
+            kubectl get "deployments,pods,services,ingress,secrets" --namespace=kube-system -o wide
+        } 
+        '6' {
+            # Write-Host "Your kubeconfig file is here: $env:KUBECONFIG"
+            Write-Host "Click Skip on login screen"
             $job = Start-Job -Name "KubDashboard" -ScriptBlock {kubectl proxy}
-            Start-Process -FilePath "http://localhost:8001/api/v1/namespaces/kube-system/services/kubernetes-dashboard/proxy"
+            Start-Process -FilePath "http://localhost:8001/api/v1/namespaces/kube-system/services/https:kubernetes-dashboard:/proxy/"
+            
             Start-Sleep -Seconds 5
             Receive-Job -Job $job
         } 
-        '5' {        
+        '7' {        
             $AKS_PERS_RESOURCE_GROUP_BASE64 = kubectl get secret azure-secret -o jsonpath='{.data.resourcegroup}'
             if (![string]::IsNullOrWhiteSpace($AKS_PERS_RESOURCE_GROUP_BASE64)) {
                 $AKS_PERS_RESOURCE_GROUP = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($AKS_PERS_RESOURCE_GROUP_BASE64))
@@ -80,8 +94,11 @@ do {
             # systemctl list-unit-files | grep .service | grep enabled
             # https://askubuntu.com/questions/795226/how-to-list-all-enabled-services-from-systemctl
 
+            # restart VM: az vm restart -g MyResourceGroup -n MyVm
+            # list vm sizes available: az vm list-sizes --location "eastus" --query "[].name"
+
         } 
-        '6' {
+        '8' {
             kubectl get pods -l k8s-app=kube-dns -n kube-system -o wide
             Do { $confirmation = Read-Host "Do you want to restart DNS pods? (y/n)"}
             while ([string]::IsNullOrWhiteSpace($confirmation))
@@ -94,13 +111,10 @@ do {
                 } 
             }             
         } 
-        '7' {
-            Invoke-WebRequest -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/nlp/installnlpkubernetes.ps1 | Invoke-Expression;
-        } 
-        '8' {
+        '9' {
             kubectl get 'deployments,pods,services,ingress,secrets,persistentvolumeclaims,persistentvolumes,nodes' --namespace=fabricnlp -o wide
         } 
-        '9' {
+        '10' {
            
             $loadBalancerIP = kubectl get svc traefik-ingress-service-public -n kube-system -o jsonpath='{.status.loadBalancer.ingress[].ip}' --ignore-not-found=true
             if ([string]::IsNullOrWhiteSpace($loadBalancerIP)) {
@@ -120,16 +134,21 @@ do {
             Write-Output "$loadBalancerIP solr.$customerid.healthcatalyst.net"            
             Write-Output "$loadBalancerIP nlp.$customerid.healthcatalyst.net"            
             Write-Output "$loadBalancerIP nlpjobs.$customerid.healthcatalyst.net"            
+
         } 
-        '10' {
+        '11' {
             Write-Host "MySql root password: $(ReadSecretPassword -secretname mysqlrootpassword -namespace fabricnlp)"
             Write-Host "MySql NLP_APP_USER password: $(ReadSecretPassword -secretname mysqlpassword -namespace fabricnlp)"
             Write-Host "SendGrid SMTP Relay key: $(ReadSecretPassword -secretname smtprelaypassword -namespace fabricnlp)"
         } 
-        '11' {
-            Invoke-WebRequest -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/realtime/installrealtimekubernetes.ps1 | Invoke-Expression;
-        } 
         '12' {
+            $pods=$(kubectl get pods -n fabricnlp -o jsonpath='{.items[*].metadata.name}')
+            foreach ($pod in $pods.Split(" ")) {
+                Write-Output "=============== Pod: $pod ================="
+                kubectl logs --tail=20 $pod -n fabricnlp
+            }
+        } 
+        '13' {
             kubectl get 'deployments,pods,services,ingress,secrets,persistentvolumeclaims,persistentvolumes,nodes' --namespace=fabricrealtime -o wide
         } 
         'q' {

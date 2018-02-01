@@ -1,27 +1,24 @@
 #!/bin/sh
 PATH=$PATH:/usr/local/bin
-date
-echo "Version 1.068"
+
+echo "$(date) Version 2018.01.31.01"
 
 # https://www.cyberciti.biz/faq/how-do-i-add-jobs-to-cron-under-linux-or-unix-oses/
-# put this script in /etc/cron.hourly/ so it runs every hourly
 
-restartCounts=$(kubectl get pods -l k8s-app=kube-dns -n kube-system -o jsonpath='{.items[*].status.containerStatuses[*].restartCount}')
-needToRestart="n"
-for restartCount in $restartCounts
+dnsPods=$(kubectl get pods -l k8s-app=kube-dns -n kube-system -o jsonpath='{.items[*].metadata.name}')
+for dnsPod in $dnsPods
 do
-    if [ $restartCount -gt "0" ]; then
-        needToRestart="y"
-        echo $restartCount
-    fi
-done
-
-if [ $needToRestart = "y" ]; then
-    failedItems=$(kubectl get pods -l k8s-app=kube-dns -n kube-system -o jsonpath='{.items[*].metadata.name}')
-
-    for item in $failedItems
+    restartCounts=$(kubectl get pods $dnsPod -n kube-system -o jsonpath='{.status.containerStatuses[*].restartCount}')
+    needToRestart="n"    
+    for restartCount in $restartCounts
     do
-        echo "deleting $item"
+        if [ $restartCount -gt "0" ]; then
+            needToRestart="y"
+        fi
+    done    
+
+    if [ $needToRestart = "y" ]; then
+        echo "deleting pod $item with restartCounts: $restartCounts"
         kubectl delete pod $item -n kube-system
-    done
-fi
+    fi    
+done

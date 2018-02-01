@@ -637,8 +637,8 @@ if ($AKS_CLUSTER_ACCESS_TYPE -eq "2") {
 }
 
 if ($AKS_CLUSTER_ACCESS_TYPE -eq "2") {
-    Write-Output "Testing internal load balancer"
-    Invoke-WebRequest -useb -Headers @{"Host" = "dashboard.$dnsrecordname"} -Uri http://$INTERNAL_IP/ | Select-Object -Expand Content
+    # Write-Output "Testing internal load balancer"
+    # Invoke-WebRequest -useb -Headers @{"Host" = "dashboard.$dnsrecordname"} -Uri http://$INTERNAL_IP/ | Select-Object -Expand Content
     
     Write-Output "To test out the load balancer since the vnet, open Git Bash and run:"
     Write-Output "curl -L --verbose --header 'Host: dashboard.$dnsrecordname' 'http://$INTERNAL_IP/' -k"

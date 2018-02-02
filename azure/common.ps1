@@ -1,8 +1,8 @@
-$version = "2018.02.01.02"
+$versioncommon = "2018.02.01.03"
 
-Write-Host "Including common.ps1 version $version"
+Write-Host "Including common.ps1 version $versioncommon"
 function global:GetCommonVersion() {
-    return $version
+    return $versioncommon
 }
 
 function global:CreateShare($resourceGroup, $sharename, $deleteExisting) {

@@ -3,7 +3,7 @@
     "properties": {
         "orchestratorProfile": {
             "orchestratorType": "Kubernetes",
-            "orchestratorRelease": "1.8",
+            "orchestratorRelease": "1.9",
             "kubernetesConfig": {
                 "networkPolicy": "none"
             }
@@ -28,7 +28,7 @@
             {
                 "name": "windowsagent",
                 "osType": "Windows",
-                "count": 2,
+                "count": 1,
                 "vmSize": "Standard_D2_v2",
                 "vnetSubnetId": "REPLACE-SUBNET",
                 "availabilityProfile": "AvailabilitySet",

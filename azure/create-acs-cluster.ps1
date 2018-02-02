@@ -1,11 +1,11 @@
-Write-output "Version 2018.01.30.01"
+Write-output "--- create-acs-cluster Version 2018.02.01.01 ----"
 
 #
 # This script is meant for quick & easy install via:
 #   curl -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/azure/create-acs-cluster.ps1 | iex;
 
 $GITHUB_URL = "https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master"
-# $GITHUB_URL = "C:\Catalyst\git\Installscripts"
+$GITHUB_URL = "C:\Catalyst\git\Installscripts"
 Invoke-WebRequest -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/azure/common.ps1 | Invoke-Expression;
 
 
@@ -19,7 +19,7 @@ $AKS_SUBNET_NAME = ""
 $AKS_SUBNET_RESOURCE_GROUP = ""
 $AKS_SSH_KEY = ""
 $AKS_FIRST_STATIC_IP = ""
-$AKS_USE_AZURE_NETWORKING = "no"
+$AKS_USE_AZURE_NETWORKING = "n"
 $AKS_SERVICE_PRINCIPAL_NAME = ""
 $AKS_SUPPORT_WINDOWS_CONTAINERS = "n"
 
@@ -78,9 +78,9 @@ if ([string]::IsNullOrWhiteSpace($AKS_SUPPORT_WINDOWS_CONTAINERS)) {
 if ("$AKS_SUPPORT_WINDOWS_CONTAINERS" -eq "n") {
     # azure networking is not supported with windows containers
     # do we want to use azure networking or kube networking
-    $AKS_USE_AZURE_NETWORKING = Read-Host "Use Azure networking (default: yes)"
+    $AKS_USE_AZURE_NETWORKING = Read-Host "Use Azure networking (default: y)"
     if ([string]::IsNullOrWhiteSpace($AKS_USE_AZURE_NETWORKING)) {
-        $AKS_USE_AZURE_NETWORKING = "yes"
+        $AKS_USE_AZURE_NETWORKING = "y"
     }
 }
 
@@ -153,14 +153,13 @@ Write-Output "SSH Public Key=$AKS_SSH_KEY"
 $KUBECTL_FILE = "$AKS_LOCAL_FOLDER\kubectl.exe"
 $DESIRED_KUBECTL_VERSION = "v1.9.2"
 $downloadkubectl = "n"
-if (!(Test-Path "$KUBECTL_FILE"))
-{
+if (!(Test-Path "$KUBECTL_FILE")) {
     $downloadkubectl = "y"
 }
 else {
-    $kubectlversion=kubectl version --client=true --short=true
-    $kubectlversionMatches=$($kubectlversion -match "$DESIRED_KUBECTL_VERSION")
-    if(!$kubectlversionMatches){
+    $kubectlversion = kubectl version --client=true --short=true
+    $kubectlversionMatches = $($kubectlversion -match "$DESIRED_KUBECTL_VERSION")
+    if (!$kubectlversionMatches) {
         $downloadkubectl = "y"
     }
 }
@@ -388,7 +387,7 @@ if ($resourceGroupExists -eq "true") {
         az resource delete --ids $(az resource list --resource-group $AKS_PERS_RESOURCE_GROUP --resource-type "Microsoft.Network/publicIPAddresses" --query "[].id" -o tsv | Where-Object {!"$_".EndsWith("PublicIP")} )
     }
     
-    if (("$AKS_VNET_NAME") -and ("$AKS_USE_AZURE_NETWORKING" -eq "no")) {
+    if (("$AKS_VNET_NAME") -and ("$AKS_USE_AZURE_NETWORKING" -eq "n")) {
         Write-Output "Switching the subnet to a temp route table and tempnsg so we can delete the old route table and nsg"
 
         $routeid = $(az network route-table show --name temproutetable --resource-group $AKS_PERS_RESOURCE_GROUP --query "id" -o tsv)
@@ -495,15 +494,15 @@ $templateFile = "acs.template.json"
 if (!"$AKS_VNET_NAME") {
     $templateFile = "acs.template.nosubnet.json"    
 }
-elseif ("$AKS_USE_AZURE_NETWORKING" -eq "yes") {
-    $templateFile = "acs.template.azurenetwork.json"             
-}
 elseif ("$AKS_SUPPORT_WINDOWS_CONTAINERS" -eq "y") {
     # https://github.com/Azure/acs-engine/issues/1767
     $templateFile = "acs.template.linuxwindows.json"    
 }
+elseif ("$AKS_USE_AZURE_NETWORKING" -eq "y") {
+    $templateFile = "acs.template.azurenetwork.json"             
+}
 
-Write-Output "Using template: $templateFile"
+Write-Output "Using template: $GITHUB_URL/azure/$templateFile"
 
 $AKS_LOCAL_TEMP_FOLDER = "$AKS_LOCAL_FOLDER\$AKS_PERS_RESOURCE_GROUP\temp"
 if (!(Test-Path -Path "$AKS_LOCAL_TEMP_FOLDER")) {
@@ -565,6 +564,22 @@ Write-Output "Generating ACS engine template"
 
 acs-engine generate $output --output-directory $acsoutputfolder
 
+if ("$AKS_SUPPORT_WINDOWS_CONTAINERS" -eq "y") {
+
+    Write-Output "Adding subnet to azuredeploy.json to work around acs-engine bug"
+    $outputdeployfile = "$acsoutputfolder\azuredeploy.json"
+    # https://github.com/Azure/acs-engine/issues/1767
+    # "subnet": "${mysubnetid}"
+    # replace     "vnetSubnetID": "[parameters('masterVnetSubnetID')]"
+    # "subnet": "[parameters('masterVnetSubnetID')]"
+
+    #there is a bug in acs-engine: https://github.com/Azure/acs-engine/issues/1767
+    $mydeployjson = Get-Content -Raw -Path $outputdeployfile | ConvertFrom-Json
+    $mydeployjson.variables | Add-Member -Type NoteProperty -Name 'subnet' -Value "[parameters('masterVnetSubnetID')]"
+    $outjson = ConvertTo-Json -InputObject $mydeployjson -Depth 10
+    Set-Content -Path $outputdeployfile -Value $outjson  
+}
+
 # --orchestrator-version 1.8 `
 # --ssh-key-value 
 
@@ -592,7 +607,7 @@ az group deployment create `
 
 # if joining a vnet, and not using azure networking then we have to manually set the route-table
 if ("$AKS_VNET_NAME") {
-    if ("$AKS_USE_AZURE_NETWORKING" -eq "no") {
+    if ("$AKS_USE_AZURE_NETWORKING" -eq "n") {
         Write-Output "Attaching route table"
         # https://github.com/Azure/acs-engine/blob/master/examples/vnet/k8s-vnet-postdeploy.sh
         $rt = az network route-table list -g "${AKS_PERS_RESOURCE_GROUP}" --query "[?name != 'temproutetable'].id" -o tsv

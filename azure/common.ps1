@@ -1,4 +1,4 @@
-$versioncommon = "2018.02.01.03"
+$versioncommon = "2018.02.05.01"
 
 Write-Host "Including common.ps1 version $versioncommon"
 function global:GetCommonVersion() {
@@ -227,20 +227,20 @@ function global:Get-FirstIP {
 }
 
 function global:SetupCronTab($resourceGroup) {
-    $virtualmachines = az vm list -g $resourceGroup --query "[].name" -o tsv
+    $virtualmachines = az vm list -g $resourceGroup --query "[?storageProfile.osDisk.osType != 'Windows'].name" -o tsv
     ForEach ($vm in $virtualmachines) {
         if ($vm -match "master" ) {
-            $cmd = "mkdir -p /opt/healthcatalyst; curl -sSL https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/azure/restartkubedns.txt -o /opt/healthcatalyst/restartkubedns.sh; crontab -l | grep -v 'restartkubedns.sh' - | { cat; echo '*/10 * * * * /opt/healthcatalyst/restartkubedns.sh >> /tmp/restartkubedns.log 2>&1'; } | crontab -"
+            $cmd = "crontab -e; mkdir -p /opt/healthcatalyst; curl -sSL https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/azure/restartkubedns.txt -o /opt/healthcatalyst/restartkubedns.sh; crontab -l | grep -v 'restartkubedns.sh' - | { cat; echo '*/10 * * * * /opt/healthcatalyst/restartkubedns.sh >> /tmp/restartkubedns.log 2>&1 \n'; } | crontab -"
             az vm run-command invoke -g $resourceGroup -n $vm --command-id RunShellScript --scripts "$cmd"
         }
     }
 }
 
 function global:UpdateOSInVMs($resourceGroup) {
-    $virtualmachines = az vm list -g $resourceGroup --query "[].name" -o tsv
+    $virtualmachines = az vm list -g $resourceGroup --query "[?storageProfile.osDisk.osType != 'Windows'].name" -o tsv
     ForEach ($vm in $virtualmachines) {
         Write-Output "Updating OS in vm: $vm"
-        $cmd = "apt-get update && apt-get upgrade"
+        $cmd = "apt-get update && apt-get -y upgrade"
         az vm run-command invoke -g $resourceGroup -n $vm --command-id RunShellScript --scripts "$cmd"
     }
 }
@@ -275,7 +275,7 @@ function global:SetHostFileInVms( $resourceGroup) {
     $fullCmdToUpdateHostsFiles = ""
     $cmdToRemovePreviousHostEntries = ""
     $cmdToAddNewHostEntries = ""
-    $virtualmachines = az vm list -g $resourceGroup --query "[].name" -o tsv
+    $virtualmachines = az vm list -g $resourceGroup --query "[?storageProfile.osDisk.osType != 'Windows'].name" -o tsv
     ForEach ($vm in $virtualmachines) {
         $firstprivateip = az vm list-ip-addresses -g $resourceGroup -n $vm --query "[].virtualMachine.network.privateIpAddresses[0]" -o tsv
         # $privateiplist= az vm show -g $AKS_PERS_RESOURCE_GROUP -n $vm -d --query privateIps -otsv

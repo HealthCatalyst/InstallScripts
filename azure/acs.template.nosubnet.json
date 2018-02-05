@@ -3,9 +3,10 @@
     "properties": {
         "orchestratorProfile": {
             "orchestratorType": "Kubernetes",
-            "orchestratorRelease": "1.8",
+            "orchestratorRelease": "1.9",
             "kubernetesConfig": {
-                "networkPolicy": "azure"
+                "networkPolicy": "none",
+                "dockerEngineVersion": "1.12.*"
             }
         },
         "masterProfile": {
@@ -15,12 +16,23 @@
             "storageProfile": "ManagedDisks"
         },
         "agentPoolProfiles": [{
-            "name": "linuxagent",
-            "count": 2,
-            "vmSize": "Standard_D2_v2",
-            "availabilityProfile": "AvailabilitySet",
-            "storageProfile": "ManagedDisks"
-        }],
+                "name": "linuxagent",
+                "count": 2,
+                "vmSize": "Standard_D2_v2",
+                "availabilityProfile": "AvailabilitySet",
+                "storageProfile": "ManagedDisks"
+            },
+            {
+                "name": "windowsagent",
+                "osType": "Windows",
+                "OSDiskSizeGB": 300,
+                "count": 1,
+                "vmSize": "Standard_D2_v2",
+                "availabilityProfile": "AvailabilitySet",
+                "storageProfile": "ManagedDisks",
+                "diskSizesGB": [1020]
+            }
+        ],
         "linuxProfile": {
             "adminUsername": "azureuser",
             "ssh": {
@@ -28,6 +40,10 @@
                     "keyData": "REPLACE-SSH-KEY"
                 }]
             }
+        },
+        "windowsProfile": {
+            "adminUsername": "azureuser",
+            "adminPassword": "REPLACE-WINDOWS-PASSWORD"
         },
         "servicePrincipalProfile": {
             "clientId": "REPLACE-CLIENTID",

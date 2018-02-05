@@ -5,7 +5,8 @@
             "orchestratorType": "Kubernetes",
             "orchestratorRelease": "1.9",
             "kubernetesConfig": {
-                "networkPolicy": "none"
+                "networkPolicy": "none",
+                "dockerEngineVersion": "1.12.*"
             }
         },
         "masterProfile": {
@@ -28,11 +29,13 @@
             {
                 "name": "windowsagent",
                 "osType": "Windows",
+                "OSDiskSizeGB": 300,
                 "count": 1,
                 "vmSize": "Standard_D2_v2",
                 "vnetSubnetId": "REPLACE-SUBNET",
                 "availabilityProfile": "AvailabilitySet",
-                "storageProfile": "ManagedDisks"
+                "storageProfile": "ManagedDisks",
+                "diskSizesGB": [1020]
             }
         ],
         "linuxProfile": {

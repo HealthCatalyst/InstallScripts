@@ -1,8 +1,11 @@
-$version = "2018.02.01.4"
+$version = "2018.02.02.01"
 
 # This script is meant for quick & easy install via:
 #   curl -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/azure/main.ps1 | iex;
+
 Invoke-WebRequest -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/azure/common.ps1 | Invoke-Expression;
+# Get-Content ./azure/common.ps1 -Raw | Invoke-Expression;
+
 
 # Get-Content -Path "./azure/common.ps1" | Invoke-Expression;
 

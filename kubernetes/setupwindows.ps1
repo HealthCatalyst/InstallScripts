@@ -29,3 +29,4 @@ $env:KUBECONFIG="C:\k\config"
 ./start-kubelet.ps1 -ClusterCidr 192.168.0.0/16
 ./start-kubeproxy.ps1
 
+kubectl apply -f https://raw.githubusercontent.com/Microsoft/SDN/master/Kubernetes/WebServer.yaml

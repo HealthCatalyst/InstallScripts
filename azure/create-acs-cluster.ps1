@@ -1,13 +1,14 @@
-Write-output "--- create-acs-cluster Version 2018.02.01.01 ----"
+Write-output "--- create-acs-cluster Version 2018.02.05.01 ----"
 
 #
 # This script is meant for quick & easy install via:
 #   curl -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/azure/create-acs-cluster.ps1 | iex;
 
 $GITHUB_URL = "https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master"
-$GITHUB_URL = "C:\Catalyst\git\Installscripts"
-Invoke-WebRequest -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/azure/common.ps1 | Invoke-Expression;
+# $GITHUB_URL = "C:\Catalyst\git\Installscripts"
 
+Invoke-WebRequest -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/azure/common.ps1 | Invoke-Expression;
+# Get-Content ./azure/common.ps1 -Raw | Invoke-Expression;
 
 $AKS_PERS_RESOURCE_GROUP = ""
 $AKS_PERS_LOCATION = ""
@@ -295,7 +296,13 @@ if ($confirmation -eq 'y') {
             Write-Output "Found subnet: [$mysubnetid]"
         }
     }
-}    
+}
+else {
+    # create a vnet
+    # create a subnet
+
+    # az network vnet create -g MyResourceGroup -n MyVnet --address-prefix 10.0.0.0/16 --subnet-name MySubnet --subnet-prefix 10.0.0.0/24    
+}
 
 
 # find CIDR for subnet
@@ -438,6 +445,8 @@ else {
     az group create --name $AKS_PERS_RESOURCE_GROUP --location $AKS_PERS_LOCATION --verbose
 }
 
+# Read-Host "continue?"
+
 
 Write-Output "checking if Service Principal already exists"
 $AKS_SERVICE_PRINCIPAL_CLIENTID = az ad sp list --display-name ${AKS_SERVICE_PRINCIPAL_NAME} --query "[].appId" --output tsv
@@ -554,6 +563,9 @@ if (!(Test-Path -Path "$acsoutputfolder")) {
     New-Item -ItemType directory -Path "$acsoutputfolder"
 }
 
+Write-Output "Deleting everything in the output folder"
+Remove-Item -Path $acsoutputfolder -Recurse -Force
+
 Write-Output "Generating ACS engine template"
 
 # acs-engine deploy --subscription-id "$AKS_SUBSCRIPTION_ID" `
@@ -566,18 +578,20 @@ acs-engine generate $output --output-directory $acsoutputfolder
 
 if ("$AKS_SUPPORT_WINDOWS_CONTAINERS" -eq "y") {
 
-    Write-Output "Adding subnet to azuredeploy.json to work around acs-engine bug"
-    $outputdeployfile = "$acsoutputfolder\azuredeploy.json"
-    # https://github.com/Azure/acs-engine/issues/1767
-    # "subnet": "${mysubnetid}"
-    # replace     "vnetSubnetID": "[parameters('masterVnetSubnetID')]"
-    # "subnet": "[parameters('masterVnetSubnetID')]"
+    if ("$AKS_VNET_NAME") {
+        Write-Output "Adding subnet to azuredeploy.json to work around acs-engine bug"
+        $outputdeployfile = "$acsoutputfolder\azuredeploy.json"
+        # https://github.com/Azure/acs-engine/issues/1767
+        # "subnet": "${mysubnetid}"
+        # replace     "vnetSubnetID": "[parameters('masterVnetSubnetID')]"
+        # "subnet": "[parameters('masterVnetSubnetID')]"
 
-    #there is a bug in acs-engine: https://github.com/Azure/acs-engine/issues/1767
-    $mydeployjson = Get-Content -Raw -Path $outputdeployfile | ConvertFrom-Json
-    $mydeployjson.variables | Add-Member -Type NoteProperty -Name 'subnet' -Value "[parameters('masterVnetSubnetID')]"
-    $outjson = ConvertTo-Json -InputObject $mydeployjson -Depth 10
-    Set-Content -Path $outputdeployfile -Value $outjson  
+        #there is a bug in acs-engine: https://github.com/Azure/acs-engine/issues/1767
+        $mydeployjson = Get-Content -Raw -Path $outputdeployfile | ConvertFrom-Json
+        $mydeployjson.variables | Add-Member -Type NoteProperty -Name 'subnet' -Value "[parameters('masterVnetSubnetID')]"
+        $outjson = ConvertTo-Json -InputObject $mydeployjson -Depth 10
+        Set-Content -Path $outputdeployfile -Value $outjson  
+    }
 }
 
 # --orchestrator-version 1.8 `

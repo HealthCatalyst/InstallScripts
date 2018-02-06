@@ -1,4 +1,4 @@
-$versioncommon = "2018.02.05.01"
+$versioncommon = "2018.02.06.01"
 
 Write-Host "Including common.ps1 version $versioncommon"
 function global:GetCommonVersion() {
@@ -304,7 +304,7 @@ function global:SetHostFileInVms( $resourceGroup) {
 # from https://github.com/majkinetor/posh/blob/master/MM_Network/Stop-ProcessByPort.ps1
 function global:Stop-ProcessByPort( [ValidateNotNullOrEmpty()] [int] $Port ) {    
     $netstat = netstat.exe -ano | Select-Object -Skip 4
-    $p_line  = $netstat | Where-Object { $p = (-split $_ | Select-Object -Index 1) -split ':' | Select-Object -Last 1; $p -eq $Port } | Select-Object -First 1
+    $p_line = $netstat | Where-Object { $p = ( -split $_ | Select-Object -Index 1) -split ':' | Select-Object -Last 1; $p -eq $Port } | Select-Object -First 1
     if (!$p_line) { Write-Host "No process found using port" $Port; return }    
     $p_id = $p_line -split '\s+' | Select-Object -Last 1
     if (!$p_id) { throw "Can't parse process id for port $Port" }
@@ -316,8 +316,129 @@ function global:Stop-ProcessByPort( [ValidateNotNullOrEmpty()] [int] $Port ) {
 
 function global:Get-ProcessByPort( [ValidateNotNullOrEmpty()] [int] $Port ) {    
     $netstat = netstat.exe -ano | Select-Object -Skip 4
-    $p_line  = $netstat | Where-Object { $p = (-split $_ | Select-Object -Index 1) -split ':' | Select-Object -Last 1; $p -eq $Port } | Select-Object -First 1
+    $p_line = $netstat | Where-Object { $p = ( -split $_ | Select-Object -Index 1) -split ':' | Select-Object -Last 1; $p -eq $Port } | Select-Object -First 1
     if (!$p_line) { return; } 
     $p_id = $p_line -split '\s+' | Select-Object -Last 1
     return $p_id;
+}
+
+function global:CleanResourceGroup($resourceGroup, $location, $vnet, $subnet, $subnetResourceGroup, $storageAccount) {
+    Write-Output "checking if resource group already exists"
+    $resourceGroupExists = az group exists --name ${resourceGroup}
+    if ($resourceGroupExists -eq "true") {
+
+        if ($(az vm list -g $resourceGroup --query "[].id" -o tsv).length -ne 0) {
+            Write-Host "The resource group [${resourceGroup}] already exists with the following VMs"
+            az resource list --resource-group "${resourceGroup}" --resource-type "Microsoft.Compute/virtualMachines" --query "[].id"
+        
+            Do { $confirmation = Read-Host "Would you like to continue (all above resources will be deleted)? (y/n)"}
+            while ([string]::IsNullOrWhiteSpace($confirmation)) 
+
+            if ($confirmation -eq 'n') {
+                Read-Host "Hit ENTER to exit"
+                exit 0
+            }    
+        }
+        else {
+            Write-Host "The resource group [${resourceGroup}] already exists but has no VMs"
+        }
+
+        if ("$vnet") {
+            # Write-Output "removing route table"
+            # az network vnet subnet update -n "${subnet}" -g "${AKS_SUBNET_RESOURCE_GROUP}" --vnet-name "${vnet}" --route-table ""
+        }
+        Write-Output "cleaning out the existing group: [$resourceGroup]"
+        #az group delete --name $resourceGroup --verbose
+
+        if ($(az vm list -g $resourceGroup --query "[].id" -o tsv).length -ne 0) {
+            Write-Output "delete the VMs first"
+            az vm delete --ids $(az vm list -g $resourceGroup --query "[].id" -o tsv) --verbose --yes
+        }
+
+        if ($(az resource list --resource-group $resourceGroup --resource-type "Microsoft.Network/networkInterfaces" --query "[].id" -o tsv ).length -ne 0) {
+            Write-Output "delete the nics"
+            az resource delete --ids $(az resource list --resource-group $resourceGroup --resource-type "Microsoft.Network/networkInterfaces" --query "[].id" -o tsv )  --verbose
+        }
+
+        if ($(az resource list --resource-group $resourceGroup --resource-type "Microsoft.Compute/disks" --query "[].id" -o tsv ).length -ne 0) {
+            Write-Output "delete the disks"
+            az resource delete --ids $(az resource list --resource-group $resourceGroup --resource-type "Microsoft.Compute/disks" --query "[].id" -o tsv )
+        }
+
+        if ($(az resource list --resource-group $resourceGroup --resource-type "Microsoft.Compute/availabilitySets" --query "[].id" -o tsv ).length -ne 0) {
+            Write-Output "delete the availabilitysets"
+            az resource delete --ids $(az resource list --resource-group $resourceGroup --resource-type "Microsoft.Compute/availabilitySets" --query "[].id" -o tsv )
+        }
+
+        if ($(az resource list --resource-group $resourceGroup --resource-type "Microsoft.Network/loadBalancers" --query "[].id" -o tsv ).length -ne 0) {
+            Write-Output "delete the load balancers"
+            az resource delete --ids $(az resource list --resource-group $resourceGroup --resource-type "Microsoft.Network/loadBalancers" --query "[].id" -o tsv )
+        }
+
+        if ($(az resource list --resource-group $resourceGroup --resource-type "Microsoft.Network/applicationGateways" --query "[].id" -o tsv ).length -ne 0) {
+            Write-Output "delete the application gateways"
+            az resource delete --ids $(az resource list --resource-group $resourceGroup --resource-type "Microsoft.Network/applicationGateways" --query "[].id" -o tsv )
+        }
+    
+        if ($(az resource list --resource-group $resourceGroup --resource-type "Microsoft.Storage/storageAccounts" --query "[].id" -o tsv | Where-Object {!"$_".EndsWith("$storageAccount")}).length -ne 0) {
+            Write-Output "delete the storage accounts EXCEPT storage account we created in the past"
+            az resource delete --ids $(az resource list --resource-group $resourceGroup --resource-type "Microsoft.Storage/storageAccounts" --query "[].id" -o tsv | Where-Object {!"$_".EndsWith("${storageAccount}")} )
+            # az resource list --resource-group fabricnlp3 --resource-type "Microsoft.Storage/storageAccounts" --query "[].id" -o tsv | ForEach-Object { if (!"$_".EndsWith("${resourceGroup}storage")) {  az resource delete --ids "$_" }}    
+        }
+        if ($(az resource list --resource-group $resourceGroup --resource-type "Microsoft.Network/publicIPAddresses" --query "[].id" -o tsv | Where-Object {!"$_".EndsWith("PublicIP")}).length -ne 0) {
+            Write-Output "delete the public IPs EXCEPT Ingress IP we created in the past"
+            az resource delete --ids $(az resource list --resource-group $resourceGroup --resource-type "Microsoft.Network/publicIPAddresses" --query "[].id" -o tsv | Where-Object {!"$_".EndsWith("PublicIP")} )
+        }
+    
+        if (("$vnet") -and ("$AKS_USE_AZURE_NETWORKING" -eq "n")) {
+            Write-Output "Switching the subnet to a temp route table and tempnsg so we can delete the old route table and nsg"
+
+            $routeid = $(az network route-table show --name temproutetable --resource-group $resourceGroup --query "id" -o tsv)
+            if ([string]::IsNullOrWhiteSpace($routeid)) {
+                Write-Output "create temproutetable"
+                $routeid = az network route-table create --name temproutetable --resource-group $resourceGroup --query "id" -o tsv   
+            }
+            $routeid = $(az network route-table show --name temproutetable --resource-group $resourceGroup --query "id" -o tsv)
+            Write-Output "temproutetable: $routeid"
+
+            $nsg = $(az network nsg show --name tempnsg --resource-group $resourceGroup --query "id" -o tsv)
+            if ([string]::IsNullOrWhiteSpace($nsg)) {
+                Write-Output "create tempnsg"
+                $nsg = az network nsg create --name tempnsg --resource-group $resourceGroup --query "id" -o tsv   
+            }
+            $nsg = $(az network nsg show --name tempnsg --resource-group $resourceGroup --query "id" -o tsv)
+            Write-Output "tempnsg: $nsg"
+        
+            Write-Output "Updating the subnet"
+            az network vnet subnet update -n "${subnet}" -g "${subnetResourceGroup}" --vnet-name "${vnet}" --route-table "$routeid" --network-security-group "$nsg"
+
+
+            if ($(az resource list --resource-group $resourceGroup --resource-type "Microsoft.Network/routeTables" --query "[?name != 'temproutetable'].id" -o tsv ).length -ne 0) {
+                Write-Output "delete the routes EXCEPT the temproutetable we just created"
+                az resource delete --ids $(az resource list --resource-group $resourceGroup --resource-type "Microsoft.Network/routeTables" --query "[?name != 'temproutetable'].id" -o tsv)
+            }
+            if ($(az resource list --resource-group $resourceGroup --resource-type "Microsoft.Network/networkSecurityGroups" --query "[?name != 'tempnsg'].id" -o tsv).length -ne 0) {
+                Write-Output "delete the nsgs EXCEPT the tempnsg we just created"
+                az resource delete --ids $(az resource list --resource-group $resourceGroup --resource-type "Microsoft.Network/networkSecurityGroups" --query "[?name != 'tempnsg'].id" -o tsv)
+            }
+        }
+        else {
+            if ($(az resource list --resource-group $resourceGroup --resource-type "Microsoft.Network/routeTables" --query "[].id" -o tsv).length -ne 0) {
+                Write-Output "delete the routes EXCEPT the temproutetable we just created"
+                az resource delete --ids $(az resource list --resource-group $resourceGroup --resource-type "Microsoft.Network/routeTables" --query "[].id" -o tsv)
+            }
+            $networkSecurityGroup = "$($resourceGroup.ToLower())-nsg"
+            if ($(az resource list --resource-group $resourceGroup --resource-type "Microsoft.Network/networkSecurityGroups" --query "[?name != '${$networkSecurityGroup}'].id" -o tsv ).length -ne 0) {
+                Write-Output "delete the network security groups"
+                az resource delete --ids $(az resource list --resource-group $resourceGroup --resource-type "Microsoft.Network/networkSecurityGroups" --query "[?name != '${$networkSecurityGroup}'].id" -o tsv )
+            }
+    
+        }
+        # note: do not delete the Microsoft.Network/publicIPAddresses otherwise the loadBalancer will get a new IP
+    }
+    else {
+        Write-Output "Create the Resource Group"
+        az group create --name $resourceGroup --location $location --verbose
+    }
+
 }

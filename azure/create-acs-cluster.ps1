@@ -1,4 +1,4 @@
-Write-output "--- create-acs-cluster Version 2018.02.05.01 ----"
+Write-output "--- create-acs-cluster Version 2018.02.06.01 ----"
 
 #
 # This script is meant for quick & easy install via:
@@ -327,126 +327,11 @@ if ("$AKS_VNET_NAME") {
     Write-Output "First static IP=[${AKS_FIRST_STATIC_IP}]"
 }
 
-Write-Output "checking if resource group already exists"
-$resourceGroupExists = az group exists --name ${AKS_PERS_RESOURCE_GROUP}
-if ($resourceGroupExists -eq "true") {
-
-    if ($(az vm list -g $AKS_PERS_RESOURCE_GROUP --query "[].id" -o tsv).length -ne 0) {
-        Write-Host "The resource group [${AKS_PERS_RESOURCE_GROUP}] already exists with the following VMs"
-        az resource list --resource-group "${AKS_PERS_RESOURCE_GROUP}" --resource-type "Microsoft.Compute/virtualMachines" --query "[].id"
-        
-        Do { $confirmation = Read-Host "Would you like to continue (all above resources will be deleted)? (y/n)"}
-        while ([string]::IsNullOrWhiteSpace($confirmation)) 
-
-        if ($confirmation -eq 'n') {
-            Read-Host "Hit ENTER to exit"
-            exit 0
-        }    
-    }
-    else {
-        Write-Host "The resource group [${AKS_PERS_RESOURCE_GROUP}] already exists but has no VMs"
-    }
-
-    if ("$AKS_VNET_NAME") {
-        # Write-Output "removing route table"
-        # az network vnet subnet update -n "${AKS_SUBNET_NAME}" -g "${AKS_SUBNET_RESOURCE_GROUP}" --vnet-name "${AKS_VNET_NAME}" --route-table ""
-    }
-    Write-Output "cleaning out the existing group: [$AKS_PERS_RESOURCE_GROUP]"
-    #az group delete --name $AKS_PERS_RESOURCE_GROUP --verbose
-
-    if ($(az vm list -g $AKS_PERS_RESOURCE_GROUP --query "[].id" -o tsv).length -ne 0) {
-        Write-Output "delete the VMs first"
-        az vm delete --ids $(az vm list -g $AKS_PERS_RESOURCE_GROUP --query "[].id" -o tsv) --verbose --yes
-    }
-
-    if ($(az resource list --resource-group $AKS_PERS_RESOURCE_GROUP --resource-type "Microsoft.Network/networkInterfaces" --query "[].id" -o tsv ).length -ne 0) {
-        Write-Output "delete the nics"
-        az resource delete --ids $(az resource list --resource-group $AKS_PERS_RESOURCE_GROUP --resource-type "Microsoft.Network/networkInterfaces" --query "[].id" -o tsv )  --verbose
-    }
-
-    if ($(az resource list --resource-group $AKS_PERS_RESOURCE_GROUP --resource-type "Microsoft.Compute/disks" --query "[].id" -o tsv ).length -ne 0) {
-        Write-Output "delete the disks"
-        az resource delete --ids $(az resource list --resource-group $AKS_PERS_RESOURCE_GROUP --resource-type "Microsoft.Compute/disks" --query "[].id" -o tsv )
-    }
-
-    if ($(az resource list --resource-group $AKS_PERS_RESOURCE_GROUP --resource-type "Microsoft.Compute/availabilitySets" --query "[].id" -o tsv ).length -ne 0) {
-        Write-Output "delete the availabilitysets"
-        az resource delete --ids $(az resource list --resource-group $AKS_PERS_RESOURCE_GROUP --resource-type "Microsoft.Compute/availabilitySets" --query "[].id" -o tsv )
-    }
-
-    if ($(az resource list --resource-group $AKS_PERS_RESOURCE_GROUP --resource-type "Microsoft.Network/loadBalancers" --query "[].id" -o tsv ).length -ne 0) {
-        Write-Output "delete the load balancers"
-        az resource delete --ids $(az resource list --resource-group $AKS_PERS_RESOURCE_GROUP --resource-type "Microsoft.Network/loadBalancers" --query "[].id" -o tsv )
-    }
-
-    if ($(az resource list --resource-group $AKS_PERS_RESOURCE_GROUP --resource-type "Microsoft.Network/applicationGateways" --query "[].id" -o tsv ).length -ne 0) {
-        Write-Output "delete the application gateways"
-        az resource delete --ids $(az resource list --resource-group $AKS_PERS_RESOURCE_GROUP --resource-type "Microsoft.Network/applicationGateways" --query "[].id" -o tsv )
-    }
-    
-    if ($(az resource list --resource-group $AKS_PERS_RESOURCE_GROUP --resource-type "Microsoft.Storage/storageAccounts" --query "[].id" -o tsv | Where-Object {!"$_".EndsWith("$AKS_PERS_STORAGE_ACCOUNT_NAME")}).length -ne 0) {
-        Write-Output "delete the storage accounts EXCEPT storage account we created in the past"
-        az resource delete --ids $(az resource list --resource-group $AKS_PERS_RESOURCE_GROUP --resource-type "Microsoft.Storage/storageAccounts" --query "[].id" -o tsv | Where-Object {!"$_".EndsWith("${AKS_PERS_STORAGE_ACCOUNT_NAME}")} )
-        # az resource list --resource-group fabricnlp3 --resource-type "Microsoft.Storage/storageAccounts" --query "[].id" -o tsv | ForEach-Object { if (!"$_".EndsWith("${AKS_PERS_RESOURCE_GROUP}storage")) {  az resource delete --ids "$_" }}    
-    }
-    if ($(az resource list --resource-group $AKS_PERS_RESOURCE_GROUP --resource-type "Microsoft.Network/publicIPAddresses" --query "[].id" -o tsv | Where-Object {!"$_".EndsWith("PublicIP")}).length -ne 0) {
-        Write-Output "delete the public IPs EXCEPT Ingress IP we created in the past"
-        az resource delete --ids $(az resource list --resource-group $AKS_PERS_RESOURCE_GROUP --resource-type "Microsoft.Network/publicIPAddresses" --query "[].id" -o tsv | Where-Object {!"$_".EndsWith("PublicIP")} )
-    }
-    
-    if (("$AKS_VNET_NAME") -and ("$AKS_USE_AZURE_NETWORKING" -eq "n")) {
-        Write-Output "Switching the subnet to a temp route table and tempnsg so we can delete the old route table and nsg"
-
-        $routeid = $(az network route-table show --name temproutetable --resource-group $AKS_PERS_RESOURCE_GROUP --query "id" -o tsv)
-        if ([string]::IsNullOrWhiteSpace($routeid)) {
-            Write-Output "create temproutetable"
-            $routeid = az network route-table create --name temproutetable --resource-group $AKS_PERS_RESOURCE_GROUP --query "id" -o tsv   
-        }
-        $routeid = $(az network route-table show --name temproutetable --resource-group $AKS_PERS_RESOURCE_GROUP --query "id" -o tsv)
-        Write-Output "temproutetable: $routeid"
-
-        $nsg = $(az network nsg show --name tempnsg --resource-group $AKS_PERS_RESOURCE_GROUP --query "id" -o tsv)
-        if ([string]::IsNullOrWhiteSpace($nsg)) {
-            Write-Output "create tempnsg"
-            $nsg = az network nsg create --name tempnsg --resource-group $AKS_PERS_RESOURCE_GROUP --query "id" -o tsv   
-        }
-        $nsg = $(az network nsg show --name tempnsg --resource-group $AKS_PERS_RESOURCE_GROUP --query "id" -o tsv)
-        Write-Output "tempnsg: $nsg"
-        
-        Write-Output "Updating the subnet"
-        az network vnet subnet update -n "${AKS_SUBNET_NAME}" -g "${AKS_SUBNET_RESOURCE_GROUP}" --vnet-name "${AKS_VNET_NAME}" --route-table "$routeid" --network-security-group "$nsg"
-
-
-        if ($(az resource list --resource-group $AKS_PERS_RESOURCE_GROUP --resource-type "Microsoft.Network/routeTables" --query "[?name != 'temproutetable'].id" -o tsv ).length -ne 0) {
-            Write-Output "delete the routes EXCEPT the temproutetable we just created"
-            az resource delete --ids $(az resource list --resource-group $AKS_PERS_RESOURCE_GROUP --resource-type "Microsoft.Network/routeTables" --query "[?name != 'temproutetable'].id" -o tsv)
-        }
-        if ($(az resource list --resource-group $AKS_PERS_RESOURCE_GROUP --resource-type "Microsoft.Network/networkSecurityGroups" --query "[?name != 'tempnsg'].id" -o tsv).length -ne 0) {
-            Write-Output "delete the nsgs EXCEPT the tempnsg we just created"
-            az resource delete --ids $(az resource list --resource-group $AKS_PERS_RESOURCE_GROUP --resource-type "Microsoft.Network/networkSecurityGroups" --query "[?name != 'tempnsg'].id" -o tsv)
-        }
-    }
-    else {
-        if ($(az resource list --resource-group $AKS_PERS_RESOURCE_GROUP --resource-type "Microsoft.Network/routeTables" --query "[].id" -o tsv).length -ne 0) {
-            Write-Output "delete the routes EXCEPT the temproutetable we just created"
-            az resource delete --ids $(az resource list --resource-group $AKS_PERS_RESOURCE_GROUP --resource-type "Microsoft.Network/routeTables" --query "[].id" -o tsv)
-        }
-        $AKS_PERS_NETWORK_SECURITY_GROUP = "$($AKS_PERS_RESOURCE_GROUP.ToLower())-nsg"
-        if ($(az resource list --resource-group $AKS_PERS_RESOURCE_GROUP --resource-type "Microsoft.Network/networkSecurityGroups" --query "[?name != '${$AKS_PERS_NETWORK_SECURITY_GROUP}'].id" -o tsv ).length -ne 0) {
-            Write-Output "delete the network security groups"
-            az resource delete --ids $(az resource list --resource-group $AKS_PERS_RESOURCE_GROUP --resource-type "Microsoft.Network/networkSecurityGroups" --query "[?name != '${$AKS_PERS_NETWORK_SECURITY_GROUP}'].id" -o tsv )
-        }
-    
-    }
-    # note: do not delete the Microsoft.Network/publicIPAddresses otherwise the loadBalancer will get a new IP
-}
-else {
-    Write-Output "Create the Resource Group"
-    az group create --name $AKS_PERS_RESOURCE_GROUP --location $AKS_PERS_LOCATION --verbose
-}
+CleanResourceGroup -resourceGroup ${AKS_PERS_RESOURCE_GROUP} -location $AKS_PERS_LOCATION -vnet $AKS_VNET_NAME `
+                    -subnet $AKS_SUBNET_NAME -subnetResourceGroup $AKS_SUBNET_RESOURCE_GROUP `
+                    -storageAccount $AKS_PERS_STORAGE_ACCOUNT_NAME
 
 # Read-Host "continue?"
-
 
 Write-Output "checking if Service Principal already exists"
 $AKS_SERVICE_PRINCIPAL_CLIENTID = az ad sp list --display-name ${AKS_SERVICE_PRINCIPAL_NAME} --query "[].appId" --output tsv
@@ -715,12 +600,12 @@ kubectl get "deployments,pods,services,ingress,secrets" --namespace=kube-system 
 # kubectl patch deployment kube-dns-v20 -n kube-system -p '{"spec":{"template":{"spec":{"containers":[{"name":"myapp","image":"172.20.34.206:5000/myapp:img:3.0"}]}}}}'
 # kubectl patch deployment kube-dns-v20 -n kube-system -p '{"spec":{"template":{"spec":{"restartPolicy":"Never"}}}}'
 
-Write-Output "Restarting DNS Pods (sometimes they get in a CrashLoopBackoff loop)"
-$failedItems = kubectl get pods -l k8s-app=kube-dns -n kube-system -o jsonpath='{range.items[*]}{.metadata.name}{\"\n\"}{end}'
-ForEach ($line in $failedItems) {
-    Write-Host "Deleting pod $line"
-    kubectl delete pod $line -n kube-system
-} 
+# Write-Output "Restarting DNS Pods (sometimes they get in a CrashLoopBackoff loop)"
+# $failedItems = kubectl get pods -l k8s-app=kube-dns -n kube-system -o jsonpath='{range.items[*]}{.metadata.name}{\"\n\"}{end}'
+# ForEach ($line in $failedItems) {
+#     Write-Host "Deleting pod $line"
+#     kubectl delete pod $line -n kube-system
+# } 
 
 SetHostFileInVms -resourceGroup $AKS_PERS_RESOURCE_GROUP
 SetupCronTab -resourceGroup $AKS_PERS_RESOURCE_GROUP

@@ -1,4 +1,4 @@
-Write-output "--- create-bare-metal Version 2018.02.05.01 ----"
+Write-output "--- create-bare-metal Version 2018.02.07.01 ----"
 
 #
 # This script is meant for quick & easy install via:
@@ -175,26 +175,41 @@ else {
 }
 
 
-$AKS_VNET_NAME="kubnettest"
-$AKS_SUBNET_NAME="kubsubnet"
-$AKS_SUBNET_RESOURCE_GROUP="Imran"
+$AKS_VNET_NAME = "kubnettest"
+$AKS_SUBNET_NAME = "kubsubnet"
+$AKS_SUBNET_RESOURCE_GROUP = "Imran"
 $AKS_SUBNET_ID = "/subscriptions/${AKS_SUBSCRIPTION_ID}/resourceGroups/${AKS_SUBNET_RESOURCE_GROUP}/providers/Microsoft.Network/virtualNetworks/${AKS_VNET_NAME}/subnets/${AKS_SUBNET_NAME}"
 
 CleanResourceGroup -resourceGroup ${AKS_PERS_RESOURCE_GROUP} -location $AKS_PERS_LOCATION -vnet $AKS_VNET_NAME `
-                    -subnet $AKS_SUBNET_NAME -subnetResourceGroup $AKS_SUBNET_RESOURCE_GROUP `
-                    -storageAccount $AKS_PERS_STORAGE_ACCOUNT_NAME
+    -subnet $AKS_SUBNET_NAME -subnetResourceGroup $AKS_SUBNET_RESOURCE_GROUP `
+    -storageAccount $AKS_PERS_STORAGE_ACCOUNT_NAME
 
 # az network vnet create -g $AKS_PERS_RESOURCE_GROUP -n $AKS_VNET_NAME --address-prefix 10.0.0.0/16 --subnet-name $AKS_SUBNET_NAME --subnet-prefix 10.0.0.0/19
 
-$MASTER_VM_NAME="k8s-master"
-$NETWORK_SECURITY_GROUP="cluster-nsg"
+$MASTER_VM_NAME = "k8s-master"
+$NETWORK_SECURITY_GROUP = "cluster-nsg"
 $nsg = az network nsg create --name $NETWORK_SECURITY_GROUP --resource-group $AKS_PERS_RESOURCE_GROUP --query "id" -o tsv 
 
+Write-Output "Creating rule: allow_ssh"
+az network nsg rule create -g $AKS_PERS_RESOURCE_GROUP --nsg-name $NETWORK_SECURITY_GROUP -n allow_ssh --priority 100 `
+    --source-address-prefixes "*" --source-port-ranges '*' `
+    --destination-address-prefixes '*' --destination-port-ranges 22 --access Allow `
+    --protocol Tcp --description "allow ssh access." `
+    --query "provisioningState" -o tsv
+
+Write-Output "Creating rule: allow_rdp"
+az network nsg rule create -g $AKS_PERS_RESOURCE_GROUP --nsg-name $NETWORK_SECURITY_GROUP -n allow_rdp `
+    --priority 101 `
+    --source-address-prefixes "*" --source-port-ranges '*' `
+    --destination-address-prefixes '*' --destination-port-ranges 3389 --access Allow `
+    --protocol Tcp --description "allow RDP access." `
+    --query "provisioningState" -o tsv
+        
 Write-Output "Creating master"
-$PUBLIC_IP_NAME="${MASTER_VM_NAME}PublicIP"
-$ip= az network public-ip create --name $PUBLIC_IP_NAME `
---resource-group $AKS_PERS_RESOURCE_GROUP `
---allocation-method Static --query "publicIp.ipAddress" -o tsv
+$PUBLIC_IP_NAME = "${MASTER_VM_NAME}PublicIP"
+$ip = az network public-ip create --name $PUBLIC_IP_NAME `
+    --resource-group $AKS_PERS_RESOURCE_GROUP `
+    --allocation-method Static --query "publicIp.ipAddress" -o tsv
 
 az network nic create `
     --resource-group $AKS_PERS_RESOURCE_GROUP `
@@ -204,18 +219,18 @@ az network nic create `
     --public-ip-address $PUBLIC_IP_NAME
 
 az vm create --resource-group $AKS_PERS_RESOURCE_GROUP --name $MASTER_VM_NAME `
-                --image CentOs --size Standard_DS2_v2 `
-                --admin-username azureuser --ssh-key-value $SSH_PUBLIC_KEY_FILE `
-                --nics "${MASTER_VM_NAME}-nic"
+    --image CentOs --size Standard_DS2_v2 `
+    --admin-username azureuser --ssh-key-value $SSH_PUBLIC_KEY_FILE `
+    --nics "${MASTER_VM_NAME}-nic"
 
 Write-Output "ssh -i ${SSH_PRIVATE_KEY_FILE_UNIX_PATH} azureuser@${ip}"
 
 Write-Output "Creating linux vm 1"
-$vm="k8s-linux-agent-1"
-$PUBLIC_IP_NAME="${vm}PublicIP"
-$ip= az network public-ip create --name $PUBLIC_IP_NAME `
---resource-group $AKS_PERS_RESOURCE_GROUP `
---allocation-method Static --query "publicIp.ipAddress" -o tsv
+$vm = "k8s-linux-agent-1"
+$PUBLIC_IP_NAME = "${vm}PublicIP"
+$ip = az network public-ip create --name $PUBLIC_IP_NAME `
+    --resource-group $AKS_PERS_RESOURCE_GROUP `
+    --allocation-method Static --query "publicIp.ipAddress" -o tsv
 
 az network nic create `
     --resource-group $AKS_PERS_RESOURCE_GROUP `
@@ -225,8 +240,39 @@ az network nic create `
     --public-ip-address $PUBLIC_IP_NAME
 
 az vm create --resource-group $AKS_PERS_RESOURCE_GROUP --name $vm `
-                --image CentOs --size Standard_DS2_v2 `
-                --admin-username azureuser --ssh-key-value $SSH_PUBLIC_KEY_FILE `
-                --nics "${vm}-nic"
+    --image CentOs --size Standard_DS2_v2 `
+    --admin-username azureuser --ssh-key-value $SSH_PUBLIC_KEY_FILE `
+    --nics "${vm}-nic"
 
 Write-Output "ssh -i ${SSH_PRIVATE_KEY_FILE_UNIX_PATH} azureuser@${ip}"
+
+Write-Output "Creating windows vm 1"
+$vm = "k8swindows2"
+$PUBLIC_IP_NAME = "${vm}PublicIP"
+$ip = az network public-ip create --name $PUBLIC_IP_NAME `
+    --resource-group $AKS_PERS_RESOURCE_GROUP `
+    --allocation-method Static --query "publicIp.ipAddress" -o tsv
+
+az network nic create `
+    --resource-group $AKS_PERS_RESOURCE_GROUP `
+    --name "${vm}-nic" `
+    --subnet $AKS_SUBNET_ID `
+    --network-security-group $NETWORK_SECURITY_GROUP `
+    --public-ip-address $PUBLIC_IP_NAME
+
+# Update for your admin password
+$AdminPassword = "ChangeYourAdminPassword1"
+
+$urn="MicrosoftWindowsServer:WindowsServerSemiAnnual:Datacenter-Core-1709-with-Containers-smalldisk:1709.0.20171012"
+$urn="Win2016Datacenter"
+az vm create --resource-group $AKS_PERS_RESOURCE_GROUP --name $vm `
+    --image "$urn" `
+    --size Standard_DS2_v2 `
+    --admin-username azureuser --admin-password $AdminPassword `
+    --nics "${vm}-nic"
+
+
+
+# https://stackoverflow.com/questions/43914269/how-to-run-simple-custom-commands-on-a-azure-vm-win-7-8-10-server-post-deploy
+# az vm extension set -n CustomScriptExtension --publisher Microsoft.Compute --version 1.8 --vm-name DVWinServerVMB --resource-group DVResourceGroup --settings "{'commandToExecute': 'powershell.exe md c:\\test'}"
+

@@ -1,4 +1,4 @@
-$version = "2018.02.02.01"
+$version = "2018.02.07.01"
 
 # This script is meant for quick & easy install via:
 #   curl -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/azure/main.ps1 | iex;
@@ -29,8 +29,9 @@ do {
     Write-Host "11: Test web sites"
     Write-Host "12: Show passwords"
     Write-Host "13: Show NLP logs"
+    Write-Host "14: Restart NLP"
     Write-Host "------ Realtime -----"
-    Write-Host "14: Show status of realtime"
+    Write-Host "15: Show status of realtime"
     Write-Host "-----------"
     Write-Host "q: Quit"
     $input = Read-Host "Please make a selection"
@@ -44,9 +45,17 @@ do {
             $index = Read-Host "Enter number of folder to use (1 - $($folders.count))"
             $folderToUse = $($folders[$index - 1])
             $fileToUse = "C:\kubernetes\$folderToUse\temp\.kube\config"
-            Write-Host "Copying $fileToUse to $env:userprofile\.kube\config"
-            Copy-Item -Path $fileToUse -Destination "$env:userprofile\.kube\config"
-            $env:KUBECONFIG = "${HOME}\.kube\config"
+            $userKubeConfigFolder = "$env:userprofile\.kube"
+            If (!(Test-Path $userKubeConfigFolder)) {
+                Write-Output "Creating $userKubeConfigFolder"
+                New-Item -ItemType Directory -Force -Path "$userKubeConfigFolder"
+            }            
+            $destinationFile = "${userKubeConfigFolder}\config"
+            Write-Host "Copying $fileToUse to $destinationFile"
+            Copy-Item -Path "$fileToUse" -Destination "$destinationFile"
+            # set environment variable KUBECONFIG to point to this location
+            $env:KUBECONFIG = "$destinationFile"
+            [Environment]::SetEnvironmentVariable("KUBECONFIG", "$destinationFile", [EnvironmentVariableTarget]::User)
             Write-Host "Current cluster: $(kubectl config current-context)"            
         } 
         '1' {
@@ -187,6 +196,9 @@ do {
             }
         } 
         '14' {
+            kubectl delete --all 'pods' --namespace=fabricnlp --ignore-not-found=true                        
+        } 
+        '15' {
             kubectl get 'deployments,pods,services,ingress,secrets,persistentvolumeclaims,persistentvolumes,nodes' --namespace=fabricrealtime -o wide
         } 
         'q' {

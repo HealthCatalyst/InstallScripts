@@ -35,6 +35,8 @@ spec:
           ports:
             - containerPort: 8085
               name: solr
+      # give pod more time to finish solr indexing
+      terminationGracePeriodSeconds: 10      
       volumes:
       - name: solr-persistent-storage
         persistentVolumeClaim:

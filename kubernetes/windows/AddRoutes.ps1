@@ -29,13 +29,14 @@ Add-RouteToPodCIDR($nicName)
     }
 }
 
-$endpointName = "cbr0"
+#$endpointName = "cbr0"
+$endpointName = "HNSTransparent"
 $vnicName = "vEthernet ($endpointName)"
 
 # Add routes to all POD networks on the Bridge endpoint nic
 Add-RouteToPodCIDR -nicName $vnicName
 
-$na = Get-NetAdapter | ? Name -Like "vEthernet (Ethernet*"
+$na = Get-NetAdapter | ? Name -Like "vEthernet (HNSTransparent)"
 if (!$na)
 {
     Write-Error "Do you have a virtual adapter configured? Couldn't find one!"

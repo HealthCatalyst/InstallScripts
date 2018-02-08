@@ -3,15 +3,16 @@ Param(
 )
 
 # Todo : Get these values using kubectl
-$KubeDnsServiceIp="11.0.0.10"
-$serviceCIDR="11.0.0.0/8"
+$KubeDnsServiceIp="10.96.0.10"
+$serviceCIDR="10.96.0.0/12"
 
 $WorkingDir = "c:\k"
 $CNIPath = [Io.path]::Combine($WorkingDir , "cni")
 $NetworkMode = "L2Bridge"
 $CNIConfig = [Io.path]::Combine($CNIPath, "config", "$NetworkMode.conf")
 
-$endpointName = "cbr0"
+# $endpointName = "cbr0"
+$endpointName = "HNSTransparent"
 $vnicName = "vEthernet ($endpointName)"
 
 function
@@ -209,7 +210,7 @@ Start-Sleep 10
 # Add route to all other POD networks
 Update-CNIConfig $podCIDR
 
-c:\k\kubelet.exe --hostname-override=$(hostname) --v=6 `
+c:\k\kubelet.exe --hostname-override=$(hostname) --v=1 `
     --pod-infra-container-image=kubeletwin/pause --resolv-conf="" `
     --allow-privileged=true --enable-debugging-handlers `
     --cluster-dns=$KubeDnsServiceIp --cluster-domain=cluster.local `

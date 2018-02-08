@@ -1,0 +1,20 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  labels:
+    app: win-nanoserver
+  name: win-nanoserver
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: win-nanoserver
+      name: win-nanoserver
+    spec:
+      containers:
+      - name: nanoserver
+        imagePullPolicy: IfNotPresent
+        image: microsoft/dotnet-samples:dotnetapp-nanoserver
+      nodeSelector:
+        beta.kubernetes.io/os: windows

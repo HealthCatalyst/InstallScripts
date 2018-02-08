@@ -59,7 +59,10 @@ Stop-service docker
 Get-ContainerNetwork | Remove-ContainerNetwork -Force
 Start-service docker
 
-./start-kubelet.ps1 -ClusterCidr 192.168.0.0/16
+./start-kubelet.ps1
 ./start-kubeproxy.ps1
 
-kubectl apply -f https://raw.githubusercontent.com/Microsoft/SDN/master/Kubernetes/WebServer.yaml
+# kubectl apply -f https://raw.githubusercontent.com/Microsoft/SDN/master/Kubernetes/WebServer.yaml
+kubectl apply -f https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/kubernetes/testwindowsnanoserver.yml
+
+kubectl apply -f https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/kubernetes/testwindowswebserver.yml

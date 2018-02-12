@@ -174,7 +174,6 @@ else {
     Write-Output "kubectl already exists at $KUBECTL_FILE"    
 }
 
-
 $AKS_VNET_NAME = "kubnettest"
 $AKS_SUBNET_NAME = "kubsubnet"
 $AKS_SUBNET_RESOURCE_GROUP = "Imran"
@@ -247,7 +246,7 @@ az vm create --resource-group $AKS_PERS_RESOURCE_GROUP --name $vm `
 Write-Output "ssh -i ${SSH_PRIVATE_KEY_FILE_UNIX_PATH} azureuser@${ip}"
 
 Write-Output "Creating windows vm 1"
-$vm = "k8swindows2"
+$vm = "k8swindows1"
 $PUBLIC_IP_NAME = "${vm}PublicIP"
 $ip = az network public-ip create --name $PUBLIC_IP_NAME `
     --resource-group $AKS_PERS_RESOURCE_GROUP `

@@ -1,4 +1,4 @@
-Write-output "--- create-acs-cluster Version 2018.02.06.01 ----"
+Write-output "--- create-acs-cluster Version 2018.02.12.01 ----"
 
 #
 # This script is meant for quick & easy install via:
@@ -25,6 +25,40 @@ $AKS_SERVICE_PRINCIPAL_NAME = ""
 $AKS_SUPPORT_WINDOWS_CONTAINERS = "n"
 
 write-output "Checking if you're already logged in..."
+
+
+# install az cli from https://docs.microsoft.com/en-us/cli/azure/install-azure-cli?view=azure-cli-latest
+$DESIRED_AZ_CLI_VERSION = "2.0.26"
+$downloadazcli = $False
+if (!(Test-CommandExists az)) {
+    $downloadazcli = $True
+}
+else {
+    $azcurrentversion = az -v | Select-String "azure-cli" | Select-Object -exp line
+    # we should get: azure-cli (2.0.22)
+    $azversionMatches = $($azcurrentversion -match "$DESIRED_AZ_CLI_VERSION")
+    if (!$azversionMatches) {
+        Write-Output "az version $azcurrentversion is not the same as desired version: $DESIRED_AZ_CLI_VERSION"
+        $downloadazcli = $True
+    }
+}
+
+if($downloadazcli){
+    $AZCLI_FILE=([System.IO.Path]::GetTempPath()+("az-cli-latest.msi"))
+    $url = "https://azurecliprod.blob.core.windows.net/msi/azure-cli-latest.msi"
+    Write-Output "Downloading az-cli-latest.msi from url $url to $AZCLI_FILE"
+    If (Test-Path $AZCLI_FILE){
+        Remove-Item $AZCLI_FILE
+    }
+    (New-Object System.Net.WebClient).DownloadFile($url, $AZCLI_FILE)
+    # https://kevinmarquette.github.io/2016-10-21-powershell-installing-msi-files/
+    Write-Output "Running MSI to install az"
+    $AZCLI_INSTALL_LOG=([System.IO.Path]::GetTempPath()+('az-cli-latest.log'))
+    # msiexec flags: https://msdn.microsoft.com/en-us/library/windows/desktop/aa367988(v=vs.85).aspx
+    Start-Process -Verb runAs msiexec.exe -Wait -ArgumentList "/i $AZCLI_FILE /qn /L*e $AZCLI_INSTALL_LOG"
+    Write-Output "Finished installing az-cli-latest.msi"
+}
+
 
 # to print out the result to screen also use: <command> | Tee-Object -Variable cmdOutput
 $loggedInUser = az account show --query "user.name"  --output tsv
@@ -328,8 +362,8 @@ if ("$AKS_VNET_NAME") {
 }
 
 CleanResourceGroup -resourceGroup ${AKS_PERS_RESOURCE_GROUP} -location $AKS_PERS_LOCATION -vnet $AKS_VNET_NAME `
-                    -subnet $AKS_SUBNET_NAME -subnetResourceGroup $AKS_SUBNET_RESOURCE_GROUP `
-                    -storageAccount $AKS_PERS_STORAGE_ACCOUNT_NAME
+    -subnet $AKS_SUBNET_NAME -subnetResourceGroup $AKS_SUBNET_RESOURCE_GROUP `
+    -storageAccount $AKS_PERS_STORAGE_ACCOUNT_NAME
 
 # Read-Host "continue?"
 

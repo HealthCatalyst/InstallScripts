@@ -2,11 +2,11 @@
 set -e
 #
 # This script is meant for quick & easy install via:
-#   'curl -sSL https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/kubernetes/setupmaster.txt | sh'
+#   curl -sSL https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/kubernetes/setupmaster.txt | sh
 #
 #
 
-version="2018.02.06.01"
+version="2018.02.13.01"
 echo "---- setupmaster version $version ----"
 
 u="$(whoami)"
@@ -36,5 +36,18 @@ kubectl get pods -n kube-system -o wide
 
 # testing
 # kubectl run nginx --image=nginx --port=80
+
+# Register the Microsoft RedHat repository
+sudo yum-config-manager \
+    --add-repo \
+    https://packages.microsoft.com/config/rhel/7/prod.repo
+
+# curl https://packages.microsoft.com/config/rhel/7/prod.repo | sudo tee /etc/yum.repos.d/microsoft.repo
+
+# Install PowerShell
+sudo yum install -y powershell
+
+# Start PowerShell
+# pwsh
 
 echo "---- end setupmaster version $version ----"

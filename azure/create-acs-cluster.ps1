@@ -1,4 +1,4 @@
-Write-output "--- create-acs-cluster Version 2018.02.12.01 ----"
+Write-output "--- create-acs-cluster Version 2018.02.13.01 ----"
 
 #
 # This script is meant for quick & easy install via:
@@ -104,6 +104,13 @@ Write-Output "Using resource group [$AKS_PERS_RESOURCE_GROUP]"
 
 Do { $AKS_PERS_LOCATION = Read-Host "Location: (e.g., eastus)"}
 while ([string]::IsNullOrWhiteSpace($AKS_PERS_LOCATION))
+
+Write-Output "checking if resource group already exists"
+$resourceGroupExists = az group exists --name ${AKS_PERS_RESOURCE_GROUP}
+if ($resourceGroupExists -ne "true") {
+    Write-Output "Create the Resource Group"
+    az group create --name $AKS_PERS_RESOURCE_GROUP --location $AKS_PERS_LOCATION --verbose
+}
 
 $AKS_SUPPORT_WINDOWS_CONTAINERS = Read-Host "Support Windows containers (y/n) (default: n)"
 if ([string]::IsNullOrWhiteSpace($AKS_SUPPORT_WINDOWS_CONTAINERS)) {
@@ -304,18 +311,25 @@ if ($confirmation -eq 'y') {
         Write-Output "Finding existing subnets in $AKS_VNET_NAME ..."
         $subnets = az network vnet subnet list --resource-group $AKS_SUBNET_RESOURCE_GROUP --vnet-name $AKS_VNET_NAME --query "[].name" -o tsv
         
-        Do { 
-            Write-Output "------  Subnets in $AKS_VNET_NAME -------"
-            for ($i = 1; $i -le $subnets.count; $i++) {
-                Write-Host "$i. $($subnets[$i-1])"
-            }    
-            Write-Output "------  End Subnets -------"
-
-            Write-Host "NOTE: Each customer should have their own subnet.  Do not put multiple customers in the same subnet"
-            $index = Read-Host "Enter number of subnet to use (1 - $($subnets.count))"
-            $AKS_SUBNET_NAME = $($subnets[$index - 1])
+        if($subnets.count -eq 1)
+        {
+            Write-Output "There is only subnet called $subnets so choosing that"
+            $AKS_SUBNET_NAME = $subnets
         }
-        while ([string]::IsNullOrWhiteSpace($AKS_SUBNET_NAME)) 
+        else {
+            Do { 
+                Write-Output "------  Subnets in $AKS_VNET_NAME -------"
+                for ($i = 1; $i -le $subnets.count; $i++) {
+                    Write-Host "$i. $($subnets[$i-1])"
+                }    
+                Write-Output "------  End Subnets -------"
+    
+                Write-Host "NOTE: Each customer should have their own subnet.  Do not put multiple customers in the same subnet"
+                $index = Read-Host "Enter number of subnet to use (1 - $($subnets.count))"
+                $AKS_SUBNET_NAME = $($subnets[$index - 1])
+            }
+            while ([string]::IsNullOrWhiteSpace($AKS_SUBNET_NAME)) 
+        }
 
         # verify the subnet exists
         $mysubnetid = "/subscriptions/${AKS_SUBSCRIPTION_ID}/resourceGroups/${AKS_SUBNET_RESOURCE_GROUP}/providers/Microsoft.Network/virtualNetworks/${AKS_VNET_NAME}/subnets/${AKS_SUBNET_NAME}"

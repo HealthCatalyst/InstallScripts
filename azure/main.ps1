@@ -1,7 +1,8 @@
-$version = "2018.02.07.01"
+$version = "2018.02.13.01"
 
 # This script is meant for quick & easy install via:
 #   curl -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/azure/main.ps1 | iex;
+#   curl -sSL  https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/azure/main.ps1 | pwsh -c -;
 
 Invoke-WebRequest -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/azure/common.ps1 | Invoke-Expression;
 # Get-Content ./azure/common.ps1 -Raw | Invoke-Expression;
@@ -21,7 +22,7 @@ do {
     Write-Host "----- Troubleshooting ----"
     Write-Host "5: Show status of cluster"
     Write-Host "6: Launch Kubernetes Admin Dashboard"
-    Write-Host "7: SSH to Master VM"
+    Write-Host "7: Show SSH commands to VMs"
     Write-Host "8: View status of DNS pods"
     Write-Host "9: Apply updates and restart all VMs"
     Write-Host "------ NLP -----"
@@ -114,8 +115,18 @@ do {
             }            
         } 
         '7' {        
-            $AKS_PERS_RESOURCE_GROUP = ReadSecretValue -secretname azure-secret -valueName resourcegroup
-                           
+            # $AKS_PERS_RESOURCE_GROUP = ReadSecretValue -secretname azure-secret -valueName resourcegroup
+            
+            if([string]::IsNullOrWhiteSpace($AKS_PERS_RESOURCE_GROUP)){
+                Do { 
+                    $AKS_PERS_RESOURCE_GROUP = Read-Host "Resource Group"
+                    if ([string]::IsNullOrWhiteSpace($AKS_PERS_RESOURCE_GROUP)) {
+                        $AKS_PERS_RESOURCE_GROUP = $DEFAULT_RESOURCE_GROUP
+                    }
+                }
+                while ([string]::IsNullOrWhiteSpace($AKS_PERS_RESOURCE_GROUP))
+            }
+
             $AKS_PERS_LOCATION = az group show --name $AKS_PERS_RESOURCE_GROUP --query "location" -o tsv
     
             $AKS_LOCAL_FOLDER = Read-Host "Folder to store SSH keys (default: c:\kubernetes)"
@@ -127,6 +138,14 @@ do {
             $MASTER_VM_NAME = "${AKS_PERS_RESOURCE_GROUP}.${AKS_PERS_LOCATION}.cloudapp.azure.com"
             Write-Output "You can connect to master VM in Git Bash for debugging using:"
             Write-Output "ssh -i ${SSH_PRIVATE_KEY_FILE_UNIX_PATH} azureuser@${MASTER_VM_NAME}"            
+
+            $virtualmachines = az vm list -g $AKS_PERS_RESOURCE_GROUP --query "[?storageProfile.osDisk.osType != 'Windows'].name" -o tsv
+            ForEach ($vm in $virtualmachines) {
+                $firstpublicip = az vm list-ip-addresses -g $AKS_PERS_RESOURCE_GROUP -n $vm --query "[].virtualMachine.network.publicIpAddresses[0].ipAddress" -o tsv
+                # $privateiplist= az vm show -g $AKS_PERS_RESOURCE_GROUP -n $vm -d --query privateIps -otsv
+                Write-Output "Connect to $vm"
+                Write-Output "ssh -i ${SSH_PRIVATE_KEY_FILE_UNIX_PATH} azureuser@${firstpublicip}"            
+            }
 
             Write-Output "Command to show errors: sudo journalctl -xef"
             Write-Output "Command to see apiserver logs: sudo journalctl -fu kube-apiserver"
@@ -205,7 +224,7 @@ do {
             return
         }
     }
-    pause
+    Read-Host -Prompt "Press Enter to continue"
     [Console]::ResetColor()
     Clear-Host
 }

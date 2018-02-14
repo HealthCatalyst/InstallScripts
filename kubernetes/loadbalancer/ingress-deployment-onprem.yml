@@ -20,7 +20,13 @@ spec:
       # run on master node so we use the IP of the master
       # https://kubernetes.io/docs/concepts/configuration/assign-pod-node/
       nodeSelector:
-        dedicated: master      
+        dedicated: master
+      # https://stackoverflow.com/questions/41999756/how-to-force-pods-deployments-to-master-nodes
+      tolerations:
+        key: dedicated
+        operator: Equal
+        value: master
+        effect: NoSchedule              
       serviceAccountName: traefik-ingress-serviceaccount
       terminationGracePeriodSeconds: 60
       volumes:

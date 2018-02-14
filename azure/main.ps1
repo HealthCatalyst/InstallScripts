@@ -1,8 +1,8 @@
-$version = "2018.02.13.02"
+$version = "2018.02.13.03"
 
 # This script is meant for quick & easy install via:
 #   curl -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/azure/main.ps1 | iex;
-#   curl -sSL  https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/azure/main.ps1 | pwsh -c -;
+#   curl -sSL  https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/azure/main.ps1 | pwsh -Interactive -NoExit -c -;
 
 Invoke-WebRequest -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/azure/common.ps1 | Invoke-Expression;
 # Get-Content ./azure/common.ps1 -Raw | Invoke-Expression;
@@ -10,7 +10,8 @@ Invoke-WebRequest -useb https://raw.githubusercontent.com/HealthCatalyst/Install
 
 # Get-Content -Path "./azure/common.ps1" | Invoke-Expression;
 
-do {
+$userinput=""
+while ($userinput -ne "q") {
     Write-Host "================ Health Catalyst version $version, common functions $(GetCommonVersion) ================"
     Write-Host "----- Choose Cluster -----"
     Write-Host "0: Change kube to point to another cluster"
@@ -228,7 +229,7 @@ do {
     [Console]::ResetColor()
     Clear-Host
 }
-until ($userinput -eq "q")
+
 
 
 

@@ -9,7 +9,7 @@ GITHUB_URL="https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/mast
 source <(curl -sSL "$GITHUB_URL/kubernetes/common.sh")
 # source ./kubernetes/common.sh
 
-version="2018.02.13.07"
+version="2018.02.14.01"
 
 echo "---- setup-loadbalancer.sh version $version ------"
 
@@ -33,10 +33,8 @@ ReadYmlAndReplaceCustomer $GITHUB_URL "kubernetes/loadbalancer/ingress.yml" $cus
         | ReplaceText WHITELISTIP $AKS_IP_WHITELIST \
         | kubectl create -f -
 
-ReadYmlAndReplaceCustomer $GITHUB_URL "kubernetes/loadbalancer/loadbalancer-public.yml" $customerid \
-        | ReplaceText PUBLICIP $publicip \
+ReadYmlAndReplaceCustomer $GITHUB_URL "kubernetes/loadbalancer/ingress-deployment-onprem.yml" $customerid \
         | kubectl create -f -
-
 
 loadbalancer="traefik-ingress-service-public"
     

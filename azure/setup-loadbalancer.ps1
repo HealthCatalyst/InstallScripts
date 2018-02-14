@@ -1,4 +1,4 @@
-Write-output "Version 2018.02.13.01"
+Write-output "Version 2018.02.14.01"
 
 #
 # This script is meant for quick & easy install via:
@@ -400,6 +400,8 @@ else {
     # kubectl delete -f "$GITHUB_URL/azure/ingress.yml"
     ReadYmlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "kubernetes/loadbalancer/ingress.yml" -customerid $customerid | Foreach-Object {$_ -replace 'WHITELISTIP', "$AKS_IP_WHITELIST"} | kubectl create -f -
 }
+
+ReadYmlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "kubernetes/loadbalancer/ingress-deployment-azure.yml" -customerid $customerid | kubectl apply -f -
 
 if ("$AKS_OPEN_TO_PUBLIC" -eq "y") {
     Write-Output "Setting up a public load balancer"

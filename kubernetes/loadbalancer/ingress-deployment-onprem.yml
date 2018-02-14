@@ -27,7 +27,9 @@ spec:
       - key: dedicated
         operator: Equal
         value: master
-        effect: NoSchedule              
+        effect: NoSchedule
+      - key: node-role.kubernetes.io/master
+        effect: NoSchedule
       serviceAccountName: traefik-ingress-serviceaccount
       terminationGracePeriodSeconds: 60
       volumes:

@@ -1,12 +1,22 @@
 
-versioncommon="2018.02.13.01"
+versioncommon="2018.02.13.02"
 
 echo "Including common.ps1 version $versioncommon"
 function GetCommonVersion() {
     echo $versioncommon
 }
 
-ReplaceText(){
+function Write-Output()
+{
+    echo $1
+}
+
+function Write-Host()
+{
+    echo $1
+}
+
+function ReplaceText(){
     local currentText=$1
     local replacementText=$2
 
@@ -19,7 +29,7 @@ ReplaceText(){
     IFS=$old_IFS     # restore default field separator
 }
 
-ReadYmlAndReplaceCustomer () {
+function ReadYmlAndReplaceCustomer () {
     local baseUrl=$1
     local templateFile=$2
     local customerid=$3
@@ -112,7 +122,7 @@ function AskForPassword () {
         mysqlrootpassword=""
         # MySQL password requirements: https://dev.mysql.com/doc/refman/5.6/en/validate-password-plugin.html
         # we also use sed to replace configs: https://unix.stackexchange.com/questions/32907/what-characters-do-i-need-to-escape-when-using-sed-in-a-sh-script
-        read -s -p "$prompt (leave empty for auto-generated)" mysqlrootpasswordsecure
+        read -s -p "$prompt (leave empty for auto-generated)" mysqlrootpasswordsecure < /dev/tty
         if [[ -z  "$mysqlrootpasswordsecure" ]]; then
             mysqlrootpassword="$(GeneratePassword)"
         fi
@@ -136,7 +146,7 @@ function AskForPasswordAnyCharacters () {
         mysqlrootpassword=""
         # MySQL password requirements: https://dev.mysql.com/doc/refman/5.6/en/validate-password-plugin.html
         # we also use sed to replace configs: https://unix.stackexchange.com/questions/32907/what-characters-do-i-need-to-escape-when-using-sed-in-a-sh-script
-        read -s -p "$prompt (leave empty for auto-generated)" mysqlrootpasswordsecure
+        read -s -p "$prompt (leave empty for auto-generated)" mysqlrootpasswordsecure < /dev/tty
         if [[ -z  "$mysqlrootpasswordsecure" ]]; then
             mysqlrootpassword="$defaultvalue"
         fi

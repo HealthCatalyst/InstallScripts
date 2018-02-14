@@ -5,7 +5,7 @@ set -e
 #   curl -sSL https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/nlp/installnlpkubernetes.sh | bash
 #
 GITHUB_URL="https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master"
-version="2018.02.13.04"
+version="2018.02.13.05"
 
 echo "---- installnlpkubernetes.sh version $version ------"
 
@@ -49,9 +49,9 @@ kubectl delete --all 'deployments,pods,services,ingress,persistentvolumeclaims,p
 echo "Waiting until all the resources are cleared up"
 
 CLEANUP_DONE="n"
-while [[ ! -z "$CLEANUP_DONE" ]]; then
+while [[ ! -z "$CLEANUP_DONE" ]]; do
     CLEANUP_DONE=$(kubectl get 'deployments,pods,services,ingress,persistentvolumeclaims,persistentvolumes' --namespace=fabricnlp)
-fi
+done
 
 ReadYmlAndReplaceCustomer $GITHUB_URL "nlp/nlp-kubernetes-storage.yml" $customerid | kubectl create -f -
 

@@ -1,5 +1,5 @@
 
-versioncommon="2018.02.13.02"
+versioncommon="2018.02.13.03"
 
 echo "Including common.ps1 version $versioncommon"
 function GetCommonVersion() {
@@ -108,7 +108,6 @@ function GeneratePassword() {
     echo $result
 }
 
-
 function AskForPassword () {
     local secretname=$1
     local prompt=$2
@@ -122,11 +121,14 @@ function AskForPassword () {
         mysqlrootpassword=""
         # MySQL password requirements: https://dev.mysql.com/doc/refman/5.6/en/validate-password-plugin.html
         # we also use sed to replace configs: https://unix.stackexchange.com/questions/32907/what-characters-do-i-need-to-escape-when-using-sed-in-a-sh-script
-        read -s -p "$prompt (leave empty for auto-generated)" mysqlrootpasswordsecure < /dev/tty
-        if [[ -z  "$mysqlrootpasswordsecure" ]]; then
-            mysqlrootpassword="$(GeneratePassword)"
+        read -s -p "$prompt (leave empty for auto-generated)" mypasswordsecure < /dev/tty
+        if [[ -z  "$mypasswordsecure" ]]; then
+            mypassword="$(GeneratePassword)"
+        else
+            mypassword=$mypasswordsecure
         fi
-        kubectl create secret generic $secretname --namespace=$namespace --from-literal=password=$mysqlrootpassword
+
+        kubectl create secret generic $secretname --namespace=$namespace --from-literal=password=$mypassword
     else 
         Write-Output "$secretname secret already set so will reuse it"
     fi
@@ -146,11 +148,13 @@ function AskForPasswordAnyCharacters () {
         mysqlrootpassword=""
         # MySQL password requirements: https://dev.mysql.com/doc/refman/5.6/en/validate-password-plugin.html
         # we also use sed to replace configs: https://unix.stackexchange.com/questions/32907/what-characters-do-i-need-to-escape-when-using-sed-in-a-sh-script
-        read -s -p "$prompt (leave empty for auto-generated)" mysqlrootpasswordsecure < /dev/tty
-        if [[ -z  "$mysqlrootpasswordsecure" ]]; then
-            mysqlrootpassword="$defaultvalue"
+        read -s -p "$prompt (leave empty for auto-generated)" mypasswordsecure < /dev/tty
+        if [[ -z  "$mypasswordsecure" ]]; then
+            mypassword="$defaultvalue"
+        else
+            mypassword=$mypasswordsecure
         fi
-        kubectl create secret generic $secretname --namespace=$namespace --from-literal=password=$mysqlrootpassword
+        kubectl create secret generic $secretname --namespace=$namespace --from-literal=password=$mypassword
     else 
         Write-Output "$secretname secret already set so will reuse it"
     fi

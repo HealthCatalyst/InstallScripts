@@ -7,10 +7,15 @@ set -e
 #
 version="2018.02.13.01"
 
+GITHUB_URL="https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master"
+
+source <(curl -s $GITHUB_URL/kubernetes/common.sh)
+# source ./kubernetes/common.sh
+
 input=""
 while [ "$input" != "q" ]; do
 
-    echo "================ Health Catalyst version $version ================"
+    echo "================ Health Catalyst version $version, common functions $(GetCommonVersion) ================"
     echo "------ Install -------"
     echo "1: Add this VM as Master"
     echo "2: Add this VM as Worker"
@@ -42,6 +47,8 @@ while [ "$input" != "q" ]; do
     2) curl -sSL https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/kubernetes/setupnode.txt | sh
         ;;
     3)  curl -sSL https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/kubernetes/setup-loadbalancer.sh | sh
+        ;;
+    4)  curl -sSL https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/nlp/installnlpkubernetes.sh | sh
         ;;
     6)  echo "Current cluster: $(kubectl config current-context)"
         kubectl version --short

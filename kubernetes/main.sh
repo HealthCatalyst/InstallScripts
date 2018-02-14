@@ -5,12 +5,14 @@ set -e
 #   curl -sSL https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/kubernetes/main.sh | sh
 #
 #
-version="2018.02.13.01"
+version="2018.02.13.02"
 
 GITHUB_URL="https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master"
 
-source <(curl -s $GITHUB_URL/kubernetes/common.sh)
+source <(curl -sSL "$GITHUB_URL/kubernetes/common.sh")
 # source ./kubernetes/common.sh
+
+GetCommonVersion
 
 input=""
 while [ "$input" != "q" ]; do

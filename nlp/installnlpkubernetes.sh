@@ -5,11 +5,12 @@ set -e
 #   curl -sSL https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/nlp/installnlpkubernetes.sh | sh
 #
 GITHUB_URL="https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master"
-version="2018.02.13.01"
+version="2018.02.13.02"
 
 echo "---- installnlpkubernetes.sh version $version ------"
 
-source <(curl -s $GITHUB_URL/kubernetes/common.sh)
+source <(curl -sSL "$GITHUB_URL/kubernetes/common.sh")
+
 # source ./kubernetes/common.sh
 
 if [[ -z $(kubectl get namespace fabricnlp --ignore-not-found=true) ]]; then

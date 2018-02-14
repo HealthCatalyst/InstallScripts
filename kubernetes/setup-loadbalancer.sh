@@ -6,7 +6,7 @@ set -e
 #
 GITHUB_URL="https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master"
 
-source <(curl -s $GITHUB_URL/kubernetes/common.sh)
+source <(curl -sSL "$GITHUB_URL/kubernetes/common.sh")
 # source ./kubernetes/common.sh
 
 

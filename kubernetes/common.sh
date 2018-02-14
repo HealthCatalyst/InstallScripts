@@ -1,5 +1,5 @@
 
-versioncommon="2018.02.12.01"
+versioncommon="2018.02.13.01"
 
 echo "Including common.ps1 version $versioncommon"
 function GetCommonVersion() {
@@ -122,7 +122,7 @@ function AskForPassword () {
     fi
 }
 
-function AskForPasswordAnyCharacters ($secretname, $prompt, $namespace, $defaultvalue) {
+function AskForPasswordAnyCharacters () {
     local secretname=$1
     local prompt=$2
     local namespace=$3

@@ -5,7 +5,7 @@ set -e
 #   curl -sSL https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/kubernetes/main.sh | bash
 #
 #
-version="2018.02.13.05"
+version="2018.02.13.06"
 
 GITHUB_URL="https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master"
 
@@ -55,6 +55,8 @@ while [[ "$input" != "q" ]]; do
     6)  echo "Current cluster: $(kubectl config current-context)"
         kubectl version --short
         kubectl get "deployments,pods,services,ingress,secrets" --namespace=kube-system -o wide
+        ;;
+    10)  kubectl get 'deployments,pods,services,ingress,secrets,persistentvolumeclaims,persistentvolumes,nodes' --namespace=fabricnlp -o wide
         ;;
     12)  Write-Host "MySql root password: $(ReadSecretPassword mysqlrootpassword fabricnlp)"
             Write-Host "MySql NLP_APP_USER password: $(ReadSecretPassword mysqlpassword fabricnlp)"

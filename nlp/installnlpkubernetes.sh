@@ -30,6 +30,9 @@ else
 fi
 
 customerid="$(ReadSecret customerid)"
+if [[ -z "$customerid" ]]; then
+
+fi
 customerid="${customerid,,}"
 echo "Customer ID: $customerid"
 

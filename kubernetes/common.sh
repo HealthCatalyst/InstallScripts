@@ -1,5 +1,5 @@
 
-versioncommon="2018.02.13.03"
+versioncommon="2018.02.13.05"
 
 echo "Including common.ps1 version $versioncommon"
 function GetCommonVersion() {
@@ -52,7 +52,6 @@ function ReadSecretValue() {
     if [[ ! -z "$secretbase64" ]]; then 
         secretvalue=$(echo $secretbase64 | base64 --decode)
         echo $secretvalue
-        return
     else
         echo "";
     fi
@@ -68,7 +67,7 @@ function ReadSecretPassword() {
     local secretname=$1
     local namespace=$2
 
-    return ReadSecretValue $secretname "password" $namespace
+    ReadSecretValue $secretname "password" $namespace
 }
 
 function SaveSecretValue() {

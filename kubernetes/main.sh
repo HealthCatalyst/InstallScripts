@@ -18,7 +18,7 @@ while [ "$input" != "q" ]; do
     echo "4: Install NLP"
     echo "5: Install Realtime"
     echo "----- Troubleshooting ----"
-    echo "5: Show status of cluster"
+    echo "6: Show status of cluster"
     echo "6: Launch Kubernetes Admin Dashboard"
     echo "8: View status of DNS pods"
     echo "9: Apply updates and restart all VMs"
@@ -43,7 +43,11 @@ while [ "$input" != "q" ]; do
         ;;
     3)  curl -sSL https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/kubernetes/setup-loadbalancer.sh | sh
         ;;
-    q) echo  "Sending SIGKILL signal"
+    6)  echo "Current cluster: $(kubectl config current-context)"
+        kubectl version --short
+        kubectl get "deployments,pods,services,ingress,secrets" --namespace=kube-system -o wide
+        ;;
+    q) echo  "Sending SIGKILL signal" 
     ;;
     *) echo "Signal number $1 is not processed"
     ;;

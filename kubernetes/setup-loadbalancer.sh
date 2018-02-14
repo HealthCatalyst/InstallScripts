@@ -15,8 +15,14 @@ ReadYmlAndReplaceCustomer () {
     templateFile=$2
     customerid=$3
 
+# have to do this to preserve the tabs in the file per https://askubuntu.com/questions/267384/using-read-without-losing-the-tab
+    old_IFS=$IFS      # save the field separator           
+    IFS=$'\n'     # new field separator, the end of line
+
     curl -sSL "$baseUrl/$templateFile" \
-        | while read -r line; do echo "${line//CUSTOMERID/$customerid}"; done
+        | while read -r line || [[ -n $line ]]; do echo "${line//CUSTOMERID/$customerid}"; done
+
+    IFS=$old_IFS     # restore default field separator
 }
 
 AKS_IP_WHITELIST=""

@@ -228,7 +228,7 @@ do {
     [Console]::ResetColor()
     Clear-Host
 }
-until ($input -eq 'q')
+until ($input == "q")
 
 
 

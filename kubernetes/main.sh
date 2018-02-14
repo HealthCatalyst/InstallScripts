@@ -2,10 +2,10 @@
 set -e
 #
 # This script is meant for quick & easy install via:
-#   curl -sSL https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/kubernetes/main.sh | sh
+#   curl -sSL https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/kubernetes/main.sh | bash
 #
 #
-version="2018.02.13.03"
+version="2018.02.13.04"
 
 GITHUB_URL="https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master"
 
@@ -15,7 +15,7 @@ source <(curl -sSL "$GITHUB_URL/kubernetes/common.sh")
 GetCommonVersion
 
 input=""
-while [ "$input" != "q" ]; do
+while [[ "$input" != "q" ]]; do
 
     echo "================ Health Catalyst version $version, common functions $(GetCommonVersion) ================"
     echo "------ Install -------"
@@ -40,17 +40,17 @@ while [ "$input" != "q" ]; do
     echo "-----------"
     echo "q: Quit"
 
-    read -p "Please make a selection:" -e input
+    read -p "Please make a selection:" -e input  < /dev/tty 
 
     case "$input" in
-    1)  curl -sSL https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/kubernetes/setupnode.txt | sh
-        curl -sSL https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/kubernetes/setupmaster.txt | sh
+    1)  curl -sSL https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/kubernetes/setupnode.txt | bash
+        curl -sSL https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/kubernetes/setupmaster.txt | bash
         ;;
-    2) curl -sSL https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/kubernetes/setupnode.txt | sh
+    2) curl -sSL https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/kubernetes/setupnode.txt | bash
         ;;
-    3)  curl -sSL https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/kubernetes/setup-loadbalancer.sh | sh
+    3)  curl -sSL https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/kubernetes/setup-loadbalancer.sh | bash
         ;;
-    4)  curl -sSL https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/nlp/installnlpkubernetes.sh | sh
+    4)  curl -sSL https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/nlp/installnlpkubernetes.sh | bash
         ;;
     6)  echo "Current cluster: $(kubectl config current-context)"
         kubectl version --short
@@ -62,5 +62,5 @@ while [ "$input" != "q" ]; do
     ;;
     esac
 
-read -p "Press Enter to Continue"
+read -p "Press Enter to Continue" < /dev/tty 
 done

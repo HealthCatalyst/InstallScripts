@@ -2,10 +2,10 @@
 set -e
 #
 # This script is meant for quick & easy install via:
-#   curl -sSL https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/nlp/installnlpkubernetes.sh | sh
+#   curl -sSL https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/nlp/installnlpkubernetes.sh | bash
 #
 GITHUB_URL="https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master"
-version="2018.02.13.03"
+version="2018.02.13.04"
 
 echo "---- installnlpkubernetes.sh version $version ------"
 
@@ -17,7 +17,7 @@ if [[ -z $(kubectl get namespace fabricnlp --ignore-not-found=true) ]]; then
     echo "Creating namespace: fabricnlp"
     kubectl create namespace fabricnlp
 else
-    while read -s -p "Namespace exists.  Do you want to delete passwords and ALL data stored in this namespace? (y/n)" deleteSecrets && [[ -z "$deleteSecrets" ]] ; do
+    while read -s -p "Namespace exists.  Do you want to delete passwords and ALL data stored in this namespace? (y/n)" deleteSecrets < /dev/tty && [[ -z "$deleteSecrets" ]] ; do
         echo "No-no, please, no blank passwords"
     done
 
@@ -29,8 +29,8 @@ else
     fi
 fi
 
-$customerid = ReadSecret customerid
-$customerid = $customerid.ToLower().Trim()
+customerid="$(ReadSecret customerid)"
+customerid="${customerid,,}"
 echo "Customer ID: $customerid"
 
 AskForPassword "mysqlrootpassword" "MySQL root password (> 8 chars, min 1 number, 1 lowercase, 1 uppercase, 1 special [!.*@] )" "fabricnlp"

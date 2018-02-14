@@ -1,4 +1,4 @@
-Write-output "Version 2018.01.29.09"
+Write-output "Version 2018.02.13.01"
 
 #
 # This script is meant for quick & easy install via:
@@ -373,7 +373,7 @@ kubectl create -f "$GITHUB_URL/azure/cafe-kube-dns.yml"
 
 kubectl delete ServiceAccount traefik-ingress-controller-serviceaccount -n kube-system --ignore-not-found=true
 
-ReadYmlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "azure/ingress-roles.yml" -customerid $customerid | kubectl apply -f -
+ReadYmlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "kubernetes/loadbalancer/ingress-roles.yml" -customerid $customerid | kubectl apply -f -
 
 if ($AKS_USE_SSL -eq "y" ) {
 
@@ -393,12 +393,12 @@ if ($AKS_USE_SSL -eq "y" ) {
 
     Write-Output "Deploy the SSL ingress controller"
     # kubectl delete -f "$GITHUB_URL/azure/ingress.ssl.yml"
-    ReadYmlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "azure/ingress.ssl.yml" -customerid $customerid | Foreach-Object {$_ -replace 'WHITELISTIP', "$AKS_IP_WHITELIST"} | kubectl create -f -
+    ReadYmlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "kubernetes/loadbalancer/ingress.ssl.yml" -customerid $customerid | Foreach-Object {$_ -replace 'WHITELISTIP', "$AKS_IP_WHITELIST"} | kubectl create -f -
 }
 else {
     Write-Output "Deploy the non-SSL ingress controller"
     # kubectl delete -f "$GITHUB_URL/azure/ingress.yml"
-    ReadYmlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "azure/ingress.yml" -customerid $customerid | Foreach-Object {$_ -replace 'WHITELISTIP', "$AKS_IP_WHITELIST"} | kubectl create -f -
+    ReadYmlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "kubernetes/loadbalancer/ingress.yml" -customerid $customerid | Foreach-Object {$_ -replace 'WHITELISTIP', "$AKS_IP_WHITELIST"} | kubectl create -f -
 }
 
 if ("$AKS_OPEN_TO_PUBLIC" -eq "y") {
@@ -412,7 +412,7 @@ if ("$AKS_OPEN_TO_PUBLIC" -eq "y") {
 
     Write-Host "Using Public IP: [$publicip]"
 
-    ReadYmlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "azure/loadbalancer-public.yml" -customerid $customerid `
+    ReadYmlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "kubernetes/loadbalancer/loadbalancer-public.yml" -customerid $customerid `
         | Foreach-Object {$_ -replace 'PUBLICIP', "$publicip"} `
         | kubectl create -f -
 

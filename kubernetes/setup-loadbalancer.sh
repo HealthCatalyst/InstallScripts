@@ -9,16 +9,16 @@ GITHUB_URL="https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/mast
 source <(curl -sSL "$GITHUB_URL/kubernetes/common.sh")
 # source ./kubernetes/common.sh
 
-version="2018.02.13.06"
+version="2018.02.13.07"
 
 echo "---- setup-loadbalancer.sh version $version ------"
-
 
 kubectl delete 'pods,services,configMaps,deployments,ingress' -l k8s-traefik=traefik -n kube-system --ignore-not-found=true
 
 kubectl delete ServiceAccount traefik-ingress-controller-serviceaccount -n kube-system --ignore-not-found=true
 
 AKS_IP_WHITELIST=""
+publicip=""
 customerid="hcut"
 dnsrecordname="$customerid.healthcatalyst.net"
 

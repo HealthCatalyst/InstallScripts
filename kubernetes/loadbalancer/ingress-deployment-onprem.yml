@@ -19,16 +19,14 @@ spec:
     spec:
       # run on master node so we use the IP of the master
       # https://kubernetes.io/docs/concepts/configuration/assign-pod-node/
+      # https://ekartco.com/2017/09/kubernetes-make-pods-run-on-your-master-nodes/
       nodeSelector:
         node-role.kubernetes.io/master: ""
       # https://stackoverflow.com/questions/41999756/how-to-force-pods-deployments-to-master-nodes
       # https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
       tolerations:
-      - key: dedicated
-        operator: Equal
-        value: master
-        effect: NoSchedule
       - key: node-role.kubernetes.io/master
+        operator: Exists
         effect: NoSchedule
       serviceAccountName: traefik-ingress-serviceaccount
       terminationGracePeriodSeconds: 60

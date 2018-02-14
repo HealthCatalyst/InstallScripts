@@ -20,7 +20,7 @@ spec:
       # run on master node so we use the IP of the master
       # https://kubernetes.io/docs/concepts/configuration/assign-pod-node/
       nodeSelector:
-        node-role.kubernetes.io/master: 
+        node-role.kubernetes.io/master: ""
       # https://stackoverflow.com/questions/41999756/how-to-force-pods-deployments-to-master-nodes
       # https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
       tolerations:

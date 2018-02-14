@@ -22,8 +22,9 @@ spec:
       nodeSelector:
         dedicated: master
       # https://stackoverflow.com/questions/41999756/how-to-force-pods-deployments-to-master-nodes
+      # https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
       tolerations:
-        key: dedicated
+      - key: dedicated
         operator: Equal
         value: master
         effect: NoSchedule              

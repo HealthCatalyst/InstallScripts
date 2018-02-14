@@ -13,6 +13,9 @@ version="2018.02.14.01"
 
 echo "---- setup-loadbalancer.sh version $version ------"
 
+# enable running pods on master
+# kubectl taint node mymasternode node-role.kubernetes.io/master:NoSchedule
+
 kubectl delete 'pods,services,configMaps,deployments,ingress' -l k8s-traefik=traefik -n kube-system --ignore-not-found=true
 
 kubectl delete ServiceAccount traefik-ingress-controller-serviceaccount -n kube-system --ignore-not-found=true

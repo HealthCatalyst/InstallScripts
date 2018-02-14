@@ -1,4 +1,4 @@
-$version = "2018.02.13.01"
+$version = "2018.02.13.02"
 
 # This script is meant for quick & easy install via:
 #   curl -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/azure/main.ps1 | iex;
@@ -35,8 +35,8 @@ do {
     Write-Host "15: Show status of realtime"
     Write-Host "-----------"
     Write-Host "q: Quit"
-    $input = Read-Host "Please make a selection"
-    switch ($input) {
+    $userinput = Read-Host "Please make a selection"
+    switch ($userinput) {
         '0' {
             Write-Host "Current cluster: $(kubectl config current-context)"
             $folders = Get-ChildItem "C:\kubernetes" -directory
@@ -228,7 +228,7 @@ do {
     [Console]::ResetColor()
     Clear-Host
 }
-until ($input == "q")
+until ($userinput -eq "q")
 
 
 

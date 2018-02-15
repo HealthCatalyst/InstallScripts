@@ -45,6 +45,8 @@ metadata:
 spec:
   accessModes:
     - ReadWriteMany
+  # no storageClassName is different than empty: https://kubernetes.io/docs/concepts/storage/persistent-volumes/#types-of-persistent-volumes
+  storageClassName: ""
   resources:
     requests:
       storage: 128Gi
@@ -82,6 +84,7 @@ metadata:
 spec:
   accessModes:
     - ReadWriteMany
+  storageClassName: ""   
   resources:
     requests:
       storage: 128Gi
@@ -119,6 +122,7 @@ metadata:
 spec:
   accessModes:
     - ReadWriteMany
+  storageClassName: ""   
   resources:
     requests:
       storage: 32Gi
@@ -169,6 +173,7 @@ metadata:
 spec:
   accessModes:
     - ReadWriteMany
+  storageClassName: ""   
   resources:
     requests:
       storage: 128Gi

@@ -5,7 +5,7 @@ set -e
 #   curl -sSL https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/kubernetes/main.sh | bash
 #
 #
-version="2018.02.14.01"
+version="2018.02.14.02"
 
 GITHUB_URL="https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master"
 
@@ -50,7 +50,7 @@ while [[ "$input" != "q" ]]; do
     2) curl -sSL https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/kubernetes/setupnode.txt | bash
         ;;
     3)  echo "Run this command on the new node to join this cluster:"
-        sudo kubeadm token create --print-join-command
+        echo "sudo $(sudo kubeadm token create --print-join-command)"
         ;;
     4)  curl -sSL https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/kubernetes/setup-loadbalancer.sh | bash
         ;;

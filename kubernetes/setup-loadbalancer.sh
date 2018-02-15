@@ -40,8 +40,10 @@ ReadYmlAndReplaceCustomer $GITHUB_URL "kubernetes/loadbalancer/ingress-deploymen
         | kubectl create -f -
 
 loadbalancer="traefik-ingress-service-public"
+loadBalancerIP="$(dig +short myip.opendns.com @resolver1.opendns.com)"
+echo "My WAN/Public IP address: ${loadBalancerIP}"
     
 echo "To test out the load balancer, open Git Bash and run:"
-echo "curl -L --verbose --header 'Host: dashboard.$dnsrecordname' 'http://$EXTERNAL_IP/' -k"        
+echo "curl -L --verbose --header 'Host: dashboard.$dnsrecordname' 'http://$loadBalancerIP/' -k"        
 
 echo "---- end of setup-loadbalancer.sh version $version ------"

@@ -69,9 +69,16 @@ while [[ "$input" != "q" ]]; do
     24)  pods=$(kubectl get pods -n fabricnlp -o jsonpath='{.items[*].metadata.name}')
         for pod in $pods
         do
-                Write-Output "=============== Pod: $pod ================="
+                Write-Output "=============== Describe Pod: $pod ================="
                 kubectl describe pods $pod -n fabricnlp
+                read -n1 -r -p "Press space to continue..." key
+        done
+
+        for pod in $pods
+        do
+                Write-Output "=============== Logs for Pod: $pod ================="
                 kubectl logs --tail=20 $pod -n fabricnlp
+                read -n1 -r -p "Press space to continue..." key
         done
         ;;
     q) echo  "Sending SIGKILL signal" 

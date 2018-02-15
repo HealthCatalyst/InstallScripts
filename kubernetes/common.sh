@@ -1,5 +1,5 @@
 
-versioncommon="2018.02.14.01"
+versioncommon="2018.02.14.02"
 
 echo "Including common.ps1 version $versioncommon"
 function GetCommonVersion() {

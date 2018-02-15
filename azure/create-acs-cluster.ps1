@@ -43,17 +43,17 @@ else {
     }
 }
 
-if($downloadazcli){
-    $AZCLI_FILE=([System.IO.Path]::GetTempPath()+("az-cli-latest.msi"))
+if ($downloadazcli) {
+    $AZCLI_FILE = ([System.IO.Path]::GetTempPath() + ("az-cli-latest.msi"))
     $url = "https://azurecliprod.blob.core.windows.net/msi/azure-cli-latest.msi"
     Write-Output "Downloading az-cli-latest.msi from url $url to $AZCLI_FILE"
-    If (Test-Path $AZCLI_FILE){
+    If (Test-Path $AZCLI_FILE) {
         Remove-Item $AZCLI_FILE
     }
     (New-Object System.Net.WebClient).DownloadFile($url, $AZCLI_FILE)
     # https://kevinmarquette.github.io/2016-10-21-powershell-installing-msi-files/
     Write-Output "Running MSI to install az"
-    $AZCLI_INSTALL_LOG=([System.IO.Path]::GetTempPath()+('az-cli-latest.log'))
+    $AZCLI_INSTALL_LOG = ([System.IO.Path]::GetTempPath() + ('az-cli-latest.log'))
     # msiexec flags: https://msdn.microsoft.com/en-us/library/windows/desktop/aa367988(v=vs.85).aspx
     Start-Process -Verb runAs msiexec.exe -Wait -ArgumentList "/i $AZCLI_FILE /qn /L*e $AZCLI_INSTALL_LOG"
     Write-Output "Finished installing az-cli-latest.msi"
@@ -248,35 +248,7 @@ acs-engine version
 $AKS_CLUSTER_NAME = "kubcluster"
 # $AKS_CLUSTER_NAME = Read-Host "Cluster Name: (e.g., fabricnlpcluster)"
 
-# create storage account to store data
-$AKS_PERS_STORAGE_ACCOUNT_NAME = Read-Host "Storage Account Name (leave empty for default)"
-if ([string]::IsNullOrWhiteSpace($AKS_PERS_STORAGE_ACCOUNT_NAME)) {
-    $AKS_PERS_STORAGE_ACCOUNT_NAME = "${AKS_PERS_RESOURCE_GROUP}storage"
-    # remove non-alphanumeric characters and use lowercase since azure doesn't allow those in a storage account
-    $AKS_PERS_STORAGE_ACCOUNT_NAME = $AKS_PERS_STORAGE_ACCOUNT_NAME -replace '[^a-zA-Z0-9]', ''
-    $AKS_PERS_STORAGE_ACCOUNT_NAME = $AKS_PERS_STORAGE_ACCOUNT_NAME.ToLower()
-    Write-Output "Using storage account: [$AKS_PERS_STORAGE_ACCOUNT_NAME]"
-}
-Write-Output "Checking to see if storage account exists"
-$storageAccountCanBeCreated = az storage account check-name --name $AKS_PERS_STORAGE_ACCOUNT_NAME --query "nameAvailable" --output tsv
-
-if ($storageAccountCanBeCreated -ne "True" ) {
-    az storage account check-name --name $AKS_PERS_STORAGE_ACCOUNT_NAME   
-    
-    Do { $confirmation = Read-Host "Storage account, [$AKS_PERS_STORAGE_ACCOUNT_NAME], already exists.  Delete it?  (WARNING: deletes data) (y/n)"}
-    while ([string]::IsNullOrWhiteSpace($confirmation)) 
-
-    if ($confirmation -eq 'y') {
-        az storage account delete -n $AKS_PERS_STORAGE_ACCOUNT_NAME -g $AKS_PERS_RESOURCE_GROUP
-        Write-Output "Creating storage account: [${AKS_PERS_STORAGE_ACCOUNT_NAME}]"
-        # https://docs.microsoft.com/en-us/azure/storage/common/storage-quickstart-create-account?tabs=azure-cli
-        az storage account create -n $AKS_PERS_STORAGE_ACCOUNT_NAME -g $AKS_PERS_RESOURCE_GROUP -l $AKS_PERS_LOCATION --kind StorageV2 --sku Standard_LRS                       
-    }    
-}
-else {
-    Write-Output "Creating storage account: [${AKS_PERS_STORAGE_ACCOUNT_NAME}]"
-    az storage account create -n $AKS_PERS_STORAGE_ACCOUNT_NAME -g $AKS_PERS_RESOURCE_GROUP -l $AKS_PERS_LOCATION --kind StorageV2 --sku Standard_LRS            
-}
+$AKS_PERS_STORAGE_ACCOUNT_NAME = CreateStorageIfNotExists -resourceGroup $AKS_PERS_RESOURCE_GROUP
 
 # see if the user wants to use a specific virtual network
 Do { $confirmation = Read-Host "Would you like to connect to an existing virtual network? (y/n)"}
@@ -311,8 +283,7 @@ if ($confirmation -eq 'y') {
         Write-Output "Finding existing subnets in $AKS_VNET_NAME ..."
         $subnets = az network vnet subnet list --resource-group $AKS_SUBNET_RESOURCE_GROUP --vnet-name $AKS_VNET_NAME --query "[].name" -o tsv
         
-        if($subnets.count -eq 1)
-        {
+        if ($subnets.count -eq 1) {
             Write-Output "There is only subnet called $subnets so choosing that"
             $AKS_SUBNET_NAME = $subnets
         }

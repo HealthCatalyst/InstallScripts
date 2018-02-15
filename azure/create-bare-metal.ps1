@@ -244,7 +244,10 @@ Write-Output "Found ID for ${AKS_PERS_NETWORK_SECURITY_GROUP}: $nsgid"
 Write-Output "Setting NSG into subnet"
 az network vnet subnet update -n "${AKS_SUBNET_NAME}" -g "${AKS_SUBNET_RESOURCE_GROUP}" --vnet-name "${AKS_VNET_NAME}" --network-security-group "$nsgid" --query "provisioningState" -o tsv
 
-    
+$AKS_PERS_STORAGE_ACCOUNT_NAME = CreateStorageIfNotExists -resourceGroup $AKS_PERS_RESOURCE_GROUP
+
+CreateShareInStorageAccount -storageAccountName $AKS_PERS_STORAGE_ACCOUNT_NAME -resourceGroup $AKS_PERS_RESOURCE_GROUP -sharename fabricnlp
+
 Write-Output "Creating master"
 $PUBLIC_IP_NAME = "${MASTER_VM_NAME}PublicIP"
 $ip = az network public-ip create --name $PUBLIC_IP_NAME `

@@ -11,6 +11,7 @@ $GITHUB_URL = "https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/m
 # $GITHUB_URL = "C:\Catalyst\git\Installscripts"
 
 Invoke-WebRequest -useb ${GITHUB_URL}/kubernetes/common-kube.ps1 | Invoke-Expression;
+# Get-Content ./kubernetes/common-kube.ps1 -Raw | Invoke-Expression;
 
 function global:CreateShareInStorageAccount($storageAccountName, $resourceGroup, $sharename, $deleteExisting) { 
     $AZURE_STORAGE_CONNECTION_STRING = az storage account show-connection-string -n $storageAccountName -g $resourceGroup -o tsv
@@ -207,7 +208,7 @@ function global:CleanResourceGroup($resourceGroup, $location, $vnet, $subnet, $s
 
         if ("$vnet") {
             # Write-Output "removing route table"
-            # az network vnet subnet update -n "${subnet}" -g "${AKS_SUBNET_RESOURCE_GROUP}" --vnet-name "${vnet}" --route-table ""
+            # az network vnet subnet update -n "${subnet}" -g "${subnetResourceGroup}" --vnet-name "${vnet}" --route-table ""
         }
         Write-Output "cleaning out the existing group: [$resourceGroup]"
         #az group delete --name $resourceGroup --verbose
@@ -340,4 +341,236 @@ function global:CreateStorageIfNotExists($resourceGroup) {
     return $storageAccountName
 }
 
+function global:GetVnet($subscriptionId) {
+    #Create an hashtable variable 
+    [hashtable]$Return = @{} 
+
+    Do { $confirmation = Read-Host "Would you like to connect to an existing virtual network? (y/n)"}
+    while ([string]::IsNullOrWhiteSpace($confirmation))
+    
+    if ($confirmation -eq 'y') {
+        Write-Output "Finding existing vnets..."
+        # az network vnet list --query "[].[name,resourceGroup ]" -o tsv    
+    
+        $vnets = az network vnet list --query "[].[name]" -o tsv
+    
+        Do { 
+            Write-Output "------  Existing vnets -------"
+            for ($i = 1; $i -le $vnets.count; $i++) {
+                Write-Host "$i. $($vnets[$i-1])"
+            }    
+            Write-Output "------  End vnets -------"
+    
+            $index = Read-Host "Enter number of vnet to use (1 - $($vnets.count))"
+            $vnetName = $($vnets[$index - 1])
+        }
+        while ([string]::IsNullOrWhiteSpace($vnetName))    
+    
+        $subnetResourceGroup = az network vnet list --query "[?name == '$vnetName'].resourceGroup" -o tsv
+        Write-Output "Using subnet resource group: [$subnetResourceGroup]"
+    
+        Write-Output "Finding existing subnets in $vnetName ..."
+        $subnets = az network vnet subnet list --resource-group $subnetResourceGroup --vnet-name $vnetName --query "[].name" -o tsv
+            
+        if ($subnets.count -eq 1) {
+            Write-Output "There is only one subnet called $subnets so choosing that"
+            $subnetName = $subnets
+        }
+        else {
+            Do { 
+                Write-Output "------  Subnets in $vnetName -------"
+                for ($i = 1; $i -le $subnets.count; $i++) {
+                    Write-Host "$i. $($subnets[$i-1])"
+                }    
+                Write-Output "------  End Subnets -------"
+        
+                Write-Host "NOTE: Each customer should have their own subnet.  Do not put multiple customers in the same subnet"
+                $index = Read-Host "Enter number of subnet to use (1 - $($subnets.count))"
+                $subnetName = $($subnets[$index - 1])
+            }
+            while ([string]::IsNullOrWhiteSpace($subnetName)) 
+        }
+    
+        # verify the subnet exists
+        $mysubnetid = "/subscriptions/${subscriptionId}/resourceGroups/${subnetResourceGroup}/providers/Microsoft.Network/virtualNetworks/${vnet}/subnets/${subnetName}"
+    
+        $subnetexists = az resource show --ids $mysubnetid --query "id" -o tsv
+        if (!"$subnetexists") {
+            Write-Host "The subnet was not found: $mysubnetid"
+            Read-Host "Hit ENTER to exit"
+            exit 0        
+        }
+        else {
+            Write-Output "Found subnet: [$mysubnetid]"
+        }
+        
+        Write-Output "Looking up CIDR for Subnet: [${subnetName}]"
+        $subnetCidr = az network vnet subnet show --name ${subnetName} --resource-group ${subnetResourceGroup} --vnet-name ${vnet} --query "addressPrefix" --output tsv
+    
+        Write-Output "Subnet CIDR=[$subnetCidr]"
+        # suggest and ask for the first static IP to use
+        $firstStaticIP = ""
+        $suggestedFirstStaticIP = Get-FirstIP -ip ${subnetCidr}
+    
+        $firstStaticIP = Read-Host "First static IP: (default: $suggestedFirstStaticIP )"
+        
+        if ([string]::IsNullOrWhiteSpace($firstStaticIP)) {
+            $firstStaticIP = "$suggestedFirstStaticIP"
+        }
+    
+        Write-Output "First static IP=[${firstStaticIP}]"
+    }
+    else {
+        # create a vnet
+        # create a subnet
+    
+        # az network vnet create -g MyResourceGroup -n MyVnet --address-prefix 10.0.0.0/16 --subnet-name MySubnet --subnet-prefix 10.0.0.0/24    
+    }
+    
+        
+    #Assign all return values in to hashtable
+    $Return.AKS_VNET_NAME = $vnetName
+    $Return.AKS_SUBNET_NAME = $subnetName
+    $Return.AKS_SUBNET_RESOURCE_GROUP = $subnetResourceGroup
+    $Return.AKS_FIRST_STATIC_IP = $firstStaticIP
+    $Return.AKS_SUBNET_ID = $mysubnetid
+
+    #Return the hashtable
+    Return $Return     
+}
+
+function global:DownloadAzCliIfNeeded() {
+    # install az cli from https://docs.microsoft.com/en-us/cli/azure/install-azure-cli?view=azure-cli-latest
+    $desiredAzClVersion = "2.0.26"
+    $downloadazcli = $False
+    if (!(Test-CommandExists az)) {
+        $downloadazcli = $True
+    }
+    else {
+        $azcurrentversion = az -v | Select-String "azure-cli" | Select-Object -exp line
+        # we should get: azure-cli (2.0.22)
+        $azversionMatches = $($azcurrentversion -match "$desiredAzClVersion")
+        if (!$azversionMatches) {
+            Write-Output "az version $azcurrentversion is not the same as desired version: $desiredAzClVersion"
+            $downloadazcli = $True
+        }
+    }
+
+    if ($downloadazcli) {
+        $azCliFile = ([System.IO.Path]::GetTempPath() + ("az-cli-latest.msi"))
+        $url = "https://azurecliprod.blob.core.windows.net/msi/azure-cli-latest.msi"
+        Write-Output "Downloading az-cli-latest.msi from url $url to $azCliFile"
+        If (Test-Path $azCliFile) {
+            Remove-Item $azCliFile
+        }
+        (New-Object System.Net.WebClient).DownloadFile($url, $azCliFile)
+        # https://kevinmarquette.github.io/2016-10-21-powershell-installing-msi-files/
+        Write-Output "Running MSI to install az"
+        $azCliInstallLog = ([System.IO.Path]::GetTempPath() + ('az-cli-latest.log'))
+        # msiexec flags: https://msdn.microsoft.com/en-us/library/windows/desktop/aa367988(v=vs.85).aspx
+        Start-Process -Verb runAs msiexec.exe -Wait -ArgumentList "/i $azCliFile /qn /L*e $azCliInstallLog"
+        Write-Output "Finished installing az-cli-latest.msi"
+    }
+    
+}
+
+function global:CreateSSHKey($resourceGroup, $localFolder) {
+    #Create an hashtable variable 
+    [hashtable]$Return = @{} 
+
+    $folderForSSHKey = "$localFolder\ssh\$resourceGroup"
+
+    if (!(Test-Path -Path "$folderForSSHKey")) {
+        Write-Output "$folderForSSHKey does not exist.  Creating it..."
+        New-Item -ItemType directory -Path "$folderForSSHKey"
+    }
+    
+    # check if SSH key is present.  If not, generate it
+    $privateKeyFile = "$folderForSSHKey\id_rsa"
+    $privateKeyFileUnixPath = "/" + (($privateKeyFile -replace "\\", "/") -replace ":", "").ToLower().Trim("/")    
+    
+    if (!(Test-Path "$privateKeyFile")) {
+        Write-Output "SSH key does not exist in $privateKeyFile."
+        Write-Output "Please open Git Bash and run:"
+        Write-Output "ssh-keygen -t rsa -b 2048 -q -N '' -C azureuser@linuxvm -f $privateKeyFileUnixPath"
+        Read-Host "Hit ENTER after you're done"
+    }
+    else {
+        Write-Output "SSH key already exists at $privateKeyFile so using it"
+    }
+    
+    $publicKeyFile = "$folderForSSHKey\id_rsa.pub"
+    $sshKey = Get-Content "$publicKeyFile" -First 1
+    Write-Output "SSH Public Key=$sshKey"
+
+    
+    $Return.AKS_SSH_KEY = $sshKey
+    $Return.SSH_PUBLIC_KEY_FILE = $publicKeyFile
+
+    #Return the hashtable
+    Return $Return     
+        
+}
+
+function global:CheckIfUserLogged() {
+    write-output "Checking if you're already logged in..."
+
+    # to print out the result to screen also use: <command> | Tee-Object -Variable cmdOutput
+    $loggedInUser = az account show --query "user.name"  --output tsv
+    
+    # get azure login and subscription
+    Write-Output "user: $loggedInUser"
+    
+    if ( "$loggedInUser" ) {
+        $subscriptionName = az account show --query "name"  --output tsv
+        Write-Output "You are currently logged in as [$loggedInUser] into subscription [$subscriptionName]"
+        
+        Do { $confirmation = Read-Host "Do you want to use this account? (y/n)"}
+        while ([string]::IsNullOrWhiteSpace($confirmation))
+    
+        if ($confirmation -eq 'n') {
+            az login
+        }    
+    }
+    else {
+        # login
+        az login
+    }
+    
+    $subscriptionId = az account show --query "id" --output tsv
+
+    Return $subscriptionId
+}
+
+function global:GetResourceGroupAndLocation($defaultResourceGroup) {
+    #Create an hashtable variable 
+    [hashtable]$Return = @{} 
+
+    Do { 
+        $resourceGroup = Read-Host "Resource Group (leave empty for $defaultResourceGroup)"
+        if ([string]::IsNullOrWhiteSpace($resourceGroup)) {
+            $resourceGroup = $defaultResourceGroup
+        }
+    }
+    while ([string]::IsNullOrWhiteSpace($resourceGroup))
+    
+    Write-Output "Using resource group [$resourceGroup]"
+    
+    Write-Output "checking if resource group already exists"
+    $resourceGroupExists = az group exists --name ${AKS_PERS_RESOURCE_GROUP}
+    if ($resourceGroupExists -ne "true") {
+        Write-Output "Create the Resource Group"
+        az group create --name $resourceGroup --location $AKS_PERS_LOCATION --verbose
+
+        Do { $location = Read-Host "Location: (e.g., eastus)"}
+        while ([string]::IsNullOrWhiteSpace($location))    
+    }
+    
+    $Return.AKS_PERS_RESOURCE_GROUP = $resourceGroup
+    $Return.AKS_PERS_LOCATION = $location
+
+    #Return the hashtable
+    Return $Return         
+}
+#-------------------
 Write-Host "end common.ps1 version $versioncommon"

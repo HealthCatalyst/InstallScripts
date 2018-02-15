@@ -164,4 +164,58 @@ function global:Get-ProcessByPort( [ValidateNotNullOrEmpty()] [int] $Port ) {
     return $p_id;
 }
 
+function global:AddFolderToPathEnvironmentVariable($folder) {
+    # add the c:\kubernetes folder to system PATH
+    Write-Output "Checking if $folder is in PATH"
+    $pathItems = ($env:path).split(";")
+    if ( $pathItems -notcontains "$folder") {
+        Write-Output "Adding $folder to system path"
+        $oldpath = (Get-ItemProperty -Path "Registry::HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\Session Manager\Environment" -Name PATH).path
+        # see if the registry value is wrong too
+        if ( ($oldpath).split(";") -notcontains "$folder") {
+            $newpath = "$oldpath;$folder"
+            Read-Host "Script needs elevated privileges to set PATH.  Hit ENTER to launch script to set PATH"
+            Start-Process powershell -verb RunAs -ArgumentList "Set-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\Session Manager\Environment' -Name PATH -Value '$newPath'; Read-Host 'Press ENTER'"
+            Write-Output "New PATH:"
+            $newpath = (Get-ItemProperty -Path "Registry::HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\Session Manager\Environment" -Name PATH).path
+            Write-Output "$newpath".split(";")
+        }
+        # for current session set the PATH too.  the above only takes effect if powershell is reopened
+        $ENV:PATH = "$ENV:PATH;$folder"
+        Write-Output "Set path for current powershell session"
+        Write-Output ($env:path).split(";")
+    }
+    else {
+        Write-Output "$folder is already in PATH"
+    }
+}
+
+function global:DownloadKubectl($localFolder) {
+    # download kubectl
+    $kubeCtlFile = "$localFolder\kubectl.exe"
+    $desiredKubeCtlVersion = "v1.9.2"
+    $downloadkubectl = "n"
+    if (!(Test-Path "$kubeCtlFile")) {
+        $downloadkubectl = "y"
+    }
+    else {
+        $kubectlversion = kubectl version --client=true --short=true
+        $kubectlversionMatches = $($kubectlversion -match "$desiredKubeCtlVersion")
+        if (!$kubectlversionMatches) {
+            $downloadkubectl = "y"
+        }
+    }
+    if ( $downloadkubectl -eq "y") {
+        $url = "https://storage.googleapis.com/kubernetes-release/release/${desiredKubeCtlVersion}/bin/windows/amd64/kubectl.exe"
+        Write-Output "Downloading kubectl.exe from url $url to $kubeCtlFile"
+        Remove-Item -Path "$kubeCtlFile"
+        (New-Object System.Net.WebClient).DownloadFile($url, $kubeCtlFile)
+    }
+    else {
+        Write-Output "kubectl already exists at $kubeCtlFile"    
+    }
+    
+}
+
+# --------------------
 Write-Host "end common-kube.ps1 version $versioncommon"

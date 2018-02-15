@@ -10,79 +10,14 @@ $GITHUB_URL = "https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/m
 Invoke-WebRequest -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/azure/common.ps1 | Invoke-Expression;
 # Get-Content ./azure/common.ps1 -Raw | Invoke-Expression;
 
-$AKS_PERS_RESOURCE_GROUP = ""
-$AKS_PERS_LOCATION = ""
-$AKS_CLUSTER_NAME = ""
-$AKS_PERS_STORAGE_ACCOUNT_NAME = ""
-$AKS_SUBSCRIPTION_ID = ""
-$AKS_VNET_NAME = ""
-$AKS_SUBNET_NAME = ""
-$AKS_SUBNET_RESOURCE_GROUP = ""
-$AKS_SSH_KEY = ""
-$AKS_FIRST_STATIC_IP = ""
 $AKS_USE_AZURE_NETWORKING = "n"
-$AKS_SERVICE_PRINCIPAL_NAME = ""
 $AKS_SUPPORT_WINDOWS_CONTAINERS = "n"
 
 write-output "Checking if you're already logged in..."
 
+DownloadAzCliIfNeeded
 
-# install az cli from https://docs.microsoft.com/en-us/cli/azure/install-azure-cli?view=azure-cli-latest
-$DESIRED_AZ_CLI_VERSION = "2.0.26"
-$downloadazcli = $False
-if (!(Test-CommandExists az)) {
-    $downloadazcli = $True
-}
-else {
-    $azcurrentversion = az -v | Select-String "azure-cli" | Select-Object -exp line
-    # we should get: azure-cli (2.0.22)
-    $azversionMatches = $($azcurrentversion -match "$DESIRED_AZ_CLI_VERSION")
-    if (!$azversionMatches) {
-        Write-Output "az version $azcurrentversion is not the same as desired version: $DESIRED_AZ_CLI_VERSION"
-        $downloadazcli = $True
-    }
-}
-
-if ($downloadazcli) {
-    $AZCLI_FILE = ([System.IO.Path]::GetTempPath() + ("az-cli-latest.msi"))
-    $url = "https://azurecliprod.blob.core.windows.net/msi/azure-cli-latest.msi"
-    Write-Output "Downloading az-cli-latest.msi from url $url to $AZCLI_FILE"
-    If (Test-Path $AZCLI_FILE) {
-        Remove-Item $AZCLI_FILE
-    }
-    (New-Object System.Net.WebClient).DownloadFile($url, $AZCLI_FILE)
-    # https://kevinmarquette.github.io/2016-10-21-powershell-installing-msi-files/
-    Write-Output "Running MSI to install az"
-    $AZCLI_INSTALL_LOG = ([System.IO.Path]::GetTempPath() + ('az-cli-latest.log'))
-    # msiexec flags: https://msdn.microsoft.com/en-us/library/windows/desktop/aa367988(v=vs.85).aspx
-    Start-Process -Verb runAs msiexec.exe -Wait -ArgumentList "/i $AZCLI_FILE /qn /L*e $AZCLI_INSTALL_LOG"
-    Write-Output "Finished installing az-cli-latest.msi"
-}
-
-
-# to print out the result to screen also use: <command> | Tee-Object -Variable cmdOutput
-$loggedInUser = az account show --query "user.name"  --output tsv
-
-# get azure login and subscription
-Write-Output "user: $loggedInUser"
-
-if ( "$loggedInUser" ) {
-    $SUBSCRIPTION_NAME = az account show --query "name"  --output tsv
-    Write-Output "You are currently logged in as [$loggedInUser] into subscription [$SUBSCRIPTION_NAME]"
-    
-    Do { $confirmation = Read-Host "Do you want to use this account? (y/n)"}
-    while ([string]::IsNullOrWhiteSpace($confirmation))
-
-    if ($confirmation -eq 'n') {
-        az login
-    }    
-}
-else {
-    # login
-    az login
-}
-
-$AKS_SUBSCRIPTION_ID = az account show --query "id" --output tsv
+$AKS_SUBSCRIPTION_ID = CheckIfUserLogged
 
 # ask for customerid
 Do { $customerid = Read-Host "Health Catalyst Customer ID (e.g., ahmn)"}
@@ -92,25 +27,11 @@ Write-Output "Customer ID: $customerid"
 
 # ask for resource group name to create
 $DEFAULT_RESOURCE_GROUP = "Prod-Kub-$($customerid.ToUpper())-RG"
-Do { 
-    $AKS_PERS_RESOURCE_GROUP = Read-Host "Resource Group (leave empty for $DEFAULT_RESOURCE_GROUP)"
-    if ([string]::IsNullOrWhiteSpace($AKS_PERS_RESOURCE_GROUP)) {
-        $AKS_PERS_RESOURCE_GROUP = $DEFAULT_RESOURCE_GROUP
-    }
-}
-while ([string]::IsNullOrWhiteSpace($AKS_PERS_RESOURCE_GROUP))
 
-Write-Output "Using resource group [$AKS_PERS_RESOURCE_GROUP]"
+$ResourceGroupInfo = GetResourceGroupAndLocation -defaultResourceGroup $DEFAULT_RESOURCE_GROUP
+$AKS_PERS_RESOURCE_GROUP=$ResourceGroupInfo.AKS_PERS_RESOURCE_GROUP
+$AKS_PERS_LOCATION=$ResourceGroupInfo.AKS_PERS_LOCATION
 
-Do { $AKS_PERS_LOCATION = Read-Host "Location: (e.g., eastus)"}
-while ([string]::IsNullOrWhiteSpace($AKS_PERS_LOCATION))
-
-Write-Output "checking if resource group already exists"
-$resourceGroupExists = az group exists --name ${AKS_PERS_RESOURCE_GROUP}
-if ($resourceGroupExists -ne "true") {
-    Write-Output "Create the Resource Group"
-    az group create --name $AKS_PERS_RESOURCE_GROUP --location $AKS_PERS_LOCATION --verbose
-}
 
 $AKS_SUPPORT_WINDOWS_CONTAINERS = Read-Host "Support Windows containers (y/n) (default: n)"
 if ([string]::IsNullOrWhiteSpace($AKS_SUPPORT_WINDOWS_CONTAINERS)) {
@@ -142,78 +63,12 @@ if (!(Test-Path -Path "$AKS_LOCAL_FOLDER")) {
     New-Item -ItemType directory -Path $AKS_LOCAL_FOLDER
 }
 
-# add the c:\kubernetes folder to system PATH
-Write-Output "Checking if $AKS_LOCAL_FOLDER is in PATH"
-$pathItems = ($env:path).split(";")
-if ( $pathItems -notcontains "$AKS_LOCAL_FOLDER") {
-    Write-Output "Adding $AKS_LOCAL_FOLDER to system path"
-    $oldpath = (Get-ItemProperty -Path "Registry::HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\Session Manager\Environment" -Name PATH).path
-    # see if the registry value is wrong too
-    if ( ($oldpath).split(";") -notcontains "$AKS_LOCAL_FOLDER") {
-        $newpath = "$oldpath;$AKS_LOCAL_FOLDER"
-        Read-Host "Script needs elevated privileges to set PATH.  Hit ENTER to launch script to set PATH"
-        Start-Process powershell -verb RunAs -ArgumentList "Set-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\Session Manager\Environment' -Name PATH -Value '$newPath'; Read-Host 'Press ENTER'"
-        Write-Output "New PATH:"
-        $newpath = (Get-ItemProperty -Path "Registry::HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\Session Manager\Environment" -Name PATH).path
-        Write-Output "$newpath".split(";")
-    }
-    # for current session set the PATH too.  the above only takes effect if powershell is reopened
-    $ENV:PATH = "$ENV:PATH;$AKS_LOCAL_FOLDER"
-    Write-Output "Set path for current powershell session"
-    Write-Output ($env:path).split(";")
-}
-else {
-    Write-Output "$AKS_LOCAL_FOLDER is already in PATH"
-}
+AddFolderToPathEnvironmentVariable -folder $AKS_LOCAL_FOLDER
 
-$AKS_FOLDER_FOR_SSH_KEY = "$AKS_LOCAL_FOLDER\ssh\$AKS_PERS_RESOURCE_GROUP"
+$SSHKeyInfo = CreateSSHKey -resourceGroup $AKS_PERS_RESOURCE_GROUP -localFolder $AKS_LOCAL_FOLDER
+$AKS_SSH_KEY = $SSHKeyInfo.AKS_SSH_KEY
 
-if (!(Test-Path -Path "$AKS_FOLDER_FOR_SSH_KEY")) {
-    Write-Output "$AKS_FOLDER_FOR_SSH_KEY does not exist.  Creating it..."
-    New-Item -ItemType directory -Path "$AKS_FOLDER_FOR_SSH_KEY"
-}
-
-# check if SSH key is present.  If not, generate it
-$SSH_PRIVATE_KEY_FILE = "$AKS_FOLDER_FOR_SSH_KEY\id_rsa"
-$SSH_PRIVATE_KEY_FILE_UNIX_PATH = "/" + (($SSH_PRIVATE_KEY_FILE -replace "\\", "/") -replace ":", "").ToLower().Trim("/")    
-
-if (!(Test-Path "$SSH_PRIVATE_KEY_FILE")) {
-    Write-Output "SSH key does not exist in $SSH_PRIVATE_KEY_FILE."
-    Write-Output "Please open Git Bash and run:"
-    Write-Output "ssh-keygen -t rsa -b 2048 -q -N '' -C azureuser@linuxvm -f $SSH_PRIVATE_KEY_FILE_UNIX_PATH"
-    Read-Host "Hit ENTER after you're done"
-}
-else {
-    Write-Output "SSH key already exists at $SSH_PRIVATE_KEY_FILE so using it"
-}
-
-$SSH_PUBLIC_KEY_FILE = "$AKS_FOLDER_FOR_SSH_KEY\id_rsa.pub"
-$AKS_SSH_KEY = Get-Content "$SSH_PUBLIC_KEY_FILE" -First 1
-Write-Output "SSH Public Key=$AKS_SSH_KEY"
-
-# download kubectl
-$KUBECTL_FILE = "$AKS_LOCAL_FOLDER\kubectl.exe"
-$DESIRED_KUBECTL_VERSION = "v1.9.2"
-$downloadkubectl = "n"
-if (!(Test-Path "$KUBECTL_FILE")) {
-    $downloadkubectl = "y"
-}
-else {
-    $kubectlversion = kubectl version --client=true --short=true
-    $kubectlversionMatches = $($kubectlversion -match "$DESIRED_KUBECTL_VERSION")
-    if (!$kubectlversionMatches) {
-        $downloadkubectl = "y"
-    }
-}
-if ( $downloadkubectl -eq "y") {
-    $url = "https://storage.googleapis.com/kubernetes-release/release/${DESIRED_KUBECTL_VERSION}/bin/windows/amd64/kubectl.exe"
-    Write-Output "Downloading kubectl.exe from url $url to $KUBECTL_FILE"
-    Remove-Item -Path "$KUBECTL_FILE"
-    (New-Object System.Net.WebClient).DownloadFile($url, $KUBECTL_FILE)
-}
-else {
-    Write-Output "kubectl already exists at $KUBECTL_FILE"    
-}
+DownloadKubectl -localFolder $AKS_LOCAL_FOLDER
 
 # download acs-engine
 $ACS_ENGINE_FILE = "$AKS_LOCAL_FOLDER\acs-engine.exe"
@@ -251,100 +106,11 @@ $AKS_CLUSTER_NAME = "kubcluster"
 $AKS_PERS_STORAGE_ACCOUNT_NAME = CreateStorageIfNotExists -resourceGroup $AKS_PERS_RESOURCE_GROUP
 
 # see if the user wants to use a specific virtual network
-Do { $confirmation = Read-Host "Would you like to connect to an existing virtual network? (y/n)"}
-while ([string]::IsNullOrWhiteSpace($confirmation))
-
-if ($confirmation -eq 'y') {
-    Write-Output "Finding existing vnets..."
-    # az network vnet list --query "[].[name,resourceGroup ]" -o tsv    
-
-    $vnets = az network vnet list --query "[].[name]" -o tsv
-
-    Do { 
-        Write-Output "------  Existing vnets -------"
-        for ($i = 1; $i -le $vnets.count; $i++) {
-            Write-Host "$i. $($vnets[$i-1])"
-        }    
-        Write-Output "------  End vnets -------"
-
-        $index = Read-Host "Enter number of vnet to use (1 - $($vnets.count))"
-        $AKS_VNET_NAME = $($vnets[$index - 1])
-    }
-    while ([string]::IsNullOrWhiteSpace($AKS_VNET_NAME))    
-
-    if ("$AKS_VNET_NAME") {
-        
-        # Do { $AKS_SUBNET_RESOURCE_GROUP = Read-Host "Resource Group of Virtual Network"}
-        # while ([string]::IsNullOrWhiteSpace($AKS_SUBNET_RESOURCE_GROUP)) 
-
-        $AKS_SUBNET_RESOURCE_GROUP = az network vnet list --query "[?name == '$AKS_VNET_NAME'].resourceGroup" -o tsv
-        Write-Output "Using subnet resource group: [$AKS_SUBNET_RESOURCE_GROUP]"
-
-        Write-Output "Finding existing subnets in $AKS_VNET_NAME ..."
-        $subnets = az network vnet subnet list --resource-group $AKS_SUBNET_RESOURCE_GROUP --vnet-name $AKS_VNET_NAME --query "[].name" -o tsv
-        
-        if ($subnets.count -eq 1) {
-            Write-Output "There is only subnet called $subnets so choosing that"
-            $AKS_SUBNET_NAME = $subnets
-        }
-        else {
-            Do { 
-                Write-Output "------  Subnets in $AKS_VNET_NAME -------"
-                for ($i = 1; $i -le $subnets.count; $i++) {
-                    Write-Host "$i. $($subnets[$i-1])"
-                }    
-                Write-Output "------  End Subnets -------"
-    
-                Write-Host "NOTE: Each customer should have their own subnet.  Do not put multiple customers in the same subnet"
-                $index = Read-Host "Enter number of subnet to use (1 - $($subnets.count))"
-                $AKS_SUBNET_NAME = $($subnets[$index - 1])
-            }
-            while ([string]::IsNullOrWhiteSpace($AKS_SUBNET_NAME)) 
-        }
-
-        # verify the subnet exists
-        $mysubnetid = "/subscriptions/${AKS_SUBSCRIPTION_ID}/resourceGroups/${AKS_SUBNET_RESOURCE_GROUP}/providers/Microsoft.Network/virtualNetworks/${AKS_VNET_NAME}/subnets/${AKS_SUBNET_NAME}"
-
-        $subnetexists = az resource show --ids $mysubnetid --query "id" -o tsv
-        if (!"$subnetexists") {
-            Write-Host "The subnet was not found: $mysubnetid"
-            Read-Host "Hit ENTER to exit"
-            exit 0        
-        }
-        else {
-            Write-Output "Found subnet: [$mysubnetid]"
-        }
-    }
-}
-else {
-    # create a vnet
-    # create a subnet
-
-    # az network vnet create -g MyResourceGroup -n MyVnet --address-prefix 10.0.0.0/16 --subnet-name MySubnet --subnet-prefix 10.0.0.0/24    
-}
-
-
-# find CIDR for subnet
-if ("$AKS_VNET_NAME") {
-    Write-Output "Looking up CIDR for Subnet: [${AKS_SUBNET_NAME}]"
-    $AKS_SUBNET_CIDR = az network vnet subnet show --name ${AKS_SUBNET_NAME} --resource-group ${AKS_SUBNET_RESOURCE_GROUP} --vnet-name ${AKS_VNET_NAME} --query "addressPrefix" --output tsv
-
-    Write-Output "Subnet CIDR=[$AKS_SUBNET_CIDR]"
-}
-
-# suggest and ask for the first static IP to use
-$AKS_FIRST_STATIC_IP = ""
-if ("$AKS_VNET_NAME") {
-    $suggestedFirstStaticIP = Get-FirstIP -ip ${AKS_SUBNET_CIDR}
-
-    $AKS_FIRST_STATIC_IP = Read-Host "First static IP: (default: $suggestedFirstStaticIP )"
-    
-    if ([string]::IsNullOrWhiteSpace($AKS_FIRST_STATIC_IP)) {
-        $AKS_FIRST_STATIC_IP = "$suggestedFirstStaticIP"
-    }
-
-    Write-Output "First static IP=[${AKS_FIRST_STATIC_IP}]"
-}
+$VnetInfo = GetVnet -subscriptionId $AKS_SUBSCRIPTION_ID
+$AKS_VNET_NAME = $VnetInfo.AKS_VNET_NAME
+$AKS_SUBNET_NAME=$VnetInfo.AKS_SUBNET_NAME
+$AKS_SUBNET_RESOURCE_GROUP=$VnetInfo.AKS_SUBNET_RESOURCE_GROUP
+$AKS_FIRST_STATIC_IP=$VnetInfo.AKS_FIRST_STATIC_IP
 
 CleanResourceGroup -resourceGroup ${AKS_PERS_RESOURCE_GROUP} -location $AKS_PERS_LOCATION -vnet $AKS_VNET_NAME `
     -subnet $AKS_SUBNET_NAME -subnetResourceGroup $AKS_SUBNET_RESOURCE_GROUP `

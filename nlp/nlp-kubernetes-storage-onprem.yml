@@ -7,7 +7,6 @@ metadata:
   name: azure-file-volume-mysql
   namespace: fabricnlp    
 spec:
-  storageClassName: default
   capacity:
     storage: 128Gi
   # https://kubernetes.io/docs/concepts/storage/persistent-volumes/#access-modes
@@ -46,7 +45,6 @@ metadata:
 spec:
   accessModes:
     - ReadWriteMany
-  storageClassName: default
   resources:
     requests:
       storage: 128Gi
@@ -62,7 +60,6 @@ spec:
   #persistentVolumeReclaimPolicy: Delete
   capacity:
     storage: 128Gi
-  storageClassName: default
   accessModes:
     - ReadWriteOnce
   hostPath:
@@ -85,7 +82,6 @@ metadata:
 spec:
   accessModes:
     - ReadWriteMany
-  storageClassName: default
   resources:
     requests:
       storage: 128Gi
@@ -101,7 +97,6 @@ metadata:
 spec:
   capacity:
     storage: 32Gi
-  storageClassName: default
   accessModes:
     - ReadWriteOnce
   hostPath:
@@ -124,7 +119,6 @@ metadata:
 spec:
   accessModes:
     - ReadWriteMany
-  storageClassName: default
   resources:
     requests:
       storage: 32Gi
@@ -137,7 +131,6 @@ metadata:
   name: azure-file-volume-mysql-backup
   namespace: fabricnlp    
 spec:
-  storageClassName: default
   capacity:
     storage: 128Gi
   # https://kubernetes.io/docs/concepts/storage/persistent-volumes/#access-modes
@@ -176,7 +169,6 @@ metadata:
 spec:
   accessModes:
     - ReadWriteMany
-  storageClassName: default
   resources:
     requests:
       storage: 128Gi

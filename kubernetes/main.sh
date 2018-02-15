@@ -71,6 +71,7 @@ while [[ "$input" != "q" ]]; do
         kubectl create -f https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/kubernetes/busybox.yml
         kubectl exec -ti busybox -- nslookup kubernetes.default
         kubectl exec busybox cat /etc/resolv.conf
+        kubectl delete -f https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/kubernetes/busybox.yml
         ;;
     15)  curl -sSL https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/nlp/installnlpkubernetes.sh | bash
         ;;

@@ -6,13 +6,13 @@ set -e
 #
 #
 
-version="2018.02.15.01"
+version="2018.02.15.02"
 echo "---- setupmaster version $version ----"
 
 u="$(whoami)"
 echo "User name: $u"
 
-sudo kubeadm init --kubernetes-version=v1.9.2 --pod-network-cidr=192.168.0.0/16
+sudo kubeadm init --kubernetes-version=v1.9.3 --pod-network-cidr=192.168.0.0/16
 
 sleep 10s
 # for logs, sudo journalctl -xeu kubelet
@@ -34,6 +34,22 @@ kubectl apply -f https://docs.projectcalico.org/v3.0/getting-started/kubernetes/
 kubectl get nodes
 
 kubectl get pods -n kube-system -o wide
+
+pods=$(kubectl get pods -n kube-system -o jsonpath='{.items[*].metadata.name}')
+waitingonPod="n"
+while [[ ! -z $waitingonPod ]]; do
+    waitingonPod=""
+    echo "---- waiting until all pods are running ---"
+
+    for pod in $pods; do
+        podstatus=$(kubectl get pods $pod -n kube-system -o jsonpath='{.status.phase}')
+        echo "$pod: $podstatus"
+        if [[ $podstatus != "Running" ]]; then
+            waitingonPod=$pod
+        fi
+    done
+    sleep 5
+done 
 
 # testing
 # kubectl run nginx --image=nginx --port=80

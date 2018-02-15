@@ -25,10 +25,17 @@ sudo yum-config-manager \
 sudo yum install -y docker-engine-17.03.1.ce-1.el7.centos
 
 # https://kubernetes.io/docs/setup/independent/install-kubeadm/
+# log rotation for docker: https://docs.docker.com/config/daemon/
+# https://docs.docker.com/config/containers/logging/json-file/
 sudo mkdir -p /etc/docker
 cat << EOF | sudo tee -a /etc/docker/daemon.json
 {
-  "exec-opts": ["native.cgroupdriver=systemd"]
+  "exec-opts": ["native.cgroupdriver=systemd"],
+  "log-driver": "json-file",
+  "log-opts": {
+    "max-size": "10m",
+    "max-file": "5"
+  }  
 }
 EOF
 

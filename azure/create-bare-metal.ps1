@@ -28,21 +28,12 @@ Write-Output "Customer ID: $customerid"
 $DEFAULT_RESOURCE_GROUP = "Test-Kub-$($customerid.ToUpper())-RG"
 
 $ResourceGroupInfo = GetResourceGroupAndLocation -defaultResourceGroup $DEFAULT_RESOURCE_GROUP
-$AKS_PERS_RESOURCE_GROUP=$ResourceGroupInfo.AKS_PERS_RESOURCE_GROUP
-$AKS_PERS_LOCATION=$ResourceGroupInfo.AKS_PERS_LOCATION
+$AKS_PERS_RESOURCE_GROUP = $ResourceGroupInfo.AKS_PERS_RESOURCE_GROUP
+$AKS_PERS_LOCATION = $ResourceGroupInfo.AKS_PERS_LOCATION
 
 $AKS_SUPPORT_WINDOWS_CONTAINERS = Read-Host "Support Windows containers (y/n) (default: n)"
 if ([string]::IsNullOrWhiteSpace($AKS_SUPPORT_WINDOWS_CONTAINERS)) {
     $AKS_SUPPORT_WINDOWS_CONTAINERS = "n"
-}
-
-if ("$AKS_SUPPORT_WINDOWS_CONTAINERS" -eq "n") {
-    # azure networking is not supported with windows containers
-    # do we want to use azure networking or kube networking
-    $AKS_USE_AZURE_NETWORKING = Read-Host "Use Azure networking (default: y)"
-    if ([string]::IsNullOrWhiteSpace($AKS_USE_AZURE_NETWORKING)) {
-        $AKS_USE_AZURE_NETWORKING = "y"
-    }
 }
 
 # service account to own the resources
@@ -64,25 +55,29 @@ if (!(Test-Path -Path "$AKS_LOCAL_FOLDER")) {
 AddFolderToPathEnvironmentVariable -folder $AKS_LOCAL_FOLDER
 
 $SSHKeyInfo = CreateSSHKey -resourceGroup $AKS_PERS_RESOURCE_GROUP -localFolder $AKS_LOCAL_FOLDER
-$SSH_PUBLIC_KEY_FILE= $SSHKeyInfo.SSH_PUBLIC_KEY_FILE
+$SSH_PUBLIC_KEY_FILE = $SSHKeyInfo.SSH_PUBLIC_KEY_FILE
+$SSH_PRIVATE_KEY_FILE_UNIX_PATH = $SSHKeyInfo.SSH_PRIVATE_KEY_FILE_UNIX_PATH
 
 DownloadKubectl -localFolder $AKS_LOCAL_FOLDER
 
 # see if the user wants to use a specific virtual network
 $VnetInfo = GetVnet -subscriptionId $AKS_SUBSCRIPTION_ID
 $AKS_VNET_NAME = $VnetInfo.AKS_VNET_NAME
-$AKS_SUBNET_NAME=$VnetInfo.AKS_SUBNET_NAME
-$AKS_SUBNET_RESOURCE_GROUP=$VnetInfo.AKS_SUBNET_RESOURCE_GROUP
-$AKS_SUBNET_ID=$VnetInfo.AKS_SUBNET_ID
+$AKS_SUBNET_NAME = $VnetInfo.AKS_SUBNET_NAME
+$AKS_SUBNET_RESOURCE_GROUP = $VnetInfo.AKS_SUBNET_RESOURCE_GROUP
+$AKS_SUBNET_ID = $VnetInfo.AKS_SUBNET_ID
 
 CleanResourceGroup -resourceGroup ${AKS_PERS_RESOURCE_GROUP} -location $AKS_PERS_LOCATION -vnet $AKS_VNET_NAME `
     -subnet $AKS_SUBNET_NAME -subnetResourceGroup $AKS_SUBNET_RESOURCE_GROUP `
     -storageAccount $AKS_PERS_STORAGE_ACCOUNT_NAME
 
-# az network vnet create -g $AKS_PERS_RESOURCE_GROUP -n $AKS_VNET_NAME --address-prefix 10.0.0.0/16 --subnet-name $AKS_SUBNET_NAME --subnet-prefix 10.0.0.0/19
+$AKS_PERS_STORAGE_ACCOUNT_NAME = $(CreateStorageIfNotExists -resourceGroup $AKS_PERS_RESOURCE_GROUP).AKS_PERS_STORAGE_ACCOUNT_NAME
+
+CreateShareInStorageAccount -storageAccountName $AKS_PERS_STORAGE_ACCOUNT_NAME -resourceGroup $AKS_PERS_RESOURCE_GROUP -sharename fabricnlp
 
 $MASTER_VM_NAME = "k8s-master"
 $NETWORK_SECURITY_GROUP = "cluster-nsg"
+Write-Host "Creating network security group: $NETWORK_SECURITY_GROUP"
 $nsg = az network nsg create --name $NETWORK_SECURITY_GROUP --resource-group $AKS_PERS_RESOURCE_GROUP --query "id" -o tsv 
 
 Write-Output "Creating rule: allow_ssh"
@@ -100,6 +95,7 @@ az network nsg rule create -g $AKS_PERS_RESOURCE_GROUP --nsg-name $NETWORK_SECUR
     --protocol Tcp --description "allow RDP access." `
     --query "provisioningState" -o tsv
 
+$sourceTagForHttpAccess = "Internet"
 if ([string]::IsNullOrWhiteSpace($(az network nsg rule show --name "HttpPort" --nsg-name $NETWORK_SECURITY_GROUP --resource-group $AKS_PERS_RESOURCE_GROUP))) {
     Write-Output "Creating rule: HttpPort"
     az network nsg rule create -g $AKS_PERS_RESOURCE_GROUP --nsg-name $NETWORK_SECURITY_GROUP -n HttpPort --priority 500 `
@@ -139,10 +135,6 @@ Write-Output "Found ID for ${AKS_PERS_NETWORK_SECURITY_GROUP}: $nsgid"
 
 Write-Output "Setting NSG into subnet"
 az network vnet subnet update -n "${AKS_SUBNET_NAME}" -g "${AKS_SUBNET_RESOURCE_GROUP}" --vnet-name "${AKS_VNET_NAME}" --network-security-group "$nsgid" --query "provisioningState" -o tsv
-
-$AKS_PERS_STORAGE_ACCOUNT_NAME = $(CreateStorageIfNotExists -resourceGroup $AKS_PERS_RESOURCE_GROUP).AKS_PERS_STORAGE_ACCOUNT_NAME
-
-CreateShareInStorageAccount -storageAccountName $AKS_PERS_STORAGE_ACCOUNT_NAME -resourceGroup $AKS_PERS_RESOURCE_GROUP -sharename fabricnlp
 
 Write-Output "Creating master"
 $PUBLIC_IP_NAME = "${MASTER_VM_NAME}PublicIP"

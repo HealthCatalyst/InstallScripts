@@ -1,6 +1,6 @@
 # This file contains common functions for Azure
 # 
-$versioncommon = "2018.02.15.01"
+$versioncommon = "2018.02.15.02"
 
 Write-Host "---- Including common.ps1 version $versioncommon -----"
 function global:GetCommonVersion() {
@@ -253,7 +253,7 @@ function global:CleanResourceGroup($resourceGroup, $location, $vnet, $subnet, $s
             az resource delete --ids $(az resource list --resource-group $resourceGroup --resource-type "Microsoft.Network/publicIPAddresses" --query "[].id" -o tsv | Where-Object {!"$_".EndsWith("PublicIP")} )
         }
     
-        if (("$vnet") -and ("$AKS_USE_AZURE_NETWORKING" -eq "n")) {
+        if (("$vnet") ) {
             Write-Host "Switching the subnet to a temp route table and tempnsg so we can delete the old route table and nsg"
 
             $routeid = $(az network route-table show --name temproutetable --resource-group $resourceGroup --query "id" -o tsv)
@@ -512,6 +512,7 @@ function global:CreateSSHKey($resourceGroup, $localFolder) {
     
     $Return.AKS_SSH_KEY = $sshKey
     $Return.SSH_PUBLIC_KEY_FILE = $publicKeyFile
+    $Return.SSH_PRIVATE_KEY_FILE_UNIX_PATH = $privateKeyFileUnixPath
 
     #Return the hashtable
     Return $Return     

@@ -5,14 +5,12 @@ set -e
 #   curl -sSL https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/kubernetes/main.sh | bash
 #
 #
-version="2018.02.14.03"
+version="2018.02.14.04"
 
 GITHUB_URL="https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master"
 
 source <(curl -sSL "$GITHUB_URL/kubernetes/common.sh")
 # source ./kubernetes/common.sh
-
-GetCommonVersion
 
 input=""
 while [[ "$input" != "q" ]]; do
@@ -71,14 +69,14 @@ while [[ "$input" != "q" ]]; do
         do
                 Write-Output "=============== Describe Pod: $pod ================="
                 kubectl describe pods $pod -n fabricnlp
-                read -n1 -r -p "Press space to continue..." key
+                read -n1 -r -p "Press space to continue..." key < /dev/tty
         done
 
         for pod in $pods
         do
                 Write-Output "=============== Logs for Pod: $pod ================="
                 kubectl logs --tail=20 $pod -n fabricnlp
-                read -n1 -r -p "Press space to continue..." key
+                read -n1 -r -p "Press space to continue..." key < /dev/tty
         done
         ;;
     q) echo  "Exiting" 

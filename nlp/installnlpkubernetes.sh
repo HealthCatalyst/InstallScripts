@@ -5,7 +5,7 @@ set -e
 #   curl -sSL https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/nlp/installnlpkubernetes.sh | bash
 #
 GITHUB_URL="https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master"
-version="2018.02.14.04"
+version="2018.02.14.05"
 
 echo "---- installnlpkubernetes.sh version $version ------"
 
@@ -29,6 +29,8 @@ else
         kubectl delete secret mysqlrootpassword -n fabricnlp --ignore-not-found=true
         kubectl delete secret mysqlpassword -n fabricnlp --ignore-not-found=true
         kubectl delete secret smtprelaypassword -n fabricnlp --ignore-not-found=true
+
+        sudo rm -rf /mnt/data/*
     fi
 fi
 

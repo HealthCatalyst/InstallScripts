@@ -5,7 +5,7 @@ set -e
 #   curl -sSL https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/kubernetes/main.sh | bash
 #
 #
-version="2018.02.15.03"
+version="2018.02.15.04"
 
 GITHUB_URL="https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master"
 
@@ -69,7 +69,7 @@ while [[ "$input" != "q" ]]; do
         kubectl logs --namespace=kube-system $(kubectl get pods --namespace=kube-system -l k8s-app=kube-dns -o name) -c sidecar        
         echo "----------- Creating a busybox pod to test DNS -----------"
         kubectl create -f https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/kubernetes/busybox.yml
-        kubectl exec -ti busybox -- nslookup kubernetes.default
+        kubectl exec busybox nslookup kubernetes.default
         kubectl exec busybox cat /etc/resolv.conf
         kubectl delete -f https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/kubernetes/busybox.yml
         ;;
@@ -77,7 +77,7 @@ while [[ "$input" != "q" ]]; do
         ;;
     21)  echo "Current cluster: $(kubectl config current-context)"
         kubectl version --short
-        kubectl get "deployments,pods,services,ingress,secrets" --namespace=kube-system -o wide
+        kubectl get "deployments,pods,services,nodes,ingress,secrets" --namespace=kube-system -o wide
         ;;
     31)  kubectl get 'deployments,pods,services,ingress,secrets,persistentvolumeclaims,persistentvolumes,nodes' --namespace=fabricnlp -o wide
         ;;
@@ -107,6 +107,7 @@ while [[ "$input" != "q" ]]; do
     ;;
     esac
 
-read -p "Press Enter to Continue" < /dev/tty 
+echo ""
+read -p "[Press Enter to Continue]" < /dev/tty 
 clear
 done

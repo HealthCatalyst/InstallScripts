@@ -29,7 +29,7 @@ EOF
 # install kubeadm
 # https://saurabh-deochake.github.io/posts/2017/07/post-1/
 sudo setenforce 0
-sudo yum install -y kubelet-1.9.2-0 kubeadm-1.9.2-0 kubectl-1.9.2-0 kubernetes-cni-0.6.0-0
+sudo yum install -y kubelet-1.9.3-0 kubeadm-1.9.3-0 kubectl-1.9.3-0 kubernetes-cni-0.6.0-0
 sudo systemctl enable kubelet && sudo systemctl start kubelet
 
 # Some users on RHEL/CentOS 7 have reported issues with traffic being routed incorrectly due to iptables being bypassed

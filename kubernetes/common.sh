@@ -1,5 +1,5 @@
 
-versioncommon="2018.02.14.02"
+versioncommon="2018.02.15.01"
 
 echo "Including common.ps1 version $versioncommon"
 function GetCommonVersion() {
@@ -159,4 +159,24 @@ function AskForPasswordAnyCharacters () {
     else 
         Write-Output "$secretname secret already set so will reuse it"
     fi
+}
+
+function WaitForPodsInNamespace(){
+    local $namespace=$1
+
+    pods=$(kubectl get pods -n $namespace -o jsonpath='{.items[*].metadata.name}')
+    waitingonPod="n"
+    while [[ ! -z $waitingonPod ]]; do
+        waitingonPod=""
+        echo "---- waiting until all pods are running ---"
+
+        for pod in $pods; do
+            podstatus=$(kubectl get pods $pod -n kube-system -o jsonpath='{.status.phase}')
+            echo "$pod: $podstatus"
+            if [[ $podstatus != "Running" ]]; then
+                waitingonPod=$pod
+            fi
+        done
+        sleep 5
+    done     
 }

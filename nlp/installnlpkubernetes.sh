@@ -80,6 +80,8 @@ ReadYmlAndReplaceCustomer $GITHUB_URL $ingressTemplate $customerid | kubectl cre
 
 kubectl get 'deployments,pods,services,ingress,secrets,persistentvolumeclaims,persistentvolumes,nodes' --namespace=fabricnlp -o wide
 
+WaitForPodsInNamespace fabricnlp
+
 # to get a shell
 # kubectl exec -it fabric.nlp.nlpwebserver-85c8cb86b5-gkphh bash --namespace=fabricnlp
 

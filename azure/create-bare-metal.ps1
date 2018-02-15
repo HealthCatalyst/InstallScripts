@@ -136,6 +136,10 @@ Write-Output "Found ID for ${AKS_PERS_NETWORK_SECURITY_GROUP}: $nsgid"
 Write-Output "Setting NSG into subnet"
 az network vnet subnet update -n "${AKS_SUBNET_NAME}" -g "${AKS_SUBNET_RESOURCE_GROUP}" --vnet-name "${AKS_VNET_NAME}" --network-security-group "$nsgid" --query "provisioningState" -o tsv
 
+# to list available images: az vm image list --output table
+# to list CentOS images: az vm image list --offer CentOS --publisher OpenLogic --all --output table
+$urn = "OpenLogic:CentOS:7.4:latest"
+
 Write-Output "Creating master"
 $PUBLIC_IP_NAME = "${MASTER_VM_NAME}PublicIP"
 $ip = az network public-ip create --name $PUBLIC_IP_NAME `
@@ -150,7 +154,8 @@ az network nic create `
     --public-ip-address $PUBLIC_IP_NAME
 
 az vm create --resource-group $AKS_PERS_RESOURCE_GROUP --name $MASTER_VM_NAME `
-    --image CentOs --size Standard_DS2_v2 `
+    --image "$urn" `
+    --size Standard_DS2_v2 `
     --admin-username azureuser --ssh-key-value $SSH_PUBLIC_KEY_FILE `
     --nics "${MASTER_VM_NAME}-nic"
 
@@ -171,7 +176,8 @@ az network nic create `
     --public-ip-address $PUBLIC_IP_NAME
 
 az vm create --resource-group $AKS_PERS_RESOURCE_GROUP --name $vm `
-    --image CentOs --size Standard_DS2_v2 `
+    --image "$urn" `
+    --size Standard_DS2_v2 `
     --admin-username azureuser --ssh-key-value $SSH_PUBLIC_KEY_FILE `
     --nics "${vm}-nic"
 
@@ -194,6 +200,7 @@ az network nic create `
 # Update for your admin password
 $AdminPassword = "ChangeYourAdminPassword1"
 
+# to list Windows images: az vm image list --offer WindowsServer --all --output table
 $urn = "MicrosoftWindowsServer:WindowsServerSemiAnnual:Datacenter-Core-1709-with-Containers-smalldisk:1709.0.20171012"
 $urn = "Win2016Datacenter"
 az vm create --resource-group $AKS_PERS_RESOURCE_GROUP --name $vm `

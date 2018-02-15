@@ -2,11 +2,14 @@
 set -e
 #
 # This script is meant for quick & easy install via:
-#   curl -sSL https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/kubernetes/setupmaster.txt | sh
+#   curl -sSL https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/kubernetes/setupmaster.txt | bash
 #
 #
 
-version="2018.02.15.02"
+GITHUB_URL="https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master"
+source <(curl -sSL "$GITHUB_URL/kubernetes/common.sh")
+
+version="2018.02.15.03"
 echo "---- setupmaster version $version ----"
 
 u="$(whoami)"
@@ -35,21 +38,7 @@ kubectl get nodes
 
 kubectl get pods -n kube-system -o wide
 
-pods=$(kubectl get pods -n kube-system -o jsonpath='{.items[*].metadata.name}')
-waitingonPod="n"
-while [[ ! -z $waitingonPod ]]; do
-    waitingonPod=""
-    echo "---- waiting until all pods are running ---"
-
-    for pod in $pods; do
-        podstatus=$(kubectl get pods $pod -n kube-system -o jsonpath='{.status.phase}')
-        echo "$pod: $podstatus"
-        if [[ $podstatus != "Running" ]]; then
-            waitingonPod=$pod
-        fi
-    done
-    sleep 5
-done 
+WaitForPodsInNamespace kube-system
 
 # testing
 # kubectl run nginx --image=nginx --port=80

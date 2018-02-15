@@ -2,11 +2,11 @@
 set -e
 #
 # This script is meant for quick & easy install via:
-#   curl -sSL https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/kubernetes/setupnode.txt | sh
+#   curl -sSL https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/kubernetes/setupnode.txt | bash
 #
 #
 
-version="2018.02.06.01"
+version="2018.02.15.01"
 echo "---- setupnode version $version ----"
 
 u="$(whoami)"
@@ -21,6 +21,8 @@ sudo rm -rf /var/lib/docker
 sudo yum-config-manager \
     --add-repo \
     https://docs.docker.com/v1.13/engine/installation/linux/repo_files/centos/docker.repo
+
+sudo yum repolist
 
 sudo yum install -y docker-engine-17.03.1.ce-1.el7.centos
 

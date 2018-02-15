@@ -1,4 +1,4 @@
-Write-output "--- create-bare-metal Version 2018.02.07.01 ----"
+Write-output "--- create-bare-metal Version 2018.02.14.01 ----"
 
 #
 # This script is meant for quick & easy install via:
@@ -7,8 +7,8 @@ Write-output "--- create-bare-metal Version 2018.02.07.01 ----"
 $GITHUB_URL = "https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master"
 # $GITHUB_URL = "C:\Catalyst\git\Installscripts"
 
-# Invoke-WebRequest -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/azure/common.ps1 | Invoke-Expression;
-Get-Content ./azure/common.ps1 -Raw | Invoke-Expression;
+Invoke-WebRequest -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/azure/common.ps1 | Invoke-Expression;
+# Get-Content ./azure/common.ps1 -Raw | Invoke-Expression;
 
 $AKS_PERS_RESOURCE_GROUP = ""
 $AKS_PERS_LOCATION = ""
@@ -203,7 +203,48 @@ az network nsg rule create -g $AKS_PERS_RESOURCE_GROUP --nsg-name $NETWORK_SECUR
     --destination-address-prefixes '*' --destination-port-ranges 3389 --access Allow `
     --protocol Tcp --description "allow RDP access." `
     --query "provisioningState" -o tsv
-        
+
+if ([string]::IsNullOrWhiteSpace($(az network nsg rule show --name "HttpPort" --nsg-name $NETWORK_SECURITY_GROUP --resource-group $AKS_PERS_RESOURCE_GROUP))) {
+    Write-Output "Creating rule: HttpPort"
+    az network nsg rule create -g $AKS_PERS_RESOURCE_GROUP --nsg-name $NETWORK_SECURITY_GROUP -n HttpPort --priority 500 `
+        --source-address-prefixes "$sourceTagForHttpAccess" --source-port-ranges '*' `
+        --destination-address-prefixes '*' --destination-port-ranges 80 --access Allow `
+        --protocol Tcp --description "allow HTTP access from $sourceTagForHttpAccess." `
+        --query "provisioningState" -o tsv
+}
+else {
+    Write-Output "Updating rule: HttpPort"
+    az network nsg rule update -g $AKS_PERS_RESOURCE_GROUP --nsg-name $NETWORK_SECURITY_GROUP -n HttpPort --priority 500 `
+        --source-address-prefixes "$sourceTagForHttpAccess" --source-port-ranges '*' `
+        --destination-address-prefixes '*' --destination-port-ranges 80 --access Allow `
+        --protocol Tcp --description "allow HTTP access from $sourceTagForHttpAccess." `
+        --query "provisioningState" -o tsv
+}
+
+if ([string]::IsNullOrWhiteSpace($(az network nsg rule show --name "HttpsPort" --nsg-name $NETWORK_SECURITY_GROUP --resource-group $AKS_PERS_RESOURCE_GROUP))) {
+    Write-Output "Creating rule: HttpsPort"
+    az network nsg rule create -g $AKS_PERS_RESOURCE_GROUP --nsg-name $NETWORK_SECURITY_GROUP -n HttpsPort --priority 501 `
+        --source-address-prefixes "$sourceTagForHttpAccess" --source-port-ranges '*' `
+        --destination-address-prefixes '*' --destination-port-ranges 443 --access Allow `
+        --protocol Tcp --description "allow HTTPS access from $sourceTagForHttpAccess." `
+        --query "provisioningState" -o tsv
+}
+else {
+    Write-Output "Updating rule: HttpsPort"
+    az network nsg rule update -g $AKS_PERS_RESOURCE_GROUP --nsg-name $NETWORK_SECURITY_GROUP -n HttpsPort --priority 501 `
+        --source-address-prefixes "$sourceTagForHttpAccess" --source-port-ranges '*' `
+        --destination-address-prefixes '*' --destination-port-ranges 443 --access Allow `
+        --protocol Tcp --description "allow HTTPS access from $sourceTagForHttpAccess." `
+        --query "provisioningState" -o tsv
+}    
+
+$nsgid = az network nsg list --resource-group ${AKS_PERS_RESOURCE_GROUP} --query "[?name == '${NETWORK_SECURITY_GROUP}'].id" -o tsv
+Write-Output "Found ID for ${AKS_PERS_NETWORK_SECURITY_GROUP}: $nsgid"
+
+Write-Output "Setting NSG into subnet"
+az network vnet subnet update -n "${AKS_SUBNET_NAME}" -g "${AKS_SUBNET_RESOURCE_GROUP}" --vnet-name "${AKS_VNET_NAME}" --network-security-group "$nsgid" --query "provisioningState" -o tsv
+
+    
 Write-Output "Creating master"
 $PUBLIC_IP_NAME = "${MASTER_VM_NAME}PublicIP"
 $ip = az network public-ip create --name $PUBLIC_IP_NAME `
@@ -262,8 +303,8 @@ az network nic create `
 # Update for your admin password
 $AdminPassword = "ChangeYourAdminPassword1"
 
-$urn="MicrosoftWindowsServer:WindowsServerSemiAnnual:Datacenter-Core-1709-with-Containers-smalldisk:1709.0.20171012"
-$urn="Win2016Datacenter"
+$urn = "MicrosoftWindowsServer:WindowsServerSemiAnnual:Datacenter-Core-1709-with-Containers-smalldisk:1709.0.20171012"
+$urn = "Win2016Datacenter"
 az vm create --resource-group $AKS_PERS_RESOURCE_GROUP --name $vm `
     --image "$urn" `
     --size Standard_DS2_v2 `

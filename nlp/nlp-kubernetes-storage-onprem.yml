@@ -1,17 +1,19 @@
 # define persistent volumes
 # ----- MySql ----------
 # Persistent Volume
-apiVersion: v1
 kind: PersistentVolume
+apiVersion: v1
 metadata:
   name: azure-file-volume-mysql
   namespace: fabricnlp    
+  labels:
+    type: local
 spec:
+  storageClassName: manual
   capacity:
-    storage: 128Gi
-  # https://kubernetes.io/docs/concepts/storage/persistent-volumes/#access-modes
+    storage: 5Gi
   accessModes:
-    - ReadWriteOnce
+    - ReadWriteMany
   hostPath:
     path: "/mnt/data"
   mountOptions:
@@ -41,29 +43,31 @@ kind: PersistentVolumeClaim
 apiVersion: v1
 metadata:
   name: az-files-mysql
-  namespace: fabricnlp  
+  namespace: fabricnlp    
 spec:
+  storageClassName: manual
   accessModes:
     - ReadWriteMany
-  # no storageClassName is different than empty: https://kubernetes.io/docs/concepts/storage/persistent-volumes/#types-of-persistent-volumes
-  storageClassName: ""
   resources:
     requests:
-      storage: 128Gi
----
+      storage: 5Gi
+---      
 # ---- Solr ------
 # volume for solr
 apiVersion: v1
 kind: PersistentVolume
 metadata:
   name: azure-file-volume-solr
-  namespace: fabricnlp    
+  namespace: fabricnlp
+  labels:
+    type: local  
 spec:
   #persistentVolumeReclaimPolicy: Delete
+  storageClassName: manual
   capacity:
-    storage: 128Gi
+    storage: 5Gi
   accessModes:
-    - ReadWriteOnce
+    - ReadWriteMany
   hostPath:
     path: "/mnt/data"
   mountOptions:
@@ -84,10 +88,10 @@ metadata:
 spec:
   accessModes:
     - ReadWriteMany
-  storageClassName: ""   
+  storageClassName: manual
   resources:
     requests:
-      storage: 128Gi
+      storage: 5Gi
 ---
 
 # ----- NLP Jobs -------
@@ -98,10 +102,11 @@ metadata:
   name: azure-file-volume-jobs
   namespace: fabricnlp    
 spec:
+  storageClassName: manual
   capacity:
-    storage: 32Gi
+    storage: 5Gi
   accessModes:
-    - ReadWriteOnce
+    - ReadWriteMany
   hostPath:
     path: "/mnt/data"
   mountOptions:
@@ -122,10 +127,10 @@ metadata:
 spec:
   accessModes:
     - ReadWriteMany
-  storageClassName: ""   
+  storageClassName: manual
   resources:
     requests:
-      storage: 32Gi
+      storage: 5Gi
 ---
 # ----- MySql Backup ----------
 # Persistent Volume
@@ -135,11 +140,12 @@ metadata:
   name: azure-file-volume-mysql-backup
   namespace: fabricnlp    
 spec:
+  storageClassName: manual
   capacity:
-    storage: 128Gi
+    storage: 5Gi
   # https://kubernetes.io/docs/concepts/storage/persistent-volumes/#access-modes
   accessModes:
-    - ReadWriteOnce
+    - ReadWriteMany
   hostPath:
     path: "/mnt/data"
   mountOptions:
@@ -173,8 +179,8 @@ metadata:
 spec:
   accessModes:
     - ReadWriteMany
-  storageClassName: ""   
+  storageClassName: manual
   resources:
     requests:
-      storage: 128Gi
+      storage: 5Gi
 ---

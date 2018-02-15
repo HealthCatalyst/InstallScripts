@@ -5,7 +5,7 @@ set -e
 #   curl -sSL https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/kubernetes/main.sh | bash
 #
 #
-version="2018.02.14.04"
+version="2018.02.15.01"
 
 GITHUB_URL="https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master"
 
@@ -16,10 +16,11 @@ input=""
 while [[ "$input" != "q" ]]; do
 
     echo "================ Health Catalyst version $version, common functions $(GetCommonVersion) ================"
-    echo "------ Install -------"
+    echo "------ Infrastructure -------"
     echo "1: Add this VM as Master"
     echo "2: Add this VM as Worker"
     echo "3. Join a new node to this cluster"
+    echo "------ Product Install -------"
     echo "4: Setup Load Balancer"
     echo "5: Install NLP"
     echo "6: Install Realtime"
@@ -32,8 +33,9 @@ while [[ "$input" != "q" ]]; do
     echo "21: Show status of NLP"
     echo "22: Test web sites"
     echo "23: Show passwords"
-    echo "24: Show NLP logs"
-    echo "25: Restart NLP"
+    echo "24: Show NLP detailed status"
+    echo "25: Show NLP logs"
+    echo "26: Restart NLP"
     echo "------ Realtime -----"
     echo "31: Show status of realtime"
     echo "-----------"
@@ -71,7 +73,8 @@ while [[ "$input" != "q" ]]; do
                 kubectl describe pods $pod -n fabricnlp
                 read -n1 -r -p "Press space to continue..." key < /dev/tty
         done
-
+        ;;
+    25)  pods=$(kubectl get pods -n fabricnlp -o jsonpath='{.items[*].metadata.name}')
         for pod in $pods
         do
                 Write-Output "=============== Logs for Pod: $pod ================="

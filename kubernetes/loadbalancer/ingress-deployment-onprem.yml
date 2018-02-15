@@ -17,6 +17,8 @@ spec:
         k8s-app: traefik-ingress-lb
         name: traefik-ingress-lb
     spec:
+      # hostPort is broken on CNI (https://github.com/kubernetes/kubernetes/issues/31307) we have to use hostNetwork where CNI is used
+      hostNetwork: true    
       # run on master node so we use the IP of the master
       # https://kubernetes.io/docs/concepts/configuration/assign-pod-node/
       # https://ekartco.com/2017/09/kubernetes-make-pods-run-on-your-master-nodes/
@@ -42,10 +44,7 @@ spec:
             name: "config"        
         ports:
           - containerPort: 80
-          # set hostPort so the ingress shows up on the master node's IP
-            hostPort: 80
           - containerPort: 443
-            hostPort: 443
         args:
         - --web
         - --kubernetes

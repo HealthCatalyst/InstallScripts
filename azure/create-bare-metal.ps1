@@ -7,8 +7,8 @@ Write-output "--- create-bare-metal Version 2018.02.15.01 ----"
 $GITHUB_URL = "https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master"
 # $GITHUB_URL = "C:\Catalyst\git\Installscripts"
 
-# Invoke-WebRequest -useb $GITHUB_URL/azure/common.ps1 | Invoke-Expression;
-Get-Content ./azure/common.ps1 -Raw | Invoke-Expression;
+Invoke-WebRequest -useb $GITHUB_URL/azure/common.ps1 | Invoke-Expression;
+# Get-Content ./azure/common.ps1 -Raw | Invoke-Expression;
 
 $AKS_USE_AZURE_NETWORKING = "n"
 $AKS_SERVICE_PRINCIPAL_NAME = ""

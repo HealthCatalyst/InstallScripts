@@ -1,4 +1,4 @@
-Write-output "--- create-acs-cluster Version 2018.02.13.01 ----"
+Write-output "--- create-acs-cluster Version 2018.02.15.01 ----"
 
 #
 # This script is meant for quick & easy install via:
@@ -17,7 +17,7 @@ write-output "Checking if you're already logged in..."
 
 DownloadAzCliIfNeeded
 
-$AKS_SUBSCRIPTION_ID = CheckIfUserLogged
+$AKS_SUBSCRIPTION_ID = $(CheckIfUserLogged).AKS_SUBSCRIPTION_ID
 
 # ask for customerid
 Do { $customerid = Read-Host "Health Catalyst Customer ID (e.g., ahmn)"}
@@ -103,7 +103,7 @@ acs-engine version
 $AKS_CLUSTER_NAME = "kubcluster"
 # $AKS_CLUSTER_NAME = Read-Host "Cluster Name: (e.g., fabricnlpcluster)"
 
-$AKS_PERS_STORAGE_ACCOUNT_NAME = CreateStorageIfNotExists -resourceGroup $AKS_PERS_RESOURCE_GROUP
+$AKS_PERS_STORAGE_ACCOUNT_NAME = $(CreateStorageIfNotExists -resourceGroup $AKS_PERS_RESOURCE_GROUP).AKS_PERS_STORAGE_ACCOUNT_NAME
 
 # see if the user wants to use a specific virtual network
 $VnetInfo = GetVnet -subscriptionId $AKS_SUBSCRIPTION_ID

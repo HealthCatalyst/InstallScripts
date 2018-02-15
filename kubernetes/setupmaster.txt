@@ -6,7 +6,7 @@ set -e
 #
 #
 
-version="2018.02.13.01"
+version="2018.02.15.01"
 echo "---- setupmaster version $version ----"
 
 u="$(whoami)"
@@ -22,7 +22,8 @@ sudo cp -f /etc/kubernetes/admin.conf $HOME/.kube/config
 sudo chown $(id -u):$(id -g) $HOME/.kube/config
 
 # calico
-kubectl apply -f https://docs.projectcalico.org/v2.6/getting-started/kubernetes/installation/hosted/kubeadm/1.6/calico.yaml
+# from https://docs.projectcalico.org/v3.0/getting-started/kubernetes/installation/hosted/kubeadm/
+kubectl apply -f https://docs.projectcalico.org/v3.0/getting-started/kubernetes/installation/hosted/kubeadm/1.7/calico.yaml
 
 # flannel
 # kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/v0.9.1/Documentation/kube-flannel.yml
@@ -38,14 +39,14 @@ kubectl get pods -n kube-system -o wide
 # kubectl run nginx --image=nginx --port=80
 
 # Register the Microsoft RedHat repository
-sudo yum-config-manager \
-    --add-repo \
-    https://packages.microsoft.com/config/rhel/7/prod.repo
+# sudo yum-config-manager \
+#    --add-repo \
+#    https://packages.microsoft.com/config/rhel/7/prod.repo
 
 # curl https://packages.microsoft.com/config/rhel/7/prod.repo | sudo tee /etc/yum.repos.d/microsoft.repo
 
 # Install PowerShell
-sudo yum install -y powershell
+# sudo yum install -y powershell
 
 # Start PowerShell
 # pwsh

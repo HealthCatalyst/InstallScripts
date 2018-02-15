@@ -1,8 +1,8 @@
 # This file contains common functions for Azure
 # 
-$versioncommon = "2018.02.14.01"
+$versioncommon = "2018.02.15.01"
 
-Write-Host "Including common.ps1 version $versioncommon"
+Write-Host "---- Including common.ps1 version $versioncommon -----"
 function global:GetCommonVersion() {
     return $versioncommon
 }
@@ -18,11 +18,11 @@ function global:CreateShareInStorageAccount($storageAccountName, $resourceGroup,
     
     if ($deleteExisting) {
         if ($(az storage share exists -n $sharename --connection-string $AZURE_STORAGE_CONNECTION_STRING --query "exists" -o tsv)) {
-            Write-Output "Deleting the file share: $sharename"
+            Write-Host "Deleting the file share: $sharename"
             az storage share delete -n $sharename --connection-string $AZURE_STORAGE_CONNECTION_STRING
         
             
-            Write-Output "Waiting for completion of delete for the file share: $sharename"        
+            Write-Host "Waiting for completion of delete for the file share: $sharename"        
             Do {
                 Start-Sleep -Seconds 5 
                 $SHARE_EXISTS = $(az storage share exists -n $sharename --connection-string $AZURE_STORAGE_CONNECTION_STRING --query "exists" -o tsv)
@@ -33,11 +33,11 @@ function global:CreateShareInStorageAccount($storageAccountName, $resourceGroup,
     }
 
     if ($(az storage share exists -n $sharename --connection-string $AZURE_STORAGE_CONNECTION_STRING --query "exists" -o tsv) -eq "false") {
-        Write-Output "Creating the file share: $sharename"        
+        Write-Host "Creating the file share: $sharename"        
         az storage share create -n $sharename --connection-string $AZURE_STORAGE_CONNECTION_STRING --quota 512       
     }
     else {
-        Write-Output "File share already exists: $sharename"         
+        Write-Host "File share already exists: $sharename"         
     }
 }
 function global:CreateShare($resourceGroup, $sharename, $deleteExisting) {
@@ -122,7 +122,7 @@ function global:SetupCronTab($resourceGroup) {
 function global:UpdateOSInVMs($resourceGroup) {
     $virtualmachines = az vm list -g $resourceGroup --query "[?storageProfile.osDisk.osType != 'Windows'].name" -o tsv
     ForEach ($vm in $virtualmachines) {
-        Write-Output "Updating OS in vm: $vm"
+        Write-Host "Updating OS in vm: $vm"
         $cmd = "apt-get update && apt-get -y upgrade"
         az vm run-command invoke -g $resourceGroup -n $vm --command-id RunShellScript --scripts "$cmd"
     }
@@ -134,15 +134,15 @@ function global:RestartVMsInResourceGroup( $resourceGroup) {
     Write-Host "Restarting VMs in resource group: ${resourceGroup}: $(az vm list -g $resourceGroup --query "[].name" -o tsv)"
     az vm restart --ids $(az vm list -g $resourceGroup --query "[].id" -o tsv)
 
-    Write-Output "Waiting for VMs to restart: $(az vm list -g $resourceGroup --query "[].name" -o tsv)"
+    Write-Host "Waiting for VMs to restart: $(az vm list -g $resourceGroup --query "[].name" -o tsv)"
     $virtualmachines = az vm list -g $resourceGroup --query "[].name" -o tsv
     ForEach ($vm in $virtualmachines) {
         
-        Write-Output "Waiting on $vm"
+        Write-Host "Waiting on $vm"
         Do { 
             Start-Sleep -Seconds 1
             $state = az vm show -g $resourceGroup -n $vm -d --query "powerState"; 
-            Write-Output "Status of ${vm}: ${state}"
+            Write-Host "Status of ${vm}: ${state}"
         }
         while (!($state = "VM running"))      
     }
@@ -162,12 +162,12 @@ function global:SetHostFileInVms( $resourceGroup) {
     ForEach ($vm in $virtualmachines) {
         $firstprivateip = az vm list-ip-addresses -g $resourceGroup -n $vm --query "[].virtualMachine.network.privateIpAddresses[0]" -o tsv
         # $privateiplist= az vm show -g $AKS_PERS_RESOURCE_GROUP -n $vm -d --query privateIps -otsv
-        Write-Output "$firstprivateip $vm"
+        Write-Host "$firstprivateip $vm"
 
         $cmdToRemovePreviousHostEntries = $cmdToRemovePreviousHostEntries + "grep -v '${vm}' - | "
         $cmdToAddNewHostEntries = $cmdToAddNewHostEntries + " && echo '$firstprivateip $vm'"
         if ($vm -match "master" ) {
-            Write-Output "$firstprivateip $MASTER_VM_NAME"
+            Write-Host "$firstprivateip $MASTER_VM_NAME"
             $cmdToRemovePreviousHostEntries = $cmdToRemovePreviousHostEntries + "grep -v '${MASTER_VM_NAME}' - | "
             $cmdToAddNewHostEntries = $cmdToAddNewHostEntries + " && echo '$firstprivateip ${MASTER_VM_NAME}'"
         }
@@ -179,14 +179,14 @@ function global:SetHostFileInVms( $resourceGroup) {
     Write-Host "$fullCmdToUpdateHostsFiles"
 
     ForEach ($vm in $virtualmachines) {
-        Write-Output "Sending command to $vm"
+        Write-Host "Sending command to $vm"
         az vm run-command invoke -g $resourceGroup -n $vm --command-id RunShellScript --scripts "$fullCmdToUpdateHostsFiles"
     }
 }
 
 
 function global:CleanResourceGroup($resourceGroup, $location, $vnet, $subnet, $subnetResourceGroup, $storageAccount) {
-    Write-Output "checking if resource group already exists"
+    Write-Host "checking if resource group already exists"
     $resourceGroupExists = az group exists --name ${resourceGroup}
     if ($resourceGroupExists -eq "true") {
 
@@ -207,92 +207,92 @@ function global:CleanResourceGroup($resourceGroup, $location, $vnet, $subnet, $s
         }
 
         if ("$vnet") {
-            # Write-Output "removing route table"
+            # Write-Host "removing route table"
             # az network vnet subnet update -n "${subnet}" -g "${subnetResourceGroup}" --vnet-name "${vnet}" --route-table ""
         }
-        Write-Output "cleaning out the existing group: [$resourceGroup]"
+        Write-Host "cleaning out the existing group: [$resourceGroup]"
         #az group delete --name $resourceGroup --verbose
 
         if ($(az vm list -g $resourceGroup --query "[].id" -o tsv).length -ne 0) {
-            Write-Output "delete the VMs first"
+            Write-Host "delete the VMs first"
             az vm delete --ids $(az vm list -g $resourceGroup --query "[].id" -o tsv) --verbose --yes
         }
 
         if ($(az resource list --resource-group $resourceGroup --resource-type "Microsoft.Network/networkInterfaces" --query "[].id" -o tsv ).length -ne 0) {
-            Write-Output "delete the nics"
+            Write-Host "delete the nics"
             az resource delete --ids $(az resource list --resource-group $resourceGroup --resource-type "Microsoft.Network/networkInterfaces" --query "[].id" -o tsv )  --verbose
         }
 
         if ($(az resource list --resource-group $resourceGroup --resource-type "Microsoft.Compute/disks" --query "[].id" -o tsv ).length -ne 0) {
-            Write-Output "delete the disks"
+            Write-Host "delete the disks"
             az resource delete --ids $(az resource list --resource-group $resourceGroup --resource-type "Microsoft.Compute/disks" --query "[].id" -o tsv )
         }
 
         if ($(az resource list --resource-group $resourceGroup --resource-type "Microsoft.Compute/availabilitySets" --query "[].id" -o tsv ).length -ne 0) {
-            Write-Output "delete the availabilitysets"
+            Write-Host "delete the availabilitysets"
             az resource delete --ids $(az resource list --resource-group $resourceGroup --resource-type "Microsoft.Compute/availabilitySets" --query "[].id" -o tsv )
         }
 
         if ($(az resource list --resource-group $resourceGroup --resource-type "Microsoft.Network/loadBalancers" --query "[].id" -o tsv ).length -ne 0) {
-            Write-Output "delete the load balancers"
+            Write-Host "delete the load balancers"
             az resource delete --ids $(az resource list --resource-group $resourceGroup --resource-type "Microsoft.Network/loadBalancers" --query "[].id" -o tsv )
         }
 
         if ($(az resource list --resource-group $resourceGroup --resource-type "Microsoft.Network/applicationGateways" --query "[].id" -o tsv ).length -ne 0) {
-            Write-Output "delete the application gateways"
+            Write-Host "delete the application gateways"
             az resource delete --ids $(az resource list --resource-group $resourceGroup --resource-type "Microsoft.Network/applicationGateways" --query "[].id" -o tsv )
         }
     
         if ($(az resource list --resource-group $resourceGroup --resource-type "Microsoft.Storage/storageAccounts" --query "[].id" -o tsv | Where-Object {!"$_".EndsWith("$storageAccount")}).length -ne 0) {
-            Write-Output "delete the storage accounts EXCEPT storage account we created in the past"
+            Write-Host "delete the storage accounts EXCEPT storage account we created in the past"
             az resource delete --ids $(az resource list --resource-group $resourceGroup --resource-type "Microsoft.Storage/storageAccounts" --query "[].id" -o tsv | Where-Object {!"$_".EndsWith("${storageAccount}")} )
             # az resource list --resource-group fabricnlp3 --resource-type "Microsoft.Storage/storageAccounts" --query "[].id" -o tsv | ForEach-Object { if (!"$_".EndsWith("${resourceGroup}storage")) {  az resource delete --ids "$_" }}    
         }
         if ($(az resource list --resource-group $resourceGroup --resource-type "Microsoft.Network/publicIPAddresses" --query "[].id" -o tsv | Where-Object {!"$_".EndsWith("PublicIP")}).length -ne 0) {
-            Write-Output "delete the public IPs EXCEPT Ingress IP we created in the past"
+            Write-Host "delete the public IPs EXCEPT Ingress IP we created in the past"
             az resource delete --ids $(az resource list --resource-group $resourceGroup --resource-type "Microsoft.Network/publicIPAddresses" --query "[].id" -o tsv | Where-Object {!"$_".EndsWith("PublicIP")} )
         }
     
         if (("$vnet") -and ("$AKS_USE_AZURE_NETWORKING" -eq "n")) {
-            Write-Output "Switching the subnet to a temp route table and tempnsg so we can delete the old route table and nsg"
+            Write-Host "Switching the subnet to a temp route table and tempnsg so we can delete the old route table and nsg"
 
             $routeid = $(az network route-table show --name temproutetable --resource-group $resourceGroup --query "id" -o tsv)
             if ([string]::IsNullOrWhiteSpace($routeid)) {
-                Write-Output "create temproutetable"
+                Write-Host "create temproutetable"
                 $routeid = az network route-table create --name temproutetable --resource-group $resourceGroup --query "id" -o tsv   
             }
             $routeid = $(az network route-table show --name temproutetable --resource-group $resourceGroup --query "id" -o tsv)
-            Write-Output "temproutetable: $routeid"
+            Write-Host "temproutetable: $routeid"
 
             $nsg = $(az network nsg show --name tempnsg --resource-group $resourceGroup --query "id" -o tsv)
             if ([string]::IsNullOrWhiteSpace($nsg)) {
-                Write-Output "create tempnsg"
+                Write-Host "create tempnsg"
                 $nsg = az network nsg create --name tempnsg --resource-group $resourceGroup --query "id" -o tsv   
             }
             $nsg = $(az network nsg show --name tempnsg --resource-group $resourceGroup --query "id" -o tsv)
-            Write-Output "tempnsg: $nsg"
+            Write-Host "tempnsg: $nsg"
         
-            Write-Output "Updating the subnet"
+            Write-Host "Updating the subnet"
             az network vnet subnet update -n "${subnet}" -g "${subnetResourceGroup}" --vnet-name "${vnet}" --route-table "$routeid" --network-security-group "$nsg"
 
 
             if ($(az resource list --resource-group $resourceGroup --resource-type "Microsoft.Network/routeTables" --query "[?name != 'temproutetable'].id" -o tsv ).length -ne 0) {
-                Write-Output "delete the routes EXCEPT the temproutetable we just created"
+                Write-Host "delete the routes EXCEPT the temproutetable we just created"
                 az resource delete --ids $(az resource list --resource-group $resourceGroup --resource-type "Microsoft.Network/routeTables" --query "[?name != 'temproutetable'].id" -o tsv)
             }
             if ($(az resource list --resource-group $resourceGroup --resource-type "Microsoft.Network/networkSecurityGroups" --query "[?name != 'tempnsg'].id" -o tsv).length -ne 0) {
-                Write-Output "delete the nsgs EXCEPT the tempnsg we just created"
+                Write-Host "delete the nsgs EXCEPT the tempnsg we just created"
                 az resource delete --ids $(az resource list --resource-group $resourceGroup --resource-type "Microsoft.Network/networkSecurityGroups" --query "[?name != 'tempnsg'].id" -o tsv)
             }
         }
         else {
             if ($(az resource list --resource-group $resourceGroup --resource-type "Microsoft.Network/routeTables" --query "[].id" -o tsv).length -ne 0) {
-                Write-Output "delete the routes EXCEPT the temproutetable we just created"
+                Write-Host "delete the routes EXCEPT the temproutetable we just created"
                 az resource delete --ids $(az resource list --resource-group $resourceGroup --resource-type "Microsoft.Network/routeTables" --query "[].id" -o tsv)
             }
             $networkSecurityGroup = "$($resourceGroup.ToLower())-nsg"
             if ($(az resource list --resource-group $resourceGroup --resource-type "Microsoft.Network/networkSecurityGroups" --query "[?name != '${$networkSecurityGroup}'].id" -o tsv ).length -ne 0) {
-                Write-Output "delete the network security groups"
+                Write-Host "delete the network security groups"
                 az resource delete --ids $(az resource list --resource-group $resourceGroup --resource-type "Microsoft.Network/networkSecurityGroups" --query "[?name != '${$networkSecurityGroup}'].id" -o tsv )
             }
     
@@ -300,13 +300,16 @@ function global:CleanResourceGroup($resourceGroup, $location, $vnet, $subnet, $s
         # note: do not delete the Microsoft.Network/publicIPAddresses otherwise the loadBalancer will get a new IP
     }
     else {
-        Write-Output "Create the Resource Group"
+        Write-Host "Create the Resource Group"
         az group create --name $resourceGroup --location $location --verbose
     }
 
 }
 
 function global:CreateStorageIfNotExists($resourceGroup) {
+    #Create an hashtable variable 
+    [hashtable]$Return = @{} 
+
     $location = az group show --name $resourceGroup --query "location" -o tsv
 
     $storageAccountName = Read-Host "Storage Account Name (leave empty for default)"
@@ -315,9 +318,9 @@ function global:CreateStorageIfNotExists($resourceGroup) {
         # remove non-alphanumeric characters and use lowercase since azure doesn't allow those in a storage account
         $storageAccountName = $storageAccountName -replace '[^a-zA-Z0-9]', ''
         $storageAccountName = $storageAccountName.ToLower()
-        Write-Output "Using storage account: [$storageAccountName]"
+        Write-Host "Using storage account: [$storageAccountName]"
     }
-    Write-Output "Checking to see if storage account exists"
+    Write-Host "Checking to see if storage account exists"
     $storageAccountCanBeCreated = az storage account check-name --name $storageAccountName --query "nameAvailable" --output tsv
     
     if ($storageAccountCanBeCreated -ne "True" ) {
@@ -328,38 +331,41 @@ function global:CreateStorageIfNotExists($resourceGroup) {
     
         if ($confirmation -eq 'y') {
             az storage account delete -n $storageAccountName -g $resourceGroup
-            Write-Output "Creating storage account: [${storageAccountName}]"
+            Write-Host "Creating storage account: [${storageAccountName}]"
             # https://docs.microsoft.com/en-us/azure/storage/common/storage-quickstart-create-account?tabs=azure-cli
             az storage account create -n $storageAccountName -g $resourceGroup -l $location --kind StorageV2 --sku Standard_LRS                       
         }    
     }
     else {
-        Write-Output "Creating storage account: [${storageAccountName}]"
+        Write-Host "Creating storage account: [${storageAccountName}]"
         az storage account create -n $storageAccountName -g $resourceGroup -l $location --kind StorageV2 --sku Standard_LRS            
     }    
 
-    return $storageAccountName
+    $Return.AKS_PERS_STORAGE_ACCOUNT_NAME=$storageAccountName
+    return $Return
 }
 
 function global:GetVnet($subscriptionId) {
     #Create an hashtable variable 
     [hashtable]$Return = @{} 
 
+    Write-Host "Subscription Id; $subscriptionId"
+
     Do { $confirmation = Read-Host "Would you like to connect to an existing virtual network? (y/n)"}
     while ([string]::IsNullOrWhiteSpace($confirmation))
     
     if ($confirmation -eq 'y') {
-        Write-Output "Finding existing vnets..."
+        Write-Host "Finding existing vnets..."
         # az network vnet list --query "[].[name,resourceGroup ]" -o tsv    
     
         $vnets = az network vnet list --query "[].[name]" -o tsv
     
         Do { 
-            Write-Output "------  Existing vnets -------"
+            Write-Host "------  Existing vnets -------"
             for ($i = 1; $i -le $vnets.count; $i++) {
                 Write-Host "$i. $($vnets[$i-1])"
             }    
-            Write-Output "------  End vnets -------"
+            Write-Host "------  End vnets -------"
     
             $index = Read-Host "Enter number of vnet to use (1 - $($vnets.count))"
             $vnetName = $($vnets[$index - 1])
@@ -367,22 +373,22 @@ function global:GetVnet($subscriptionId) {
         while ([string]::IsNullOrWhiteSpace($vnetName))    
     
         $subnetResourceGroup = az network vnet list --query "[?name == '$vnetName'].resourceGroup" -o tsv
-        Write-Output "Using subnet resource group: [$subnetResourceGroup]"
+        Write-Host "Using subnet resource group: [$subnetResourceGroup]"
     
-        Write-Output "Finding existing subnets in $vnetName ..."
+        Write-Host "Finding existing subnets in $vnetName ..."
         $subnets = az network vnet subnet list --resource-group $subnetResourceGroup --vnet-name $vnetName --query "[].name" -o tsv
             
         if ($subnets.count -eq 1) {
-            Write-Output "There is only one subnet called $subnets so choosing that"
+            Write-Host "There is only one subnet called $subnets so choosing that"
             $subnetName = $subnets
         }
         else {
             Do { 
-                Write-Output "------  Subnets in $vnetName -------"
+                Write-Host "------  Subnets in $vnetName -------"
                 for ($i = 1; $i -le $subnets.count; $i++) {
                     Write-Host "$i. $($subnets[$i-1])"
                 }    
-                Write-Output "------  End Subnets -------"
+                Write-Host "------  End Subnets -------"
         
                 Write-Host "NOTE: Each customer should have their own subnet.  Do not put multiple customers in the same subnet"
                 $index = Read-Host "Enter number of subnet to use (1 - $($subnets.count))"
@@ -392,7 +398,7 @@ function global:GetVnet($subscriptionId) {
         }
     
         # verify the subnet exists
-        $mysubnetid = "/subscriptions/${subscriptionId}/resourceGroups/${subnetResourceGroup}/providers/Microsoft.Network/virtualNetworks/${vnet}/subnets/${subnetName}"
+        $mysubnetid = "/subscriptions/${subscriptionId}/resourceGroups/${subnetResourceGroup}/providers/Microsoft.Network/virtualNetworks/${vnetName}/subnets/${subnetName}"
     
         $subnetexists = az resource show --ids $mysubnetid --query "id" -o tsv
         if (!"$subnetexists") {
@@ -401,13 +407,13 @@ function global:GetVnet($subscriptionId) {
             exit 0        
         }
         else {
-            Write-Output "Found subnet: [$mysubnetid]"
+            Write-Host "Found subnet: [$mysubnetid]"
         }
         
-        Write-Output "Looking up CIDR for Subnet: [${subnetName}]"
-        $subnetCidr = az network vnet subnet show --name ${subnetName} --resource-group ${subnetResourceGroup} --vnet-name ${vnet} --query "addressPrefix" --output tsv
+        Write-Host "Looking up CIDR for Subnet: [${subnetName}]"
+        $subnetCidr = az network vnet subnet show --name ${subnetName} --resource-group ${subnetResourceGroup} --vnet-name ${vnetname} --query "addressPrefix" --output tsv
     
-        Write-Output "Subnet CIDR=[$subnetCidr]"
+        Write-Host "Subnet CIDR=[$subnetCidr]"
         # suggest and ask for the first static IP to use
         $firstStaticIP = ""
         $suggestedFirstStaticIP = Get-FirstIP -ip ${subnetCidr}
@@ -418,7 +424,7 @@ function global:GetVnet($subscriptionId) {
             $firstStaticIP = "$suggestedFirstStaticIP"
         }
     
-        Write-Output "First static IP=[${firstStaticIP}]"
+        Write-Host "First static IP=[${firstStaticIP}]"
     }
     else {
         # create a vnet
@@ -451,7 +457,7 @@ function global:DownloadAzCliIfNeeded() {
         # we should get: azure-cli (2.0.22)
         $azversionMatches = $($azcurrentversion -match "$desiredAzClVersion")
         if (!$azversionMatches) {
-            Write-Output "az version $azcurrentversion is not the same as desired version: $desiredAzClVersion"
+            Write-Host "az version $azcurrentversion is not the same as desired version: $desiredAzClVersion"
             $downloadazcli = $True
         }
     }
@@ -459,17 +465,17 @@ function global:DownloadAzCliIfNeeded() {
     if ($downloadazcli) {
         $azCliFile = ([System.IO.Path]::GetTempPath() + ("az-cli-latest.msi"))
         $url = "https://azurecliprod.blob.core.windows.net/msi/azure-cli-latest.msi"
-        Write-Output "Downloading az-cli-latest.msi from url $url to $azCliFile"
+        Write-Host "Downloading az-cli-latest.msi from url $url to $azCliFile"
         If (Test-Path $azCliFile) {
             Remove-Item $azCliFile
         }
         (New-Object System.Net.WebClient).DownloadFile($url, $azCliFile)
         # https://kevinmarquette.github.io/2016-10-21-powershell-installing-msi-files/
-        Write-Output "Running MSI to install az"
+        Write-Host "Running MSI to install az"
         $azCliInstallLog = ([System.IO.Path]::GetTempPath() + ('az-cli-latest.log'))
         # msiexec flags: https://msdn.microsoft.com/en-us/library/windows/desktop/aa367988(v=vs.85).aspx
         Start-Process -Verb runAs msiexec.exe -Wait -ArgumentList "/i $azCliFile /qn /L*e $azCliInstallLog"
-        Write-Output "Finished installing az-cli-latest.msi"
+        Write-Host "Finished installing az-cli-latest.msi"
     }
     
 }
@@ -481,7 +487,7 @@ function global:CreateSSHKey($resourceGroup, $localFolder) {
     $folderForSSHKey = "$localFolder\ssh\$resourceGroup"
 
     if (!(Test-Path -Path "$folderForSSHKey")) {
-        Write-Output "$folderForSSHKey does not exist.  Creating it..."
+        Write-Host "$folderForSSHKey does not exist.  Creating it..."
         New-Item -ItemType directory -Path "$folderForSSHKey"
     }
     
@@ -490,18 +496,18 @@ function global:CreateSSHKey($resourceGroup, $localFolder) {
     $privateKeyFileUnixPath = "/" + (($privateKeyFile -replace "\\", "/") -replace ":", "").ToLower().Trim("/")    
     
     if (!(Test-Path "$privateKeyFile")) {
-        Write-Output "SSH key does not exist in $privateKeyFile."
-        Write-Output "Please open Git Bash and run:"
-        Write-Output "ssh-keygen -t rsa -b 2048 -q -N '' -C azureuser@linuxvm -f $privateKeyFileUnixPath"
+        Write-Host "SSH key does not exist in $privateKeyFile."
+        Write-Host "Please open Git Bash and run:"
+        Write-Host "ssh-keygen -t rsa -b 2048 -q -N '' -C azureuser@linuxvm -f $privateKeyFileUnixPath"
         Read-Host "Hit ENTER after you're done"
     }
     else {
-        Write-Output "SSH key already exists at $privateKeyFile so using it"
+        Write-Host "SSH key already exists at $privateKeyFile so using it"
     }
     
     $publicKeyFile = "$folderForSSHKey\id_rsa.pub"
     $sshKey = Get-Content "$publicKeyFile" -First 1
-    Write-Output "SSH Public Key=$sshKey"
+    Write-Host "SSH Public Key=$sshKey"
 
     
     $Return.AKS_SSH_KEY = $sshKey
@@ -513,17 +519,21 @@ function global:CreateSSHKey($resourceGroup, $localFolder) {
 }
 
 function global:CheckIfUserLogged() {
-    write-output "Checking if you're already logged in..."
+
+    #Create an hashtable variable 
+    [hashtable]$Return = @{} 
+
+    Write-Host "Checking if you're already logged in..."
 
     # to print out the result to screen also use: <command> | Tee-Object -Variable cmdOutput
-    $loggedInUser = az account show --query "user.name"  --output tsv
+    $loggedInUser = $(az account show --query "user.name"  --output tsv)
     
     # get azure login and subscription
-    Write-Output "user: $loggedInUser"
+    Write-Host "user ${loggedInUser}"
     
     if ( "$loggedInUser" ) {
         $subscriptionName = az account show --query "name"  --output tsv
-        Write-Output "You are currently logged in as [$loggedInUser] into subscription [$subscriptionName]"
+        Write-Host "You are currently logged in as [$loggedInUser] into subscription [$subscriptionName]"
         
         Do { $confirmation = Read-Host "Do you want to use this account? (y/n)"}
         while ([string]::IsNullOrWhiteSpace($confirmation))
@@ -537,9 +547,12 @@ function global:CheckIfUserLogged() {
         az login
     }
     
-    $subscriptionId = az account show --query "id" --output tsv
+    $subscriptionId = $(az account show --query "id" --output tsv)
 
-    Return $subscriptionId
+    Write-Host "SubscriptionId: ${subscriptionId}"
+
+    $Return.AKS_SUBSCRIPTION_ID= "$subscriptionId"
+    return $Return
 }
 
 function global:GetResourceGroupAndLocation($defaultResourceGroup) {
@@ -554,16 +567,16 @@ function global:GetResourceGroupAndLocation($defaultResourceGroup) {
     }
     while ([string]::IsNullOrWhiteSpace($resourceGroup))
     
-    Write-Output "Using resource group [$resourceGroup]"
+    Write-Host "Using resource group [$resourceGroup]"
     
-    Write-Output "checking if resource group already exists"
-    $resourceGroupExists = az group exists --name ${AKS_PERS_RESOURCE_GROUP}
+    Write-Host "checking if resource group already exists"
+    $resourceGroupExists = az group exists --name ${resourceGroup}
     if ($resourceGroupExists -ne "true") {
-        Write-Output "Create the Resource Group"
-        az group create --name $resourceGroup --location $AKS_PERS_LOCATION --verbose
-
         Do { $location = Read-Host "Location: (e.g., eastus)"}
         while ([string]::IsNullOrWhiteSpace($location))    
+
+        Write-Host "Create the Resource Group"
+        az group create --name $resourceGroup --location $location --verbose
     }
     
     $Return.AKS_PERS_RESOURCE_GROUP = $resourceGroup

@@ -1,4 +1,4 @@
-Write-output "--- create-bare-metal Version 2018.02.14.01 ----"
+Write-output "--- create-bare-metal Version 2018.02.15.01 ----"
 
 #
 # This script is meant for quick & easy install via:
@@ -7,8 +7,8 @@ Write-output "--- create-bare-metal Version 2018.02.14.01 ----"
 $GITHUB_URL = "https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master"
 # $GITHUB_URL = "C:\Catalyst\git\Installscripts"
 
-Invoke-WebRequest -useb $GITHUB_URL/azure/common.ps1 | Invoke-Expression;
-# Get-Content ./azure/common.ps1 -Raw | Invoke-Expression;
+# Invoke-WebRequest -useb $GITHUB_URL/azure/common.ps1 | Invoke-Expression;
+Get-Content ./azure/common.ps1 -Raw | Invoke-Expression;
 
 $AKS_USE_AZURE_NETWORKING = "n"
 $AKS_SERVICE_PRINCIPAL_NAME = ""
@@ -16,9 +16,7 @@ $AKS_SUPPORT_WINDOWS_CONTAINERS = "n"
 
 DownloadAzCliIfNeeded
 
-write-output "Checking if you're already logged in..."
-
-$AKS_SUBSCRIPTION_ID = CheckIfUserLogged
+$AKS_SUBSCRIPTION_ID = $(CheckIfUserLogged).AKS_SUBSCRIPTION_ID
 
 # ask for customerid
 Do { $customerid = Read-Host "Health Catalyst Customer ID (e.g., ahmn)"}
@@ -142,7 +140,7 @@ Write-Output "Found ID for ${AKS_PERS_NETWORK_SECURITY_GROUP}: $nsgid"
 Write-Output "Setting NSG into subnet"
 az network vnet subnet update -n "${AKS_SUBNET_NAME}" -g "${AKS_SUBNET_RESOURCE_GROUP}" --vnet-name "${AKS_VNET_NAME}" --network-security-group "$nsgid" --query "provisioningState" -o tsv
 
-$AKS_PERS_STORAGE_ACCOUNT_NAME = CreateStorageIfNotExists -resourceGroup $AKS_PERS_RESOURCE_GROUP
+$AKS_PERS_STORAGE_ACCOUNT_NAME = $(CreateStorageIfNotExists -resourceGroup $AKS_PERS_RESOURCE_GROUP).AKS_PERS_STORAGE_ACCOUNT_NAME
 
 CreateShareInStorageAccount -storageAccountName $AKS_PERS_STORAGE_ACCOUNT_NAME -resourceGroup $AKS_PERS_RESOURCE_GROUP -sharename fabricnlp
 

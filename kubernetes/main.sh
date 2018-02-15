@@ -5,7 +5,7 @@ set -e
 #   curl -sSL https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/kubernetes/main.sh | bash
 #
 #
-version="2018.02.15.01"
+version="2018.02.15.02"
 
 GITHUB_URL="https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master"
 
@@ -20,24 +20,25 @@ while [[ "$input" != "q" ]]; do
     echo "1: Add this VM as Master"
     echo "2: Add this VM as Worker"
     echo "3. Join a new node to this cluster"
-    echo "------ Product Install -------"
     echo "4: Setup Load Balancer"
-    echo "5: Install NLP"
-    echo "6: Install Realtime"
+    echo "5: Test DNS"
+    echo "------ Product Install -------"
+    echo "15: Install NLP"
+    echo "16: Install Realtime"
     echo "----- Troubleshooting ----"
-    echo "11: Show status of cluster"
-    echo "12: Launch Kubernetes Admin Dashboard"
-    echo "13: View status of DNS pods"
-    echo "14: Apply updates and restart all VMs"
+    echo "21: Show status of cluster"
+    echo "22: Launch Kubernetes Admin Dashboard"
+    echo "23: View status of DNS pods"
+    echo "24: Apply updates and restart all VMs"
     echo "------ NLP -----"
-    echo "21: Show status of NLP"
-    echo "22: Test web sites"
-    echo "23: Show passwords"
-    echo "24: Show NLP detailed status"
-    echo "25: Show NLP logs"
-    echo "26: Restart NLP"
+    echo "31: Show status of NLP"
+    echo "32: Test web sites"
+    echo "33: Show passwords"
+    echo "34: Show NLP detailed status"
+    echo "35: Show NLP logs"
+    echo "36: Restart NLP"
     echo "------ Realtime -----"
-    echo "31: Show status of realtime"
+    echo "41: Show status of realtime"
     echo "-----------"
     echo "q: Quit"
 
@@ -54,19 +55,36 @@ while [[ "$input" != "q" ]]; do
         ;;
     4)  curl -sSL https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/kubernetes/setup-loadbalancer.sh | bash
         ;;
-    5)  curl -sSL https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/nlp/installnlpkubernetes.sh | bash
+    5)  # from https://kubernetes.io/docs/tasks/administer-cluster/dns-custom-nameservers/#debugging-dns-resolution
+        echo "To resolve DNS issues: https://kubernetes.io/docs/tasks/administer-cluster/dns-custom-nameservers/#debugging-dns-resolution"
+        echo "----------- Checking if DNS pods are running -----------"
+        kubectl get pods --namespace=kube-system -l k8s-app=kube-dns
+        echo "----------- Checking if DNS service is running -----------"
+        kubectl get svc --namespace=kube-system
+        echo "----------- Checking if DNS endpoints are exposed ------------"
+        kubectl get ep kube-dns --namespace=kube-system
+        echo "----------- Checking logs for DNS service -----------"
+        kubectl logs --namespace=kube-system $(kubectl get pods --namespace=kube-system -l k8s-app=kube-dns -o name) -c kubedns
+        kubectl logs --namespace=kube-system $(kubectl get pods --namespace=kube-system -l k8s-app=kube-dns -o name) -c dnsmasq
+        kubectl logs --namespace=kube-system $(kubectl get pods --namespace=kube-system -l k8s-app=kube-dns -o name) -c sidecar        
+        echo "----------- Creating a busybox pod to test DNS -----------"
+        kubectl create -f https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/kubernetes/busybox.yaml
+        kubectl exec -ti busybox -- nslookup kubernetes.default
+        kubectl exec busybox cat /etc/resolv.conf
         ;;
-    11)  echo "Current cluster: $(kubectl config current-context)"
+    15)  curl -sSL https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/nlp/installnlpkubernetes.sh | bash
+        ;;
+    21)  echo "Current cluster: $(kubectl config current-context)"
         kubectl version --short
         kubectl get "deployments,pods,services,ingress,secrets" --namespace=kube-system -o wide
         ;;
-    21)  kubectl get 'deployments,pods,services,ingress,secrets,persistentvolumeclaims,persistentvolumes,nodes' --namespace=fabricnlp -o wide
+    31)  kubectl get 'deployments,pods,services,ingress,secrets,persistentvolumeclaims,persistentvolumes,nodes' --namespace=fabricnlp -o wide
         ;;
-    23)  Write-Host "MySql root password: $(ReadSecretPassword mysqlrootpassword fabricnlp)"
+    33)  Write-Host "MySql root password: $(ReadSecretPassword mysqlrootpassword fabricnlp)"
             Write-Host "MySql NLP_APP_USER password: $(ReadSecretPassword mysqlpassword fabricnlp)"
             Write-Host "SendGrid SMTP Relay key: $(ReadSecretPassword smtprelaypassword fabricnlp)"
         ;;
-    24)  pods=$(kubectl get pods -n fabricnlp -o jsonpath='{.items[*].metadata.name}')
+    34)  pods=$(kubectl get pods -n fabricnlp -o jsonpath='{.items[*].metadata.name}')
         for pod in $pods
         do
                 Write-Output "=============== Describe Pod: $pod ================="
@@ -74,7 +92,7 @@ while [[ "$input" != "q" ]]; do
                 read -n1 -r -p "Press space to continue..." key < /dev/tty
         done
         ;;
-    25)  pods=$(kubectl get pods -n fabricnlp -o jsonpath='{.items[*].metadata.name}')
+    35)  pods=$(kubectl get pods -n fabricnlp -o jsonpath='{.items[*].metadata.name}')
         for pod in $pods
         do
                 Write-Output "=============== Logs for Pod: $pod ================="

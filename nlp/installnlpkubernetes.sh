@@ -5,7 +5,7 @@ set -e
 #   curl -sSL https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/nlp/installnlpkubernetes.sh | bash
 #
 GITHUB_URL="https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master"
-version="2018.02.14.01"
+version="2018.02.14.02"
 
 echo "---- installnlpkubernetes.sh version $version ------"
 
@@ -31,7 +31,7 @@ fi
 
 customerid="$(ReadSecret customerid)"
 if [[ -z "$customerid" ]]; then
-
+    echo "customerid not set"
 fi
 customerid="${customerid,,}"
 echo "Customer ID: $customerid"

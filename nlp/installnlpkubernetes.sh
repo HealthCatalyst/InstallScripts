@@ -5,7 +5,7 @@ set -e
 #   curl -sSL https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/nlp/installnlpkubernetes.sh | bash
 #
 GITHUB_URL="https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master"
-version="2018.02.14.02"
+version="2018.02.14.03"
 
 echo "---- installnlpkubernetes.sh version $version ------"
 
@@ -17,8 +17,11 @@ if [[ -z $(kubectl get namespace fabricnlp --ignore-not-found=true) ]]; then
     echo "Creating namespace: fabricnlp"
     kubectl create namespace fabricnlp
 else
-    while read -s -p "Namespace exists.  Do you want to delete passwords and ALL data stored in this namespace? (y/n)" deleteSecrets < /dev/tty && [[ -z "$deleteSecrets" ]] ; do
-        echo "No-no, please, no blank passwords"
+    while : ; do
+        read -p "Namespace exists.  Do you want to delete passwords and ALL data stored in this namespace? (y/n): " deleteSecrets < /dev/tty
+        if [[ ! -z "$deleteSecrets" ]]; then
+            break
+        fi
     done
 
     if [[ $deleteSecrets == "y" ]]; then    

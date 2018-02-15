@@ -1,5 +1,5 @@
 
-versioncommon="2018.02.15.03"
+versioncommon="2018.02.15.04"
 
 echo "--- Including common.sh version $versioncommon ---"
 function GetCommonVersion() {
@@ -116,7 +116,7 @@ function AskForPassword () {
         namespace="default"
     fi
 
-    if [[ -z "$(kubectl get secret $secretname -n $namespace -o jsonpath='{.data.password}' --ignore-not-found=true)" ]]; then
+    if [[ -z "$(kubectl get secret $secretname -n $namespace -o jsonpath='{.data}' --ignore-not-found=true)" ]]; then
         mysqlrootpassword=""
         # MySQL password requirements: https://dev.mysql.com/doc/refman/5.6/en/validate-password-plugin.html
         # we also use sed to replace configs: https://unix.stackexchange.com/questions/32907/what-characters-do-i-need-to-escape-when-using-sed-in-a-sh-script
@@ -144,7 +144,7 @@ function AskForPasswordAnyCharacters () {
         namespace="default"
     fi
 
-    if [[ -z "$(kubectl get secret $secretname -n $namespace -o jsonpath='{.data.password}' --ignore-not-found=true)" ]]; then
+    if [[ -z "$(kubectl get secret $secretname -n $namespace -o jsonpath='{.data}' --ignore-not-found=true)" ]]; then
         mysqlrootpassword=""
         # MySQL password requirements: https://dev.mysql.com/doc/refman/5.6/en/validate-password-plugin.html
         # we also use sed to replace configs: https://unix.stackexchange.com/questions/32907/what-characters-do-i-need-to-escape-when-using-sed-in-a-sh-script

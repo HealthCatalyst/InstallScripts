@@ -66,7 +66,7 @@ function global:SaveSecretValue($secretname, $valueName, $value, $namespace) {
 
 function global:AskForPassword ($secretname, $prompt, $namespace) {
     if ([string]::IsNullOrWhiteSpace($namespace)) { $namespace = "default"}
-    if ([string]::IsNullOrWhiteSpace($(kubectl get secret $secretname -n $namespace -o jsonpath='{.data.password}' --ignore-not-found=true))) {
+    if ([string]::IsNullOrWhiteSpace($(kubectl get secret $secretname -n $namespace -o jsonpath='{.data}' --ignore-not-found=true))) {
 
         $mysqlrootpassword = ""
         # MySQL password requirements: https://dev.mysql.com/doc/refman/5.6/en/validate-password-plugin.html
@@ -90,7 +90,7 @@ function global:AskForPassword ($secretname, $prompt, $namespace) {
 
 function global:AskForPasswordAnyCharacters ($secretname, $prompt, $namespace, $defaultvalue) {
     if ([string]::IsNullOrWhiteSpace($namespace)) { $namespace = "default"}
-    if ([string]::IsNullOrWhiteSpace($(kubectl get secret $secretname -n $namespace -o jsonpath='{.data.password}' --ignore-not-found=true))) {
+    if ([string]::IsNullOrWhiteSpace($(kubectl get secret $secretname -n $namespace -o jsonpath='{.data}' --ignore-not-found=true))) {
 
         $mysqlrootpassword = ""
         # MySQL password requirements: https://dev.mysql.com/doc/refman/5.6/en/validate-password-plugin.html
@@ -114,7 +114,7 @@ function global:AskForPasswordAnyCharacters ($secretname, $prompt, $namespace, $
 
 function global:AskForSecretValue ($secretname, $prompt, $namespace) {
     if ([string]::IsNullOrWhiteSpace($namespace)) { $namespace = "default"}
-    if ([string]::IsNullOrWhiteSpace($(kubectl get secret $secretname -n $namespace -o jsonpath='{.data.value}' --ignore-not-found=true))) {
+    if ([string]::IsNullOrWhiteSpace($(kubectl get secret $secretname -n $namespace -o jsonpath='{.data}' --ignore-not-found=true))) {
 
         $certhostname = ""
         Do {

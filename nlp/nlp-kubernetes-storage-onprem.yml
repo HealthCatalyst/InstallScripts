@@ -46,6 +46,7 @@ metadata:
 spec:
   accessModes:
     - ReadWriteMany
+  storageClassName: default
   resources:
     requests:
       storage: 128Gi
@@ -84,6 +85,7 @@ metadata:
 spec:
   accessModes:
     - ReadWriteMany
+  storageClassName: default
   resources:
     requests:
       storage: 128Gi
@@ -122,6 +124,7 @@ metadata:
 spec:
   accessModes:
     - ReadWriteMany
+  storageClassName: default
   resources:
     requests:
       storage: 32Gi
@@ -173,6 +176,7 @@ metadata:
 spec:
   accessModes:
     - ReadWriteMany
+  storageClassName: default
   resources:
     requests:
       storage: 128Gi

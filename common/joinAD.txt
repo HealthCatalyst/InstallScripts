@@ -51,6 +51,7 @@ getDomainController () {
    printf "\n"
 }
 
+printf "Calling functions \n"
 getAD
 validateFQDN
 getADUser
@@ -61,7 +62,7 @@ sudo yum -y install realmd samba samba-common oddjob oddjob-mkhomedir sssd ntpda
 sudo systemctl enable ntpd.service
 
 # Get the primary domain controller for NTP
-printf "Configurting Time Service to look to the domain controller for  \n"
+printf "Configurting Time Service to look to the domain controller for ${domainController} \n"
 sudo ntpdate "${domainController}"
 sudo systemctl start ntpd.service
 sudo realm join -U aduser $FQDN 

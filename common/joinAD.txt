@@ -1,5 +1,5 @@
 #!/bin/sh
-set -ex
+set -e
 #
 # This script is meant for quick & easy install via:
 #   curl -sSL https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/common/joinAD.txt | sh
@@ -60,10 +60,9 @@ sudo yum update -y
 sudo yum -y install realmd samba samba-common oddjob oddjob-mkhomedir sssd ntpdate ntp
 sudo systemctl enable ntpd.service
 
-
 # Get the primary domain controller for NTP
 printf "Configurting Time Service to look to the domain controller for  \n"
-sudo ntpdate ${domainController}
+sudo ntpdate "${domainController}"
 sudo systemctl start ntpd.service
 sudo realm join -U aduser $FQDN 
 

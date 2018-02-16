@@ -24,11 +24,11 @@ connectionString="//${azurestorageaccount}.file.core.windows.net/${azuresharenam
 sudo mount -t cifs ${connectionString}
 
 # remove previous entry for this drive
-grep -v "/mnt/hcshared" /etc/fstab | sudo tee /etc/fstab
+grep -v "/mnt/hcshared" /etc/fstab | sudo tee /etc/fstab > /dev/null
 
 fstabstring="//${azurestorageaccount}.file.core.windows.net/${azuresharename} /mnt/hcshared cifs vers=2.1,username=${azurestorageaccount},password=${azurestorageaccesskey},dir_mode=0777,file_mode=0777,serverino"
 
-echo "${fstabstring}" | sudo tee -a /etc/fstab
+echo "${fstabstring}" | sudo tee -a /etc/fstab > /dev/null
 
 cat /etc/fstab
 

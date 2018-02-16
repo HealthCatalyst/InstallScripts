@@ -24,7 +24,7 @@ docker run --rm hello-world
 echo "docker is setup now"
 
 # echo "setting up a cleanup job"
-# echo "0 2 * * * /bin/sh backup.sh" | sudo tee -a /etc/cron.d/docker_cleanup
+# echo "0 2 * * * /bin/sh backup.sh" | sudo tee -a /etc/cron.d/docker_cleanup > /dev/null
 # (crontab -l ; echo "@daily /.sh") | sort - | uniq - | crontab -
 
 appinsightskey=""

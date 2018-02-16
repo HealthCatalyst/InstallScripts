@@ -1,5 +1,5 @@
 
-versioncommon="2018.02.16.01"
+versioncommon="2018.02.16.02"
 
 echo "--- Including common.sh version $versioncommon ---"
 function GetCommonVersion() {
@@ -184,6 +184,7 @@ function AskForSecretValue () {
 
 function WaitForPodsInNamespace(){
     local namespace="$1"
+    local interval=$2
 
     pods=$(kubectl get pods -n $namespace -o jsonpath='{.items[*].metadata.name}')
     waitingonPod="n"
@@ -193,12 +194,12 @@ function WaitForPodsInNamespace(){
 
         for pod in $pods; do
             podstatus=$(kubectl get pods $pod -n $namespace -o jsonpath='{.status.phase}')
-            echo "$pod: $podstatus"
             if [[ $podstatus != "Running" ]]; then
+                echo "$pod: $podstatus"
                 waitingonPod=$pod
             fi
         done
-        sleep 5
+        sleep $interval
     done     
 }
 

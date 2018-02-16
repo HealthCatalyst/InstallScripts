@@ -46,7 +46,7 @@ kubectl get nodes
 
 kubectl get pods -n kube-system -o wide
 
-WaitForPodsInNamespace kube-system
+WaitForPodsInNamespace kube-system 5
 
 sudo mkdir -p /mnt/data
 sudo chown $(id -u):$(id -g) /mnt/data

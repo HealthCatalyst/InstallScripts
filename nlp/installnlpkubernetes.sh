@@ -138,7 +138,7 @@ done
 
 kubectl get 'deployments,pods,services,ingress,secrets,persistentvolumeclaims,persistentvolumes,nodes' --namespace=$namespace -o wide
 
-WaitForPodsInNamespace $namespace
+WaitForPodsInNamespace $namespace 5
 
 # to get a shell
 # kubectl exec -it fabric.nlp.nlpwebserver-85c8cb86b5-gkphh bash --namespace=fabricnlp

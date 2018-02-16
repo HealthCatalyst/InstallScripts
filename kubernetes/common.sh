@@ -1,5 +1,5 @@
 
-versioncommon="2018.02.15.08"
+versioncommon="2018.02.16.01"
 
 echo "--- Including common.sh version $versioncommon ---"
 function GetCommonVersion() {
@@ -160,6 +160,27 @@ function AskForPasswordAnyCharacters () {
         Write-Output "$secretname secret already set so will reuse it"
     fi
 }
+
+function AskForSecretValue () {
+    local secretname=$1
+    local prompt=$2
+    local namespace=$3
+
+    if [[ -z "$namespace" ]]; then
+        namespace="default"
+    fi
+
+    if [[ -z "$(kubectl get secret $secretname -n $namespace -o jsonpath='{.data}' --ignore-not-found=true)" ]]; then
+        mysqlrootpassword=""
+        # MySQL password requirements: https://dev.mysql.com/doc/refman/5.6/en/validate-password-plugin.html
+        # we also use sed to replace configs: https://unix.stackexchange.com/questions/32907/what-characters-do-i-need-to-escape-when-using-sed-in-a-sh-script
+        read -p "${prompt}: " myvalue < /dev/tty
+        kubectl create secret generic $secretname --namespace=$namespace --from-literal=value=$myvalue
+    else 
+        Write-Output "$secretname secret already set so will reuse it"
+    fi
+}
+
 
 function WaitForPodsInNamespace(){
     local namespace="$1"

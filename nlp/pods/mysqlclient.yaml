@@ -54,6 +54,5 @@ spec:
       volumes:
       - name: mysql-persistent-storage-backup
         persistentVolumeClaim:
-          claimName: az-files-mysql-backup             
-      restartPolicy: OnFailure
+          claimName: az-files-mysql-backup
 ---

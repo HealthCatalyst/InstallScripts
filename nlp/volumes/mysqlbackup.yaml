@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: PersistentVolume
 metadata:
-  name: azure-file-volume-mysql-backup
+  name: nlp.mysqlbackup
   namespace: fabricnlp    
   labels:
     type: azure  

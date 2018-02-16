@@ -1,7 +1,7 @@
 kind: PersistentVolume
 apiVersion: v1
 metadata:
-  name: file-volume-mysql
+  name: nlp.mysqlserver
   namespace: fabricnlp    
   labels:
     type: local  

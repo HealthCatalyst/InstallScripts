@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: PersistentVolume
 metadata:
-  name: file-volume-solr
+  name: nlp.solrserver
   namespace: fabricnlp
   labels:
     type: local  

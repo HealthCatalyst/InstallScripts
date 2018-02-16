@@ -1,0 +1,18 @@
+# https://github.com/kubernetes/contrib/tree/master/for-demos/proxy-to-service
+# https://stackoverflow.com/questions/47057176/how-to-access-kubernetes-service-externally-on-bare-metal-install
+# https://github.com/kubernetes/contrib/tree/master/for-demos/proxy-to-service
+apiVersion: v1
+kind: Pod
+metadata:
+  name: dns-proxy
+spec:
+
+  containers:
+  - name: proxy-tcp
+    image: k8s.gcr.io/proxy-to-service:v2
+    args: [ "tcp", "53", "kube-dns.default" ]
+    ports:
+    - name: tcp
+      protocol: TCP
+      containerPort: 53
+      hostPort: 53

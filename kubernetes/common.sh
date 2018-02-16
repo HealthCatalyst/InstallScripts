@@ -1,5 +1,5 @@
 
-versioncommon="2018.02.15.06"
+versioncommon="2018.02.15.07"
 
 echo "--- Including common.sh version $versioncommon ---"
 function GetCommonVersion() {
@@ -195,13 +195,13 @@ function mountSMBWithParams(){
     local password=$3
     
     # save as secret
-    secretname="sharedfolder"
-    namespace="default"
-    if [[ ! -z  "$(kubectl get secret $secretname -n $namespace -o jsonpath='{.data}' --ignore-not-found=true)" ]]; then
-        kubectl delete secret $secretname -n $namespace
-    fi
+    # secretname="sharedfolder"
+    # namespace="default"
+    # if [[ ! -z  "$(kubectl get secret $secretname -n $namespace -o jsonpath='{.data}' --ignore-not-found=true)" ]]; then
+    #     kubectl delete secret $secretname -n $namespace
+    # fi
 
-    kubectl create secret generic $secretname --namespace=$namespace --from-literal=path=$pathToShare --from-literal=username=$username --from-literal=password=$password
+    # kubectl create secret generic $secretname --namespace=$namespace --from-literal=path=$pathToShare --from-literal=username=$username --from-literal=password=$password
 
     # from: https://docs.microsoft.com/en-us/azure/storage/files/storage-how-to-use-files-linux
     sudo yum -y install samba-client samba-common cifs-utils 

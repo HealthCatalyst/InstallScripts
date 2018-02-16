@@ -1,0 +1,64 @@
+#!/bin/sh
+set -e
+#
+# This script is meant for quick & easy install via:
+#   curl -sSL https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/kubernetes/joinAD.txt | sh
+#
+#
+
+version="2018.02.15.01"
+echo "---- setupad version $version ----"
+
+u="$(whoami)"
+echo "User name: $u"
+
+## Set some variables for console bolding
+bold=$(tput bold)
+normal=$(tput sgr0)
+
+### Get Active Directory function
+
+getAD () {
+   printf "\n"
+   echo -n "Enter your fully qualified Active Directory domain's distinguished name (example mydomain.local) and press [ENTER]: "
+   read FQDN
+   printf "\n"
+}
+
+### Validate the users entered FQDN is accessible publicly
+
+validateFQDN () {
+  results=$([ "$(dig +short ${FQDN})" ] && echo "got answer")
+  if [ -z "$results" ]; then printf "\n ${bold}$FQDN ${normal}is not resolvable. Please ensure that the server is resolvable via nslookup before re-running this script.\n\n"
+  fi
+}
+
+### Get Active Directory User
+
+getADUser () {
+   printf "\n"
+   echo -n "Enter an Active Directory username with permissions to join computers to the domain and press [ENTER]: "
+   read aduser
+   printf "\n"
+}
+
+getAD
+validateFQDN
+getADUser
+
+
+sudo yum update -y
+sudo yum -y install realmd samba samba-common oddjob oddjob-mkhomedir sssd ntpdate ntp
+sudo systemctl enable ntpd.service
+
+
+# Get the primary domain controller for NTP
+#sudo ntpdate hcsad1.hqcatalyst.local
+sudo systemctl start ntpd.service
+sudo realm join -U aduser $FQDN 
+
+sudo realm list
+servername="$(hostname)"
+sudo hostnamectl set-hostname "$servername.${FQDN}"
+sudo systemctl restart sssd
+

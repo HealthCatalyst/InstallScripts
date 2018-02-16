@@ -1,5 +1,5 @@
 #!/bin/sh
-set -e
+set -ex
 #
 # This script is meant for quick & easy install via:
 #   curl -sSL https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/common/joinAD.txt | sh
@@ -71,4 +71,3 @@ printf "Configurting the hostname of this server to the fully qualified domain n
 servername="$(hostname)"
 sudo hostnamectl set-hostname "$servername.${FQDN}"
 sudo systemctl restart sssd
-

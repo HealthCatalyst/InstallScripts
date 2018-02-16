@@ -56,4 +56,4 @@ spec:
       volumes:
       - name: certificateserver-persistent-storage
         persistentVolumeClaim:
-          claimName: az-files-certificateserver            
+          claimName: realtime.certificateserver        

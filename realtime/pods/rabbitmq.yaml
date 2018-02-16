@@ -65,7 +65,7 @@ spec:
       volumes:
       - name: rabbitmqcert-persistent-storage
         persistentVolumeClaim:
-          claimName: az-files-rabbitmqcert            
+          claimName: realtime.rabbitmqcert           
       - name: rabbitmq-persistent-storage
         persistentVolumeClaim:
-          claimName: az-files-rabbitmq            
+          claimName: realtime.rabbitmq           

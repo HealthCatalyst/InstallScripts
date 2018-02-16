@@ -5,7 +5,7 @@ set -e
 #   curl -sSL https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/kubernetes/main.sh | bash
 #
 #
-version="2018.02.15.06"
+version="2018.02.15.07"
 
 GITHUB_URL="https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master"
 
@@ -19,9 +19,10 @@ while [[ "$input" != "q" ]]; do
     echo "------ Infrastructure -------"
     echo "1: Add this VM as Master"
     echo "2: Add this VM as Worker"
-    echo "3. Join a new node to this cluster"
-    echo "4: Setup Load Balancer"
-    echo "5: Test DNS"
+    echo "3: Join a new node to this cluster"
+    echo "4: Mount shared folder"
+    echo "5: Setup Load Balancer"
+    echo "6: Test DNS"
     echo "------ Product Install -------"
     echo "15: Install NLP"
     echo "16: Install Realtime"
@@ -48,14 +49,17 @@ while [[ "$input" != "q" ]]; do
     1)  curl -sSL https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/kubernetes/setupnode.txt | bash
         curl -sSL https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/kubernetes/setupmaster.txt | bash
         ;;
-    2) curl -sSL https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/kubernetes/setupnode.txt | bash
+    2)  mountSMB
+        curl -sSL https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/kubernetes/setupnode.txt | bash
         ;;
     3)  echo "Run this command on the new node to join this cluster:"
         echo "sudo $(sudo kubeadm token create --print-join-command)"
         ;;
-    4)  curl -sSL https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/kubernetes/setup-loadbalancer.sh | bash
+    4)  mountSMB
         ;;
-    5)  # from https://kubernetes.io/docs/tasks/administer-cluster/dns-custom-nameservers/#debugging-dns-resolution
+    5)  curl -sSL https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/kubernetes/setup-loadbalancer.sh | bash
+        ;;
+    6)  # from https://kubernetes.io/docs/tasks/administer-cluster/dns-custom-nameservers/#debugging-dns-resolution
         echo "To resolve DNS issues: https://kubernetes.io/docs/tasks/administer-cluster/dns-custom-nameservers/#debugging-dns-resolution"
         echo "----------- Checking if DNS pods are running -----------"
         kubectl get pods --namespace=kube-system -l k8s-app=kube-dns

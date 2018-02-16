@@ -1,5 +1,5 @@
 
-versioncommon="2018.02.15.04"
+versioncommon="2018.02.15.05"
 
 echo "--- Including common.sh version $versioncommon ---"
 function GetCommonVersion() {
@@ -179,4 +179,47 @@ function WaitForPodsInNamespace(){
         done
         sleep 5
     done     
+}
+
+function mountSMB(){
+    read -p "path to SMB share (e.g., //myserver.mydomain/myshare): " pathToShare < /dev/tty    
+    read -p "username: " username < /dev/tty
+    read -s -p "password: " password < /dev/tty
+
+    mountSMBWithParams $pathToShare $username $password
+}
+
+function mountSMBWithParams(){
+    local pathToShare=$1
+    local username=$2 #<storage-account-name>
+    local password=$3
+    
+    # save as secret
+    # secretname="sharedfolder"
+    # namespace="default"
+    # if [[ ! -z  "$(kubectl get secret $secretname -n $namespace -o jsonpath='{.data}' --ignore-not-found=true)" ]]; then
+    #     kubectl delete secret $secretname -n $namespace
+    # fi
+
+    # kubectl create secret generic $secretname --namespace=$namespace --from-literal=path=$pathToShare --from-literal=username=$username --from-literal=password=$password
+
+    # from: https://docs.microsoft.com/en-us/azure/storage/files/storage-how-to-use-files-linux
+    sudo yum -y install samba-client samba-common cifs-utils 
+
+    sudo mkdir -p /mnt/data
+
+#    sudo mount -t cifs //fabrickubernetesstorage.file.core.windows.net/data /mnt/data -o vers=2.1,username=fabrickubernetesstorage,password=gpHa7oEYsBaxg6o5hZXnfcocB5u5sEkw2q4pBHXaU5SNgJ4PXUU6gioWMjxwSi8DnfzZZfYXfB9pVyWH0t2gng==,dir_mode=0777,file_mode=0777,serverino
+
+    # sudo mount -t cifs $pathToShare /mnt/data -o vers=2.1,username=<storage-account-name>,password=<storage-account-key>,dir_mode=0777,file_mode=0777,serverino
+
+    # remove previous entry for this drive
+    grep -v "/mnt/data" /etc/fstab | sudo tee /etc/fstab
+
+    echo "$pathToShare /mnt/data cifs nofail,vers=2.1,username=$username,password=$password,dir_mode=0777,file_mode=0777,serverino" | sudo tee -a /etc/fstab
+
+    sudo mount -a
+
+    touch "/mnt/data/$hostname.txt"
+
+    ls /mnt/data
 }

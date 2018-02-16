@@ -9,7 +9,7 @@ set -e
 GITHUB_URL="https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master"
 source <(curl -sSL "$GITHUB_URL/kubernetes/common.sh")
 
-version="2018.02.15.04"
+version="2018.02.15.05"
 echo "---- setupmaster version $version ----"
 
 u="$(whoami)"
@@ -47,6 +47,10 @@ kubectl get nodes
 kubectl get pods -n kube-system -o wide
 
 WaitForPodsInNamespace kube-system
+
+sudo mkdir -p /mnt/data
+sudo chown $(id -u):$(id -g) /mnt/data
+sudo chmod -R 777 /mnt/data
 
 # testing
 # kubectl run nginx --image=nginx --port=80

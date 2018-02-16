@@ -1,4 +1,4 @@
-Write-output "--- create-bare-metal Version 2018.02.15.01 ----"
+Write-output "--- create-bare-metal Version 2018.02.15.02 ----"
 
 #
 # This script is meant for quick & easy install via:
@@ -10,7 +10,6 @@ $GITHUB_URL = "https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/m
 Invoke-WebRequest -useb $GITHUB_URL/azure/common.ps1 | Invoke-Expression;
 # Get-Content ./azure/common.ps1 -Raw | Invoke-Expression;
 
-$AKS_USE_AZURE_NETWORKING = "n"
 $AKS_SERVICE_PRINCIPAL_NAME = ""
 $AKS_SUPPORT_WINDOWS_CONTAINERS = "n"
 
@@ -73,7 +72,7 @@ CleanResourceGroup -resourceGroup ${AKS_PERS_RESOURCE_GROUP} -location $AKS_PERS
 
 $AKS_PERS_STORAGE_ACCOUNT_NAME = $(CreateStorageIfNotExists -resourceGroup $AKS_PERS_RESOURCE_GROUP).AKS_PERS_STORAGE_ACCOUNT_NAME
 
-CreateShareInStorageAccount -storageAccountName $AKS_PERS_STORAGE_ACCOUNT_NAME -resourceGroup $AKS_PERS_RESOURCE_GROUP -sharename fabricnlp
+CreateShareInStorageAccount -storageAccountName $AKS_PERS_STORAGE_ACCOUNT_NAME -resourceGroup $AKS_PERS_RESOURCE_GROUP -sharename "data"
 
 $MASTER_VM_NAME = "k8s-master"
 $NETWORK_SECURITY_GROUP = "cluster-nsg"

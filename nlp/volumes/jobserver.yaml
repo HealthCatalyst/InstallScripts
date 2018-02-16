@@ -5,7 +5,7 @@ metadata:
   namespace: fabricnlp    
 spec:
   capacity:
-    storage: 32Gi
+    storage: 8Gi
   storageClassName: default
   accessModes:
     - ReadWriteMany

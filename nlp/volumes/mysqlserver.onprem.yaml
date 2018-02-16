@@ -1,14 +1,14 @@
 kind: PersistentVolume
 apiVersion: v1
 metadata:
-  name: azure-file-volume-mysql
+  name: file-volume-mysql
   namespace: fabricnlp    
   labels:
     type: local
 spec:
   storageClassName: default
   capacity:
-    storage: 5Gi
+    storage: 8Gi
   accessModes:
     - ReadWriteMany
   hostPath:

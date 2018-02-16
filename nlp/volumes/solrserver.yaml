@@ -6,7 +6,7 @@ metadata:
 spec:
   #persistentVolumeReclaimPolicy: Delete
   capacity:
-    storage: 128Gi
+    storage: 32Gi
   storageClassName: default
   accessModes:
     - ReadWriteMany

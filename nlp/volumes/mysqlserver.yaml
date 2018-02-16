@@ -6,7 +6,7 @@ metadata:
 spec:
   storageClassName: default
   capacity:
-    storage: 128Gi
+    storage: 8Gi
   # https://kubernetes.io/docs/concepts/storage/persistent-volumes/#access-modes
   accessModes:
     - ReadWriteMany

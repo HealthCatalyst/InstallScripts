@@ -4,8 +4,9 @@ metadata:
   name: az-files-jobs
   namespace: fabricnlp  
 spec:
+  storageClassName: default
   accessModes:
     - ReadWriteMany
   resources:
     requests:
-      storage: 32Gi
+      storage: 8Gi

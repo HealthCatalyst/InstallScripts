@@ -42,10 +42,19 @@ getADUser () {
    printf "\n"
 }
 
+### Get Active Directory User
+
+getDomainController () {
+   printf "\n"
+   echo -n "Enter the fully qualified domain name of an Active Directory domain controller and press [ENTER]: "
+   read domainController
+   printf "\n"
+}
+
 getAD
 validateFQDN
 getADUser
-
+getDomainController
 
 sudo yum update -y
 sudo yum -y install realmd samba samba-common oddjob oddjob-mkhomedir sssd ntpdate ntp
@@ -53,11 +62,12 @@ sudo systemctl enable ntpd.service
 
 
 # Get the primary domain controller for NTP
-#sudo ntpdate hcsad1.hqcatalyst.local
+printf "Configurting Time Service to look to the domain controller for  \n"
+sudo ntpdate ${getDomainController}
 sudo systemctl start ntpd.service
 sudo realm join -U aduser $FQDN 
 
-sudo realm list
+printf "Configurting the hostname of this server to the fully qualified domain name."
 servername="$(hostname)"
 sudo hostnamectl set-hostname "$servername.${FQDN}"
 sudo systemctl restart sssd

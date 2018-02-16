@@ -8,7 +8,8 @@ metadata:
   namespace: fabricnlp  
 spec:
   # hostPort is broken on CNI (https://github.com/kubernetes/kubernetes/issues/31307) we have to use hostNetwork where CNI is used
-  hostNetwork: true    
+  hostNetwork: true
+  dnsPolicy: ClusterFirstWithHostNet
   # run on master node so we use the IP of the master
   # https://kubernetes.io/docs/concepts/configuration/assign-pod-node/
   # https://ekartco.com/2017/09/kubernetes-make-pods-run-on-your-master-nodes/
@@ -22,8 +23,10 @@ spec:
     effect: NoSchedule
   containers:
   - name: proxy-tcp
+#    image: k8s.gcr.io/proxy-to-service:v2
     image: healthcatalyst/tcp-proxy:latest
-    args: [ "tcp", "3306", "mysqlserver" ]
+    imagePullPolicy: Always
+    args: [ "tcp", "3306", "mysqlserver.fabricnlp.svc.cluster.local" ]
     ports:
     - name: tcp
       protocol: TCP

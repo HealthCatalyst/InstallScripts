@@ -28,12 +28,12 @@ spec:
             - name: NLPWEB_EXTERNAL_URL
               valueFrom:
                 secretKeyRef:
-                  name: NLPWEB_EXTERNAL_URL
+                  name: nlpweb-external-url
                   key: url
             - name: JOBSERVER_EXTERNAL_URL
               valueFrom:
                 secretKeyRef:
-                  name: JOBSERVER_EXTERNAL_URL
+                  name: jobserver-external-url
                   key: url
             # - name: EXTERNAL_HOSTNAME
             #   value: localhost

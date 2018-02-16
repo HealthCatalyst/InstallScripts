@@ -5,7 +5,7 @@ set -e
 #   curl -sSL https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/nlp/installnlpkubernetes.sh | bash
 #
 GITHUB_URL="https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master"
-version="2018.02.16.01"
+version="2018.02.16.02"
 
 echo "---- installnlpkubernetes.sh version $version ------"
 
@@ -47,7 +47,7 @@ echo "Customer ID: $customerid"
 loadBalancerIP="$(dig +short myip.opendns.com @resolver1.opendns.com)"
 echo "My WAN/Public IP address: ${loadBalancerIP}"
 
-echo "Cleaning out any old resources in fabricnlp"
+echo "--- Cleaning out any old resources in fabricnlp ---"
 
 # note kubectl doesn't like spaces in between commas below
 kubectl delete --all 'deployments,pods,services,ingress,persistentvolumeclaims,persistentvolumes,jobs,cronjobs' --namespace=$namespace --ignore-not-found=true
@@ -59,8 +59,8 @@ while [[ ! -z "$CLEANUP_DONE" ]]; do
     CLEANUP_DONE=$(kubectl get 'deployments,pods,services,ingress,persistentvolumeclaims,persistentvolumes' --namespace=$namespace)
 done
 
-SaveSecretValue NLPWEB_EXTERNAL_URL url "${loadBalancerIP}/nlpweb"  $namespace
-SaveSecretValue JOBSERVER_EXTERNAL_URL url "${loadBalancerIP}/nlp"  $namespace
+SaveSecretValue "nlpweb-external-url" url "${loadBalancerIP}/nlpweb"  $namespace
+SaveSecretValue "jobserver-external-url" url "${loadBalancerIP}/nlp"  $namespace
 
 AskForPassword "mysqlrootpassword" "MySQL root password (> 8 chars, min 1 number, 1 lowercase, 1 uppercase, 1 special [!.*@] )" "$namespace"
 # MySQL password requirements: https://dev.mysql.com/doc/refman/5.6/en/validate-password-plugin.html

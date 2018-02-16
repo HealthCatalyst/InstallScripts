@@ -1,4 +1,4 @@
-Write-Output "Version 2018.02.15.01"
+Write-Output "Version 2018.02.16.01"
 
 # curl -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/nlp/installnlpkubernetes.ps1 | iex;
 $GITHUB_URL = "https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master"
@@ -87,8 +87,8 @@ $customerid = ReadSecret -secretname customerid
 $customerid = $customerid.ToLower().Trim()
 Write-Output "Customer ID: $customerid"
 
-SaveSecretValue -secretname NLPWEB_EXTERNAL_URL -valueName url -value "nlp.$customerid.healthcatalyst.net" -namespace $namespace
-SaveSecretValue -secretname JOBSERVER_EXTERNAL_URL -valueName url -value "nlpjobs.$customerid.healthcatalyst.net" -namespace $namespace
+SaveSecretValue -secretname nlpweb-external-url -valueName url -value "nlp.$customerid.healthcatalyst.net" -namespace $namespace
+SaveSecretValue -secretname jobserver-external-url -valueName url -value "nlpjobs.$customerid.healthcatalyst.net" -namespace $namespace
 
 AskForPassword -secretname "mysqlrootpassword" -prompt "MySQL root password (> 8 chars, min 1 number, 1 lowercase, 1 uppercase, 1 special [!.*@] )" -namespace "$namespace"
 # MySQL password requirements: https://dev.mysql.com/doc/refman/5.6/en/validate-password-plugin.html

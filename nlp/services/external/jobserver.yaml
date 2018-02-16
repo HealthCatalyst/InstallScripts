@@ -1,11 +1,11 @@
 kind: Service
 apiVersion: v1
 metadata:
-  name: nlpserverpublic
+  name: nlpjobsserverpublic
   namespace: fabricnlp
 spec:
   selector:
-    app: nlpwebserver
+    app: jobserver
   ports:
   - port: 80
-    targetPort: 8083
+    targetPort: 8084

@@ -5,7 +5,7 @@ set -e
 #   curl -sSL https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/nlp/installnlpkubernetes.sh | bash
 #
 GITHUB_URL="https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master"
-version="2018.02.16.02"
+version="2018.02.16.03"
 
 echo "---- installnlpkubernetes.sh version $version ------"
 
@@ -56,7 +56,9 @@ echo "Waiting until all the resources are cleared up"
 
 CLEANUP_DONE="n"
 while [[ ! -z "$CLEANUP_DONE" ]]; do
-    CLEANUP_DONE=$(kubectl get 'deployments,pods,services,ingress,persistentvolumeclaims,persistentvolumes' --namespace=$namespace)
+    CLEANUP_DONE=$(kubectl get 'deployments,pods,services,ingress,persistentvolumeclaims,persistentvolumes' --namespace=$namespace -o jsonpath="{.items[*].metadata.name}")
+    echo "Remaining items: $CLEANUP_DONE"
+    sleep 5
 done
 
 SaveSecretValue "nlpweb-external-url" url "${loadBalancerIP}/nlpweb"  $namespace

@@ -5,7 +5,7 @@ set -e
 #   curl -sSL https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/kubernetes/main.sh | bash
 #
 #
-version="2018.02.16.02"
+version="2018.02.16.03"
 
 GITHUB_URL="https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master"
 
@@ -123,7 +123,9 @@ while [[ "$input" != "q" ]]; do
         ;;
     43)  Write-Host "MySql root password: $(ReadSecretPassword mysqlrootpassword fabricrealtime)"
             Write-Host "MySql NLP_APP_USER password: $(ReadSecretPassword mysqlpassword fabricrealtime)"
-            Write-Host "SendGrid SMTP Relay key: $(ReadSecretPassword smtprelaypassword fabricrealtime)"
+            Write-Host "certhostname: $(ReadSecretPassword certhostname fabricrealtime)"
+            Write-Host "certpassword: $(ReadSecretPassword certpassword fabricrealtime)"
+            Write-Host "rabbitmqmgmtuipassword: $(ReadSecretPassword rabbitmqmgmtuipassword fabricrealtime)"
         ;;
     44)  pods=$(kubectl get pods -n fabricrealtime -o jsonpath='{.items[*].metadata.name}')
         for pod in $pods

@@ -5,7 +5,7 @@ set -e
 #   curl -sSL https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/nlp/installnlpkubernetes.sh | bash
 #
 GITHUB_URL="https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master"
-version="2018.02.16.01"
+version="2018.02.16.02"
 
 echo "---- installrealtimekubernetes.sh version $version ------"
 
@@ -13,9 +13,9 @@ source <(curl -sSL "$GITHUB_URL/kubernetes/common.sh")
 
 # source ./kubernetes/common.sh
 
-$namespace="fabricrealtime"
+namespace="fabricrealtime"
 
-$datafolder="/mnt/data/fabricrealtime"
+datafolder="/mnt/data/fabricrealtime"
 if [ ! -d "$datafolder" ]; then
     sudo mkdir -p $datafolder
 fi

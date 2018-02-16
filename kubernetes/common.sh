@@ -1,5 +1,5 @@
 
-versioncommon="2018.02.15.07"
+versioncommon="2018.02.15.08"
 
 echo "--- Including common.sh version $versioncommon ---"
 function GetCommonVersion() {
@@ -217,7 +217,8 @@ function mountSMBWithParams(){
 
     sudo mount -a
 
-    touch "/mnt/data/$hostname.txt"
+    touch "/mnt/data/$(hostname).txt"
 
-    ls /mnt/data
+    echo "Listing files in shared folder"
+    ls -al /mnt/data
 }

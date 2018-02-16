@@ -5,7 +5,7 @@ set -e
 #   curl -sSL https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/nlp/installnlpkubernetes.sh | bash
 #
 GITHUB_URL="https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master"
-version="2018.02.14.05"
+version="2018.02.14.06"
 
 echo "---- installnlpkubernetes.sh version $version ------"
 
@@ -74,7 +74,7 @@ ReadYmlAndReplaceCustomer $GITHUB_URL "nlp/nlp-backups-cronjob.yml" $customerid 
 
 echo "Setting up reverse proxy"
 
-ingressTemplate="nlp/nlp-ingress.yml"
+ingressTemplate="nlp/nlp-ingress.onprem.yml"
 echo "Using template: $ingressTemplate"
 
 ReadYmlAndReplaceCustomer $GITHUB_URL $ingressTemplate $customerid | kubectl create -f -

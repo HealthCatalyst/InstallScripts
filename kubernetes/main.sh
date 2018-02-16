@@ -5,7 +5,7 @@ set -e
 #   curl -sSL https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/kubernetes/main.sh | bash
 #
 #
-version="2018.02.15.08"
+version="2018.02.15.09"
 
 GITHUB_URL="https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master"
 
@@ -105,7 +105,6 @@ while [[ "$input" != "q" ]]; do
                 kubectl describe pods $pod -n fabricnlp
                 read -n1 -r -p "Press space to continue..." key < /dev/tty
         done
-        kubectl exec busybox -- nslookup mysqlserver.fabricnlp.svc.cluster.local
         ;;
     35)  pods=$(kubectl get pods -n fabricnlp -o jsonpath='{.items[*].metadata.name}')
         for pod in $pods

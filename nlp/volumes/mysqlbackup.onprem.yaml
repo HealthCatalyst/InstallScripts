@@ -4,7 +4,7 @@ metadata:
   name: azure-file-volume-mysql-backup
   namespace: fabricnlp    
 spec:
-  storageClassName: manual
+  storageClassName: default
   capacity:
     storage: 5Gi
   # https://kubernetes.io/docs/concepts/storage/persistent-volumes/#access-modes

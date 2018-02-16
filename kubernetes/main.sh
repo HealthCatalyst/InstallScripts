@@ -40,6 +40,8 @@ while [[ "$input" != "q" ]]; do
     echo "36: Restart NLP"
     echo "------ Realtime -----"
     echo "41: Show status of realtime"
+    echo "44: Show Realtime detailed status"
+    echo "45: Show Realtime logs"
     echo "-----------"
     echo "q: Quit"
 
@@ -89,6 +91,8 @@ while [[ "$input" != "q" ]]; do
         ;;
     15)  curl -sSL https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/nlp/installnlpkubernetes.sh | bash
         ;;
+    16)  curl -sSL https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/nlp/installrealtimekubernetes.sh | bash
+        ;;
     21)  echo "Current cluster: $(kubectl config current-context)"
         kubectl version --short
         kubectl get "deployments,pods,services,nodes,ingress,secrets" --namespace=kube-system -o wide
@@ -115,6 +119,29 @@ while [[ "$input" != "q" ]]; do
                 read -n1 -r -p "Press space to continue..." key < /dev/tty
         done
         ;;
+    41)  kubectl get 'deployments,pods,services,ingress,secrets,persistentvolumeclaims,persistentvolumes,nodes' --namespace=fabricrealtime -o wide
+        ;;
+    43)  Write-Host "MySql root password: $(ReadSecretPassword mysqlrootpassword fabricrealtime)"
+            Write-Host "MySql NLP_APP_USER password: $(ReadSecretPassword mysqlpassword fabricrealtime)"
+            Write-Host "SendGrid SMTP Relay key: $(ReadSecretPassword smtprelaypassword fabricrealtime)"
+        ;;
+    44)  pods=$(kubectl get pods -n fabricrealtime -o jsonpath='{.items[*].metadata.name}')
+        for pod in $pods
+        do
+                Write-Output "=============== Describe Pod: $pod ================="
+                kubectl describe pods $pod -n fabricrealtime
+                read -n1 -r -p "Press space to continue..." key < /dev/tty
+        done
+        ;;
+    45)  pods=$(kubectl get pods -n fabricrealtime -o jsonpath='{.items[*].metadata.name}')
+        for pod in $pods
+        do
+                Write-Output "=============== Logs for Pod: $pod ================="
+                kubectl logs --tail=20 $pod -n fabricrealtime
+                read -n1 -r -p "Press space to continue..." key < /dev/tty
+        done
+        ;;
+
     q) echo  "Exiting" 
     ;;
     *) echo "Menu item $1 is not known"

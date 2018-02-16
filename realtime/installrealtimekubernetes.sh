@@ -5,7 +5,7 @@ set -e
 #   curl -sSL https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/nlp/installnlpkubernetes.sh | bash
 #
 GITHUB_URL="https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master"
-version="2018.02.14.05"
+version="2018.02.16.01"
 
 echo "---- installrealtimekubernetes.sh version $version ------"
 
@@ -14,6 +14,11 @@ source <(curl -sSL "$GITHUB_URL/kubernetes/common.sh")
 # source ./kubernetes/common.sh
 
 $namespace="fabricrealtime"
+
+$datafolder="/mnt/data/fabricrealtime"
+if [ ! -d "$datafolder" ]; then
+    sudo mkdir -p $datafolder
+fi
 
 if [[ -z $(kubectl get namespace $namespace --ignore-not-found=true) ]]; then
     echo "Creating namespace: $namespace"
@@ -65,14 +70,58 @@ echo "Waiting until all the resources are cleared up"
 
 CLEANUP_DONE="n"
 while [[ ! -z "$CLEANUP_DONE" ]]; do
-    CLEANUP_DONE=$(kubectl get 'deployments,pods,services,ingress,persistentvolumeclaims,persistentvolumes' --namespace=$namespace)
+    CLEANUP_DONE=$(kubectl get 'deployments,pods,services,ingress,persistentvolumeclaims,persistentvolumes' --namespace=$namespace -o jsonpath="{.items[*].metadata.name}")
+    echo "Remaining items: $CLEANUP_DONE"
+    sleep 5
 done
 
-ReadYmlAndReplaceCustomer $GITHUB_URL "realtime/realtime-kubernetes-storage-onprem.yml" $customerid | kubectl create -f -
+echo "-- Deploying volumes --"
+folder="volumes"
+for fname in "certificateserver.onprem.yaml" "mysqlserver.onprem.yaml" "rabbitmq-cert.onprem.yaml" "rabbitmq.onprem.yaml"
+do
+    echo "Deploying realtime/$folder/$fname"
+    ReadYmlAndReplaceCustomer $GITHUB_URL "realtime/$folder/$fname" $customerid | kubectl create -f -
+done
 
-ReadYmlAndReplaceCustomer $GITHUB_URL "realtime/realtime-kubernetes.yml" $customerid | kubectl create -f -
+echo "-- Deploying volume claims --"
+folder="volumeclaims"
+for fname in "certificateserver.yaml" "mysqlserver.yaml" "rabbitmq-cert.yaml" "rabbitmq.yaml"
+do
+    echo "Deploying realtime/$folder/$fname"
+    ReadYmlAndReplaceCustomer $GITHUB_URL "realtime/$folder/$fname" $customerid | kubectl create -f -
+done
 
-ReadYmlAndReplaceCustomer $GITHUB_URL "realtime/realtime-kubernetes-public.yml" $customerid | kubectl create -f -
+echo "-- Deploying pods --"
+folder="pods"
+for fname in "certificateserver.yaml" "mysqlserver.yaml" "interfaceengine.yaml" "rabbitmq.yaml"
+do
+    echo "Deploying realtime/$folder/$fname"
+    ReadYmlAndReplaceCustomer $GITHUB_URL "realtime/$folder/$fname" $customerid | kubectl create -f -
+done
+
+echo "-- Deploying cluster services --"
+folder="services/cluster"
+for fname in "certificateserver.yaml" "mysqlserver.yaml" "interfaceengine.yaml" "rabbitmq.yaml"
+do
+    echo "Deploying realtime/$folder/$fname"
+    ReadYmlAndReplaceCustomer $GITHUB_URL "realtime/$folder/$fname" $customerid | kubectl create -f -
+done
+
+echo "-- Deploying external services --"
+folder="services/external"
+for fname in "certificateserver.yaml"
+do
+    echo "Deploying realtime/$folder/$fname"
+    ReadYmlAndReplaceCustomer $GITHUB_URL "realtime/$folder/$fname" $customerid | kubectl create -f -
+done
+
+echo "-- Deploying HTTP proxies --"
+folder="ingress/http"
+for fname in "web.onprem.yaml"
+do
+    echo "Deploying realtime/$folder/$fname"
+    ReadYmlAndReplaceCustomer $GITHUB_URL "realtime/$folder/$fname" $customerid | kubectl create -f -
+done
 
 kubectl get 'deployments,pods,services,ingress,secrets,persistentvolumeclaims,persistentvolumes,nodes' --namespace=$namespace -o wide
 

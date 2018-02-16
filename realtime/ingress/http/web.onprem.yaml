@@ -1,0 +1,15 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+    name: nlp-ingress
+    namespace: fabricnlp
+    annotations:
+        kubernetes.io/ingress.class: traefik
+spec:
+  rules:
+  - http:
+      paths:
+      - path: /certificates
+        backend:
+          serviceName: certificateserverpublic
+          servicePort: 80

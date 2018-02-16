@@ -60,7 +60,6 @@ sudo yum update -y
 sudo yum -y install realmd samba samba-common oddjob oddjob-mkhomedir sssd ntpdate ntp
 sudo systemctl enable ntpd.service
 
-
 # Get the primary domain controller for NTP
 printf "Configurting Time Service to look to the domain controller for  \n"
 sudo ntpdate "${domainController}"

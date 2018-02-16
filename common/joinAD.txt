@@ -2,7 +2,7 @@
 set -e
 #
 # This script is meant for quick & easy install via:
-#   curl -sSL https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/kubernetes/joinAD.txt | sh
+#   curl -sSL https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/common/joinAD.txt | sh
 #
 #
 

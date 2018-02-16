@@ -68,6 +68,12 @@ while [[ "$input" != "q" ]]; do
         kubectl logs --namespace=kube-system $(kubectl get pods --namespace=kube-system -l k8s-app=kube-dns -o name) -c dnsmasq
         kubectl logs --namespace=kube-system $(kubectl get pods --namespace=kube-system -l k8s-app=kube-dns -o name) -c sidecar        
         echo "----------- Creating a busybox pod to test DNS -----------"
+        while [[ ! -z "$(kubectl get pods busybox -n default -o jsonpath='{.status.phase}' --ignore-not-found=true)"]]; do
+            echo "Waiting for busybox to terminate"
+            echo "."
+            sleep 5
+        done
+
         kubectl create -f https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/kubernetes/busybox.yml
         while [[ "$(kubectl get pods busybox -n default -o jsonpath='{.status.phase}')" != "Running" ]]; do
             echo "."
@@ -96,6 +102,7 @@ while [[ "$input" != "q" ]]; do
                 kubectl describe pods $pod -n fabricnlp
                 read -n1 -r -p "Press space to continue..." key < /dev/tty
         done
+        kubectl exec busybox -- nslookup mysqlserver.fabricnlp.svc.cluster.local
         ;;
     35)  pods=$(kubectl get pods -n fabricnlp -o jsonpath='{.items[*].metadata.name}')
         for pod in $pods

@@ -15,6 +15,7 @@ source <(curl -sSL "$GITHUB_URL/kubernetes/common.sh")
 
 if [[ -z $(kubectl get namespace fabricnlp --ignore-not-found=true) ]]; then
     echo "Creating namespace: fabricnlp"
+    # kubectl create -f $GITHUB_URL/nlp/nlp-namespace.yml
     kubectl create namespace fabricnlp
 else
     while : ; do

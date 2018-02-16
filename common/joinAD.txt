@@ -63,7 +63,7 @@ sudo systemctl enable ntpd.service
 
 # Get the primary domain controller for NTP
 printf "Configurting Time Service to look to the domain controller for  \n"
-sudo ntpdate ${getDomainController}
+sudo ntpdate ${domainController}
 sudo systemctl start ntpd.service
 sudo realm join -U aduser $FQDN 
 

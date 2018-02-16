@@ -1,0 +1,20 @@
+kind: Service
+apiVersion: v1
+metadata:
+# name of this service.  other
+  name: nlpwebserver
+  namespace: fabricnlp  
+  labels:
+    app: nlpwebserver
+spec:
+  ports:
+  - port: 8083
+    targetPort: 8083
+    protocol: TCP
+    name: http
+  - port: 8443
+    targetPort: 8443
+    protocol: TCP
+    name: https
+  selector:
+    app: nlpwebserver

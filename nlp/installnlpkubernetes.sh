@@ -5,7 +5,7 @@ set -e
 #   curl -sSL https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/nlp/installnlpkubernetes.sh | bash
 #
 GITHUB_URL="https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master"
-version="2018.02.15.01"
+version="2018.02.16.01"
 
 echo "---- installnlpkubernetes.sh version $version ------"
 
@@ -47,17 +47,6 @@ echo "Customer ID: $customerid"
 loadBalancerIP="$(dig +short myip.opendns.com @resolver1.opendns.com)"
 echo "My WAN/Public IP address: ${loadBalancerIP}"
 
-SaveSecretValue NLPWEB_EXTERNAL_URL url "${loadBalancerIP}/nlpweb"  $namespace
-SaveSecretValue JOBSERVER_EXTERNAL_URL url "${loadBalancerIP}/nlp"  $namespace
-
-AskForPassword "mysqlrootpassword" "MySQL root password (> 8 chars, min 1 number, 1 lowercase, 1 uppercase, 1 special [!.*@] )" "$namespace"
-# MySQL password requirements: https://dev.mysql.com/doc/refman/5.6/en/validate-password-plugin.html
-# we also use sed to replace configs: https://unix.stackexchange.com/questions/32907/what-characters-do-i-need-to-escape-when-using-sed-in-a-sh-script
-
-AskForPassword "mysqlpassword" "MySQL NLP_APP_USER password (> 8 chars, min 1 number, 1 lowercase, 1 uppercase, 1 special [!.*@] )" "$namespace"
-
-AskForPasswordAnyCharacters "smtprelaypassword" "SMTP (SendGrid) Relay Key" "$namespace" "" 
-
 echo "Cleaning out any old resources in fabricnlp"
 
 # note kubectl doesn't like spaces in between commas below
@@ -70,22 +59,80 @@ while [[ ! -z "$CLEANUP_DONE" ]]; do
     CLEANUP_DONE=$(kubectl get 'deployments,pods,services,ingress,persistentvolumeclaims,persistentvolumes' --namespace=$namespace)
 done
 
-ReadYmlAndReplaceCustomer $GITHUB_URL "nlp/nlp-kubernetes-storage-onprem.yml" $customerid | kubectl create -f -
+SaveSecretValue NLPWEB_EXTERNAL_URL url "${loadBalancerIP}/nlpweb"  $namespace
+SaveSecretValue JOBSERVER_EXTERNAL_URL url "${loadBalancerIP}/nlp"  $namespace
 
-ReadYmlAndReplaceCustomer $GITHUB_URL "nlp/nlp-kubernetes.yml" $customerid | kubectl create -f -
+AskForPassword "mysqlrootpassword" "MySQL root password (> 8 chars, min 1 number, 1 lowercase, 1 uppercase, 1 special [!.*@] )" "$namespace"
+# MySQL password requirements: https://dev.mysql.com/doc/refman/5.6/en/validate-password-plugin.html
+# we also use sed to replace configs: https://unix.stackexchange.com/questions/32907/what-characters-do-i-need-to-escape-when-using-sed-in-a-sh-script
 
-ReadYmlAndReplaceCustomer $GITHUB_URL "nlp/nlp-kubernetes-public.yml" $customerid | kubectl create -f -
+AskForPassword "mysqlpassword" "MySQL NLP_APP_USER password (> 8 chars, min 1 number, 1 lowercase, 1 uppercase, 1 special [!.*@] )" "$namespace"
 
-ReadYmlAndReplaceCustomer $GITHUB_URL "nlp/nlp-mysql-private.yml" $customerid | kubectl create -f -
+AskForPasswordAnyCharacters "smtprelaypassword" "SMTP (SendGrid) Relay Key" "$namespace" "" 
 
-ReadYmlAndReplaceCustomer $GITHUB_URL "nlp/nlp-backups-cronjob.yml" $customerid | kubectl create -f -
+echo "-- Deploying volumes --"
+folder="volumes"
+for fname in "mysqlserver.onprem.yaml" "solrserver.onprem.yaml" "jobserver.onprem.yaml" "mysqlbackup.onprem.yaml"
+do
+    echo "Deploying nlp/$folder/$fname"
+    ReadYmlAndReplaceCustomer $GITHUB_URL "nlp/$folder/$fname" $customerid | kubectl create -f -
+done
 
-echo "Setting up reverse proxy"
+echo "-- Deploying volume claims --"
+folder="volumeclaims"
+for fname in "mysqlserver.yaml" "solrserver.yaml" "jobserver.yaml" "mysqlbackup.yaml"
+do
+    echo "Deploying nlp/$folder/$fname"
+    ReadYmlAndReplaceCustomer $GITHUB_URL "nlp/$folder/$fname" $customerid | kubectl create -f -
+done
 
-ingressTemplate="nlp/nlp-ingress.onprem.yml"
-echo "Using template: $ingressTemplate"
+echo "-- Deploying pods --"
+folder="pods"
+for fname in "mysqlserver.yaml" "solrserver.yaml" "jobserver.yaml" "nlpwebserver.yaml" "mysqlclient.yaml"
+do
+    echo "Deploying nlp/$folder/$fname"
+    ReadYmlAndReplaceCustomer $GITHUB_URL "nlp/$folder/$fname" $customerid | kubectl create -f -
+done
 
-ReadYmlAndReplaceCustomer $GITHUB_URL $ingressTemplate $customerid | kubectl create -f -
+echo "-- Deploying cluster services --"
+folder="services/cluster"
+for fname in "mysqlserver.yaml" "solrserver.yaml" "jobserver.yaml" "nlpwebserver.yaml"
+do
+    echo "Deploying nlp/$folder/$fname"
+    ReadYmlAndReplaceCustomer $GITHUB_URL "nlp/$folder/$fname" $customerid | kubectl create -f -
+done
+
+echo "-- Deploying external services --"
+folder="services/external"
+for fname in "solrserver.yaml" "jobserver.yaml" "nlpwebserver.yaml"
+do
+    echo "Deploying nlp/$folder/$fname"
+    ReadYmlAndReplaceCustomer $GITHUB_URL "nlp/$folder/$fname" $customerid | kubectl create -f -
+done
+
+echo "-- Deploying HTTP proxies --"
+folder="ingress/http"
+for fname in "web.onprem.yaml"
+do
+    echo "Deploying nlp/$folder/$fname"
+    ReadYmlAndReplaceCustomer $GITHUB_URL "nlp/$folder/$fname" $customerid | kubectl create -f -
+done
+
+echo "-- Deploying TCP proxies --"
+folder="ingress/tcp"
+for fname in "mysqlserver.onprem.yaml"
+do
+    echo "Deploying nlp/$folder/$fname"
+    ReadYmlAndReplaceCustomer $GITHUB_URL "nlp/$folder/$fname" $customerid | kubectl create -f -
+done
+
+echo "-- Deploying jobs --"
+folder="jobs"
+for fname in "mysqlserver-backup-cron.yaml"
+do
+    echo "Deploying nlp/$folder/$fname"
+    ReadYmlAndReplaceCustomer $GITHUB_URL "nlp/$folder/$fname" $customerid | kubectl create -f -
+done
 
 kubectl get 'deployments,pods,services,ingress,secrets,persistentvolumeclaims,persistentvolumes,nodes' --namespace=$namespace -o wide
 
@@ -95,8 +142,6 @@ WaitForPodsInNamespace $namespace
 # kubectl exec -it fabric.nlp.nlpwebserver-85c8cb86b5-gkphh bash --namespace=fabricnlp
 
 # kubectl create secret generic azure-secret --namespace=fabricnlp --from-literal=azurestorageaccountname="fabricnlp7storage" --from-literal=azurestorageaccountkey="/bYhXNstTodg3MdOvTMog/vDLSFrQDpxG/Zgkp2MlnjtOWhDBNQ2xOs6zjRoZYNjmJHya34MfzqdfOwXkMDN2A=="
-
-
 
 echo "To test out the NLP services, open Git Bash and run:"
 echo "curl -L --verbose --header 'Host: solr.$customerid.healthcatalyst.net' 'http://$loadBalancerIP/solr' -k"

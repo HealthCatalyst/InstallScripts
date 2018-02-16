@@ -1,0 +1,15 @@
+kind: Service
+apiVersion: v1
+metadata:
+# name of this service.  other
+  name: jobserver
+  namespace: fabricnlp  
+  labels:
+    app: jobserver
+spec:
+  ports:
+  - port: 8084
+    targetPort: 8084
+    protocol: TCP
+  selector:
+    app: jobserver

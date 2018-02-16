@@ -1,0 +1,20 @@
+kind: Service
+apiVersion: v1
+metadata:
+# this service shows up in the UI with this name
+  name: mysqlserver
+# namespace should match other services in this file  
+  namespace: fabricnlp  
+# labels allows you to use selectors to find this service
+  labels:
+    app: mysqlserver
+spec:
+  ports:
+# port that other services can use to connect to this service
+  - port: 3306
+# port in the pod we map to  
+    targetPort: 3306
+    protocol: TCP
+# selector says this service should use a pod that has the "app: mysqlserver" label
+  selector:
+    app: mysqlserver

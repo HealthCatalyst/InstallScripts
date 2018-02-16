@@ -1,24 +1,6 @@
 # define persistent volumes
 # ----- MySql ----------
 # Persistent Volume
-kind: PersistentVolume
-apiVersion: v1
-metadata:
-  name: azure-file-volume-mysql
-  namespace: fabricnlp    
-  labels:
-    type: local
-spec:
-  storageClassName: manual
-  capacity:
-    storage: 5Gi
-  accessModes:
-    - ReadWriteMany
-  hostPath:
-    path: "/mnt/data"
-  claimRef:
-    namespace: fabricnlp
-    name: az-files-mysql
 ---
 # Persistent Volume Claim
 # claims have to be defined here otherwise when we remove the pods the volume goes into Released mode
@@ -38,25 +20,6 @@ spec:
 ---      
 # ---- Solr ------
 # volume for solr
-apiVersion: v1
-kind: PersistentVolume
-metadata:
-  name: azure-file-volume-solr
-  namespace: fabricnlp
-  labels:
-    type: local  
-spec:
-  #persistentVolumeReclaimPolicy: Delete
-  storageClassName: manual
-  capacity:
-    storage: 5Gi
-  accessModes:
-    - ReadWriteMany
-  hostPath:
-    path: "/mnt/data"
-  claimRef:
-    namespace: fabricnlp
-    name: az-files-solr
 ---
 # Persistent Volume Claim
 kind: PersistentVolumeClaim
@@ -75,22 +38,7 @@ spec:
 
 # ----- NLP Jobs -------
 # volume for nlp jobs
-apiVersion: v1
-kind: PersistentVolume
-metadata:
-  name: azure-file-volume-jobs
-  namespace: fabricnlp    
-spec:
-  storageClassName: manual
-  capacity:
-    storage: 5Gi
-  accessModes:
-    - ReadWriteMany
-  hostPath:
-    path: "/mnt/data"
-  claimRef:
-    namespace: fabricnlp
-    name: az-files-jobs
+
 ---
 # Persistent Volume Claim
 kind: PersistentVolumeClaim
@@ -108,23 +56,6 @@ spec:
 ---
 # ----- MySql Backup ----------
 # Persistent Volume
-apiVersion: v1
-kind: PersistentVolume
-metadata:
-  name: azure-file-volume-mysql-backup
-  namespace: fabricnlp    
-spec:
-  storageClassName: manual
-  capacity:
-    storage: 5Gi
-  # https://kubernetes.io/docs/concepts/storage/persistent-volumes/#access-modes
-  accessModes:
-    - ReadWriteMany
-  hostPath:
-    path: "/mnt/data"
-  claimRef:
-    namespace: fabricnlp
-    name: az-files-mysql-backup
 ---
 # Persistent Volume Claim
 # claims have to be defined here otherwise when we remove the pods the volume goes into Released mode

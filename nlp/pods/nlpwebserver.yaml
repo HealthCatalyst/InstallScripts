@@ -1,0 +1,47 @@
+kind: Deployment
+apiVersion: extensions/v1beta1
+metadata:
+  name: fabric.nlp.nlpwebserver
+  namespace: fabricnlp    
+  labels:
+    app: nlpwebserver
+spec:
+  replicas: 1
+  revisionHistoryLimit: 3  # Clean-up old Replica Sets deployed; only keep previous 3.
+  strategy:
+    # We need to kill the existing Pod before creating an new one
+    # for the new one to be able to attach the persistent disk.
+    type: Recreate        
+  selector:
+    matchLabels:
+      app: nlpwebserver
+  template:
+    metadata:
+      labels:
+        app: nlpwebserver
+    spec:
+      containers:
+        - name: nlpwebserver
+          image: healthcatalyst/fabric.nlp.docker.web:latest
+          imagePullPolicy: Always          
+          env:
+            - name: NLPWEB_EXTERNAL_URL
+              valueFrom:
+                secretKeyRef:
+                  name: NLPWEB_EXTERNAL_URL
+                  key: url
+            - name: JOBSERVER_EXTERNAL_URL
+              valueFrom:
+                secretKeyRef:
+                  name: JOBSERVER_EXTERNAL_URL
+                  key: url
+            - name: MYSQL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mysqlpassword
+                  key: password
+          ports:
+            - containerPort: 8083
+              name: nlpwebserver
+            - containerPort: 8443
+              name: https

@@ -1,0 +1,11 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: solrserverpublic
+  namespace: fabricnlp
+spec:
+  selector:
+    app: solrserver
+  ports:
+  - port: 80
+    targetPort: 8085

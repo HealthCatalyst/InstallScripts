@@ -1,4 +1,4 @@
-Write-Output "Version 2018.01.31.01"
+Write-Output "Version 2018.02.15.01"
 
 # curl -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/nlp/installnlpkubernetes.ps1 | iex;
 $GITHUB_URL = "https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master"
@@ -62,23 +62,24 @@ $AKS_PERS_BACKUP_SHARE_NAME = "${AKS_PERS_SHARE_NAME}backups"
 CreateShare -resourceGroup $AKS_PERS_RESOURCE_GROUP -sharename $AKS_PERS_SHARE_NAME
 CreateShare -resourceGroup $AKS_PERS_RESOURCE_GROUP -sharename $AKS_PERS_BACKUP_SHARE_NAME
 
-if ([string]::IsNullOrWhiteSpace($(kubectl get namespace fabricnlp --ignore-not-found=true))) {
-    kubectl create namespace fabricnlp
+$namespace="fabricnlp"
+
+if ([string]::IsNullOrWhiteSpace($(kubectl get namespace $namespace --ignore-not-found=true))) {
+    kubectl create namespace $namespace
 }
 else {
     Do { $deleteSecrets = Read-Host "Namespace exists.  Do you want to delete passwords and ALL data stored in this namespace? (y/n)"}
     while ([string]::IsNullOrWhiteSpace($deleteSecrets))    
     
     if ($deleteSecrets -eq "y" ) {
-        kubectl delete secret mysqlrootpassword -n fabricnlp --ignore-not-found=true
-        kubectl delete secret mysqlpassword -n fabricnlp --ignore-not-found=true
-        kubectl delete secret smtprelaypassword -n fabricnlp --ignore-not-found=true
+        kubectl delete secret mysqlrootpassword -n $namespace --ignore-not-found=true
+        kubectl delete secret mysqlpassword -n $namespace --ignore-not-found=true
+        kubectl delete secret smtprelaypassword -n $namespace --ignore-not-found=true
                
         # need to recreate the file share when we change passwords otherwise the new password will not work with the old password stored in the share
         CreateShare -resourceGroup $AKS_PERS_RESOURCE_GROUP -sharename $AKS_PERS_SHARE_NAME -deleteExisting true
     }
 }
-
 
 AskForSecretValue -secretname "customerid" -prompt "Health Catalyst Customer ID (e.g., ahmn)"
 
@@ -86,22 +87,25 @@ $customerid = ReadSecret -secretname customerid
 $customerid = $customerid.ToLower().Trim()
 Write-Output "Customer ID: $customerid"
 
-AskForPassword -secretname "mysqlrootpassword" -prompt "MySQL root password (> 8 chars, min 1 number, 1 lowercase, 1 uppercase, 1 special [!.*@] )" -namespace "fabricnlp"
+SaveSecretValue -secretname NLPWEB_EXTERNAL_URL -valueName url -value "nlp.$customerid.healthcatalyst.net" -namespace $namespace
+SaveSecretValue -secretname JOBSERVER_EXTERNAL_URL -valueName url -value "nlpjobs.$customerid.healthcatalyst.net" -namespace $namespace
+
+AskForPassword -secretname "mysqlrootpassword" -prompt "MySQL root password (> 8 chars, min 1 number, 1 lowercase, 1 uppercase, 1 special [!.*@] )" -namespace "$namespace"
 # MySQL password requirements: https://dev.mysql.com/doc/refman/5.6/en/validate-password-plugin.html
 # we also use sed to replace configs: https://unix.stackexchange.com/questions/32907/what-characters-do-i-need-to-escape-when-using-sed-in-a-sh-script
 
-AskForPassword -secretname "mysqlpassword" -prompt "MySQL NLP_APP_USER password (> 8 chars, min 1 number, 1 lowercase, 1 uppercase, 1 special [!.*@] )" -namespace "fabricnlp"
+AskForPassword -secretname "mysqlpassword" -prompt "MySQL NLP_APP_USER password (> 8 chars, min 1 number, 1 lowercase, 1 uppercase, 1 special [!.*@] )" -namespace "$namespace"
 
-AskForPasswordAnyCharacters -secretname "smtprelaypassword" -prompt "SMTP (SendGrid) Relay Key" -namespace "fabricnlp" -defaultvalue "" 
+AskForPasswordAnyCharacters -secretname "smtprelaypassword" -prompt "SMTP (SendGrid) Relay Key" -namespace "$namespace" -defaultvalue "" 
 
-Write-Output "Cleaning out any old resources in fabricnlp"
+Write-Output "Cleaning out any old resources in $namespace"
 
 # note kubectl doesn't like spaces in between commas below
-kubectl delete --all 'deployments,pods,services,ingress,persistentvolumeclaims,persistentvolumes,jobs,cronjobs' --namespace=fabricnlp --ignore-not-found=true
+kubectl delete --all 'deployments,pods,services,ingress,persistentvolumeclaims,persistentvolumes,jobs,cronjobs' --namespace=$namespace --ignore-not-found=true
 
 Write-Output "Waiting until all the resources are cleared up"
 
-Do { $CLEANUP_DONE = $(kubectl get 'deployments,pods,services,ingress,persistentvolumeclaims,persistentvolumes' --namespace=fabricnlp)}
+Do { $CLEANUP_DONE = $(kubectl get 'deployments,pods,services,ingress,persistentvolumeclaims,persistentvolumes' --namespace=$namespace)}
 while (![string]::IsNullOrWhiteSpace($CLEANUP_DONE))
 
 ReadYmlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "nlp/nlp-kubernetes-storage.yml" -customerid $customerid | kubectl create -f -
@@ -124,7 +128,7 @@ Write-Output "Using template: $ingressTemplate"
 
 ReadYmlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile $ingressTemplate -customerid $customerid | kubectl create -f -
 
-kubectl get 'deployments,pods,services,ingress,secrets,persistentvolumeclaims,persistentvolumes,nodes' --namespace=fabricnlp -o wide
+kubectl get 'deployments,pods,services,ingress,secrets,persistentvolumeclaims,persistentvolumes,nodes' --namespace=$namespace -o wide
 
 # to get a shell
 # kubectl exec -it fabric.nlp.nlpwebserver-85c8cb86b5-gkphh bash --namespace=fabricnlp

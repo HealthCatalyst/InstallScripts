@@ -91,9 +91,15 @@ spec:
           imagePullPolicy: Always          
           env:
             - name: NLPWEB_EXTERNAL_URL
-              value: nlp.CUSTOMERID.healthcatalyst.net
+              valueFrom:
+                secretKeyRef:
+                  name: NLPWEB_EXTERNAL_URL
+                  key: url
             - name: JOBSERVER_EXTERNAL_URL
-              value: nlpjobs.CUSTOMERID.healthcatalyst.net
+              valueFrom:
+                secretKeyRef:
+                  name: JOBSERVER_EXTERNAL_URL
+                  key: url
             - name: MYSQL_PASSWORD
               valueFrom:
                 secretKeyRef:
@@ -159,9 +165,15 @@ spec:
           imagePullPolicy: Always          
           env:
             - name: NLPWEB_EXTERNAL_URL
-              value: nlp.CUSTOMERID.healthcatalyst.net
+              valueFrom:
+                secretKeyRef:
+                  name: NLPWEB_EXTERNAL_URL
+                  key: url
             - name: JOBSERVER_EXTERNAL_URL
-              value: nlpjobs.CUSTOMERID.healthcatalyst.net
+              valueFrom:
+                secretKeyRef:
+                  name: JOBSERVER_EXTERNAL_URL
+                  key: url
             # - name: EXTERNAL_HOSTNAME
             #   value: localhost
             - name: MYSQL_PASSWORD

@@ -8,7 +8,7 @@
 kind: PersistentVolumeClaim
 apiVersion: v1
 metadata:
-  name: az-files-mysql
+  name: nlp.mysqlserver
   namespace: fabricnlp    
 spec:
   storageClassName: manual
@@ -25,7 +25,7 @@ spec:
 kind: PersistentVolumeClaim
 apiVersion: v1
 metadata:
-  name: az-files-solr
+  name: nlp.solrserver
   namespace: fabricnlp  
 spec:
   accessModes:
@@ -44,7 +44,7 @@ spec:
 kind: PersistentVolumeClaim
 apiVersion: v1
 metadata:
-  name: az-files-jobs
+  name: nlp.jobserver
   namespace: fabricnlp  
 spec:
   accessModes:
@@ -63,7 +63,7 @@ spec:
 kind: PersistentVolumeClaim
 apiVersion: v1
 metadata:
-  name: az-files-mysql-backup
+  name: nlp.mysqlbackup
   namespace: fabricnlp  
 spec:
   accessModes:

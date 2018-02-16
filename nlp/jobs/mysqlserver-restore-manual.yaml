@@ -43,7 +43,7 @@ spec:
       volumes:
       - name: mysql-persistent-storage-backup
         persistentVolumeClaim:
-          claimName: az-files-mysql-backup             
+          claimName: nlp.mysqlbackup             
   # job failures: https://kubernetes.io/docs/concepts/workloads/controllers/jobs-run-to-completion/
   backoffLimit: 1
 

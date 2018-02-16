@@ -3,6 +3,9 @@ kind: PersistentVolume
 metadata:
   name: azure-file-volume-jobs
   namespace: fabricnlp    
+  labels:
+    type: azure  
+    namespace: fabricnlp
 spec:
   capacity:
     storage: 8Gi
@@ -21,4 +24,4 @@ spec:
     - gid=1000
   claimRef:
     namespace: fabricnlp
-    name: az-files-jobs
+    name: nlp.jobserver

@@ -71,15 +71,7 @@ AskForPassword -secretname "certpassword"  -prompt "Client Certificate password 
 
 AskForPassword -secretname "rabbitmqmgmtuipassword"  -prompt "Admin password for RabbitMqMgmt" -namespace "fabricrealtime"
 
-Write-Output "Cleaning out any old resources in fabricrealtime"
-
-# note kubectl doesn't like spaces in between commas below
-kubectl delete --all 'deployments,pods,services,ingress,persistentvolumeclaims,persistentvolumes' --namespace=fabricrealtime --ignore-not-found=true
-
-Write-Output "Waiting until all the resources are cleared up"
-
-Do { $CLEANUP_DONE = $(kubectl get 'deployments,pods,services,ingress,persistentvolumeclaims,persistentvolumes' --namespace=fabricrealtime)}
-while (![string]::IsNullOrWhiteSpace($CLEANUP_DONE))
+CleanOutNamespace -namespace $namespace
 
 $AKS_PERS_SHARE_NAME = "fabricrealtime"
 $AKS_PERS_STORAGE_ACCOUNT_NAME_BASE64 = kubectl get secret azure-secret -o jsonpath='{.data.azurestorageaccountname}'

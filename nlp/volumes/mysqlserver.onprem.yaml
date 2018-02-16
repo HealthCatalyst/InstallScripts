@@ -4,7 +4,8 @@ metadata:
   name: file-volume-mysql
   namespace: fabricnlp    
   labels:
-    type: local
+    type: local  
+    namespace: fabricnlp
 spec:
   storageClassName: default
   capacity:
@@ -15,4 +16,4 @@ spec:
     path: "/mnt/data"
   claimRef:
     namespace: fabricnlp
-    name: az-files-mysql
+    name: nlp.mysqlserver

@@ -3,6 +3,9 @@ kind: PersistentVolume
 metadata:
   name: azure-file-volume-solr
   namespace: fabricnlp    
+  labels:
+    type: azure  
+    namespace: fabricnlp  
 spec:
   #persistentVolumeReclaimPolicy: Delete
   capacity:
@@ -22,4 +25,4 @@ spec:
     - gid=1000
   claimRef:
     namespace: fabricnlp
-    name: az-files-solr
+    name: nlp.solrserver

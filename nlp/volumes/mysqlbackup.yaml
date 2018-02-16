@@ -3,6 +3,9 @@ kind: PersistentVolume
 metadata:
   name: azure-file-volume-mysql-backup
   namespace: fabricnlp    
+  labels:
+    type: azure  
+    namespace: fabricnlp  
 spec:
   storageClassName: default
   capacity:
@@ -34,4 +37,4 @@ spec:
     - file_mode=0764
   claimRef:
     namespace: fabricnlp
-    name: az-files-mysql-backup
+    name: nlp.mysqlbackup

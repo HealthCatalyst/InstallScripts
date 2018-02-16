@@ -244,3 +244,22 @@ function mountSMBWithParams(){
     echo "Listing files in shared folder"
     ls -al /mnt/data
 }
+
+function CleanOutNamespace(){
+    local namespace=$1
+
+    echo "--- Cleaning out any old resources in $namespace ---"
+
+    # note kubectl doesn't like spaces in between commas below
+    kubectl delete --all 'deployments,pods,services,ingress,persistentvolumeclaims,jobs,cronjobs' --namespace=$namespace --ignore-not-found=true
+
+    # can't delete persistent volume claims since they are not scoped to namespace
+    kubectl delete 'pv' -l namespace=$namespace --ignore-not-found=true
+
+    CLEANUP_DONE="n"
+    while [[ ! -z "$CLEANUP_DONE" ]]; do
+        CLEANUP_DONE=$(kubectl get 'deployments,pods,services,ingress,persistentvolumeclaims' --namespace=$namespace -o jsonpath="{.items[*].metadata.name}")
+        echo "Remaining items: $CLEANUP_DONE"
+        sleep 5
+    done
+}

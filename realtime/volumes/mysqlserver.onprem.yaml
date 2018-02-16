@@ -4,7 +4,8 @@ metadata:
   name: realtime.mysqlserver
   namespace: fabricrealtime
   labels:
-    type: local  
+    type: local
+    namespace: fabricrealtime
 spec:
   #persistentVolumeReclaimPolicy: Delete
   storageClassName: default

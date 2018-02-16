@@ -5,6 +5,7 @@ metadata:
   namespace: fabricnlp
   labels:
     type: local  
+    namespace: fabricnlp
 spec:
   #persistentVolumeReclaimPolicy: Delete
   storageClassName: default
@@ -16,4 +17,4 @@ spec:
     path: "/mnt/data"
   claimRef:
     namespace: fabricnlp
-    name: az-files-jobs
+    name: nlp.jobserver

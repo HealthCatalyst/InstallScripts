@@ -86,7 +86,7 @@ spec:
     - file_mode=0764
   claimRef:
     namespace: fabricnlp
-    name: az-files-mysql
+    name: nlp.mysqlserver
 ---
 apiVersion: v1
 kind: PersistentVolume
@@ -110,12 +110,12 @@ spec:
     - gid=1000
   claimRef:
     namespace: fabricnlp
-    name: az-files-solr
+    name: nlp.solrserver
 ---
 kind: PersistentVolumeClaim
 apiVersion: v1
 metadata:
-  name: az-files-mysql
+  name: nlp.mysqlserver
   namespace: fabricnlp  
 spec:
   accessModes:
@@ -127,7 +127,7 @@ spec:
 kind: PersistentVolumeClaim
 apiVersion: v1
 metadata:
-  name: az-files-solr
+  name: nlp.solrserver
   namespace: fabricnlp  
 spec:
   accessModes:
@@ -168,7 +168,7 @@ spec:
       volumes:
       - name: solr-persistent-storage
         persistentVolumeClaim:
-          claimName: az-files-solr            
+          claimName: nlp.solrserver            
 ---
 # MySql pod
 kind: Deployment
@@ -234,5 +234,5 @@ spec:
           path: /data/mysql          
       - name: mysql-persistent-storage2
         persistentVolumeClaim:
-          claimName: az-files-mysql            
+          claimName: nlp.mysqlserver            
 ---

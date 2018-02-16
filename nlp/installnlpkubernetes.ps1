@@ -98,15 +98,7 @@ AskForPassword -secretname "mysqlpassword" -prompt "MySQL NLP_APP_USER password 
 
 AskForPasswordAnyCharacters -secretname "smtprelaypassword" -prompt "SMTP (SendGrid) Relay Key" -namespace "$namespace" -defaultvalue "" 
 
-Write-Output "Cleaning out any old resources in $namespace"
-
-# note kubectl doesn't like spaces in between commas below
-kubectl delete --all 'deployments,pods,services,ingress,persistentvolumeclaims,persistentvolumes,jobs,cronjobs' --namespace=$namespace --ignore-not-found=true
-
-Write-Output "Waiting until all the resources are cleared up"
-
-Do { $CLEANUP_DONE = $(kubectl get 'deployments,pods,services,ingress,persistentvolumeclaims,persistentvolumes' --namespace=$namespace)}
-while (![string]::IsNullOrWhiteSpace($CLEANUP_DONE))
+CleanOutNamespace -namespace $namespace
 
 ReadYmlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "nlp/nlp-kubernetes-storage.yml" -customerid $customerid | kubectl create -f -
 

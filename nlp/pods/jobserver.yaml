@@ -52,4 +52,4 @@ spec:
       volumes:
       - name: jobs-persistent-storage
         persistentVolumeClaim:
-          claimName: az-files-jobs            
+          claimName: nlp.jobserver            

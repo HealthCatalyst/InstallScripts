@@ -3,6 +3,9 @@ kind: PersistentVolume
 metadata:
   name: realtime.certificateserver
   namespace: fabricrealtime    
+  labels:
+    type: azure
+    namespace: fabricrealtime  
 spec:
   storageClassName: default
   capacity:

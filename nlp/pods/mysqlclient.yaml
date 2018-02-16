@@ -54,5 +54,5 @@ spec:
       volumes:
       - name: mysql-persistent-storage-backup
         persistentVolumeClaim:
-          claimName: az-files-mysql-backup
+          claimName: nlp.mysqlbackup
 ---

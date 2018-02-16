@@ -60,4 +60,4 @@ spec:
       volumes:
       - name: mysql-persistent-storage
         persistentVolumeClaim:
-          claimName: az-files-mysql            
+          claimName: nlp.mysqlserver            

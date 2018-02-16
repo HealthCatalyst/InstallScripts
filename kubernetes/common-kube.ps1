@@ -217,5 +217,23 @@ function global:DownloadKubectl($localFolder) {
     
 }
 
+function global:CleanOutNamespace($namespace){
+
+    Write-Output "--- Cleaning out any old resources in $namespace ---"
+
+    # note kubectl doesn't like spaces in between commas below
+    kubectl delete --all 'deployments,pods,services,ingress,persistentvolumeclaims,jobs,cronjobs' --namespace=$namespace --ignore-not-found=true
+
+    # can't delete persistent volume claims since they are not scoped to namespace
+    kubectl delete 'pv' -l namespace=$namespace --ignore-not-found=true
+
+    $CLEANUP_DONE="n"
+    Do {
+        $CLEANUP_DONE=$(kubectl get 'deployments,pods,services,ingress,persistentvolumeclaims' --namespace=$namespace -o jsonpath="{.items[*].metadata.name}")
+        Write-Output "Remaining items: $CLEANUP_DONE"
+        Start-Sleep 5
+    }
+    while ([string]::IsNullOrEmpty($CLEANUP_DONE))
+}
 # --------------------
 Write-Host "end common-kube.ps1 version $versioncommon"

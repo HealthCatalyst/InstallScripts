@@ -61,19 +61,7 @@ AskForPassword "certpassword" "Client Certificate password (> 8 chars, min 1 num
 
 AskForPassword "rabbitmqmgmtuipassword" "Admin password for RabbitMqMgmt" "$namespace"
 
-echo "Cleaning out any old resources in $namespace"
-
-# note kubectl doesn't like spaces in between commas below
-kubectl delete --all 'deployments,pods,services,ingress,persistentvolumeclaims,persistentvolumes,jobs,cronjobs' --namespace=$namespace --ignore-not-found=true
-
-echo "Waiting until all the resources are cleared up"
-
-CLEANUP_DONE="n"
-while [[ ! -z "$CLEANUP_DONE" ]]; do
-    CLEANUP_DONE=$(kubectl get 'deployments,pods,services,ingress,persistentvolumeclaims,persistentvolumes' --namespace=$namespace -o jsonpath="{.items[*].metadata.name}")
-    echo "Remaining items: $CLEANUP_DONE"
-    sleep 5
-done
+CleanOutNamespace $namespace
 
 echo "-- Deploying volumes --"
 folder="volumes"

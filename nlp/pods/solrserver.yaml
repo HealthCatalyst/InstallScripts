@@ -36,4 +36,4 @@ spec:
       volumes:
       - name: solr-persistent-storage
         persistentVolumeClaim:
-          claimName: az-files-solr            
+          claimName: nlp.solrserver            

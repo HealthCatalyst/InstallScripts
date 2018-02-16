@@ -1,7 +1,7 @@
 kind: PersistentVolumeClaim
 apiVersion: v1
 metadata:
-  name: az-files-jobs
+  name: nlp.jobserver
   namespace: fabricnlp  
 spec:
   storageClassName: default

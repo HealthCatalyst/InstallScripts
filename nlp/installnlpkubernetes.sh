@@ -47,19 +47,7 @@ echo "Customer ID: $customerid"
 loadBalancerIP="$(dig +short myip.opendns.com @resolver1.opendns.com)"
 echo "My WAN/Public IP address: ${loadBalancerIP}"
 
-echo "--- Cleaning out any old resources in fabricnlp ---"
-
-# note kubectl doesn't like spaces in between commas below
-kubectl delete --all 'deployments,pods,services,ingress,persistentvolumeclaims,persistentvolumes,jobs,cronjobs' --namespace=$namespace --ignore-not-found=true
-
-echo "Waiting until all the resources are cleared up"
-
-CLEANUP_DONE="n"
-while [[ ! -z "$CLEANUP_DONE" ]]; do
-    CLEANUP_DONE=$(kubectl get 'deployments,pods,services,ingress,persistentvolumeclaims,persistentvolumes' --namespace=$namespace -o jsonpath="{.items[*].metadata.name}")
-    echo "Remaining items: $CLEANUP_DONE"
-    sleep 5
-done
+CleanOutNamespace $namespace
 
 SaveSecretValue "nlpweb-external-url" url "${loadBalancerIP}/nlpweb"  $namespace
 SaveSecretValue "jobserver-external-url" url "${loadBalancerIP}/nlp"  $namespace

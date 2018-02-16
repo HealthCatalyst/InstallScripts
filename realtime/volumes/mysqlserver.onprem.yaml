@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: PersistentVolume
 metadata:
-  name: file-volume-mysql
+  name: realtime.mysqlserver
   namespace: fabricrealtime
   labels:
     type: local  
@@ -16,4 +16,4 @@ spec:
     path: "/mnt/data/fabricrealtime"
   claimRef:
     namespace: fabricrealtime
-    name: az-files-mysql
+    name: realtime.mysqlserver

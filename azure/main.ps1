@@ -1,4 +1,4 @@
-$version = "2018.02.13.03"
+$version = "2018.02.20.01"
 
 # This script is meant for quick & easy install via:
 #   curl -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/azure/main.ps1 | iex;
@@ -10,7 +10,7 @@ Invoke-WebRequest -useb https://raw.githubusercontent.com/HealthCatalyst/Install
 
 # Get-Content -Path "./azure/common.ps1" | Invoke-Expression;
 
-$userinput=""
+$userinput = ""
 while ($userinput -ne "q") {
     Write-Host "================ Health Catalyst version $version, common functions $(GetCommonVersion) ================"
     Write-Host "----- Choose Cluster -----"
@@ -118,7 +118,7 @@ while ($userinput -ne "q") {
         '7' {        
             # $AKS_PERS_RESOURCE_GROUP = ReadSecretValue -secretname azure-secret -valueName resourcegroup
             
-            if([string]::IsNullOrWhiteSpace($AKS_PERS_RESOURCE_GROUP)){
+            if ([string]::IsNullOrWhiteSpace($AKS_PERS_RESOURCE_GROUP)) {
                 Do { 
                     $AKS_PERS_RESOURCE_GROUP = Read-Host "Resource Group"
                     if ([string]::IsNullOrWhiteSpace($AKS_PERS_RESOURCE_GROUP)) {
@@ -143,7 +143,10 @@ while ($userinput -ne "q") {
             $virtualmachines = az vm list -g $AKS_PERS_RESOURCE_GROUP --query "[?storageProfile.osDisk.osType != 'Windows'].name" -o tsv
             ForEach ($vm in $virtualmachines) {
                 $firstpublicip = az vm list-ip-addresses -g $AKS_PERS_RESOURCE_GROUP -n $vm --query "[].virtualMachine.network.publicIpAddresses[0].ipAddress" -o tsv
-                # $privateiplist= az vm show -g $AKS_PERS_RESOURCE_GROUP -n $vm -d --query privateIps -otsv
+                if ([string]::IsNullOrEmpty($firstpublicip)) {
+                    $firstpublicip = az vm show -g $AKS_PERS_RESOURCE_GROUP -n $vm -d --query privateIps -otsv
+                    $firstpublicip=$firstpublicip.Split(",")[0]
+                }
                 Write-Output "Connect to $vm"
                 Write-Output "ssh -i ${SSH_PRIVATE_KEY_FILE_UNIX_PATH} azureuser@${firstpublicip}"            
             }

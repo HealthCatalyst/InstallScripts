@@ -6,7 +6,7 @@ metadata:
   namespace: kube-system
   labels:
     k8s-traefik: traefik    
-    traffic-type: internal
+    traffic-type-internal: internal
   annotations:
     kubernetes.io/ingress.class: traefik-internal
 spec:

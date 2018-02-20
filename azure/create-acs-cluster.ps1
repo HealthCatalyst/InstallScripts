@@ -4,11 +4,11 @@ Write-output "--- create-acs-cluster Version 2018.02.15.01 ----"
 # This script is meant for quick & easy install via:
 #   curl -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/azure/create-acs-cluster.ps1 | iex;
 
-# $GITHUB_URL = "https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master"
-$GITHUB_URL = "C:\Catalyst\git\Installscripts"
+$GITHUB_URL = "https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master"
+# $GITHUB_URL = "C:\Catalyst\git\Installscripts"
 
-# Invoke-WebRequest -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/azure/common.ps1 | Invoke-Expression;
-Get-Content ./azure/common.ps1 -Raw | Invoke-Expression;
+Invoke-WebRequest -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/azure/common.ps1 | Invoke-Expression;
+# Get-Content ./azure/common.ps1 -Raw | Invoke-Expression;
 
 $AKS_USE_AZURE_NETWORKING = "n"
 $AKS_SUPPORT_WINDOWS_CONTAINERS = "n"
@@ -67,7 +67,7 @@ AddFolderToPathEnvironmentVariable -folder $AKS_LOCAL_FOLDER
 
 $SSHKeyInfo = CreateSSHKey -resourceGroup $AKS_PERS_RESOURCE_GROUP -localFolder $AKS_LOCAL_FOLDER
 $AKS_SSH_KEY = $SSHKeyInfo.AKS_SSH_KEY
-
+$SSH_PRIVATE_KEY_FILE_UNIX_PATH = $SSHKeyInfo.SSH_PRIVATE_KEY_FILE_UNIX_PATH
 DownloadKubectl -localFolder $AKS_LOCAL_FOLDER
 
 # download acs-engine

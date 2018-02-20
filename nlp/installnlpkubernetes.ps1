@@ -100,15 +100,15 @@ AskForPasswordAnyCharacters -secretname "smtprelaypassword" -prompt "SMTP (SendG
 
 CleanOutNamespace -namespace $namespace
 
-ReadYmlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "nlp/nlp-kubernetes-storage.yml" -customerid $customerid | kubectl create -f -
+ReadYamlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "nlp/nlp-kubernetes-storage.yml" -customerid $customerid | kubectl create -f -
 
-ReadYmlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "nlp/nlp-kubernetes.yml" -customerid $customerid | kubectl create -f -
+ReadYamlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "nlp/nlp-kubernetes.yml" -customerid $customerid | kubectl create -f -
 
-ReadYmlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "nlp/nlp-kubernetes-public.yml" -customerid $customerid | kubectl create -f -
+ReadYamlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "nlp/nlp-kubernetes-public.yml" -customerid $customerid | kubectl create -f -
 
-ReadYmlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "nlp/nlp-mysql-private.yml" -customerid $customerid | kubectl create -f -
+ReadYamlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "nlp/nlp-mysql-private.yml" -customerid $customerid | kubectl create -f -
 
-ReadYmlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "nlp/nlp-backups-cronjob.yml" -customerid $customerid | kubectl create -f -
+ReadYamlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "nlp/nlp-backups-cronjob.yml" -customerid $customerid | kubectl create -f -
 
 Write-Output "Setting up reverse proxy"
 
@@ -118,7 +118,7 @@ if ($AKS_USE_SSL -eq "y" ) {
 }
 Write-Output "Using template: $ingressTemplate"
 
-ReadYmlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile $ingressTemplate -customerid $customerid | kubectl create -f -
+ReadYamlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile $ingressTemplate -customerid $customerid | kubectl create -f -
 
 kubectl get 'deployments,pods,services,ingress,secrets,persistentvolumeclaims,persistentvolumes,nodes' --namespace=$namespace -o wide
 

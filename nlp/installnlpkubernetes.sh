@@ -65,7 +65,7 @@ folder="volumes"
 for fname in "mysqlserver.onprem.yaml" "solrserver.onprem.yaml" "jobserver.onprem.yaml" "mysqlbackup.onprem.yaml"
 do
     echo "Deploying nlp/$folder/$fname"
-    ReadYmlAndReplaceCustomer $GITHUB_URL "nlp/$folder/$fname" $customerid | kubectl create -f -
+    ReadYamlAndReplaceCustomer $GITHUB_URL "nlp/$folder/$fname" $customerid | kubectl create -f -
 done
 
 echo "-- Deploying volume claims --"
@@ -73,7 +73,7 @@ folder="volumeclaims"
 for fname in "mysqlserver.yaml" "solrserver.yaml" "jobserver.yaml" "mysqlbackup.yaml"
 do
     echo "Deploying nlp/$folder/$fname"
-    ReadYmlAndReplaceCustomer $GITHUB_URL "nlp/$folder/$fname" $customerid | kubectl create -f -
+    ReadYamlAndReplaceCustomer $GITHUB_URL "nlp/$folder/$fname" $customerid | kubectl create -f -
 done
 
 echo "-- Deploying pods --"
@@ -81,7 +81,7 @@ folder="pods"
 for fname in "mysqlserver.yaml" "solrserver.yaml" "jobserver.yaml" "nlpwebserver.yaml" "mysqlclient.yaml"
 do
     echo "Deploying nlp/$folder/$fname"
-    ReadYmlAndReplaceCustomer $GITHUB_URL "nlp/$folder/$fname" $customerid | kubectl create -f -
+    ReadYamlAndReplaceCustomer $GITHUB_URL "nlp/$folder/$fname" $customerid | kubectl create -f -
 done
 
 echo "-- Deploying cluster services --"
@@ -89,7 +89,7 @@ folder="services/cluster"
 for fname in "mysqlserver.yaml" "solrserver.yaml" "jobserver.yaml" "nlpwebserver.yaml"
 do
     echo "Deploying nlp/$folder/$fname"
-    ReadYmlAndReplaceCustomer $GITHUB_URL "nlp/$folder/$fname" $customerid | kubectl create -f -
+    ReadYamlAndReplaceCustomer $GITHUB_URL "nlp/$folder/$fname" $customerid | kubectl create -f -
 done
 
 echo "-- Deploying external services --"
@@ -97,7 +97,7 @@ folder="services/external"
 for fname in "solrserver.yaml" "jobserver.yaml" "nlpwebserver.yaml"
 do
     echo "Deploying nlp/$folder/$fname"
-    ReadYmlAndReplaceCustomer $GITHUB_URL "nlp/$folder/$fname" $customerid | kubectl create -f -
+    ReadYamlAndReplaceCustomer $GITHUB_URL "nlp/$folder/$fname" $customerid | kubectl create -f -
 done
 
 echo "-- Deploying HTTP proxies --"
@@ -105,7 +105,7 @@ folder="ingress/http"
 for fname in "web.onprem.yaml"
 do
     echo "Deploying nlp/$folder/$fname"
-    ReadYmlAndReplaceCustomer $GITHUB_URL "nlp/$folder/$fname" $customerid | kubectl create -f -
+    ReadYamlAndReplaceCustomer $GITHUB_URL "nlp/$folder/$fname" $customerid | kubectl create -f -
 done
 
 echo "-- Deploying TCP proxies --"
@@ -113,7 +113,7 @@ folder="ingress/tcp"
 for fname in "mysqlserver.onprem.yaml"
 do
     echo "Deploying nlp/$folder/$fname"
-    ReadYmlAndReplaceCustomer $GITHUB_URL "nlp/$folder/$fname" $customerid | kubectl create -f -
+    ReadYamlAndReplaceCustomer $GITHUB_URL "nlp/$folder/$fname" $customerid | kubectl create -f -
 done
 
 echo "-- Deploying jobs --"
@@ -121,7 +121,7 @@ folder="jobs"
 for fname in "mysqlserver-backup-cron.yaml"
 do
     echo "Deploying nlp/$folder/$fname"
-    ReadYmlAndReplaceCustomer $GITHUB_URL "nlp/$folder/$fname" $customerid | kubectl create -f -
+    ReadYamlAndReplaceCustomer $GITHUB_URL "nlp/$folder/$fname" $customerid | kubectl create -f -
 done
 
 kubectl get 'deployments,pods,services,ingress,secrets,persistentvolumeclaims,persistentvolumes,nodes' --namespace=$namespace -o wide

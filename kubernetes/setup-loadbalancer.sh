@@ -27,24 +27,24 @@ dnsrecordname="$customerid.healthcatalyst.net"
 
 SaveSecretValue customerid "value" $customerid
 
-# ReadYmlAndReplaceCustomer $GITHUB_URL "azure/ingress-roles.yml" $customerid
+# ReadYamlAndReplaceCustomer $GITHUB_URL "azure/ingress-roles.yml" $customerid
 
-ReadYmlAndReplaceCustomer $GITHUB_URL "kubernetes/loadbalancer/configmaps/config.yaml" $customerid \
+ReadYamlAndReplaceCustomer $GITHUB_URL "kubernetes/loadbalancer/configmaps/config.yaml" $customerid \
         | kubectl apply -f -
 
-ReadYmlAndReplaceCustomer $GITHUB_URL "kubernetes/loadbalancer/roles/ingress-roles.yaml" $customerid \
+ReadYamlAndReplaceCustomer $GITHUB_URL "kubernetes/loadbalancer/roles/ingress-roles.yaml" $customerid \
         | kubectl apply -f -
 
-ReadYmlAndReplaceCustomer $GITHUB_URL "kubernetes/loadbalancer/pods/ingress-onprem.yaml" $customerid \
+ReadYamlAndReplaceCustomer $GITHUB_URL "kubernetes/loadbalancer/pods/ingress-onprem.yaml" $customerid \
         | kubectl apply -f -
 
-ReadYmlAndReplaceCustomer $GITHUB_URL "kubernetes/loadbalancer/services/loadbalancer-internal.yaml" $customerid \
+ReadYamlAndReplaceCustomer $GITHUB_URL "kubernetes/loadbalancer/services/loadbalancer-internal.yaml" $customerid \
         | kubectl apply -f -
 
-ReadYmlAndReplaceCustomer $GITHUB_URL "kubernetes/loadbalancer/ingress/dashboard-internal.yaml" $customerid \
+ReadYamlAndReplaceCustomer $GITHUB_URL "kubernetes/loadbalancer/ingress/dashboard-internal.yaml" $customerid \
         | kubectl apply -f -
 
-ReadYmlAndReplaceCustomer $GITHUB_URL "kubernetes/loadbalancer/ingress/default-internal.yaml" $customerid \
+ReadYamlAndReplaceCustomer $GITHUB_URL "kubernetes/loadbalancer/ingress/default-internal.yaml" $customerid \
         | kubectl apply -f -
 
 loadbalancer="traefik-ingress-service-public"

@@ -68,7 +68,7 @@ folder="volumes"
 for fname in "certificateserver.onprem.yaml" "mysqlserver.onprem.yaml" "rabbitmq-cert.onprem.yaml" "rabbitmq.onprem.yaml"
 do
     echo "Deploying realtime/$folder/$fname"
-    ReadYmlAndReplaceCustomer $GITHUB_URL "realtime/$folder/$fname" $customerid | kubectl create -f -
+    ReadYamlAndReplaceCustomer $GITHUB_URL "realtime/$folder/$fname" $customerid | kubectl create -f -
 done
 
 echo "-- Deploying volume claims --"
@@ -76,7 +76,7 @@ folder="volumeclaims"
 for fname in "certificateserver.yaml" "mysqlserver.yaml" "rabbitmq-cert.yaml" "rabbitmq.yaml"
 do
     echo "Deploying realtime/$folder/$fname"
-    ReadYmlAndReplaceCustomer $GITHUB_URL "realtime/$folder/$fname" $customerid | kubectl create -f -
+    ReadYamlAndReplaceCustomer $GITHUB_URL "realtime/$folder/$fname" $customerid | kubectl create -f -
 done
 
 echo "-- Deploying pods --"
@@ -84,7 +84,7 @@ folder="pods"
 for fname in "certificateserver.yaml" "mysqlserver.yaml" "interfaceengine.yaml" "rabbitmq.yaml"
 do
     echo "Deploying realtime/$folder/$fname"
-    ReadYmlAndReplaceCustomer $GITHUB_URL "realtime/$folder/$fname" $customerid | kubectl create -f -
+    ReadYamlAndReplaceCustomer $GITHUB_URL "realtime/$folder/$fname" $customerid | kubectl create -f -
 done
 
 echo "-- Deploying cluster services --"
@@ -92,7 +92,7 @@ folder="services/cluster"
 for fname in "certificateserver.yaml" "mysqlserver.yaml" "interfaceengine.yaml" "rabbitmq.yaml"
 do
     echo "Deploying realtime/$folder/$fname"
-    ReadYmlAndReplaceCustomer $GITHUB_URL "realtime/$folder/$fname" $customerid | kubectl create -f -
+    ReadYamlAndReplaceCustomer $GITHUB_URL "realtime/$folder/$fname" $customerid | kubectl create -f -
 done
 
 echo "-- Deploying external services --"
@@ -100,7 +100,7 @@ folder="services/external"
 for fname in "certificateserver.yaml"
 do
     echo "Deploying realtime/$folder/$fname"
-    ReadYmlAndReplaceCustomer $GITHUB_URL "realtime/$folder/$fname" $customerid | kubectl create -f -
+    ReadYamlAndReplaceCustomer $GITHUB_URL "realtime/$folder/$fname" $customerid | kubectl create -f -
 done
 
 echo "-- Deploying HTTP proxies --"
@@ -108,7 +108,7 @@ folder="ingress/http"
 for fname in "web.onprem.yaml"
 do
     echo "Deploying realtime/$folder/$fname"
-    ReadYmlAndReplaceCustomer $GITHUB_URL "realtime/$folder/$fname" $customerid | kubectl create -f -
+    ReadYamlAndReplaceCustomer $GITHUB_URL "realtime/$folder/$fname" $customerid | kubectl create -f -
 done
 
 kubectl get 'deployments,pods,services,ingress,secrets,persistentvolumeclaims,persistentvolumes,nodes' --namespace=$namespace -o wide

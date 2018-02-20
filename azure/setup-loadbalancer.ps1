@@ -1,12 +1,14 @@
-Write-output "Version 2018.02.14.01"
+Write-output "Version 2018.02.20.02"
 
 #
 # This script is meant for quick & easy install via:
 #   curl -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/azure/setup-loadbalancer.ps1 | iex;
 
-$GITHUB_URL = "https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master"
-# $GITHUB_URL = "."
-Invoke-WebRequest -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/azure/common.ps1 | Invoke-Expression;
+# $GITHUB_URL = "https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master"
+$GITHUB_URL = "C:\Catalyst\git\Installscripts"
+
+# Invoke-WebRequest -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/azure/common.ps1 | Invoke-Expression;
+Get-Content ./azure/common.ps1 -Raw | Invoke-Expression;
 
 $AKS_OPEN_TO_PUBLIC = ""
 $AKS_USE_SSL = ""
@@ -390,59 +392,60 @@ if ($AKS_USE_SSL -eq "y" ) {
 }
 
 Write-Host "Deploying configmaps"
-$folder = "loadbalancer/configmaps"
+$folder = "kubernetes/loadbalancer/configmaps"
 if ($AKS_USE_SSL -eq "y" ) {
-    foreach ($file in "config.yaml".Split(" ")) { 
-        ReadYmlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "$folder/$file" -customerid $customerid | kubectl apply -f -
+    foreach ($file in "config.ssl.yaml".Split(" ")) { 
+        ReadYamlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "${folder}/${file}" -customerid $customerid | kubectl apply -f -
     }
 }
 else {
-    foreach ($file in "config.ssl.yaml".Split(" ")) { 
-        ReadYmlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "$folder/$file" -customerid $customerid | kubectl apply -f -
+    foreach ($file in "config.yaml".Split(" ")) { 
+        Write-Host "$GITHUB_URL ${folder}/${file}"
+        ReadYamlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "${folder}/${file}" -customerid $customerid | kubectl apply -f -
     }
 }
 Write-Host "Deploying roles"
-$folder = "loadbalancer/roles"
+$folder = "kubernetes/loadbalancer/roles"
 foreach ($file in "ingress-roles.yaml".Split(" ")) { 
-    ReadYmlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "$folder/$file" -customerid $customerid | kubectl apply -f -
+    ReadYamlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "${folder}/${file}" -customerid $customerid | kubectl apply -f -
 }
 
 Write-Host "Deploying pods"
-$folder = "loadbalancer/pods"
+$folder = "kubernetes/loadbalancer/pods"
 if ($AKS_USE_SSL -eq "y" ) {
-    foreach ($file in "ingress-azure.yaml".Split(" ")) { 
-        ReadYmlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "$folder/$file" -customerid $customerid | kubectl apply -f -
-    }
-}
-else {
     foreach ($file in "ingress-azure.ssl.yaml".Split(" ")) { 
-        ReadYmlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "$folder/$file" -customerid $customerid | kubectl apply -f -
+        ReadYamlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "${folder}/${file}" -customerid $customerid | kubectl apply -f -
     }    
 }
+else {
+    foreach ($file in "ingress-azure.yaml".Split(" ")) { 
+        ReadYamlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "${folder}/${file}" -customerid $customerid | kubectl apply -f -
+    }
+}
 foreach ($file in "ingress-azure.internal.yaml".Split(" ")) { 
-    ReadYmlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "$folder/$file" -customerid $customerid | kubectl apply -f -
+    ReadYamlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "${folder}/${file}" -customerid $customerid | kubectl apply -f -
 }
 
 Write-Host "Deploying services"
-$folder = "loadbalancer/services"
+$folder = "kubernetes/loadbalancer/services"
 foreach ($file in "dashboard.yaml".Split(" ")) { 
-    ReadYmlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "$folder/$file" -customerid $customerid | kubectl apply -f -
+    ReadYamlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "${folder}/${file}" -customerid $customerid | kubectl apply -f -
 }
 
 Write-Host "Deploying ingress"
-$folder = "loadbalancer/ingress"
+$folder = "kubernetes/loadbalancer/ingress"
 if ($AKS_USE_SSL -eq "y" ) {
     foreach ($file in "dashboard.ssl.yaml".Split(" ")) { 
-        ReadYmlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "$folder/$file" -customerid $customerid | kubectl apply -f -
+        ReadYamlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "${folder}/${file}" -customerid $customerid | kubectl apply -f -
     }
 }
 else {
     foreach ($file in "dashboard.yaml".Split(" ")) { 
-        ReadYmlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "$folder/$file" -customerid $customerid | kubectl apply -f -
+        ReadYamlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "${folder}/${file}" -customerid $customerid | kubectl apply -f -
     }    
 }
 foreach ($file in "default.yaml default-internal.yaml".Split(" ")) { 
-    ReadYmlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "$folder/$file" -customerid $customerid | kubectl apply -f -
+    ReadYamlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "${folder}/${file}" -customerid $customerid | kubectl apply -f -
 }    
 
 if ("$AKS_OPEN_TO_PUBLIC" -eq "y") {
@@ -456,7 +459,7 @@ if ("$AKS_OPEN_TO_PUBLIC" -eq "y") {
 
     Write-Host "Using Public IP: [$publicip]"
 
-    ReadYmlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "kubernetes/loadbalancer/services/loadbalancer-public.yml" -customerid $customerid `
+    ReadYamlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "kubernetes/loadbalancer/services/loadbalancer-public.yaml" -customerid $customerid `
         | Foreach-Object {$_ -replace 'PUBLICIP', "$publicip"} `
         | kubectl create -f -
 
@@ -464,11 +467,11 @@ if ("$AKS_OPEN_TO_PUBLIC" -eq "y") {
     if ($AKS_CLUSTER_ACCESS_TYPE -eq "2") {
         # if we are restricting IPs then also deploy an internal load balancer
         Write-Output "Setting up a internal load balancer also since we are restricting IPs"
-        ReadYmlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "kubernetes/loadbalancer/services/loadbalancer-internal.yml" -customerid $customerid `
+        ReadYamlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "kubernetes/loadbalancer/services/loadbalancer-internal.yaml" -customerid $customerid `
             | kubectl create -f -
           
     }
-    #kubectl create -f "$GITHUB_URL/azure/loadbalancer-public.yml"
+    #kubectl create -f "$GITHUB_URL/azure/loadbalancer-public.yaml"
 
     #kubectl patch service traefik-ingress-service-public --loadBalancerIP=52.191.114.120
 
@@ -476,7 +479,7 @@ if ("$AKS_OPEN_TO_PUBLIC" -eq "y") {
 }
 else {
     Write-Output "Setting up an internal load balancer"
-    ReadYmlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "kubernetes/loadbalancer/services/loadbalancer-internal.yml" -customerid $customerid `
+    ReadYamlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "kubernetes/loadbalancer/services/loadbalancer-internal.yaml" -customerid $customerid `
     | kubectl create -f -
 }
 
@@ -694,8 +697,8 @@ if ($AKS_CLUSTER_ACCESS_TYPE -eq "2") {
     Write-Output "curl -L --verbose --header 'Host: dashboard.$dnsrecordname' 'http://$EXTERNAL_IP/' -k"        
 }
 else {
-    Write-Output "Testing load balancer"
-    Invoke-WebRequest -useb -Headers @{"Host" = "dashboard.$dnsrecordname"} -Uri http://$EXTERNAL_IP/ | Select-Object -Expand Content
+    # Write-Output "Testing load balancer"
+    # Invoke-WebRequest -useb -Headers @{"Host" = "dashboard.$dnsrecordname"} -Uri http://$EXTERNAL_IP/ | Select-Object -Expand Content
     
     Write-Output "To test out the load balancer, open Git Bash and run:"
     Write-Output "curl -L --verbose --header 'Host: dashboard.$dnsrecordname' 'http://$EXTERNAL_IP/' -k"        

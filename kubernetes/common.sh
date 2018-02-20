@@ -29,7 +29,7 @@ function ReplaceText(){
     IFS=$old_IFS     # restore default field separator
 }
 
-function ReadYmlAndReplaceCustomer () {
+function ReadYamlAndReplaceCustomer () {
     local baseUrl=$1
     local templateFile=$2
     local customerid=$3

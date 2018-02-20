@@ -1,5 +1,5 @@
 # this file contains common functions for kubernetes
-$versionkubecommon = "2018.02.14.01"
+$versionkubecommon = "2018.02.20.01"
 
 Write-Host "Including common-kube.ps1 version $versionkubecommon"
 function global:GetCommonKubeVersion() {
@@ -129,10 +129,11 @@ function global:AskForSecretValue ($secretname, $prompt, $namespace) {
     }    
 }
 
-function global:ReadYmlAndReplaceCustomer($baseUrl, $templateFile, $customerid ) {
+function global:ReadYamlAndReplaceCustomer($baseUrl, $templateFile, $customerid ) {
+    Write-Host "Reading from url: ${baseUrl}/${templateFile}"
+
     if ($baseUrl.StartsWith("http")) { 
-        #        Write-Output "Reading from url: $GITHUB_URL/$templateFile"
-        Invoke-WebRequest -Uri "$baseUrl/$templateFile" -UseBasicParsing -ContentType "text/plain; charset=utf-8" `
+        Invoke-WebRequest -Uri "${baseUrl}/${templateFile}" -UseBasicParsing -ContentType "text/plain; charset=utf-8" `
             | Select-Object -Expand Content `
             | Foreach-Object {$_ -replace 'CUSTOMERID', "$customerid"}
     }

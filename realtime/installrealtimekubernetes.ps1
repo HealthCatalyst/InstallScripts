@@ -82,11 +82,11 @@ $AZURE_STORAGE_CONNECTION_STRING = az storage account show-connection-string -n 
 Write-Output "Create the file share: $AKS_PERS_SHARE_NAME"
 az storage share create -n $AKS_PERS_SHARE_NAME --connection-string $AZURE_STORAGE_CONNECTION_STRING --quota 512
 
-ReadYmlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "realtime/realtime-kubernetes-storage.yml" -customerid $customerid | kubectl create -f -
+ReadYamlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "realtime/realtime-kubernetes-storage.yml" -customerid $customerid | kubectl create -f -
 
-ReadYmlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "realtime/realtime-kubernetes.yml" -customerid $customerid | kubectl create -f -
+ReadYamlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "realtime/realtime-kubernetes.yml" -customerid $customerid | kubectl create -f -
 
-ReadYmlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "realtime/realtime-kubernetes-public.yml" -customerid $customerid | kubectl create -f -
+ReadYamlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "realtime/realtime-kubernetes-public.yml" -customerid $customerid | kubectl create -f -
 
 $ipname = "InterfaceEnginePublicIP"
 $publicip = az network public-ip show -g $AKS_PERS_RESOURCE_GROUP -n $ipname --query "ipAddress" -o tsv;
@@ -144,7 +144,7 @@ if ($AKS_USE_SSL -eq "y" ) {
 
 Write-Output "Using template: $templateFile"
 
-ReadYmlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile $templateFile -customerid $customerid
+ReadYamlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile $templateFile -customerid $customerid
 
 kubectl get 'deployments,pods,services,ingress,secrets,persistentvolumeclaims,persistentvolumes,nodes' --namespace=fabricrealtime -o wide
 

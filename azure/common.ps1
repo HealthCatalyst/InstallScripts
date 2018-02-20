@@ -7,11 +7,11 @@ function global:GetCommonVersion() {
     return $versioncommon
 }
 
-$GITHUB_URL = "https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master"
-# $GITHUB_URL = "C:\Catalyst\git\Installscripts"
+# $GITHUB_URL = "https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master"
+$GITHUB_URL = "C:\Catalyst\git\Installscripts"
 
-Invoke-WebRequest -useb ${GITHUB_URL}/kubernetes/common-kube.ps1 | Invoke-Expression;
-# Get-Content ./kubernetes/common-kube.ps1 -Raw | Invoke-Expression;
+# Invoke-WebRequest -useb ${GITHUB_URL}/kubernetes/common-kube.ps1 | Invoke-Expression;
+Get-Content ./kubernetes/common-kube.ps1 -Raw | Invoke-Expression;
 
 function global:CreateShareInStorageAccount($storageAccountName, $resourceGroup, $sharename, $deleteExisting) { 
     $AZURE_STORAGE_CONNECTION_STRING = az storage account show-connection-string -n $storageAccountName -g $resourceGroup -o tsv

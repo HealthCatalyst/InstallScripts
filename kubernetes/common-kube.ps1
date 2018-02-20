@@ -1,5 +1,5 @@
 # this file contains common functions for kubernetes
-$versionkubecommon = "2018.02.20.01"
+$versionkubecommon = "2018.02.20.02"
 
 Write-Host "Including common-kube.ps1 version $versionkubecommon"
 function global:GetCommonKubeVersion() {
@@ -230,11 +230,11 @@ function global:CleanOutNamespace($namespace){
 
     $CLEANUP_DONE="n"
     Do {
-        $CLEANUP_DONE=$(kubectl get 'deployments,pods,services,ingress,persistentvolumeclaims' --namespace=$namespace -o jsonpath="{.items[*].metadata.name}")
+        $CLEANUP_DONE=$(kubectl get 'deployments,pods,services,ingress,persistentvolumeclaims,jobs,cronjobs' --namespace=$namespace -o jsonpath="{.items[*].metadata.name}")
         Write-Output "Remaining items: $CLEANUP_DONE"
         Start-Sleep 5
     }
-    while ([string]::IsNullOrEmpty($CLEANUP_DONE))
+    while (![string]::IsNullOrEmpty($CLEANUP_DONE))
 }
 # --------------------
 Write-Host "end common-kube.ps1 version $versioncommon"

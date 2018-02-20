@@ -1,4 +1,4 @@
-Write-Output "--- installnlpkubernetes.ps1 Version 2018.02.20.02 ---"
+Write-Output "--- installnlpkubernetes.ps1 Version 2018.02.20.03 ---"
 
 # curl -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/nlp/installnlpkubernetes.ps1 | iex;
 $GITHUB_URL = "https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master"
@@ -108,7 +108,7 @@ foreach ($file in "ingress-roles.yaml".Split(" ")) {
 
 Write-Host "-- Deploying volumes --"
 $folder="volumes"
-foreach ($file in "mysqlserver.onprem.yaml solrserver.onprem.yaml jobserver.onprem.yaml mysqlbackup.onprem.yaml".Split(" ")) { 
+foreach ($file in "mysqlserver.yaml solrserver.yaml jobserver.yaml mysqlbackup.yaml".Split(" ")) { 
     ReadYamlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "nlp/${folder}/${file}" -customerid $customerid | kubectl apply -f -
 }
 
@@ -138,13 +138,13 @@ foreach ($file in "solrserver.yaml jobserver.yaml nlpwebserver.yaml".Split(" "))
 
 Write-Host "-- Deploying HTTP proxies --"
 $folder="ingress/http"
-foreach ($file in "web.onprem.yaml".Split(" ")) { 
+foreach ($file in "web.yaml".Split(" ")) { 
     ReadYamlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "nlp/${folder}/${file}" -customerid $customerid | kubectl apply -f -
 }
 
 Write-Host "-- Deploying TCP proxies --"
 $folder="ingress/tcp"
-foreach ($file in "mysqlserver.onprem.yaml".Split(" ")) { 
+foreach ($file in "mysqlserver.yaml".Split(" ")) { 
     ReadYamlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "nlp/${folder}/${file}" -customerid $customerid | kubectl apply -f -
 }
 

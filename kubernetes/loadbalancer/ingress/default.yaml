@@ -6,7 +6,7 @@ metadata:
   namespace: kube-system
   labels:
     k8s-traefik: traefik  
-    traffic-type-external: external      
+    expose: external
   annotations:
     kubernetes.io/ingress.class: traefik
 spec:

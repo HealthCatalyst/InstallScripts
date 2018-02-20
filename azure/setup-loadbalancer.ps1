@@ -1,4 +1,4 @@
-Write-output "Version 2018.02.20.04"
+Write-output "Version 2018.02.20.05"
 
 #
 # This script is meant for quick & easy install via:
@@ -434,16 +434,6 @@ foreach ($file in "dashboard.yaml".Split(" ")) {
 
 Write-Host "Deploying ingress"
 $folder = "kubernetes/loadbalancer/ingress"
-if ($AKS_USE_SSL -eq "y" ) {
-    foreach ($file in "dashboard.ssl.yaml".Split(" ")) { 
-        ReadYamlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "${folder}/${file}" -customerid $customerid | kubectl apply -f -
-    }
-}
-else {
-    foreach ($file in "dashboard.yaml".Split(" ")) { 
-        ReadYamlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "${folder}/${file}" -customerid $customerid | kubectl apply -f -
-    }    
-}
 foreach ($file in "default.yaml default-internal.yaml".Split(" ")) { 
     ReadYamlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "${folder}/${file}" -customerid $customerid | kubectl apply -f -
 }    

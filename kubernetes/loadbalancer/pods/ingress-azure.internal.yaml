@@ -38,7 +38,7 @@ spec:
         - --kubernetes
         - --configfile=/config/traefik.toml
         - --logLevel=INFO
-        - --kubernetes.labelselector= "traffic-type-internal"
+        - --kubernetes.labelselector=expose=internal        
         # https://github.com/kubernetes/ingress-nginx/blob/master/README.md#running-multiple-ingress-controllers
         # https://docs.traefik.io/user-guide/kubernetes/
 ---

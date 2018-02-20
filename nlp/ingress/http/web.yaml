@@ -3,6 +3,8 @@ kind: Ingress
 metadata:
     name: nlp-ingress
     namespace: fabricnlp
+    labels:  
+        traffic-type: external
     annotations:
         kubernetes.io/ingress.class: traefik
 spec:

@@ -1,7 +1,7 @@
 apiVersion: extensions/v1beta1
 kind: Ingress
 metadata:
-    name: nlp-ingress
+    name: nlp-ingress-internal
     namespace: fabricnlp
     labels:
         traffic-type: internal

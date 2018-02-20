@@ -50,4 +50,5 @@ spec:
         - --kubernetes
         - --configfile=/config/traefik.toml
         - --logLevel=INFO
+        - --kubernetes.labelselector= "traffic-type:external"
 ---

@@ -3,7 +3,7 @@ kind: Service
 apiVersion: v1
 metadata:
   labels:
-    k8s-app: kubernetes-dashboard
+    k8s-app: kubernetes-dashboard-internal
   name: kubernetes-dashboard
   namespace: kube-system
   annotations:

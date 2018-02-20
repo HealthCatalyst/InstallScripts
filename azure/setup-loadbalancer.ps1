@@ -1,4 +1,4 @@
-Write-output "Version 2018.02.20.03"
+Write-output "Version 2018.02.20.04"
 
 #
 # This script is meant for quick & easy install via:
@@ -464,13 +464,13 @@ if ("$AKS_OPEN_TO_PUBLIC" -eq "y") {
         | kubectl create -f -
 
 
-    if ($AKS_CLUSTER_ACCESS_TYPE -eq "2") {
-        # if we are restricting IPs then also deploy an internal load balancer
-        Write-Output "Setting up a internal load balancer also since we are restricting IPs"
-        ReadYamlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "kubernetes/loadbalancer/services/loadbalancer-internal.yaml" -customerid $customerid `
-            | kubectl create -f -
+    # if ($AKS_CLUSTER_ACCESS_TYPE -eq "2") {
+    #     # if we are restricting IPs then also deploy an internal load balancer
+    #     Write-Output "Setting up a internal load balancer also since we are restricting IPs"
+    #     ReadYamlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "kubernetes/loadbalancer/services/loadbalancer-internal.yaml" -customerid $customerid `
+    #         | kubectl create -f -
           
-    }
+    # }
     #kubectl create -f "$GITHUB_URL/azure/loadbalancer-public.yaml"
 
     #kubectl patch service traefik-ingress-service-public --loadBalancerIP=52.191.114.120
@@ -478,10 +478,11 @@ if ("$AKS_OPEN_TO_PUBLIC" -eq "y") {
     #kubectl patch deployment traefik-ingress-controller -p '{"spec":{"loadBalancerIP":"52.191.114.120"}}'    
 }
 else {
-    Write-Output "Setting up an internal load balancer"
-    ReadYamlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "kubernetes/loadbalancer/services/loadbalancer-internal.yaml" -customerid $customerid `
-    | kubectl create -f -
 }
+
+Write-Output "Setting up an internal load balancer"
+ReadYamlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "kubernetes/loadbalancer/services/loadbalancer-internal.yaml" -customerid $customerid `
+    | kubectl create -f -
 
 $startDate = Get-Date
 $timeoutInMinutes = 10

@@ -13,7 +13,7 @@ metadata:
     kubernetes.io/ingress.class: "loadbalancer-internal"
 spec:
   selector:
-    k8s-app: traefik-ingress-lb
+    k8s-app: traefik-ingress-lb-internal
   externalTrafficPolicy: "Local"
   ports:
     - protocol: TCP

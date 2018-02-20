@@ -1,14 +1,14 @@
-Write-output "Version 2018.02.20.02"
+Write-output "Version 2018.02.20.03"
 
 #
 # This script is meant for quick & easy install via:
 #   curl -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/azure/setup-loadbalancer.ps1 | iex;
 
-# $GITHUB_URL = "https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master"
-$GITHUB_URL = "C:\Catalyst\git\Installscripts"
+$GITHUB_URL = "https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master"
+# $GITHUB_URL = "C:\Catalyst\git\Installscripts"
 
-# Invoke-WebRequest -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/azure/common.ps1 | Invoke-Expression;
-Get-Content ./azure/common.ps1 -Raw | Invoke-Expression;
+Invoke-WebRequest -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/azure/common.ps1 | Invoke-Expression;
+# Get-Content ./azure/common.ps1 -Raw | Invoke-Expression;
 
 $AKS_OPEN_TO_PUBLIC = ""
 $AKS_USE_SSL = ""

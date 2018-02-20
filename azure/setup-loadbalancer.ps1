@@ -366,17 +366,14 @@ kubectl delete 'pods,services,configMaps,deployments,ingress' -l k8s-traefik=tra
 
 # set Google DNS servers to resolve external  urls
 # http://blog.kubernetes.io/2017/04/configuring-private-dns-zones-upstream-nameservers-kubernetes.html
-kubectl delete -f "$GITHUB_URL/azure/cafe-kube-dns.yml" --ignore-not-found=true
+kubectl delete -f "$GITHUB_URL/kubernetes/loadbalancer/dns/upstream.yaml" --ignore-not-found=true
 Start-Sleep -Seconds 10
-kubectl create -f "$GITHUB_URL/azure/cafe-kube-dns.yml"
+kubectl create -f "$GITHUB_URL/kubernetes/loadbalancer/dns/upstream.yaml"
 # to debug dns: https://kubernetes.io/docs/tasks/administer-cluster/dns-custom-nameservers/#inheriting-dns-from-the-node
 
 kubectl delete ServiceAccount traefik-ingress-controller-serviceaccount -n kube-system --ignore-not-found=true
 
-ReadYmlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "kubernetes/loadbalancer/ingress-roles.yml" -customerid $customerid | kubectl apply -f -
-
 if ($AKS_USE_SSL -eq "y" ) {
-
     # if the SSL cert is not set in kube secrets then ask for the files
     if ([string]::IsNullOrWhiteSpace($(kubectl get secret traefik-cert-ahmn -o jsonpath='{.data}' -n kube-system --ignore-not-found=true))) {
         # ask for tls cert files
@@ -390,18 +387,63 @@ if ($AKS_USE_SSL -eq "y" ) {
         Write-Output "Storing TLS certs as kubernetes secret"
         kubectl create secret generic traefik-cert-ahmn -n kube-system --from-file="$AKS_SSL_CERT_FOLDER_UNIX_PATH/tls.crt" --from-file="$AKS_SSL_CERT_FOLDER_UNIX_PATH/tls.key"
     }
+}
 
-    Write-Output "Deploy the SSL ingress controller"
-    # kubectl delete -f "$GITHUB_URL/azure/ingress.ssl.yml"
-    ReadYmlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "kubernetes/loadbalancer/ingress.ssl.yml" -customerid $customerid | Foreach-Object {$_ -replace 'WHITELISTIP', "$AKS_IP_WHITELIST"} | kubectl create -f -
+Write-Host "Deploying configmaps"
+$folder = "loadbalancer/configmaps"
+if ($AKS_USE_SSL -eq "y" ) {
+    foreach ($file in "config.yaml".Split(" ")) { 
+        ReadYmlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "$folder/$file" -customerid $customerid | kubectl apply -f -
+    }
 }
 else {
-    Write-Output "Deploy the non-SSL ingress controller"
-    # kubectl delete -f "$GITHUB_URL/azure/ingress.yml"
-    ReadYmlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "kubernetes/loadbalancer/ingress.yml" -customerid $customerid | Foreach-Object {$_ -replace 'WHITELISTIP', "$AKS_IP_WHITELIST"} | kubectl create -f -
+    foreach ($file in "config.ssl.yaml".Split(" ")) { 
+        ReadYmlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "$folder/$file" -customerid $customerid | kubectl apply -f -
+    }
+}
+Write-Host "Deploying roles"
+$folder = "loadbalancer/roles"
+foreach ($file in "ingress-roles.yaml".Split(" ")) { 
+    ReadYmlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "$folder/$file" -customerid $customerid | kubectl apply -f -
 }
 
-ReadYmlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "kubernetes/loadbalancer/ingress-deployment-azure.yml" -customerid $customerid | kubectl apply -f -
+Write-Host "Deploying pods"
+$folder = "loadbalancer/pods"
+if ($AKS_USE_SSL -eq "y" ) {
+    foreach ($file in "ingress-azure.yaml".Split(" ")) { 
+        ReadYmlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "$folder/$file" -customerid $customerid | kubectl apply -f -
+    }
+}
+else {
+    foreach ($file in "ingress-azure.ssl.yaml".Split(" ")) { 
+        ReadYmlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "$folder/$file" -customerid $customerid | kubectl apply -f -
+    }    
+}
+foreach ($file in "ingress-azure.internal.yaml".Split(" ")) { 
+    ReadYmlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "$folder/$file" -customerid $customerid | kubectl apply -f -
+}
+
+Write-Host "Deploying services"
+$folder = "loadbalancer/services"
+foreach ($file in "dashboard.yaml".Split(" ")) { 
+    ReadYmlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "$folder/$file" -customerid $customerid | kubectl apply -f -
+}
+
+Write-Host "Deploying ingress"
+$folder = "loadbalancer/ingress"
+if ($AKS_USE_SSL -eq "y" ) {
+    foreach ($file in "dashboard.ssl.yaml".Split(" ")) { 
+        ReadYmlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "$folder/$file" -customerid $customerid | kubectl apply -f -
+    }
+}
+else {
+    foreach ($file in "dashboard.yaml".Split(" ")) { 
+        ReadYmlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "$folder/$file" -customerid $customerid | kubectl apply -f -
+    }    
+}
+foreach ($file in "default.yaml default-internal.yaml".Split(" ")) { 
+    ReadYmlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "$folder/$file" -customerid $customerid | kubectl apply -f -
+}    
 
 if ("$AKS_OPEN_TO_PUBLIC" -eq "y") {
     Write-Output "Setting up a public load balancer"
@@ -414,7 +456,7 @@ if ("$AKS_OPEN_TO_PUBLIC" -eq "y") {
 
     Write-Host "Using Public IP: [$publicip]"
 
-    ReadYmlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "kubernetes/loadbalancer/loadbalancer-public.yml" -customerid $customerid `
+    ReadYmlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "kubernetes/loadbalancer/services/loadbalancer-public.yml" -customerid $customerid `
         | Foreach-Object {$_ -replace 'PUBLICIP', "$publicip"} `
         | kubectl create -f -
 
@@ -422,7 +464,9 @@ if ("$AKS_OPEN_TO_PUBLIC" -eq "y") {
     if ($AKS_CLUSTER_ACCESS_TYPE -eq "2") {
         # if we are restricting IPs then also deploy an internal load balancer
         Write-Output "Setting up a internal load balancer also since we are restricting IPs"
-        kubectl create -f "$GITHUB_URL/azure/loadbalancer-internal.yml"        
+        ReadYmlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "kubernetes/loadbalancer/services/loadbalancer-internal.yml" -customerid $customerid `
+            | kubectl create -f -
+          
     }
     #kubectl create -f "$GITHUB_URL/azure/loadbalancer-public.yml"
 
@@ -432,7 +476,8 @@ if ("$AKS_OPEN_TO_PUBLIC" -eq "y") {
 }
 else {
     Write-Output "Setting up an internal load balancer"
-    kubectl create -f "$GITHUB_URL/azure/loadbalancer-internal.yml"
+    ReadYmlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "kubernetes/loadbalancer/services/loadbalancer-internal.yml" -customerid $customerid `
+    | kubectl create -f -
 }
 
 $startDate = Get-Date

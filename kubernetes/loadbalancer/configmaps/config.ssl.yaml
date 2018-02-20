@@ -1,0 +1,31 @@
+# Traefik Ingress reverse proxy
+# based on https://github.com/containous/traefik/issues/2329
+
+# the config for Traefik so it knows where the certificates are
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: traefik-conf
+  namespace: kube-system
+  labels:
+    k8s-traefik: traefik  
+data:
+  traefik.toml: |
+    # traefik.toml
+    defaultEntryPoints = ["http","https"]
+    [accessLog]
+    [entryPoints]
+      [entryPoints.http]
+      address = ":80"
+        [entryPoints.http.redirect]
+          entryPoint = "https"
+      [entryPoints.https]
+      address = ":443"
+        [entryPoints.https.tls]
+          [[entryPoints.https.tls.certificates]]
+          # TLS certs for Allina (AHMN): *.ahmn.healthcatalyst.net
+          CertFile = "/ssl/ahmn/tls.crt"
+          KeyFile = "/ssl/ahmn/tls.key"
+          # [[entryPoints.https.tls.certificates]]
+          # CertFile = "/ssl/ahmn/tls.crt"
+          # KeyFile = "/ssl/ahmn/tls.key"        

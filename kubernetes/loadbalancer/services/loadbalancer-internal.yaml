@@ -10,7 +10,7 @@ metadata:
     service.beta.kubernetes.io/azure-load-balancer-internal: "true"
     # https://gowalker.org/k8s.io/kubernetes/pkg/cloudprovider/providers/azure
     # service.beta.kubernetes.io/azure-load-balancer-internal-subnet": ""
-
+    kubernetes.io/ingress.class: "loadbalancer-internal"
 spec:
   selector:
     k8s-app: traefik-ingress-lb

@@ -148,8 +148,9 @@ while ($userinput -ne "q") {
                 Write-Output "ssh -i ${SSH_PRIVATE_KEY_FILE_UNIX_PATH} azureuser@${firstpublicip}"            
             }
 
-            Write-Output "Command to show errors: sudo journalctl -xef"
+            Write-Output "Command to show errors: sudo journalctl -xef --priority 0..3"
             Write-Output "Command to see apiserver logs: sudo journalctl -fu kube-apiserver"
+            Write-Output "Cheat Sheet for journalctl: https://www.cheatography.com/airlove/cheat-sheets/journalctl/"
             # systemctl list-unit-files | grep .service | grep enabled
             # https://askubuntu.com/questions/795226/how-to-list-all-enabled-services-from-systemctl
 

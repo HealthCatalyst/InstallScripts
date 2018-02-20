@@ -1,6 +1,6 @@
 # This file contains common functions for Azure
 # 
-$versioncommon = "2018.02.15.02"
+$versioncommon = "2018.02.19.01"
 
 Write-Host "---- Including common.ps1 version $versioncommon -----"
 function global:GetCommonVersion() {
@@ -254,28 +254,31 @@ function global:CleanResourceGroup($resourceGroup, $location, $vnet, $subnet, $s
         }
     
         if (("$vnet") ) {
-            Write-Host "Switching the subnet to a temp route table and tempnsg so we can delete the old route table and nsg"
+            if (![string]::IsNullOrWhiteSpace($(az network vnet subnet show -n "${subnet}" -g "${subnetResourceGroup}" --vnet-name "${vnet}" --query "networkSecurityGroup.id"))) {
+                # Write-Host "Switching the subnet to a temp route table and tempnsg so we can delete the old route table and nsg"
 
-            $routeid = $(az network route-table show --name temproutetable --resource-group $resourceGroup --query "id" -o tsv)
-            if ([string]::IsNullOrWhiteSpace($routeid)) {
-                Write-Host "create temproutetable"
-                $routeid = az network route-table create --name temproutetable --resource-group $resourceGroup --query "id" -o tsv   
-            }
-            $routeid = $(az network route-table show --name temproutetable --resource-group $resourceGroup --query "id" -o tsv)
-            Write-Host "temproutetable: $routeid"
+                # $routeid = $(az network route-table show --name temproutetable --resource-group $resourceGroup --query "id" -o tsv)
+                # if ([string]::IsNullOrWhiteSpace($routeid)) {
+                #     Write-Host "create temproutetable"
+                #     $routeid = az network route-table create --name temproutetable --resource-group $resourceGroup --query "id" -o tsv   
+                # }
+                # $routeid = $(az network route-table show --name temproutetable --resource-group $resourceGroup --query "id" -o tsv)
+                # Write-Host "temproutetable: $routeid"
 
-            $nsg = $(az network nsg show --name tempnsg --resource-group $resourceGroup --query "id" -o tsv)
-            if ([string]::IsNullOrWhiteSpace($nsg)) {
-                Write-Host "create tempnsg"
-                $nsg = az network nsg create --name tempnsg --resource-group $resourceGroup --query "id" -o tsv   
-            }
-            $nsg = $(az network nsg show --name tempnsg --resource-group $resourceGroup --query "id" -o tsv)
-            Write-Host "tempnsg: $nsg"
+                # $nsg = $(az network nsg show --name tempnsg --resource-group $resourceGroup --query "id" -o tsv)
+                # if ([string]::IsNullOrWhiteSpace($nsg)) {
+                #     Write-Host "create tempnsg"
+                #     $nsg = az network nsg create --name tempnsg --resource-group $resourceGroup --query "id" -o tsv   
+                # }
+                # $nsg = $(az network nsg show --name tempnsg --resource-group $resourceGroup --query "id" -o tsv)
+                # Write-Host "tempnsg: $nsg"
         
-            Write-Host "Updating the subnet"
-            az network vnet subnet update -n "${subnet}" -g "${subnetResourceGroup}" --vnet-name "${vnet}" --route-table "$routeid" --network-security-group "$nsg"
+                Write-Host "Updating the subnet"
+                az network vnet subnet update -n "${subnet}" -g "${subnetResourceGroup}" --vnet-name "${vnet}" --route-table="" --network-security-group=""
 
-
+                #az network vnet subnet update -n "${subnet}" -g "${subnetResourceGroup}" --vnet-name "${vnet}" --route-table "$routeid" --network-security-group "$nsg"
+            }
+        
             if ($(az resource list --resource-group $resourceGroup --resource-type "Microsoft.Network/routeTables" --query "[?name != 'temproutetable'].id" -o tsv ).length -ne 0) {
                 Write-Host "delete the routes EXCEPT the temproutetable we just created"
                 az resource delete --ids $(az resource list --resource-group $resourceGroup --resource-type "Microsoft.Network/routeTables" --query "[?name != 'temproutetable'].id" -o tsv)
@@ -341,7 +344,7 @@ function global:CreateStorageIfNotExists($resourceGroup) {
         az storage account create -n $storageAccountName -g $resourceGroup -l $location --kind StorageV2 --sku Standard_LRS            
     }    
 
-    $Return.AKS_PERS_STORAGE_ACCOUNT_NAME=$storageAccountName
+    $Return.AKS_PERS_STORAGE_ACCOUNT_NAME = $storageAccountName
     return $Return
 }
 
@@ -440,6 +443,7 @@ function global:GetVnet($subscriptionId) {
     $Return.AKS_SUBNET_RESOURCE_GROUP = $subnetResourceGroup
     $Return.AKS_FIRST_STATIC_IP = $firstStaticIP
     $Return.AKS_SUBNET_ID = $mysubnetid
+    $Return.AKS_SUBNET_CIDR = $subnetCidr
 
     #Return the hashtable
     Return $Return     
@@ -552,7 +556,7 @@ function global:CheckIfUserLogged() {
 
     Write-Host "SubscriptionId: ${subscriptionId}"
 
-    $Return.AKS_SUBSCRIPTION_ID= "$subscriptionId"
+    $Return.AKS_SUBSCRIPTION_ID = "$subscriptionId"
     return $Return
 }
 
@@ -578,6 +582,9 @@ function global:GetResourceGroupAndLocation($defaultResourceGroup) {
 
         Write-Host "Create the Resource Group"
         az group create --name $resourceGroup --location $location --verbose
+    }
+    else {
+        $location = az group show --name $resourceGroup --query "location" -o tsv
     }
     
     $Return.AKS_PERS_RESOURCE_GROUP = $resourceGroup

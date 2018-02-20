@@ -4,11 +4,11 @@ Write-output "--- create-acs-cluster Version 2018.02.15.01 ----"
 # This script is meant for quick & easy install via:
 #   curl -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/azure/create-acs-cluster.ps1 | iex;
 
-$GITHUB_URL = "https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master"
-# $GITHUB_URL = "C:\Catalyst\git\Installscripts"
+# $GITHUB_URL = "https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master"
+$GITHUB_URL = "C:\Catalyst\git\Installscripts"
 
-Invoke-WebRequest -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/azure/common.ps1 | Invoke-Expression;
-# Get-Content ./azure/common.ps1 -Raw | Invoke-Expression;
+# Invoke-WebRequest -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/azure/common.ps1 | Invoke-Expression;
+Get-Content ./azure/common.ps1 -Raw | Invoke-Expression;
 
 $AKS_USE_AZURE_NETWORKING = "n"
 $AKS_SUPPORT_WINDOWS_CONTAINERS = "n"
@@ -72,7 +72,7 @@ DownloadKubectl -localFolder $AKS_LOCAL_FOLDER
 
 # download acs-engine
 $ACS_ENGINE_FILE = "$AKS_LOCAL_FOLDER\acs-engine.exe"
-$DESIRED_ACS_ENGINE_VERSION = "v0.12.4"
+$DESIRED_ACS_ENGINE_VERSION = "v0.13.0"
 $downloadACSEngine = "n"
 if (!(Test-Path "$ACS_ENGINE_FILE")) {
     $downloadACSEngine = "y"
@@ -111,6 +111,7 @@ $AKS_VNET_NAME = $VnetInfo.AKS_VNET_NAME
 $AKS_SUBNET_NAME=$VnetInfo.AKS_SUBNET_NAME
 $AKS_SUBNET_RESOURCE_GROUP=$VnetInfo.AKS_SUBNET_RESOURCE_GROUP
 $AKS_FIRST_STATIC_IP=$VnetInfo.AKS_FIRST_STATIC_IP
+$AKS_SUBNET_CIDR=$VnetInfo.AKS_SUBNET_CIDR
 
 CleanResourceGroup -resourceGroup ${AKS_PERS_RESOURCE_GROUP} -location $AKS_PERS_LOCATION -vnet $AKS_VNET_NAME `
     -subnet $AKS_SUBNET_NAME -subnetResourceGroup $AKS_SUBNET_RESOURCE_GROUP `
@@ -211,6 +212,12 @@ else {
 # https://doc.m0n0.ch/quickstartpc/intro-CIDR.html
 $WINDOWS_PASSWORD = "replacepassword1234$"
 Write-Output "replacing values in the acs.json file"
+Write-Output "AKS_SSH_KEY: $AKS_SSH_KEY"
+Write-Output "AKS_SERVICE_PRINCIPAL_CLIENTID: $AKS_SERVICE_PRINCIPAL_CLIENTID"
+Write-Output "SUBNET: ${mysubnetid}"
+Write-Output "DNS NAME: ${dnsNamePrefix}"
+Write-Output "FIRST STATIC IP: $AKS_FIRST_STATIC_IP"
+Write-Output "AKS_SUBNET_CIDR: $AKS_SUBNET_CIDR"
 $MyFile = (Get-Content $output) | 
     Foreach-Object {$_ -replace 'REPLACE-SSH-KEY', "${AKS_SSH_KEY}"}  | 
     Foreach-Object {$_ -replace 'REPLACE-CLIENTID', "${AKS_SERVICE_PRINCIPAL_CLIENTID}"}  | 

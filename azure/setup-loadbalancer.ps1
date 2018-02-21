@@ -1,11 +1,11 @@
-Write-output "Version 2018.02.20.06"
+Write-output "Version 2018.02.21.01"
 
 #
 # This script is meant for quick & easy install via:
 #   curl -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/azure/setup-loadbalancer.ps1 | iex;
 
-# $GITHUB_URL = "https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master"
-$GITHUB_URL = "C:\Catalyst\git\Installscripts"
+$GITHUB_URL = "https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master"
+# $GITHUB_URL = "C:\Catalyst\git\Installscripts"
 
 Write-Host "GITHUB_URL: $GITHUB_URL"
 
@@ -440,7 +440,7 @@ foreach ($file in "ingress-azure.internal.yaml".Split(" ")) {
 }
 
 Write-Host "Deploying services"
-$folder = "kubernetes/loadbalancer/services"
+$folder = "kubernetes/loadbalancer/services/cluster"
 foreach ($file in "dashboard.yaml dashboard-internal.yaml".Split(" ")) { 
     ReadYamlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "${folder}/${file}" -customerid $customerid | kubectl apply -f -
 }
@@ -462,7 +462,7 @@ if ("$AKS_OPEN_TO_PUBLIC" -eq "y") {
 
     Write-Host "Using Public IP: [$publicip]"
 
-    ReadYamlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "kubernetes/loadbalancer/services/loadbalancer-public.yaml" -customerid $customerid `
+    ReadYamlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "kubernetes/loadbalancer/services/external/loadbalancer-public.yaml" -customerid $customerid `
         | Foreach-Object {$_ -replace 'PUBLICIP', "$publicip"} `
         | kubectl create -f -
 
@@ -484,7 +484,7 @@ else {
 }
 
 Write-Output "Setting up an internal load balancer"
-ReadYamlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "kubernetes/loadbalancer/services/loadbalancer-internal.yaml" -customerid $customerid `
+ReadYamlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "kubernetes/loadbalancer/services/external/loadbalancer-internal.yaml" -customerid $customerid `
     | kubectl create -f -
 
 $startDate = Get-Date

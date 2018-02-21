@@ -1,17 +1,14 @@
 # This file contains common functions for Azure
 # 
-$versioncommon = "2018.02.20.01"
+$versioncommon = "2018.02.20.02"
 
 Write-Host "---- Including common.ps1 version $versioncommon -----"
 function global:GetCommonVersion() {
     return $versioncommon
 }
 
-$GITHUB_URL = "https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master"
-# $GITHUB_URL = "C:\Catalyst\git\Installscripts"
-
-# Invoke-WebRequest -useb ${GITHUB_URL}/kubernetes/common-kube.ps1 | Invoke-Expression;
-Get-Content ./kubernetes/common-kube.ps1 -Raw | Invoke-Expression;
+Invoke-WebRequest -useb ${GITHUB_URL}/kubernetes/common-kube.ps1 | Invoke-Expression;
+# Get-Content ./kubernetes/common-kube.ps1 -Raw | Invoke-Expression;
 
 function global:CreateShareInStorageAccount($storageAccountName, $resourceGroup, $sharename, $deleteExisting) { 
     $AZURE_STORAGE_CONNECTION_STRING = az storage account show-connection-string -n $storageAccountName -g $resourceGroup -o tsv

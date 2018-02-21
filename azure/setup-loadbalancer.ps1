@@ -1,11 +1,13 @@
-Write-output "Version 2018.02.20.05"
+Write-output "Version 2018.02.20.06"
 
 #
 # This script is meant for quick & easy install via:
 #   curl -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/azure/setup-loadbalancer.ps1 | iex;
 
 $GITHUB_URL = "https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master"
-# $GITHUB_URL = "C:\Catalyst\git\Installscripts"
+#$GITHUB_URL = "C:\Catalyst\git\Installscripts"
+
+Write-Host "GITHUB_URL: $GITHUB_URL"
 
 Invoke-WebRequest -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/azure/common.ps1 | Invoke-Expression;
 # Get-Content ./azure/common.ps1 -Raw | Invoke-Expression;
@@ -391,6 +393,8 @@ if ($AKS_USE_SSL -eq "y" ) {
     }
 }
 
+Write-Host "GITHUB_URL: $GITHUB_URL"
+
 Write-Host "Deploying configmaps"
 $folder = "kubernetes/loadbalancer/configmaps"
 if ($AKS_USE_SSL -eq "y" ) {
@@ -426,11 +430,11 @@ foreach ($file in "ingress-azure.internal.yaml".Split(" ")) {
     ReadYamlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "${folder}/${file}" -customerid $customerid | kubectl apply -f -
 }
 
-Write-Host "Deploying services"
-$folder = "kubernetes/loadbalancer/services"
-foreach ($file in "dashboard.yaml".Split(" ")) { 
-    ReadYamlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "${folder}/${file}" -customerid $customerid | kubectl apply -f -
-}
+# Write-Host "Deploying services"
+# $folder = "kubernetes/loadbalancer/services"
+# foreach ($file in "dashboard.yaml".Split(" ")) { 
+#     ReadYamlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "${folder}/${file}" -customerid $customerid | kubectl apply -f -
+# }
 
 Write-Host "Deploying ingress"
 $folder = "kubernetes/loadbalancer/ingress"

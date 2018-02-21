@@ -1,7 +1,7 @@
 kind: Service
 apiVersion: v1
 metadata:
-  name: traefik-ingress-service-private
+  name: traefik-ingress-service-internal
   namespace: kube-system
   labels:
     k8s-traefik: traefik  
@@ -10,7 +10,6 @@ metadata:
     service.beta.kubernetes.io/azure-load-balancer-internal: "true"
     # https://gowalker.org/k8s.io/kubernetes/pkg/cloudprovider/providers/azure
     # service.beta.kubernetes.io/azure-load-balancer-internal-subnet": ""
-    kubernetes.io/ingress.class: "loadbalancer-internal"
 spec:
   selector:
     k8s-app: traefik-ingress-lb-internal

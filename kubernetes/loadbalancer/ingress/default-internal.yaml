@@ -8,7 +8,7 @@ metadata:
     k8s-traefik: traefik    
     expose: internal
   annotations:
-    kubernetes.io/ingress.class: traefik-internal
+    kubernetes.io/ingress.class: traefik
 spec:
   rules:
   - http:

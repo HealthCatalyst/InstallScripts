@@ -1,0 +1,19 @@
+# ingress for the Traefik admin ui
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: traefik-default-route-ssl
+  namespace: kube-system
+  labels:
+    k8s-traefik: traefik
+    expose: external
+  annotations:
+    kubernetes.io/ingress.class: traefik
+spec:
+  rules:
+  - host: dashboard.CUSTOMERID.healthcatalyst.net
+    http:
+      paths:
+      - backend:
+          serviceName: traefik-dashboard
+          servicePort: 80

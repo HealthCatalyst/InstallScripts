@@ -1,18 +1,13 @@
-# ------------------- Dashboard Service ------------------- #
-kind: Service
 apiVersion: v1
+kind: Service
 metadata:
-  labels:
-    k8s-app: traefik-dashboard-internal
   name: traefik-dashboard-internal
   namespace: kube-system
-  annotations:
-    # from https://radu-matei.com/blog/k8s-appsvc/
-    service.beta.kubernetes.io/azure-load-balancer-internal: "true"  
+  labels:
+    k8s-traefik: traefik    
 spec:
-  ports:
-    - port: 443
-      targetPort: 8443
   selector:
-    k8s-app: traefik-dashboard
-  type: LoadBalancer  
+    k8s-app: traefik-ingress-lb-internal
+  ports:
+  - port: 80
+    targetPort: 8080

@@ -104,12 +104,6 @@ AskForPasswordAnyCharacters -secretname "smtprelaypassword" -prompt "SMTP (SendG
 
 CleanOutNamespace -namespace $namespace
 
-# Write-Host "Deploying roles"
-# $folder = "kubernetes/loadbalancer/roles"
-# foreach ($file in "ingress-roles.yaml".Split(" ")) { 
-#     ReadYamlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "${folder}/${file}" -customerid $customerid | kubectl apply -f -
-# }
-
 Write-Host "-- Deploying volumes --"
 $folder="volumes"
 foreach ($file in "mysqlserver.yaml solrserver.yaml jobserver.yaml mysqlbackup.yaml".Split(" ")) { 

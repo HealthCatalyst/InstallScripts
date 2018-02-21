@@ -37,8 +37,12 @@ spec:
         - --web
         - --kubernetes
         - --configfile=/config/traefik.toml
-        - --logLevel=INFO
-        - --kubernetes.labelselector=expose=internal        
+        - --logLevel=DEBUG
+        - --kubernetes.labelselector=expose=internal    
+        # - --kubernetes.namespaces=["default","kube-system","fabricnlp"]
+        - --kubernetes.debugloggeneratedtemplate
+        - --kubernetes.trace
+        - --debug            
         # https://github.com/kubernetes/ingress-nginx/blob/master/README.md#running-multiple-ingress-controllers
         # https://docs.traefik.io/user-guide/kubernetes/
 ---

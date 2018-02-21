@@ -4,7 +4,11 @@ Write-Output "--- installnlpkubernetes.ps1 Version 2018.02.20.04 ---"
 $GITHUB_URL = "https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master"
 # $GITHUB_URL = "."
 
-Invoke-WebRequest -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/azure/common.ps1 | Invoke-Expression;
+Invoke-WebRequest -useb ${GITHUB_URL}/kubernetes/common-kube.ps1 | Invoke-Expression;
+# Get-Content ./kubernetes/common-kube.ps1 -Raw | Invoke-Expression;
+
+Invoke-WebRequest -useb $GITHUB_URL/azure/common.ps1 | Invoke-Expression;
+# Get-Content ./azure/common.ps1 -Raw | Invoke-Expression;
 
 $loggedInUser = az account show --query "user.name"  --output tsv
 $AKS_USE_SSL = ""

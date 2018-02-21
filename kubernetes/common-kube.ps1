@@ -6,16 +6,6 @@ function global:GetCommonKubeVersion() {
     return $versionkubecommon
 }
 
-function global:Test-CommandExists {
-    Param ($command)
-    # from https://blogs.technet.microsoft.com/heyscriptingguy/2013/02/19/use-a-powershell-function-to-see-if-a-command-exists/
-    $oldPreference = $ErrorActionPreference
-    $ErrorActionPreference = 'stop'
-    try {if (Get-Command $command) {RETURN $true}}
-    Catch {Write-Host "$command does not exist"; RETURN $false}
-    Finally {$ErrorActionPreference = $oldPreference}
-} #end function test-CommandExists
-
 function global:ReadSecretValue($secretname, $valueName, $namespace) {
     if ([string]::IsNullOrWhiteSpace($namespace)) { $namespace = "default"}
 

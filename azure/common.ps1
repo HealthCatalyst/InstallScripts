@@ -443,6 +443,16 @@ function global:GetVnet($subscriptionId) {
     Return $Return     
 }
 
+function global:Test-CommandExists {
+    Param ($command)
+    # from https://blogs.technet.microsoft.com/heyscriptingguy/2013/02/19/use-a-powershell-function-to-see-if-a-command-exists/
+    $oldPreference = $ErrorActionPreference
+    $ErrorActionPreference = 'stop'
+    try {if (Get-Command $command) {RETURN $true}}
+    Catch {Write-Host "$command does not exist"; RETURN $false}
+    Finally {$ErrorActionPreference = $oldPreference}
+} #end function test-CommandExists
+
 function global:DownloadAzCliIfNeeded() {
     # install az cli from https://docs.microsoft.com/en-us/cli/azure/install-azure-cli?view=azure-cli-latest
     $desiredAzClVersion = "2.0.26"

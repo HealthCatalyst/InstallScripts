@@ -14,7 +14,7 @@ spec:
   - http:
       paths:
       - backend:
-          serviceName: traefik-web-ui
+          serviceName: traefik-dashboard-internal
           servicePort: 80         
 ---
 

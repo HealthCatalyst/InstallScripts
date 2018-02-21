@@ -1,8 +1,8 @@
 Write-Output "--- installnlpkubernetes.ps1 Version 2018.02.20.04 ---"
 
 # curl -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/nlp/installnlpkubernetes.ps1 | iex;
-$GITHUB_URL = "https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master"
-# $GITHUB_URL = "."
+# $GITHUB_URL = "https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master"
+$GITHUB_URL = "C:\Catalyst\git\Installscripts"
 
 Invoke-WebRequest -useb ${GITHUB_URL}/kubernetes/common-kube.ps1 | Invoke-Expression;
 # Get-Content ./kubernetes/common-kube.ps1 -Raw | Invoke-Expression;
@@ -104,11 +104,11 @@ AskForPasswordAnyCharacters -secretname "smtprelaypassword" -prompt "SMTP (SendG
 
 CleanOutNamespace -namespace $namespace
 
-Write-Host "Deploying roles"
-$folder = "kubernetes/loadbalancer/roles"
-foreach ($file in "ingress-roles.yaml".Split(" ")) { 
-    ReadYamlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "${folder}/${file}" -customerid $customerid | kubectl apply -f -
-}
+# Write-Host "Deploying roles"
+# $folder = "kubernetes/loadbalancer/roles"
+# foreach ($file in "ingress-roles.yaml".Split(" ")) { 
+#     ReadYamlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "${folder}/${file}" -customerid $customerid | kubectl apply -f -
+# }
 
 Write-Host "-- Deploying volumes --"
 $folder="volumes"
@@ -148,7 +148,7 @@ foreach ($file in "web.yaml solr.yaml".Split(" ")) {
 
 Write-Host "-- Deploying TCP proxies --"
 $folder="ingress/tcp"
-foreach ($file in "mysqlserver.yaml".Split(" ")) { 
+foreach ($file in "mysqlserver.internal.yaml".Split(" ")) { 
     ReadYamlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "nlp/${folder}/${file}" -customerid $customerid | kubectl apply -f -
 }
 

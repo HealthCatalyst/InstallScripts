@@ -2,7 +2,7 @@
 apiVersion: extensions/v1beta1
 kind: Ingress
 metadata:
-  name: traefik-web-ui
+  name: traefik-default-route-ssl
   namespace: kube-system
   labels:
     k8s-traefik: traefik  
@@ -18,5 +18,5 @@ spec:
     http:
       paths:
       - backend:
-          serviceName: traefik-web-ui
+          serviceName: traefik-dashboard
           servicePort: 80

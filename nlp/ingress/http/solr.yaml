@@ -4,7 +4,7 @@ metadata:
     name: nlp-ingress-internal
     namespace: fabricnlp
     labels:
-        traffic-type: internal
+        expose: internal
     annotations:
         kubernetes.io/ingress.class: traefik
 spec:

@@ -16,4 +16,6 @@ data:
     [entryPoints]
       [entryPoints.http]
       address = ":80"
+    [kubernetes]
+      namespaces = ["default","kube-system","fabricnlp"]
 

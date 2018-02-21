@@ -453,6 +453,39 @@ function global:Test-CommandExists {
     Finally {$ErrorActionPreference = $oldPreference}
 } #end function test-CommandExists
 
+function global:Get-ProcessByPort( [ValidateNotNullOrEmpty()] [int] $Port ) {    
+    $netstat = netstat.exe -ano | Select-Object -Skip 4
+    $p_line = $netstat | Where-Object { $p = ( -split $_ | Select-Object -Index 1) -split ':' | Select-Object -Last 1; $p -eq $Port } | Select-Object -First 1
+    if (!$p_line) { return; } 
+    $p_id = $p_line -split '\s+' | Select-Object -Last 1
+    return $p_id;
+}
+
+function global:AddFolderToPathEnvironmentVariable($folder) {
+    # add the c:\kubernetes folder to system PATH
+    Write-Output "Checking if $folder is in PATH"
+    $pathItems = ($env:path).split(";")
+    if ( $pathItems -notcontains "$folder") {
+        Write-Output "Adding $folder to system path"
+        $oldpath = (Get-ItemProperty -Path "Registry::HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\Session Manager\Environment" -Name PATH).path
+        # see if the registry value is wrong too
+        if ( ($oldpath).split(";") -notcontains "$folder") {
+            $newpath = "$oldpath;$folder"
+            Read-Host "Script needs elevated privileges to set PATH.  Hit ENTER to launch script to set PATH"
+            Start-Process powershell -verb RunAs -ArgumentList "Set-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\Session Manager\Environment' -Name PATH -Value '$newPath'; Read-Host 'Press ENTER'"
+            Write-Output "New PATH:"
+            $newpath = (Get-ItemProperty -Path "Registry::HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\Session Manager\Environment" -Name PATH).path
+            Write-Output "$newpath".split(";")
+        }
+        # for current session set the PATH too.  the above only takes effect if powershell is reopened
+        $ENV:PATH = "$ENV:PATH;$folder"
+        Write-Output "Set path for current powershell session"
+        Write-Output ($env:path).split(";")
+    }
+    else {
+        Write-Output "$folder is already in PATH"
+    }
+}
 function global:DownloadAzCliIfNeeded() {
     # install az cli from https://docs.microsoft.com/en-us/cli/azure/install-azure-cli?view=azure-cli-latest
     $desiredAzClVersion = "2.0.26"

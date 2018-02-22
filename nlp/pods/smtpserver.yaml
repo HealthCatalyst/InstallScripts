@@ -1,0 +1,44 @@
+kind: Deployment
+apiVersion: extensions/v1beta1
+metadata:
+  name: fabric.nlp.smtpserver
+  namespace: fabricnlp  
+  labels:
+    app: smtpserver
+spec:
+  replicas: 1
+  revisionHistoryLimit: 3  # Clean-up old Replica Sets deployed; only keep previous 3.
+  strategy:
+    # We need to kill the existing Pod before creating an new one
+    # for the new one to be able to attach the persistent disk.
+    type: Recreate        
+  selector:
+    matchLabels:
+      app: smtpserver
+  template:
+    metadata:
+      labels:
+        app: smtpserver
+    spec:
+      containers:
+        - name: smtpserver
+          image: healthcatalyst/fabric.smtp.agent:latest
+          imagePullPolicy: Always       
+          # environment variables
+          env:
+            - name: SMTP_RELAY_PASSWORD
+              # set the value of this environment variable from a secret called smtprelaypassword
+              valueFrom:
+                secretKeyRef:
+                  name: smtprelaypassword
+                  key: password
+            - name: SMTP_RELAY_USERNAME
+              # set the value of this environment variable directly
+              value: apikey
+            - name: SMTP_RELAY_SERVER
+              value: smtp.sendgrid.net
+            - name: SMTP_RELAY_PORT
+              value: "587"
+          ports:
+            - containerPort: 25
+              name: smtp              

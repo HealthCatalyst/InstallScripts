@@ -1,4 +1,4 @@
-Write-Output "--- installnlpkubernetes.ps1 Version 2018.02.21.03 ---"
+Write-Output "--- installnlpkubernetes.ps1 Version 2018.02.21.04 ---"
 
 # curl -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/nlp/installnlpkubernetes.ps1 | iex;
 
@@ -119,13 +119,13 @@ foreach ($file in "mysqlserver.yaml solrserver.yaml jobserver.yaml mysqlbackup.y
 
 Write-Host "-- Deploying pods --"
 $folder = "pods"
-foreach ($file in "mysqlserver.yaml solrserver.yaml jobserver.yaml nlpwebserver.yaml mysqlclient.yaml".Split(" ")) { 
+foreach ($file in "mysqlserver.yaml solrserver.yaml jobserver.yaml nlpwebserver.yaml mysqlclient.yaml smtpserver.yaml".Split(" ")) { 
     ReadYamlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "nlp/${folder}/${file}" -customerid $customerid | kubectl apply -f -
 }
 
 Write-Host "-- Deploying cluster services --"
 $folder = "services/cluster"
-foreach ($file in "mysqlserver.yaml solrserver.yaml jobserver.yaml nlpwebserver.yaml".Split(" ")) { 
+foreach ($file in "mysqlserver.yaml solrserver.yaml jobserver.yaml nlpwebserver.yaml smtpserver.yaml".Split(" ")) { 
     ReadYamlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "nlp/${folder}/${file}" -customerid $customerid | kubectl apply -f -
 }
 

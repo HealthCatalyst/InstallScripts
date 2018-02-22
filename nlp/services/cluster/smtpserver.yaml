@@ -1,0 +1,14 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: smtpserver
+  namespace: fabricnlp  
+  labels:
+    app: smtpserver
+spec:
+  ports:
+  - port: 25
+    targetPort: 25
+    protocol: TCP
+  selector:
+    app: smtpserver

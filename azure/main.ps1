@@ -1,4 +1,4 @@
-$version = "2018.02.20.01"
+$version = "2018.02.21.01"
 
 # This script is meant for quick & easy install via:
 #   curl -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/azure/main.ps1 | iex;
@@ -194,7 +194,7 @@ while ($userinput -ne "q") {
            
             $loadBalancerIP = kubectl get svc traefik-ingress-service-public -n kube-system -o jsonpath='{.status.loadBalancer.ingress[].ip}' --ignore-not-found=true
             if ([string]::IsNullOrWhiteSpace($loadBalancerIP)) {
-                $loadBalancerIP = kubectl get svc traefik-ingress-service-private -n kube-system -o jsonpath='{.status.loadBalancer.ingress[].ip}'
+                $loadBalancerIP = kubectl get svc traefik-ingress-service-internal -n kube-system -o jsonpath='{.status.loadBalancer.ingress[].ip}'
             }
             $customerid = ReadSecret -secretname customerid
             $customerid = $customerid.ToLower().Trim()

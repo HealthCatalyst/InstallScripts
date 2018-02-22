@@ -1,4 +1,4 @@
-Write-output "Version 2018.02.21.04"
+Write-output "Version 2018.02.21.05"
 
 #
 # This script is meant for quick & easy install via:
@@ -524,7 +524,7 @@ if ($AKS_CLUSTER_ACCESS_TYPE -eq "2") {
     Do { 
         Start-Sleep -Seconds 10
         Write-Output "."
-        $INTERNAL_IP = $(kubectl get svc traefik-ingress-service-private -n kube-system -o jsonpath='{.status.loadBalancer.ingress[].ip}')
+        $INTERNAL_IP = $(kubectl get svc traefik-ingress-service-internal -n kube-system -o jsonpath='{.status.loadBalancer.ingress[].ip}')
     }
     while ([string]::IsNullOrWhiteSpace($INTERNAL_IP) -and ($startDate.AddMinutes($timeoutInMinutes) -gt (Get-Date)))
     Write-Output "Internal IP: $INTERNAL_IP"

@@ -1,4 +1,4 @@
-Write-Output "Version 2018.01.17.1"
+Write-Output "Version 2018.01.21.01"
 
 # curl -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/realtime/installrealtimekubernetes.ps1 | iex;
 

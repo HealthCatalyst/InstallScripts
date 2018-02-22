@@ -1,4 +1,4 @@
-$version = "2018.02.21.01"
+$version = "2018.02.21.02"
 
 # This script is meant for quick & easy install via:
 #   curl -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/azure/main.ps1 | iex;
@@ -199,7 +199,7 @@ while ($userinput -ne "q") {
             $customerid = ReadSecret -secretname customerid
             $customerid = $customerid.ToLower().Trim()
                                     
-            Invoke-WebRequest -useb -Headers @{"Host" = "nlp.$customerid.healthcatalyst.net"} -Uri http://$loadBalancerIP/nlpweb | Select-Object -Expand Content
+            # Invoke-WebRequest -useb -Headers @{"Host" = "nlp.$customerid.healthcatalyst.net"} -Uri http://$loadBalancerIP/nlpweb | Select-Object -Expand Content
 
             Write-Output "To test out the NLP services, open Git Bash and run:"
             Write-Output "curl -L --verbose --header 'Host: solr.$customerid.healthcatalyst.net' 'http://$loadBalancerIP/solr' -k" 

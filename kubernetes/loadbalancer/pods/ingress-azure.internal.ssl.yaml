@@ -1,10 +1,10 @@
 kind: Deployment
 apiVersion: extensions/v1beta1
 metadata:
-  name: traefik-ingress-controller
+  name: traefik-ingress-controller-internal
   namespace: kube-system
   labels:
-    k8s-app: traefik-ingress-lb
+    k8s-app: traefik-ingress-lb-internal
     k8s-traefik: traefik  
 spec:
   replicas: 1
@@ -15,7 +15,7 @@ spec:
     metadata:
       labels:
         k8s-app: traefik-ingress-lb
-        name: traefik-ingress-lb
+        name: traefik-ingress-lb-internal
     spec:
       serviceAccountName: traefik-ingress-serviceaccount
       terminationGracePeriodSeconds: 60
@@ -31,14 +31,12 @@ spec:
             name: traefik-conf
       containers:
       - image: traefik:1.5
-        name: traefik-ingress-lb
+        name: traefik-ingress-lb-internal
         volumeMounts:
           - mountPath: "/config"
             name: "config"        
           - mountPath: "/ssl/ahmn"
-            name: "ssl-ahmn" 
-          # - mountPath: "/ssl/ahmn"
-          #   name: "ssl-ahmn" 
+            name: "ssl-ahmn"             
         ports:
           - containerPort: 80
           - containerPort: 443
@@ -48,9 +46,11 @@ spec:
         - --kubernetes
         - --configfile=/config/traefik.toml
         - --logLevel=DEBUG
+        - --kubernetes.labelselector=expose=internal    
         # - --kubernetes.namespaces=["default","kube-system","fabricnlp"]
-        - --kubernetes.labelselector=expose=external
         - --kubernetes.debugloggeneratedtemplate
         - --kubernetes.trace
-        - --debug        
+        - --debug            
+        # https://github.com/kubernetes/ingress-nginx/blob/master/README.md#running-multiple-ingress-controllers
+        # https://docs.traefik.io/user-guide/kubernetes/
 ---

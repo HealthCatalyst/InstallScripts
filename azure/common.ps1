@@ -1,6 +1,6 @@
 # This file contains common functions for Azure
 # 
-$versioncommon = "2018.02.20.02"
+$versioncommon = "2018.02.21.01"
 
 Write-Host "---- Including common.ps1 version $versioncommon -----"
 function global:GetCommonVersion() {
@@ -463,27 +463,27 @@ function global:Get-ProcessByPort( [ValidateNotNullOrEmpty()] [int] $Port ) {
 
 function global:AddFolderToPathEnvironmentVariable($folder) {
     # add the c:\kubernetes folder to system PATH
-    Write-Output "Checking if $folder is in PATH"
+    Write-Host "Checking if $folder is in PATH"
     $pathItems = ($env:path).split(";")
     if ( $pathItems -notcontains "$folder") {
-        Write-Output "Adding $folder to system path"
+        Write-Host "Adding $folder to system path"
         $oldpath = (Get-ItemProperty -Path "Registry::HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\Session Manager\Environment" -Name PATH).path
         # see if the registry value is wrong too
         if ( ($oldpath).split(";") -notcontains "$folder") {
             $newpath = "$oldpath;$folder"
             Read-Host "Script needs elevated privileges to set PATH.  Hit ENTER to launch script to set PATH"
             Start-Process powershell -verb RunAs -ArgumentList "Set-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\Session Manager\Environment' -Name PATH -Value '$newPath'; Read-Host 'Press ENTER'"
-            Write-Output "New PATH:"
+            Write-Host "New PATH:"
             $newpath = (Get-ItemProperty -Path "Registry::HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\Session Manager\Environment" -Name PATH).path
-            Write-Output "$newpath".split(";")
+            Write-Host "$newpath".split(";")
         }
         # for current session set the PATH too.  the above only takes effect if powershell is reopened
         $ENV:PATH = "$ENV:PATH;$folder"
-        Write-Output "Set path for current powershell session"
-        Write-Output ($env:path).split(";")
+        Write-Host "Set path for current powershell session"
+        Write-Host ($env:path).split(";")
     }
     else {
-        Write-Output "$folder is already in PATH"
+        Write-Host "$folder is already in PATH"
     }
 }
 function global:DownloadAzCliIfNeeded() {
@@ -629,6 +629,33 @@ function global:GetResourceGroupAndLocation($defaultResourceGroup) {
 
     #Return the hashtable
     Return $Return         
+}
+
+function global:SetNetworkSecurityGroupRule($resourceGroup, $networkSecurityGroup, $rulename, $ruledescription, $sourceTag, $port, $priority ){
+    if ([string]::IsNullOrWhiteSpace($(az network nsg rule show --name "$rulename" --nsg-name $networkSecurityGroup --resource-group $resourceGroup))) {
+        Write-Host "Creating rule: $rulename"
+        az network nsg rule create -g $resourceGroup --nsg-name $networkSecurityGroup -n "$rulename" --priority $priority `
+            --source-address-prefixes "${sourceTag}" --source-port-ranges '*' `
+            --destination-address-prefixes '*' --destination-port-ranges $port --access Allow `
+            --protocol Tcp --description "$ruledescription" `
+            --query "provisioningState" -o tsv
+    }
+    else {
+        Write-Host "Updating rule: $rulename"
+
+        az network nsg rule update -g $resourceGroup --nsg-name $networkSecurityGroup -n "$rulename" --priority $priority `
+            --source-address-prefixes "${sourceTag}" --source-port-ranges '*' `
+            --destination-address-prefixes '*' --destination-port-ranges $port --access Allow `
+            --protocol Tcp --description "$ruledescription" `
+            --query "provisioningState" -o tsv
+    }
+    
+}
+function global:DeleteNetworkSecurityGroupRule($resourceGroup, $networkSecurityGroup, $rulename ){
+    if (![string]::IsNullOrWhiteSpace($(az network nsg rule show --name "$rulename" --nsg-name $networkSecurityGroup --resource-group $resourceGroup))) {
+        Write-Host "Deleting $rulename rule"
+        az network nsg rule delete -g $resourceGroup --nsg-name $networkSecurityGroup -n $rulename
+    }    
 }
 #-------------------
 Write-Host "end common.ps1 version $versioncommon"

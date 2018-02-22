@@ -1,4 +1,4 @@
-Write-output "Version 2018.02.21.05"
+Write-output "Version 2018.02.21.06"
 
 #
 # This script is meant for quick & easy install via:
@@ -179,122 +179,44 @@ if ($SetupNSG) {
         $sourceTagForHttpAccess = $AKS_IP_WHITELIST
     }
 
-    if (![string]::IsNullOrWhiteSpace($(az network nsg rule show --name "HttpPort" --nsg-name $AKS_PERS_NETWORK_SECURITY_GROUP --resource-group $AKS_PERS_RESOURCE_GROUP))) {
-        Write-Output "Deleting HttpPort rule so we can create it later"
-        az network nsg rule delete -g $AKS_PERS_RESOURCE_GROUP --nsg-name $AKS_PERS_NETWORK_SECURITY_GROUP -n HttpPort
-    }
+    DeleteNetworkSecurityGroupRule -resourceGroup $AKS_PERS_RESOURCE_GROUP -networkSecurityGroup $AKS_PERS_NETWORK_SECURITY_GROUP -rulename "HttpPort"
+    DeleteNetworkSecurityGroupRule -resourceGroup $AKS_PERS_RESOURCE_GROUP -networkSecurityGroup $AKS_PERS_NETWORK_SECURITY_GROUP -rulename "HttpsPort"
 
-    if (![string]::IsNullOrWhiteSpace($(az network nsg rule show --name "HttpsPort" --nsg-name $AKS_PERS_NETWORK_SECURITY_GROUP --resource-group $AKS_PERS_RESOURCE_GROUP))) {
-        Write-Output "Deleting HttpsPort rule so we can create it later"
-        az network nsg rule delete -g $AKS_PERS_RESOURCE_GROUP --nsg-name $AKS_PERS_NETWORK_SECURITY_GROUP -n HttpsPort
-    }    
+    SetNetworkSecurityGroupRule -resourceGroup $AKS_PERS_RESOURCE_GROUP -networkSecurityGroup $AKS_PERS_NETWORK_SECURITY_GROUP `
+        -rulename "allow_kube_tls" `
+        -ruledescription "allow kubectl and HTTPS access from ${sourceTagForAdminAccess}." `
+        -sourceTag "${sourceTagForAdminAccess}" -port 443 -priority 100 
 
-    if ([string]::IsNullOrWhiteSpace($(az network nsg rule show --name "allow_kube_tls" --nsg-name $AKS_PERS_NETWORK_SECURITY_GROUP --resource-group $AKS_PERS_RESOURCE_GROUP))) {
-        Write-Output "Creating rule: allow_kube_tls"
-        az network nsg rule create -g $AKS_PERS_RESOURCE_GROUP --nsg-name $AKS_PERS_NETWORK_SECURITY_GROUP -n allow_kube_tls --priority 100 `
-            --source-address-prefixes "${sourceTagForAdminAccess}" --source-port-ranges '*' `
-            --destination-address-prefixes '*' --destination-port-ranges 443 --access Allow `
-            --protocol Tcp --description "allow kubectl and HTTPS access from ${sourceTagForAdminAccess}." `
-            --query "provisioningState" -o tsv
-    }
-    else {
-        Write-Output "Updating rule: allow_kube_tls"
+    SetNetworkSecurityGroupRule -resourceGroup $AKS_PERS_RESOURCE_GROUP -networkSecurityGroup $AKS_PERS_NETWORK_SECURITY_GROUP `
+        -rulename "allow_http" `
+        -ruledescription "allow HTTP access from ${sourceTagForAdminAccess}." `
+        -sourceTag "${sourceTagForAdminAccess}" -port 80 -priority 101
+            
+    SetNetworkSecurityGroupRule -resourceGroup $AKS_PERS_RESOURCE_GROUP -networkSecurityGroup $AKS_PERS_NETWORK_SECURITY_GROUP `
+        -rulename "allow_ssh" `
+        -ruledescription "allow SSH access from ${sourceTagForAdminAccess}." `
+        -sourceTag "${sourceTagForAdminAccess}" -port 22 -priority 104
 
-        az network nsg rule update -g $AKS_PERS_RESOURCE_GROUP --nsg-name $AKS_PERS_NETWORK_SECURITY_GROUP -n allow_kube_tls --priority 100 `
-            --source-address-prefixes "${sourceTagForAdminAccess}" --source-port-ranges '*' `
-            --destination-address-prefixes '*' --destination-port-ranges 443 --access Allow `
-            --protocol Tcp --description "allow kubectl access and HTTPS from ${sourceTagForAdminAccess}." `
-            --query "provisioningState" -o tsv
-    }
-    if ([string]::IsNullOrWhiteSpace($(az network nsg rule show --name "allow_http" --nsg-name $AKS_PERS_NETWORK_SECURITY_GROUP --resource-group $AKS_PERS_RESOURCE_GROUP))) {
-        Write-Output "Creating rule: allow_http"
-        az network nsg rule create -g $AKS_PERS_RESOURCE_GROUP --nsg-name $AKS_PERS_NETWORK_SECURITY_GROUP -n allow_http --priority 101 `
-            --source-address-prefixes "${sourceTagForAdminAccess}" --source-port-ranges '*' `
-            --destination-address-prefixes '*' --destination-port-ranges 80 --access Allow `
-            --protocol Tcp --description "allow HTTP access from ${sourceTagForAdminAccess}." `
-            --query "provisioningState" -o tsv
-    }
-    else {
-        Write-Output "Updating rule: allow_http"
-        az network nsg rule update -g $AKS_PERS_RESOURCE_GROUP --nsg-name $AKS_PERS_NETWORK_SECURITY_GROUP -n allow_http --priority 101 `
-            --source-address-prefixes "${sourceTagForAdminAccess}" --source-port-ranges '*' `
-            --destination-address-prefixes '*' --destination-port-ranges 80 --access Allow `
-            --protocol Tcp --description "allow HTTP access from ${sourceTagForAdminAccess}." `
-            --query "provisioningState" -o tsv
-    }
-
-    if ([string]::IsNullOrWhiteSpace($(az network nsg rule show --name "allow_ssh" --nsg-name $AKS_PERS_NETWORK_SECURITY_GROUP --resource-group $AKS_PERS_RESOURCE_GROUP))) {
-        Write-Output "Creating rule: allow_ssh"
-        az network nsg rule create -g $AKS_PERS_RESOURCE_GROUP --nsg-name $AKS_PERS_NETWORK_SECURITY_GROUP -n allow_ssh --priority 104 `
-            --source-address-prefixes "${sourceTagForAdminAccess}" --source-port-ranges '*' `
-            --destination-address-prefixes '*' --destination-port-ranges 22 --access Allow `
-            --protocol Tcp --description "allow ssh access from ${sourceTagForAdminAccess}." `
-            --query "provisioningState" -o tsv
-    }
-    else {
-        Write-Output "Updating rule: allow_ssh"
-        az network nsg rule update -g $AKS_PERS_RESOURCE_GROUP --nsg-name $AKS_PERS_NETWORK_SECURITY_GROUP -n allow_ssh --priority 104 `
-            --source-address-prefixes "${sourceTagForAdminAccess}" --source-port-ranges '*' `
-            --destination-address-prefixes '*' --destination-port-ranges 22 --access Allow `
-            --protocol Tcp --description "allow ssh access from ${sourceTagForAdminAccess}." `
-            --query "provisioningState" -o tsv
-    }
-
-    if ([string]::IsNullOrWhiteSpace($(az network nsg rule show --name "mysql" --nsg-name $AKS_PERS_NETWORK_SECURITY_GROUP --resource-group $AKS_PERS_RESOURCE_GROUP))) {
-        Write-Output "Creating rule: mysql"
-        az network nsg rule create -g $AKS_PERS_RESOURCE_GROUP --nsg-name $AKS_PERS_NETWORK_SECURITY_GROUP -n mysql --priority 205 `
-            --source-address-prefixes "${sourceTagForAdminAccess}" --source-port-ranges '*' `
-            --destination-address-prefixes '*' --destination-port-ranges 3306 --access Allow `
-            --protocol Tcp --description "allow mysql access from ${sourceTagForAdminAccess}." `
-            --query "provisioningState" -o tsv
-    }
-    else {
-        Write-Output "Updating rule: mysql"
-        az network nsg rule update -g $AKS_PERS_RESOURCE_GROUP --nsg-name $AKS_PERS_NETWORK_SECURITY_GROUP -n mysql --priority 205 `
-            --source-address-prefixes "${sourceTagForAdminAccess}" --source-port-ranges '*' `
-            --destination-address-prefixes '*' --destination-port-ranges 3306 --access Allow `
-            --protocol Tcp --description "allow mysql access from ${sourceTagForAdminAccess}." `
-            --query "provisioningState" -o tsv
-    }
-
+    SetNetworkSecurityGroupRule -resourceGroup $AKS_PERS_RESOURCE_GROUP -networkSecurityGroup $AKS_PERS_NETWORK_SECURITY_GROUP `
+        -rulename "allow_mysql" `
+        -ruledescription "allow MySQL access from ${sourceTagForAdminAccess}." `
+        -sourceTag "${sourceTagForAdminAccess}" -port 3306 -priority 205
+            
     # if we already have opened the ports for admin access then we're not allowed to add another rule for opening them
     if (($sourceTagForHttpAccess -eq "Internet") -and ($sourceTagForAdminAccess -eq "Internet")) {
         Write-Output "Since we already have rules open port 80 and 443 to the Internet, we do not need to create separate ones for the Internet"
     }
     else {
-        if ([string]::IsNullOrWhiteSpace($(az network nsg rule show --name "HttpPort" --nsg-name $AKS_PERS_NETWORK_SECURITY_GROUP --resource-group $AKS_PERS_RESOURCE_GROUP))) {
-            Write-Output "Creating rule: HttpPort"
-            az network nsg rule create -g $AKS_PERS_RESOURCE_GROUP --nsg-name $AKS_PERS_NETWORK_SECURITY_GROUP -n HttpPort --priority 500 `
-                --source-address-prefixes "$sourceTagForHttpAccess" --source-port-ranges '*' `
-                --destination-address-prefixes '*' --destination-port-ranges 80 --access Allow `
-                --protocol Tcp --description "allow HTTP access from $sourceTagForHttpAccess." `
-                --query "provisioningState" -o tsv
-        }
-        else {
-            Write-Output "Updating rule: HttpPort"
-            az network nsg rule update -g $AKS_PERS_RESOURCE_GROUP --nsg-name $AKS_PERS_NETWORK_SECURITY_GROUP -n HttpPort --priority 500 `
-                --source-address-prefixes "$sourceTagForHttpAccess" --source-port-ranges '*' `
-                --destination-address-prefixes '*' --destination-port-ranges 80 --access Allow `
-                --protocol Tcp --description "allow HTTP access from $sourceTagForHttpAccess." `
-                --query "provisioningState" -o tsv
-        }
 
-        if ([string]::IsNullOrWhiteSpace($(az network nsg rule show --name "HttpsPort" --nsg-name $AKS_PERS_NETWORK_SECURITY_GROUP --resource-group $AKS_PERS_RESOURCE_GROUP))) {
-            Write-Output "Creating rule: HttpsPort"
-            az network nsg rule create -g $AKS_PERS_RESOURCE_GROUP --nsg-name $AKS_PERS_NETWORK_SECURITY_GROUP -n HttpsPort --priority 501 `
-                --source-address-prefixes "$sourceTagForHttpAccess" --source-port-ranges '*' `
-                --destination-address-prefixes '*' --destination-port-ranges 443 --access Allow `
-                --protocol Tcp --description "allow HTTPS access from $sourceTagForHttpAccess." `
-                --query "provisioningState" -o tsv
-        }
-        else {
-            Write-Output "Updating rule: HttpsPort"
-            az network nsg rule update -g $AKS_PERS_RESOURCE_GROUP --nsg-name $AKS_PERS_NETWORK_SECURITY_GROUP -n HttpsPort --priority 501 `
-                --source-address-prefixes "$sourceTagForHttpAccess" --source-port-ranges '*' `
-                --destination-address-prefixes '*' --destination-port-ranges 443 --access Allow `
-                --protocol Tcp --description "allow HTTPS access from $sourceTagForHttpAccess." `
-                --query "provisioningState" -o tsv
-        }    
+        SetNetworkSecurityGroupRule -resourceGroup $AKS_PERS_RESOURCE_GROUP -networkSecurityGroup $AKS_PERS_NETWORK_SECURITY_GROUP `
+            -rulename "HttpPort" `
+            -ruledescription "allow HTTP access from ${sourceTagForHttpAccess}." `
+            -sourceTag "${sourceTagForHttpAccess}" -port 80 -priority 500
+    
+            SetNetworkSecurityGroupRule -resourceGroup $AKS_PERS_RESOURCE_GROUP -networkSecurityGroup $AKS_PERS_NETWORK_SECURITY_GROUP `
+            -rulename "HttpsPort" `
+            -ruledescription "allow HTTPS access from ${sourceTagForHttpAccess}." `
+            -sourceTag "${sourceTagForHttpAccess}" -port 443 -priority 501
     }
 
     $nsgid = az network nsg list --resource-group ${AKS_PERS_RESOURCE_GROUP} --query "[?name == '${AKS_PERS_NETWORK_SECURITY_GROUP}'].id" -o tsv
@@ -426,17 +348,14 @@ foreach ($file in "ingress-roles.yaml".Split(" ")) {
 Write-Host "Deploying pods"
 $folder = "kubernetes/loadbalancer/pods"
 if ($AKS_USE_SSL -eq "y" ) {
-    foreach ($file in "ingress-azure.ssl.yaml".Split(" ")) { 
+    foreach ($file in "ingress-azure.ssl.yaml ingress-azure.internal.ssl.yaml".Split(" ")) { 
         ReadYamlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "${folder}/${file}" -customerid $customerid | kubectl apply -f -
     }    
 }
 else {
-    foreach ($file in "ingress-azure.yaml".Split(" ")) { 
+    foreach ($file in "ingress-azure.yaml ingress-azure.internal.yaml".Split(" ")) { 
         ReadYamlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "${folder}/${file}" -customerid $customerid | kubectl apply -f -
     }
-}
-foreach ($file in "ingress-azure.internal.yaml".Split(" ")) { 
-    ReadYamlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "${folder}/${file}" -customerid $customerid | kubectl apply -f -
 }
 
 Write-Host "Deploying services"

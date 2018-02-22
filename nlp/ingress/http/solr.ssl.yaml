@@ -1,0 +1,22 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+    name: nlp-ingress-internal
+    namespace: fabricnlp
+    labels:
+        expose: internal
+    annotations:
+        kubernetes.io/ingress.class: traefik
+spec:
+    tls:
+    - secretName: ssl-ahmn
+      hosts:
+        - solr.CUSTOMERID.healthcatalyst.net
+    rules:
+    - host: solr.CUSTOMERID.healthcatalyst.net
+      http:
+        paths:
+        - backend:
+            serviceName: solrserverpublic
+            servicePort: 80
+---

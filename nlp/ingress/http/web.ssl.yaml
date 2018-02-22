@@ -12,7 +12,6 @@ spec:
     tls:
     - secretName: ssl-ahmn
       hosts:
-        - solr.CUSTOMERID.healthcatalyst.net
         - nlp.CUSTOMERID.healthcatalyst.net
         - nlpjobs.CUSTOMERID.healthcatalyst.net
     rules:

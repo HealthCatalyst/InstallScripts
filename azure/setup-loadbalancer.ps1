@@ -1,4 +1,4 @@
-Write-output "Version 2018.02.21.01"
+Write-output "Version 2018.02.21.02"
 
 #
 # This script is meant for quick & easy install via:
@@ -450,6 +450,17 @@ $folder = "kubernetes/loadbalancer/ingress"
 foreach ($file in "default.yaml default-internal.yaml dashboard.yaml".Split(" ")) { 
     ReadYamlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "${folder}/${file}" -customerid $customerid | kubectl apply -f -
 }    
+
+if ($AKS_USE_SSL -eq "y" ) {
+    foreach ($file in "dashboard.ssl.yaml".Split(" ")) { 
+        ReadYamlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "${folder}/${file}" -customerid $customerid | kubectl apply -f -
+    }    
+}
+else {
+    foreach ($file in "dashboard.yaml".Split(" ")) { 
+        ReadYamlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "${folder}/${file}" -customerid $customerid | kubectl apply -f -
+    }    
+}
 
 if ("$AKS_OPEN_TO_PUBLIC" -eq "y") {
     Write-Output "Setting up a public load balancer"

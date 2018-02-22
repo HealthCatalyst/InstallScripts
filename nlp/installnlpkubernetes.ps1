@@ -1,4 +1,4 @@
-Write-Output "--- installnlpkubernetes.ps1 Version 2018.02.20.04 ---"
+Write-Output "--- installnlpkubernetes.ps1 Version 2018.02.21.01 ---"
 
 # curl -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/nlp/installnlpkubernetes.ps1 | iex;
 # $GITHUB_URL = "https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master"
@@ -66,7 +66,7 @@ $AKS_PERS_BACKUP_SHARE_NAME = "${AKS_PERS_SHARE_NAME}backups"
 CreateShare -resourceGroup $AKS_PERS_RESOURCE_GROUP -sharename $AKS_PERS_SHARE_NAME
 CreateShare -resourceGroup $AKS_PERS_RESOURCE_GROUP -sharename $AKS_PERS_BACKUP_SHARE_NAME
 
-$namespace="fabricnlp"
+$namespace = "fabricnlp"
 
 if ([string]::IsNullOrWhiteSpace($(kubectl get namespace $namespace --ignore-not-found=true))) {
     kubectl create namespace $namespace
@@ -105,49 +105,56 @@ AskForPasswordAnyCharacters -secretname "smtprelaypassword" -prompt "SMTP (SendG
 CleanOutNamespace -namespace $namespace
 
 Write-Host "-- Deploying volumes --"
-$folder="volumes"
+$folder = "volumes"
 foreach ($file in "mysqlserver.yaml solrserver.yaml jobserver.yaml mysqlbackup.yaml".Split(" ")) { 
     ReadYamlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "nlp/${folder}/${file}" -customerid $customerid | kubectl apply -f -
 }
 
 Write-Host "-- Deploying volume claims --"
-$folder="volumeclaims"
+$folder = "volumeclaims"
 foreach ($file in "mysqlserver.yaml solrserver.yaml jobserver.yaml mysqlbackup.yaml".Split(" ")) { 
     ReadYamlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "nlp/${folder}/${file}" -customerid $customerid | kubectl apply -f -
 }
 
 Write-Host "-- Deploying pods --"
-$folder="pods"
+$folder = "pods"
 foreach ($file in "mysqlserver.yaml solrserver.yaml jobserver.yaml nlpwebserver.yaml mysqlclient.yaml".Split(" ")) { 
     ReadYamlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "nlp/${folder}/${file}" -customerid $customerid | kubectl apply -f -
 }
 
 Write-Host "-- Deploying cluster services --"
-$folder="services/cluster"
+$folder = "services/cluster"
 foreach ($file in "mysqlserver.yaml solrserver.yaml jobserver.yaml nlpwebserver.yaml".Split(" ")) { 
     ReadYamlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "nlp/${folder}/${file}" -customerid $customerid | kubectl apply -f -
 }
 
 Write-Host "-- Deploying external services --"
-$folder="services/external"
+$folder = "services/external"
 foreach ($file in "solrserver.yaml jobserver.yaml nlpwebserver.yaml".Split(" ")) { 
     ReadYamlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "nlp/${folder}/${file}" -customerid $customerid | kubectl apply -f -
 }
 
 Write-Host "-- Deploying HTTP proxies --"
-$folder="ingress/http"
-foreach ($file in "web.yaml solr.yaml".Split(" ")) { 
-    ReadYamlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "nlp/${folder}/${file}" -customerid $customerid | kubectl apply -f -
+$folder = "ingress/http"
+if ($AKS_USE_SSL -eq "y" ) {
+    foreach ($file in "web.ssl.yaml solr.ssl.yaml".Split(" ")) { 
+        ReadYamlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "nlp/${folder}/${file}" -customerid $customerid | kubectl apply -f -
+    }
+}
+else {
+    foreach ($file in "web.yaml solr.yaml".Split(" ")) { 
+        ReadYamlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "nlp/${folder}/${file}" -customerid $customerid | kubectl apply -f -
+    }
 }
 
 Write-Host "-- Deploying TCP proxies --"
-$folder="ingress/tcp"
+$folder = "ingress/tcp"
 foreach ($file in "mysqlserver.internal.yaml".Split(" ")) { 
     ReadYamlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "nlp/${folder}/${file}" -customerid $customerid | kubectl apply -f -
 }
 
 Write-Host "-- Deploying jobs --"
-$folder="jobs"
+$folder = "jobs"
 foreach ($file in "mysqlserver-backup-cron.yaml".Split(" ")) { 
     ReadYamlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "nlp/${folder}/${file}" -customerid $customerid | kubectl apply -f -
 }

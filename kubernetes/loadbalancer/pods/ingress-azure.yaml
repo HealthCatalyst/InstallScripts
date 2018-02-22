@@ -24,7 +24,7 @@ spec:
           configMap:
             name: traefik-conf
       containers:
-      - image: traefik
+      - image: traefik:1.5
         name: traefik-ingress-lb
         volumeMounts:
           - mountPath: "/config"

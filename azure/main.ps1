@@ -1,4 +1,4 @@
-$version = "2018.02.21.02"
+$version = "2018.02.21.03"
 
 # This script is meant for quick & easy install via:
 #   curl -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/azure/main.ps1 | iex;
@@ -111,13 +111,13 @@ while ($userinput -ne "q") {
             # }
             
             # Write-Host "Your kubeconfig file is here: $env:KUBECONFIG"
-            $kubectlversion = kubectl version --client=true --short=true
-            if ($kubectlversion -match "v1.9") {
-                Write-Host "Click Skip on login screen";
-                Start-Process -FilePath "http://localhost:8001/api/v1/namespaces/kube-system/services/https:kubernetes-dashboard:/proxy/";
+            $kubectlversion = $(kubectl version --short=true)[1]
+            if ($kubectlversion -match "v1.8") {
+                Start-Process -FilePath "http://localhost:8001/api/v1/namespaces/kube-system/services/kubernetes-dashboard/proxy";
             }
             else {
-                Start-Process -FilePath "http://localhost:8001/api/v1/namespaces/kube-system/services/kubernetes-dashboard/proxy";
+                Write-Host "Click Skip on login screen";
+                Start-Process -FilePath "http://localhost:8001/api/v1/namespaces/kube-system/services/https:kubernetes-dashboard:/proxy/";
             }            
         } 
         '7' {        
@@ -150,7 +150,7 @@ while ($userinput -ne "q") {
                 $firstpublicip = az vm list-ip-addresses -g $AKS_PERS_RESOURCE_GROUP -n $vm --query "[].virtualMachine.network.publicIpAddresses[0].ipAddress" -o tsv
                 if ([string]::IsNullOrEmpty($firstpublicip)) {
                     $firstpublicip = az vm show -g $AKS_PERS_RESOURCE_GROUP -n $vm -d --query privateIps -otsv
-                    $firstpublicip=$firstpublicip.Split(",")[0]
+                    $firstpublicip = $firstpublicip.Split(",")[0]
                 }
                 Write-Output "Connect to $vm"
                 Write-Output "ssh -i ${SSH_PRIVATE_KEY_FILE_UNIX_PATH} azureuser@${firstpublicip}"            

@@ -1,4 +1,4 @@
-Write-output "Version 2018.02.21.06"
+Write-output "Version 2018.02.21.07"
 
 #
 # This script is meant for quick & easy install via:
@@ -213,7 +213,7 @@ if ($SetupNSG) {
             -ruledescription "allow HTTP access from ${sourceTagForHttpAccess}." `
             -sourceTag "${sourceTagForHttpAccess}" -port 80 -priority 500
     
-            SetNetworkSecurityGroupRule -resourceGroup $AKS_PERS_RESOURCE_GROUP -networkSecurityGroup $AKS_PERS_NETWORK_SECURITY_GROUP `
+        SetNetworkSecurityGroupRule -resourceGroup $AKS_PERS_RESOURCE_GROUP -networkSecurityGroup $AKS_PERS_NETWORK_SECURITY_GROUP `
             -rulename "HttpsPort" `
             -ruledescription "allow HTTPS access from ${sourceTagForHttpAccess}." `
             -sourceTag "${sourceTagForHttpAccess}" -port 443 -priority 501
@@ -339,10 +339,17 @@ else {
         ReadYamlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "${folder}/${file}" -customerid $customerid | kubectl apply -f -
     }
 }
-Write-Host "Deploying roles"
-$folder = "kubernetes/loadbalancer/roles"
-foreach ($file in "ingress-roles.yaml".Split(" ")) { 
-    ReadYamlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "${folder}/${file}" -customerid $customerid | kubectl apply -f -
+
+$kubectlversion = $(kubectl version --short=true)[1]
+if ($kubectlversion -match "v1.8") {
+    Write-Host "Since kubectlversion ($kubectlversion) is less than 1.9 no roles are needed"
+}
+else {
+    Write-Host "Deploying roles"
+    $folder = "kubernetes/loadbalancer/roles"
+    foreach ($file in "ingress-roles.yaml".Split(" ")) { 
+        ReadYamlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "${folder}/${file}" -customerid $customerid | kubectl apply -f -
+    }
 }
 
 Write-Host "Deploying pods"

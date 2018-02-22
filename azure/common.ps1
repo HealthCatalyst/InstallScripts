@@ -1,6 +1,6 @@
 # This file contains common functions for Azure
 # 
-$versioncommon = "2018.02.21.01"
+$versioncommon = "2018.02.21.02"
 
 Write-Host "---- Including common.ps1 version $versioncommon -----"
 function global:GetCommonVersion() {
@@ -488,7 +488,7 @@ function global:AddFolderToPathEnvironmentVariable($folder) {
 }
 function global:DownloadAzCliIfNeeded() {
     # install az cli from https://docs.microsoft.com/en-us/cli/azure/install-azure-cli?view=azure-cli-latest
-    $desiredAzClVersion = "2.0.26"
+    $desiredAzClVersion = "2.0.27"
     $downloadazcli = $False
     if (!(Test-CommandExists az)) {
         $downloadazcli = $True

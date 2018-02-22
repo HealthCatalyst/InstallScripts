@@ -52,5 +52,6 @@ spec:
         - --kubernetes.labelselector=expose=external
         - --kubernetes.debugloggeneratedtemplate
         - --kubernetes.trace
-        - --debug        
+        - --debug
+        - --accesslog
 ---

@@ -1,4 +1,4 @@
-Write-output "Version 2018.02.22.02"
+Write-output "Version 2018.02.22.03"
 
 #
 # This script is meant for quick & easy install via:
@@ -404,6 +404,9 @@ if ("$AKS_OPEN_TO_PUBLIC" -eq "y") {
         | kubectl create -f -
 }
 else {
+    Write-Output "Setting up an internal load balancer"
+    ReadYamlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "kubernetes/loadbalancer/services/external/loadbalancer-public.restricted.yaml" -customerid $customerid `
+        | kubectl create -f -
 }
 
 # Write-Output "Setting up an internal load balancer"

@@ -1,0 +1,27 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: traefik-ingress-service-public
+  namespace: kube-system
+  labels:
+    k8s-traefik: traefik    
+  annotations:
+    # from https://radu-matei.com/blog/k8s-appsvc/
+    service.beta.kubernetes.io/azure-load-balancer-internal: "true"
+    # https://gowalker.org/k8s.io/kubernetes/pkg/cloudprovider/providers/azure
+    # service.beta.kubernetes.io/azure-load-balancer-internal-subnet": ""    
+spec:
+  selector:
+    k8s-app: traefik-ingress-lb
+# k8s-app: nginx-ingress-lb    
+# https://kubernetes.io/docs/tutorials/services/source-ip/
+  externalTrafficPolicy: "Local"
+  ports:
+    - protocol: TCP
+      port: 80
+      name: web
+    - protocol: TCP
+      port: 443
+      name: ssl      
+  type: LoadBalancer
+---

@@ -1,4 +1,4 @@
-Write-Output "--- installnlpkubernetes.ps1 Version 2018.02.21.02 ---"
+Write-Output "--- installnlpkubernetes.ps1 Version 2018.02.21.03 ---"
 
 # curl -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/nlp/installnlpkubernetes.ps1 | iex;
 

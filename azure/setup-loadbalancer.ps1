@@ -1,4 +1,4 @@
-Write-output "Version 2018.02.22.01"
+Write-output "Version 2018.02.22.02"
 
 #
 # This script is meant for quick & easy install via:
@@ -355,41 +355,27 @@ else {
 Write-Host "Deploying pods"
 $folder = "kubernetes/loadbalancer/pods"
 if ($AKS_USE_SSL -eq "y" ) {
-    foreach ($file in "ingress-azure.ssl.yaml".Split(" ")) { 
+    foreach ($file in "ingress-azure.ssl.yaml ingress-azure.internal.ssl.yaml".Split(" ")) { 
         ReadYamlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "${folder}/${file}" -customerid $customerid | kubectl apply -f -
     }    
-
-    # foreach ($file in "ingress-azure.ssl.yaml ingress-azure.internal.ssl.yaml".Split(" ")) { 
-    #     ReadYamlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "${folder}/${file}" -customerid $customerid | kubectl apply -f -
-    # }    
 }
 else {
-    foreach ($file in "ingress-azure.yaml".Split(" ")) { 
+    foreach ($file in "ingress-azure.yaml ingress-azure.internal.yaml".Split(" ")) { 
         ReadYamlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "${folder}/${file}" -customerid $customerid | kubectl apply -f -
     }
-    # foreach ($file in "ingress-azure.yaml ingress-azure.internal.yaml".Split(" ")) { 
-    #     ReadYamlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "${folder}/${file}" -customerid $customerid | kubectl apply -f -
-    # }
-
 }
 
 Write-Host "Deploying services"
 $folder = "kubernetes/loadbalancer/services/cluster"
-foreach ($file in "dashboard.yaml".Split(" ")) { 
+foreach ($file in "dashboard.yaml dashboard-internal.yaml".Split(" ")) { 
     ReadYamlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "${folder}/${file}" -customerid $customerid | kubectl apply -f -
 }
-# foreach ($file in "dashboard.yaml dashboard-internal.yaml".Split(" ")) { 
-#     ReadYamlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "${folder}/${file}" -customerid $customerid | kubectl apply -f -
-# }
 
 Write-Host "Deploying ingress"
 $folder = "kubernetes/loadbalancer/ingress"
-foreach ($file in "default.yaml".Split(" ")) { 
+foreach ($file in "default.yaml default-internal.yaml".Split(" ")) { 
     ReadYamlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "${folder}/${file}" -customerid $customerid | kubectl apply -f -
 }    
-# foreach ($file in "default.yaml default-internal.yaml".Split(" ")) { 
-#     ReadYamlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "${folder}/${file}" -customerid $customerid | kubectl apply -f -
-# }    
 
 if ($AKS_USE_SSL -eq "y" ) {
     foreach ($file in "dashboard.ssl.yaml".Split(" ")) { 
@@ -416,27 +402,13 @@ if ("$AKS_OPEN_TO_PUBLIC" -eq "y") {
     ReadYamlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "kubernetes/loadbalancer/services/external/loadbalancer-public.yaml" -customerid $customerid `
         | Foreach-Object {$_ -replace 'PUBLICIP', "$publicip"} `
         | kubectl create -f -
-
-
-    # if ($AKS_CLUSTER_ACCESS_TYPE -eq "2") {
-    #     # if we are restricting IPs then also deploy an internal load balancer
-    #     Write-Output "Setting up a internal load balancer also since we are restricting IPs"
-    #     ReadYamlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "kubernetes/loadbalancer/services/loadbalancer-internal.yaml" -customerid $customerid `
-    #         | kubectl create -f -
-          
-    # }
-    #kubectl create -f "$GITHUB_URL/azure/loadbalancer-public.yaml"
-
-    #kubectl patch service traefik-ingress-service-public --loadBalancerIP=52.191.114.120
-
-    #kubectl patch deployment traefik-ingress-controller -p '{"spec":{"loadBalancerIP":"52.191.114.120"}}'    
 }
 else {
 }
 
 # Write-Output "Setting up an internal load balancer"
-# ReadYamlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "kubernetes/loadbalancer/services/external/loadbalancer-internal.yaml" -customerid $customerid `
-#     | kubectl create -f -
+ReadYamlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "kubernetes/loadbalancer/services/external/loadbalancer-internal.yaml" -customerid $customerid `
+    | kubectl create -f -
 
 $startDate = Get-Date
 $timeoutInMinutes = 10

@@ -168,7 +168,7 @@ kubectl get 'deployments,pods,services,ingress,secrets,persistentvolumeclaims,pe
 
 $loadBalancerIP = kubectl get svc traefik-ingress-service-public -n kube-system -o jsonpath='{.status.loadBalancer.ingress[].ip}' --ignore-not-found=true
 if ([string]::IsNullOrWhiteSpace($loadBalancerIP)) {
-    $loadBalancerIP = kubectl get svc traefik-ingress-service-private -n kube-system -o jsonpath='{.status.loadBalancer.ingress[].ip}'
+    $loadBalancerIP = kubectl get svc traefik-ingress-service-internal -n kube-system -o jsonpath='{.status.loadBalancer.ingress[].ip}'
 }
 
 Write-Output "To test out the NLP services, open Git Bash and run:"

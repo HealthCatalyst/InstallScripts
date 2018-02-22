@@ -505,7 +505,7 @@ if ("$AKS_OPEN_TO_PUBLIC" -eq "y") {
     $loadbalancer = "traefik-ingress-service-public"
 }
 else {
-    $loadbalancer = "traefik-ingress-service-private"    
+    $loadbalancer = "traefik-ingress-service-internal"    
 }
 
 $INTERNAL_IP = ""

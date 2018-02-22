@@ -166,7 +166,7 @@ Write-Output "and then in your browser, navigate to: http://127.0.0.1:8001/ui"
 
 $loadBalancerIP = kubectl get svc traefik-ingress-service-public -n kube-system -o jsonpath='{.status.loadBalancer.ingress[].ip}'
 if ([string]::IsNullOrWhiteSpace($loadBalancerIP)) {
-    $loadBalancerIP = kubectl get svc traefik-ingress-service-private -n kube-system -o jsonpath='{.status.loadBalancer.ingress[].ip}'
+    $loadBalancerIP = kubectl get svc traefik-ingress-service-internal -n kube-system -o jsonpath='{.status.loadBalancer.ingress[].ip}'
 }
 
 Write-Output "To test out the NLP services, open Git Bash and run:"

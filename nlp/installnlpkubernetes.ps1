@@ -1,8 +1,9 @@
 Write-Output "--- installnlpkubernetes.ps1 Version 2018.02.21.02 ---"
 
 # curl -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/nlp/installnlpkubernetes.ps1 | iex;
-# $GITHUB_URL = "https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master"
-$GITHUB_URL = "C:\Catalyst\git\Installscripts"
+
+$GITHUB_URL = "https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master"
+# $GITHUB_URL = "C:\Catalyst\git\Installscripts"
 
 Invoke-WebRequest -useb ${GITHUB_URL}/kubernetes/common-kube.ps1 | Invoke-Expression;
 # Get-Content ./kubernetes/common-kube.ps1 -Raw | Invoke-Expression;

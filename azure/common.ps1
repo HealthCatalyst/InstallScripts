@@ -1,6 +1,6 @@
 # This file contains common functions for Azure
 # 
-$versioncommon = "2018.02.21.02"
+$versioncommon = "2018.02.21.03"
 
 Write-Host "---- Including common.ps1 version $versioncommon -----"
 function global:GetCommonVersion() {
@@ -508,7 +508,7 @@ function global:DownloadAzCliIfNeeded() {
         $url = "https://azurecliprod.blob.core.windows.net/msi/azure-cli-latest.msi"
         Write-Host "Downloading az-cli-latest.msi from url $url to $azCliFile"
         If (Test-Path $azCliFile) {
-            Remove-Item $azCliFile
+            Remove-Item $azCliFile -Force
         }
         (New-Object System.Net.WebClient).DownloadFile($url, $azCliFile)
         # https://kevinmarquette.github.io/2016-10-21-powershell-installing-msi-files/

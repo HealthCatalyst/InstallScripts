@@ -1,4 +1,4 @@
-$version = "2018.02.21.03"
+$version = "2018.02.21.04"
 
 # This script is meant for quick & easy install via:
 #   curl -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/azure/main.ps1 | iex;
@@ -30,7 +30,7 @@ while ($userinput -ne "q") {
     Write-Host "6: Launch Kubernetes Admin Dashboard"
     Write-Host "7: Show SSH commands to VMs"
     Write-Host "8: View status of DNS pods"
-    Write-Host "9: Apply updates and restart all VMs"
+    Write-Host "9: Restart all VMs"
     Write-Host "------ NLP -----"
     Write-Host "10: Show status of NLP"
     Write-Host "11: Test web sites"
@@ -182,7 +182,7 @@ while ($userinput -ne "q") {
         '9' {
             # restart VMs
             $AKS_PERS_RESOURCE_GROUP = ReadSecretValue -secretname azure-secret -valueName resourcegroup
-            UpdateOSInVMs -resourceGroup $AKS_PERS_RESOURCE_GROUP
+            # UpdateOSInVMs -resourceGroup $AKS_PERS_RESOURCE_GROUP
             RestartVMsInResourceGroup -resourceGroup $AKS_PERS_RESOURCE_GROUP
             SetHostFileInVms -resourceGroup $AKS_PERS_RESOURCE_GROUP
             SetupCronTab -resourceGroup $AKS_PERS_RESOURCE_GROUP            

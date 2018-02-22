@@ -1,5 +1,5 @@
 # this file contains common functions for kubernetes
-$versionkubecommon = "2018.02.20.02"
+$versionkubecommon = "2018.02.20.03"
 
 Write-Host "Including common-kube.ps1 version $versionkubecommon"
 function global:GetCommonKubeVersion() {
@@ -151,7 +151,7 @@ function global:Stop-ProcessByPort( [ValidateNotNullOrEmpty()] [int] $Port ) {
 function global:DownloadKubectl($localFolder) {
     # download kubectl
     $kubeCtlFile = "$localFolder\kubectl.exe"
-    $desiredKubeCtlVersion = "v1.9.2"
+    $desiredKubeCtlVersion = "v1.9.3"
     $downloadkubectl = "n"
     if (!(Test-Path "$kubeCtlFile")) {
         $downloadkubectl = "y"

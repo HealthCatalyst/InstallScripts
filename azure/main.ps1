@@ -158,7 +158,9 @@ while ($userinput -ne "q") {
 
             Write-Output "Command to show errors: sudo journalctl -xef --priority 0..3"
             Write-Output "Command to see apiserver logs: sudo journalctl -fu kube-apiserver"
-            Write-Output "Command to see apiserver logs: sudo systemctl status kubelet"
+            Write-Output "Command to see kubelet status: sudo systemctl status kubelet"
+            # sudo systemctl restart kubelet.service
+            # sudo service kubelet status
             # /var/log/pods
             
             Write-Output "Cheat Sheet for journalctl: https://www.cheatography.com/airlove/cheat-sheets/journalctl/"
@@ -188,7 +190,7 @@ while ($userinput -ne "q") {
             # UpdateOSInVMs -resourceGroup $AKS_PERS_RESOURCE_GROUP
             RestartVMsInResourceGroup -resourceGroup $AKS_PERS_RESOURCE_GROUP
             SetHostFileInVms -resourceGroup $AKS_PERS_RESOURCE_GROUP
-            SetupCronTab -resourceGroup $AKS_PERS_RESOURCE_GROUP            
+            SetupCronTab -resourceGroup $AKS_PERS_RESOURCE_GROUP          
         } 
         '10' {
             kubectl get 'deployments,pods,services,ingress,secrets,persistentvolumeclaims,persistentvolumes,nodes' --namespace=fabricnlp -o wide

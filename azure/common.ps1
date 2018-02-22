@@ -1,6 +1,6 @@
 # This file contains common functions for Azure
 # 
-$versioncommon = "2018.02.21.03"
+$versioncommon = "2018.02.21.04"
 
 Write-Host "---- Including common.ps1 version $versioncommon -----"
 function global:GetCommonVersion() {
@@ -107,7 +107,7 @@ function global:SetupCronTab($resourceGroup) {
     $virtualmachines = az vm list -g $resourceGroup --query "[?storageProfile.osDisk.osType != 'Windows'].name" -o tsv
     ForEach ($vm in $virtualmachines) {
         if ($vm -match "master" ) {
-            $cmd = "crontab -e; mkdir -p /opt/healthcatalyst; curl -sSL https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/azure/restartkubedns.txt -o /opt/healthcatalyst/restartkubedns.sh; crontab -l | grep -v 'restartkubedns.sh' - | { cat; echo '*/10 * * * * /opt/healthcatalyst/restartkubedns.sh >> /tmp/restartkubedns.log 2>&1 \n'; } | crontab -"
+            $cmd = "crontab -e; mkdir -p /opt/healthcatalyst; curl -sSL https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/azure/restartkubedns.txt -o /opt/healthcatalyst/restartkubedns.sh; chmod +x /opt/healthcatalyst/restartkubedns.sh; crontab -l | grep -v 'restartkubedns.sh' - | { cat; echo '*/10 * * * * /opt/healthcatalyst/restartkubedns.sh >> /tmp/restartkubedns.log 2>&1 \n'; } | crontab -"
             az vm run-command invoke -g $resourceGroup -n $vm --command-id RunShellScript --scripts "$cmd"
         }
     }
@@ -140,6 +140,16 @@ function global:RestartVMsInResourceGroup( $resourceGroup) {
         }
         while (!($state = "VM running"))      
     }
+
+    # sudo systemctl restart etcd 
+    ForEach ($vm in $virtualmachines) {
+        if ($vm -match "master" ) {
+            Write-Host "Sending command to master($vm) to restart etcd due to bug: https://github.com/Azure/acs-engine/issues/2282"
+            az vm run-command invoke -g $resourceGroup -n $vm --command-id RunShellScript --scripts "systemctl restart etcd"
+        }
+    }
+    
+
 }
 
 function global:SetHostFileInVms( $resourceGroup) {
@@ -631,7 +641,7 @@ function global:GetResourceGroupAndLocation($defaultResourceGroup) {
     Return $Return         
 }
 
-function global:SetNetworkSecurityGroupRule($resourceGroup, $networkSecurityGroup, $rulename, $ruledescription, $sourceTag, $port, $priority ){
+function global:SetNetworkSecurityGroupRule($resourceGroup, $networkSecurityGroup, $rulename, $ruledescription, $sourceTag, $port, $priority ) {
     if ([string]::IsNullOrWhiteSpace($(az network nsg rule show --name "$rulename" --nsg-name $networkSecurityGroup --resource-group $resourceGroup))) {
         Write-Host "Creating rule: $rulename"
         az network nsg rule create -g $resourceGroup --nsg-name $networkSecurityGroup -n "$rulename" --priority $priority `
@@ -651,7 +661,7 @@ function global:SetNetworkSecurityGroupRule($resourceGroup, $networkSecurityGrou
     }
     
 }
-function global:DeleteNetworkSecurityGroupRule($resourceGroup, $networkSecurityGroup, $rulename ){
+function global:DeleteNetworkSecurityGroupRule($resourceGroup, $networkSecurityGroup, $rulename ) {
     if (![string]::IsNullOrWhiteSpace($(az network nsg rule show --name "$rulename" --nsg-name $networkSecurityGroup --resource-group $resourceGroup))) {
         Write-Host "Deleting $rulename rule"
         az network nsg rule delete -g $resourceGroup --nsg-name $networkSecurityGroup -n $rulename

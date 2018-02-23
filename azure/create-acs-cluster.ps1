@@ -1,4 +1,4 @@
-Write-output "--- create-acs-cluster Version 2018.02.22.01 ----"
+Write-output "--- create-acs-cluster Version 2018.02.22.02 ----"
 
 #
 # This script is meant for quick & easy install via:
@@ -169,6 +169,7 @@ else {
     # https://github.com/Azure/azure-cli/issues/1332
     Write-Output "Sleeping to wait for Service Principal to propagate"
     Start-Sleep -Seconds 30;
+    [Console]::ResetColor()
 
     $AKS_SERVICE_PRINCIPAL_CLIENTID = az ad sp list --display-name ${AKS_SERVICE_PRINCIPAL_NAME} --query "[].appId" --output tsv
     Write-Output "created $AKS_SERVICE_PRINCIPAL_NAME clientId=$AKS_SERVICE_PRINCIPAL_CLIENTID clientsecret=$AKS_SERVICE_PRINCIPAL_CLIENTSECRET"
@@ -234,9 +235,11 @@ $WINDOWS_PASSWORD = GeneratePassword
 Write-Output "replacing values in the acs.json file"
 Write-Output "AKS_SSH_KEY: $AKS_SSH_KEY"
 Write-Output "AKS_SERVICE_PRINCIPAL_CLIENTID: $AKS_SERVICE_PRINCIPAL_CLIENTID"
+Write-Output "AKS_SERVICE_PRINCIPAL_CLIENTSECRET: $AKS_SERVICE_PRINCIPAL_CLIENTSECRET"
 Write-Output "SUBNET: ${mysubnetid}"
 Write-Output "DNS NAME: ${dnsNamePrefix}"
 Write-Output "FIRST STATIC IP: $AKS_FIRST_STATIC_IP"
+Write-Output "WINDOWS PASSWORD: $WINDOWS_PASSWORD"
 Write-Output "AKS_SUBNET_CIDR: $AKS_SUBNET_CIDR"
 $MyFile = (Get-Content $output) | 
     Foreach-Object {$_ -replace 'REPLACE-SSH-KEY', "${AKS_SSH_KEY}"}  | 

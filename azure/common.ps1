@@ -1,6 +1,6 @@
 # This file contains common functions for Azure
 # 
-$versioncommon = "2018.02.22.01"
+$versioncommon = "2018.02.22.02"
 
 Write-Host "---- Including common.ps1 version $versioncommon -----"
 function global:GetCommonVersion() {
@@ -532,7 +532,8 @@ function global:DownloadAzCliIfNeeded() {
         Write-Host "Running MSI to install az"
         $azCliInstallLog = ([System.IO.Path]::GetTempPath() + ('az-cli-latest.log'))
         # msiexec flags: https://msdn.microsoft.com/en-us/library/windows/desktop/aa367988(v=vs.85).aspx
-        Start-Process -Verb runAs msiexec.exe -Wait -ArgumentList "/i $azCliFile /qn /L*e $azCliInstallLog"
+        # Start-Process -Verb runAs msiexec.exe -Wait -ArgumentList "/i $azCliFile /qn /L*e $azCliInstallLog"
+        Start-Process -Verb runAs msiexec.exe -Wait -ArgumentList "/i $azCliFile"
         Write-Host "Finished installing az-cli-latest.msi"
     }
     

@@ -23,6 +23,8 @@ while ($userinput -ne "q") {
     Write-Host "------ Infrastructure -------"
     Write-Host "1: Create a new Azure Container Service"
     Write-Host "2: Setup Load Balancer"
+    Write-Host "3: Start VMs in Resource Group"
+    Write-Host "4: Stop VMs in Resource Group"
     Write-Host "------ Install -------"
     Write-Host "11: Install NLP"
     Write-Host "12: Install Realtime"
@@ -71,6 +73,20 @@ while ($userinput -ne "q") {
         } 
         '2' {
             Invoke-WebRequest -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/azure/setup-loadbalancer.ps1 | Invoke-Expression;
+        } 
+        '3' {
+            Do { 
+                $AKS_PERS_RESOURCE_GROUP = Read-Host "Resource Group"
+            }
+            while ([string]::IsNullOrWhiteSpace($AKS_PERS_RESOURCE_GROUP))
+            az vm start --ids $(az vm list -g $AKS_PERS_RESOURCE_GROUP --query "[].id" -o tsv) 
+        } 
+        '4' {
+            Do { 
+                $AKS_PERS_RESOURCE_GROUP = Read-Host "Resource Group"
+            }
+            while ([string]::IsNullOrWhiteSpace($AKS_PERS_RESOURCE_GROUP))
+            az vm stop --ids $(az vm list -g $AKS_PERS_RESOURCE_GROUP --query "[].id" -o tsv) 
         } 
         '11' {
             Invoke-WebRequest -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/nlp/installnlpkubernetes.ps1 | Invoke-Expression;

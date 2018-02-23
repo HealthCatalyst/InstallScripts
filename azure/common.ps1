@@ -1,6 +1,6 @@
 # This file contains common functions for Azure
 # 
-$versioncommon = "2018.02.22.02"
+$versioncommon = "2018.02.22.04"
 
 Write-Host "---- Including common.ps1 version $versioncommon -----"
 function global:GetCommonVersion() {
@@ -333,7 +333,8 @@ function global:CreateStorageIfNotExists($resourceGroup) {
     if ($storageAccountCanBeCreated -ne "True" ) {
         az storage account check-name --name $storageAccountName   
         
-        Do { $confirmation = Read-Host "Storage account, [$storageAccountName], already exists.  Delete it?  (WARNING: deletes data) (y/n)"}
+        Write-Warning "Storage account, [$storageAccountName], already exists.  Deleting it will remove this data permanently"
+        Do { $confirmation = Read-Host "Delete storage account: (WARNING: deletes data) (y/n)"}
         while ([string]::IsNullOrWhiteSpace($confirmation)) 
     
         if ($confirmation -eq 'y') {
@@ -527,7 +528,9 @@ function global:DownloadAzCliIfNeeded() {
         If (Test-Path $azCliFile) {
             Remove-Item $azCliFile -Force
         }
-        (New-Object System.Net.WebClient).DownloadFile($url, $azCliFile)
+
+        DownloadFile -url $url -targetFile $azCliFile
+
         # https://kevinmarquette.github.io/2016-10-21-powershell-installing-msi-files/
         Write-Host "Running MSI to install az"
         $azCliInstallLog = ([System.IO.Path]::GetTempPath() + ('az-cli-latest.log'))
@@ -674,6 +677,59 @@ function global:DeleteNetworkSecurityGroupRule($resourceGroup, $networkSecurityG
         Write-Host "Deleting $rulename rule"
         az network nsg rule delete -g $resourceGroup --nsg-name $networkSecurityGroup -n $rulename
     }    
+}
+
+function global:DownloadKubectl($localFolder) {
+    # download kubectl
+    $kubeCtlFile = "$localFolder\kubectl.exe"
+    $desiredKubeCtlVersion = "v1.9.3"
+    $downloadkubectl = "n"
+    if (!(Test-Path "$kubeCtlFile")) {
+        $downloadkubectl = "y"
+    }
+    else {
+        $kubectlversion = kubectl version --client=true --short=true
+        $kubectlversionMatches = $($kubectlversion -match "$desiredKubeCtlVersion")
+        if (!$kubectlversionMatches) {
+            $downloadkubectl = "y"
+        }
+    }
+    if ( $downloadkubectl -eq "y") {
+        $url = "https://storage.googleapis.com/kubernetes-release/release/${desiredKubeCtlVersion}/bin/windows/amd64/kubectl.exe"
+        Write-Output "Downloading kubectl.exe from url $url to $kubeCtlFile"
+        Remove-Item -Path "$kubeCtlFile"
+        DownloadFile -url $url -targetFile $kubeCtlFile
+    }
+    else {
+        Write-Output "kubectl already exists at $kubeCtlFile"    
+    }
+    
+}
+function global:DownloadFile($url, $targetFile)
+{
+    # from https://stackoverflow.com/questions/21422364/is-there-any-way-to-monitor-the-progress-of-a-download-using-a-webclient-object
+    $uri = New-Object "System.Uri" "$url"
+    $request = [System.Net.HttpWebRequest]::Create($uri)
+    $request.set_Timeout(15000) #15 second timeout
+    $response = $request.GetResponse()
+    $totalLength = [System.Math]::Floor($response.get_ContentLength() / 1024)
+    $responseStream = $response.GetResponseStream()
+    $targetStream = New-Object -TypeName System.IO.FileStream -ArgumentList $targetFile, Create
+    $buffer = new-object byte[] 10KB
+    $count = $responseStream.Read($buffer, 0, $buffer.length)
+    $downloadedBytes = $count
+    while ($count -gt 0) {
+        $targetStream.Write($buffer, 0, $count)
+        $count = $responseStream.Read($buffer, 0, $buffer.length)
+        $downloadedBytes = $downloadedBytes + $count
+        Write-Progress -activity "Downloading file '$($url.split('/') | Select-Object -Last 1)'" -status "Downloaded ($([System.Math]::Floor($downloadedBytes/1024))K of $($totalLength)K): " -PercentComplete ((([System.Math]::Floor($downloadedBytes / 1024)) / $totalLength) * 100)
+    }
+
+    Write-Progress -activity "Finished downloading file '$($url.split('/') | Select-Object -Last 1)'"
+    $targetStream.Flush()
+    $targetStream.Close()
+    $targetStream.Dispose()
+    $responseStream.Dispose()
 }
 #-------------------
 Write-Host "end common.ps1 version $versioncommon"

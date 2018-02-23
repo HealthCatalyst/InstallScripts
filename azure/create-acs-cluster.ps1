@@ -93,7 +93,9 @@ if ($downloadACSEngine -eq "y") {
     $url = "https://github.com/Azure/acs-engine/releases/download/${DESIRED_ACS_ENGINE_VERSION}/acs-engine-${DESIRED_ACS_ENGINE_VERSION}-windows-amd64.zip"
     Write-Output "Downloading acs-engine.exe from $url to $ACS_ENGINE_FILE"
     Remove-Item -Path "$ACS_ENGINE_FILE"
-    (New-Object System.Net.WebClient).DownloadFile($url, "$AKS_LOCAL_FOLDER\acs-engine.zip")
+
+    DownloadFile -url $url -targetFile "$AKS_LOCAL_FOLDER\acs-engine.zip"
+
     Expand-Archive -Path "$AKS_LOCAL_FOLDER\acs-engine.zip" -DestinationPath "$AKS_LOCAL_FOLDER" -Force
     Copy-Item -Path "$AKS_LOCAL_FOLDER\acs-engine-${DESIRED_ACS_ENGINE_VERSION}-windows-amd64\acs-engine.exe" -Destination $ACS_ENGINE_FILE
 }

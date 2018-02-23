@@ -1,5 +1,5 @@
 # this file contains common functions for kubernetes
-$versionkubecommon = "2018.02.22.01"
+$versionkubecommon = "2018.02.22.02"
 
 Write-Host "Including common-kube.ps1 version $versionkubecommon"
 function global:GetCommonKubeVersion() {
@@ -148,32 +148,6 @@ function global:Stop-ProcessByPort( [ValidateNotNullOrEmpty()] [int] $Port ) {
 }
 
 
-function global:DownloadKubectl($localFolder) {
-    # download kubectl
-    $kubeCtlFile = "$localFolder\kubectl.exe"
-    $desiredKubeCtlVersion = "v1.9.3"
-    $downloadkubectl = "n"
-    if (!(Test-Path "$kubeCtlFile")) {
-        $downloadkubectl = "y"
-    }
-    else {
-        $kubectlversion = kubectl version --client=true --short=true
-        $kubectlversionMatches = $($kubectlversion -match "$desiredKubeCtlVersion")
-        if (!$kubectlversionMatches) {
-            $downloadkubectl = "y"
-        }
-    }
-    if ( $downloadkubectl -eq "y") {
-        $url = "https://storage.googleapis.com/kubernetes-release/release/${desiredKubeCtlVersion}/bin/windows/amd64/kubectl.exe"
-        Write-Output "Downloading kubectl.exe from url $url to $kubeCtlFile"
-        Remove-Item -Path "$kubeCtlFile"
-        (New-Object System.Net.WebClient).DownloadFile($url, $kubeCtlFile)
-    }
-    else {
-        Write-Output "kubectl already exists at $kubeCtlFile"    
-    }
-    
-}
 
 function global:CleanOutNamespace($namespace){
 

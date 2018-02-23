@@ -1,5 +1,5 @@
 # this file contains common functions for kubernetes
-$versionkubecommon = "2018.02.20.03"
+$versionkubecommon = "2018.02.22.01"
 
 Write-Host "Including common-kube.ps1 version $versionkubecommon"
 function global:GetCommonKubeVersion() {
@@ -9,7 +9,7 @@ function global:GetCommonKubeVersion() {
 function global:ReadSecretValue($secretname, $valueName, $namespace) {
     if ([string]::IsNullOrWhiteSpace($namespace)) { $namespace = "default"}
 
-    $secretbase64 = kubectl get secret $secretname -o jsonpath="{.data.${valueName}}" -n $namespace --ignore-not-found=true
+    $secretbase64 = kubectl get secret $secretname -o jsonpath="{.data.${valueName}}" -n $namespace --ignore-not-found=true 2> $null
 
     if (![string]::IsNullOrWhiteSpace($secretbase64)) {
         $secretvalue = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($secretbase64))

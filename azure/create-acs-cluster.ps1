@@ -1,4 +1,4 @@
-Write-output "--- create-acs-cluster Version 2018.02.22.03 ----"
+Write-output "--- create-acs-cluster Version 2018.02.22.04 ----"
 
 #
 # This script is meant for quick & easy install via:
@@ -227,7 +227,7 @@ else {
 
 # subnet CIDR to mask
 # https://doc.m0n0.ch/quickstartpc/intro-CIDR.html
-$WINDOWS_PASSWORD = GeneratePassword
+$WINDOWS_PASSWORD = "replacepassword1234$"
 Write-Output "replacing values in the acs.json file"
 Write-Output "AKS_SSH_KEY: $AKS_SSH_KEY"
 Write-Output "AKS_SERVICE_PRINCIPAL_CLIENTID: $AKS_SERVICE_PRINCIPAL_CLIENTID"

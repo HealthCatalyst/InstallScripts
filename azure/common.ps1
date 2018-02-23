@@ -1,6 +1,6 @@
 # This file contains common functions for Azure
 # 
-$versioncommon = "2018.02.21.04"
+$versioncommon = "2018.02.22.01"
 
 Write-Host "---- Including common.ps1 version $versioncommon -----"
 function global:GetCommonVersion() {
@@ -362,46 +362,53 @@ function global:GetVnet($subscriptionId) {
     while ([string]::IsNullOrWhiteSpace($confirmation))
     
     if ($confirmation -eq 'y') {
-        Write-Host "Finding existing vnets..."
-        # az network vnet list --query "[].[name,resourceGroup ]" -o tsv    
+        # see if we had previously connected to a vnet
+        $vnetName = ReadSecretValue -secretname azure-vnet -valueName vnet
+        $subnetName = ReadSecretValue -secretname azure-vnet -valueName subnet
+        $subnetResourceGroup = ReadSecretValue -secretname azure-vnet -valueName subnetResourceGroup
+
+        if ([string]::IsNullOrEmpty($vnetName)) {
+            Write-Host "Finding existing vnets..."
+            # az network vnet list --query "[].[name,resourceGroup ]" -o tsv    
     
-        $vnets = az network vnet list --query "[].[name]" -o tsv
+            $vnets = az network vnet list --query "[].[name]" -o tsv
     
-        Do { 
-            Write-Host "------  Existing vnets -------"
-            for ($i = 1; $i -le $vnets.count; $i++) {
-                Write-Host "$i. $($vnets[$i-1])"
-            }    
-            Write-Host "------  End vnets -------"
-    
-            $index = Read-Host "Enter number of vnet to use (1 - $($vnets.count))"
-            $vnetName = $($vnets[$index - 1])
-        }
-        while ([string]::IsNullOrWhiteSpace($vnetName))    
-    
-        $subnetResourceGroup = az network vnet list --query "[?name == '$vnetName'].resourceGroup" -o tsv
-        Write-Host "Using subnet resource group: [$subnetResourceGroup]"
-    
-        Write-Host "Finding existing subnets in $vnetName ..."
-        $subnets = az network vnet subnet list --resource-group $subnetResourceGroup --vnet-name $vnetName --query "[].name" -o tsv
-            
-        if ($subnets.count -eq 1) {
-            Write-Host "There is only one subnet called $subnets so choosing that"
-            $subnetName = $subnets
-        }
-        else {
             Do { 
-                Write-Host "------  Subnets in $vnetName -------"
-                for ($i = 1; $i -le $subnets.count; $i++) {
-                    Write-Host "$i. $($subnets[$i-1])"
+                Write-Host "------  Existing vnets -------"
+                for ($i = 1; $i -le $vnets.count; $i++) {
+                    Write-Host "$i. $($vnets[$i-1])"
                 }    
-                Write-Host "------  End Subnets -------"
-        
-                Write-Host "NOTE: Each customer should have their own subnet.  Do not put multiple customers in the same subnet"
-                $index = Read-Host "Enter number of subnet to use (1 - $($subnets.count))"
-                $subnetName = $($subnets[$index - 1])
+                Write-Host "------  End vnets -------"
+    
+                $index = Read-Host "Enter number of vnet to use (1 - $($vnets.count))"
+                $vnetName = $($vnets[$index - 1])
             }
-            while ([string]::IsNullOrWhiteSpace($subnetName)) 
+            while ([string]::IsNullOrWhiteSpace($vnetName))    
+    
+            $subnetResourceGroup = az network vnet list --query "[?name == '$vnetName'].resourceGroup" -o tsv
+            Write-Host "Using subnet resource group: [$subnetResourceGroup]"
+    
+            Write-Host "Finding existing subnets in $vnetName ..."
+            $subnets = az network vnet subnet list --resource-group $subnetResourceGroup --vnet-name $vnetName --query "[].name" -o tsv
+            
+            if ($subnets.count -eq 1) {
+                Write-Host "There is only one subnet called $subnets so choosing that"
+                $subnetName = $subnets
+            }
+            else {
+                Do { 
+                    Write-Host "------  Subnets in $vnetName -------"
+                    for ($i = 1; $i -le $subnets.count; $i++) {
+                        Write-Host "$i. $($subnets[$i-1])"
+                    }    
+                    Write-Host "------  End Subnets -------"
+        
+                    Write-Host "NOTE: Each customer should have their own subnet.  Do not put multiple customers in the same subnet"
+                    $index = Read-Host "Enter number of subnet to use (1 - $($subnets.count))"
+                    $subnetName = $($subnets[$index - 1])
+                }
+                while ([string]::IsNullOrWhiteSpace($subnetName)) 
+            }        
         }
     
         # verify the subnet exists
@@ -425,7 +432,7 @@ function global:GetVnet($subscriptionId) {
         $firstStaticIP = ""
         $suggestedFirstStaticIP = Get-FirstIP -ip ${subnetCidr}
     
-        $firstStaticIP = Read-Host "First static IP: (default: $suggestedFirstStaticIP )"
+        # $firstStaticIP = Read-Host "First static IP: (default: $suggestedFirstStaticIP )"
         
         if ([string]::IsNullOrWhiteSpace($firstStaticIP)) {
             $firstStaticIP = "$suggestedFirstStaticIP"

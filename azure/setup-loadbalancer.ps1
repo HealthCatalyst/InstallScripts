@@ -1,4 +1,4 @@
-Write-output "Version 2018.02.22.03"
+Write-output "Version 2018.02.22.04"
 
 #
 # This script is meant for quick & easy install via:
@@ -69,7 +69,7 @@ Do {
     Write-Host "How do you want to control access to this cluster:"
     Write-Host "1: Allow anyone to access it"
     Write-Host "2: Only allow certain IP ranges to access it"
-    Write-Host "3: Only allow computers inside the subnet to access it"
+    Write-Host "3: Only allow computers inside the vnet to access it"
     Write-Host "-------------"
 
     $AKS_CLUSTER_ACCESS_TYPE = Read-Host "Enter number of option to use (1 - 3)"
@@ -151,6 +151,12 @@ if ($SETUP_DNS -eq "y") {
     }
 }
 
+if (($AKS_CLUSTER_ACCESS_TYPE -eq "1" ) -or ($AKS_CLUSTER_ACCESS_TYPE -eq "2")) {
+    $AKS_OPEN_TO_PUBLIC = "y"
+}
+else {
+    $AKS_OPEN_TO_PUBLIC = "n"
+}
 
 Write-Output "Setting up Network Security Group for the subnet"
 
@@ -207,16 +213,17 @@ if ($SetupNSG) {
         Write-Output "Since we already have rules open port 80 and 443 to the Internet, we do not need to create separate ones for the Internet"
     }
     else {
-
-        SetNetworkSecurityGroupRule -resourceGroup $AKS_PERS_RESOURCE_GROUP -networkSecurityGroup $AKS_PERS_NETWORK_SECURITY_GROUP `
-            -rulename "HttpPort" `
-            -ruledescription "allow HTTP access from ${sourceTagForHttpAccess}." `
-            -sourceTag "${sourceTagForHttpAccess}" -port 80 -priority 500
+        if ($AKS_OPEN_TO_PUBLIC -eq "y") {
+            SetNetworkSecurityGroupRule -resourceGroup $AKS_PERS_RESOURCE_GROUP -networkSecurityGroup $AKS_PERS_NETWORK_SECURITY_GROUP `
+                -rulename "HttpPort" `
+                -ruledescription "allow HTTP access from ${sourceTagForHttpAccess}." `
+                -sourceTag "${sourceTagForHttpAccess}" -port 80 -priority 500
     
-        SetNetworkSecurityGroupRule -resourceGroup $AKS_PERS_RESOURCE_GROUP -networkSecurityGroup $AKS_PERS_NETWORK_SECURITY_GROUP `
-            -rulename "HttpsPort" `
-            -ruledescription "allow HTTPS access from ${sourceTagForHttpAccess}." `
-            -sourceTag "${sourceTagForHttpAccess}" -port 443 -priority 501
+            SetNetworkSecurityGroupRule -resourceGroup $AKS_PERS_RESOURCE_GROUP -networkSecurityGroup $AKS_PERS_NETWORK_SECURITY_GROUP `
+                -rulename "HttpsPort" `
+                -ruledescription "allow HTTPS access from ${sourceTagForHttpAccess}." `
+                -sourceTag "${sourceTagForHttpAccess}" -port 443 -priority 501
+        }
     }
 
     $nsgid = az network nsg list --resource-group ${AKS_PERS_RESOURCE_GROUP} --query "[?name == '${AKS_PERS_NETWORK_SECURITY_GROUP}'].id" -o tsv
@@ -227,13 +234,7 @@ if ($SetupNSG) {
 }
 
 # set up WAF if requested
-if ($AKS_USE_WAF -eq "n") {
-    if (($AKS_CLUSTER_ACCESS_TYPE -eq "1" ) -or ($AKS_CLUSTER_ACCESS_TYPE -eq "2")) {
-        $AKS_OPEN_TO_PUBLIC = "y"
-    }
-}
-else {
-    $AKS_OPEN_TO_PUBLIC = "n"
+if ($AKS_USE_WAF -eq "y") {
     $publicip = az network public-ip show -g $AKS_PERS_RESOURCE_GROUP -n IngressPublicIP --query "ipAddress" -o tsv;
     if ([string]::IsNullOrWhiteSpace($publicip)) {
         az network public-ip create -g $AKS_PERS_RESOURCE_GROUP -n IngressPublicIP --location $AKS_PERS_LOCATION --allocation-method Static

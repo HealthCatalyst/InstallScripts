@@ -1,4 +1,4 @@
-$version = "2018.02.22.01"
+$version = "2018.02.22.02"
 
 # This script is meant for quick & easy install via:
 #   curl -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/azure/main.ps1 | iex;
@@ -25,15 +25,16 @@ while ($userinput -ne "q") {
     Write-Host "2: Setup Load Balancer"
     Write-Host "3: Start VMs in Resource Group"
     Write-Host "4: Stop VMs in Resource Group"
+    Write-Host "5: Renew Azure token"
     Write-Host "------ Install -------"
     Write-Host "11: Install NLP"
     Write-Host "12: Install Realtime"
     Write-Host "----- Troubleshooting ----"
-    Write-Host "21: Show status of cluster"
-    Write-Host "22: Launch Kubernetes Admin Dashboard"
-    Write-Host "23: Show SSH commands to VMs"
-    Write-Host "24: View status of DNS pods"
-    Write-Host "25: Restart all VMs"
+    Write-Host "20: Show status of cluster"
+    Write-Host "21: Launch Kubernetes Admin Dashboard"
+    Write-Host "22: Show SSH commands to VMs"
+    Write-Host "23: View status of DNS pods"
+    Write-Host "24: Restart all VMs"
     Write-Host "------ NLP -----"
     Write-Host "30: Show status of NLP"
     Write-Host "31: Test web sites"
@@ -88,18 +89,28 @@ while ($userinput -ne "q") {
             while ([string]::IsNullOrWhiteSpace($AKS_PERS_RESOURCE_GROUP))
             az vm stop --ids $(az vm list -g $AKS_PERS_RESOURCE_GROUP --query "[].id" -o tsv) 
         } 
+        '5' {
+            $expiresOn = $(az account get-access-token --query "expiresOn" -o tsv)
+            Do { $confirmation = Read-Host "Your current access token expires on $expiresOn. Do you want to login again to get a new access token? (y/n)"}
+            while ([string]::IsNullOrWhiteSpace($confirmation))
+        
+            if ($confirmation -eq "y") {
+                az account clear
+                az login
+            }
+        }         
         '11' {
             Invoke-WebRequest -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/nlp/installnlpkubernetes.ps1 | Invoke-Expression;
         } 
         '12' {
             Invoke-WebRequest -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/realtime/installrealtimekubernetes.ps1 | Invoke-Expression;
         } 
-        '21' {
+        '20' {
             Write-Host "Current cluster: $(kubectl config current-context)"
             kubectl version --short
-            kubectl get "deployments,pods,services,ingress,secrets" --namespace=kube-system -o wide
+            kubectl get "deployments,pods,services,ingress,secrets,nodes" --namespace=kube-system -o wide
         } 
-        '22' {
+        '21' {
             # launch Kubernetes dashboard
             $launchJob = $true
             $existingProcess = Get-ProcessByPort 8001
@@ -137,7 +148,7 @@ while ($userinput -ne "q") {
                 Start-Process -FilePath "http://localhost:8001/api/v1/namespaces/kube-system/services/https:kubernetes-dashboard:/proxy/";
             }            
         } 
-        '23' {        
+        '22' {        
             # $AKS_PERS_RESOURCE_GROUP = ReadSecretValue -secretname azure-secret -valueName resourcegroup
             
             if ([string]::IsNullOrWhiteSpace($AKS_PERS_RESOURCE_GROUP)) {
@@ -188,7 +199,7 @@ while ($userinput -ne "q") {
             # list vm sizes available: az vm list-sizes --location "eastus" --query "[].name"
 
         } 
-        '24' {
+        '23' {
             kubectl get pods -l k8s-app=kube-dns -n kube-system -o wide
             Do { $confirmation = Read-Host "Do you want to restart DNS pods? (y/n)"}
             while ([string]::IsNullOrWhiteSpace($confirmation))
@@ -201,7 +212,7 @@ while ($userinput -ne "q") {
                 } 
             }             
         } 
-        '25' {
+        '24' {
             # restart VMs
             $AKS_PERS_RESOURCE_GROUP = ReadSecretValue -secretname azure-secret -valueName resourcegroup
             # UpdateOSInVMs -resourceGroup $AKS_PERS_RESOURCE_GROUP

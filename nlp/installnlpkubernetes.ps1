@@ -1,4 +1,4 @@
-Write-Output "--- installnlpkubernetes.ps1 Version 2018.02.21.04 ---"
+Write-Output "--- installnlpkubernetes.ps1 Version 2018.02.22.01 ---"
 
 # curl -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/nlp/installnlpkubernetes.ps1 | iex;
 
@@ -50,6 +50,7 @@ if ([string]::IsNullOrWhiteSpace($(kubectl get secret traefik-cert-ahmn -o jsonp
 }
 else {
     $AKS_USE_SSL = "y"
+    Write-Host "Using SSL since the secret is set"
 }
 
 # https://kubernetes.io/docs/reference/kubectl/jsonpath/

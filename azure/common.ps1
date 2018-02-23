@@ -1,6 +1,6 @@
 # This file contains common functions for Azure
 # 
-$versioncommon = "2018.02.22.04"
+$versioncommon = "2018.02.22.05"
 
 Write-Host "---- Including common.ps1 version $versioncommon -----"
 function global:GetCommonVersion() {
@@ -10,6 +10,8 @@ function global:GetCommonVersion() {
 function global:CreateShareInStorageAccount($storageAccountName, $resourceGroup, $sharename, $deleteExisting) { 
     $AZURE_STORAGE_CONNECTION_STRING = az storage account show-connection-string -n $storageAccountName -g $resourceGroup -o tsv
     
+    Write-Host "Storage connection string: $AZURE_STORAGE_CONNECTION_STRING"
+
     if ($deleteExisting) {
         if ($(az storage share exists -n $sharename --connection-string $AZURE_STORAGE_CONNECTION_STRING --query "exists" -o tsv)) {
             Write-Host "Deleting the file share: $sharename"

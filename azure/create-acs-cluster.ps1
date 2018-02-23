@@ -1,4 +1,4 @@
-Write-output "--- create-acs-cluster Version 2018.02.15.01 ----"
+Write-output "--- create-acs-cluster Version 2018.02.22.01 ----"
 
 #
 # This script is meant for quick & easy install via:
@@ -33,8 +33,8 @@ Write-Output "Customer ID: $customerid"
 $DEFAULT_RESOURCE_GROUP = "Prod-Kub-$($customerid.ToUpper())-RG"
 
 $ResourceGroupInfo = GetResourceGroupAndLocation -defaultResourceGroup $DEFAULT_RESOURCE_GROUP
-$AKS_PERS_RESOURCE_GROUP=$ResourceGroupInfo.AKS_PERS_RESOURCE_GROUP
-$AKS_PERS_LOCATION=$ResourceGroupInfo.AKS_PERS_LOCATION
+$AKS_PERS_RESOURCE_GROUP = $ResourceGroupInfo.AKS_PERS_RESOURCE_GROUP
+$AKS_PERS_LOCATION = $ResourceGroupInfo.AKS_PERS_LOCATION
 
 
 $AKS_SUPPORT_WINDOWS_CONTAINERS = Read-Host "Support Windows containers (y/n) (default: n)"
@@ -112,10 +112,10 @@ $AKS_PERS_STORAGE_ACCOUNT_NAME = $(CreateStorageIfNotExists -resourceGroup $AKS_
 # see if the user wants to use a specific virtual network
 $VnetInfo = GetVnet -subscriptionId $AKS_SUBSCRIPTION_ID
 $AKS_VNET_NAME = $VnetInfo.AKS_VNET_NAME
-$AKS_SUBNET_NAME=$VnetInfo.AKS_SUBNET_NAME
-$AKS_SUBNET_RESOURCE_GROUP=$VnetInfo.AKS_SUBNET_RESOURCE_GROUP
-$AKS_FIRST_STATIC_IP=$VnetInfo.AKS_FIRST_STATIC_IP
-$AKS_SUBNET_CIDR=$VnetInfo.AKS_SUBNET_CIDR
+$AKS_SUBNET_NAME = $VnetInfo.AKS_SUBNET_NAME
+$AKS_SUBNET_RESOURCE_GROUP = $VnetInfo.AKS_SUBNET_RESOURCE_GROUP
+$AKS_FIRST_STATIC_IP = $VnetInfo.AKS_FIRST_STATIC_IP
+$AKS_SUBNET_CIDR = $VnetInfo.AKS_SUBNET_CIDR
 
 CleanResourceGroup -resourceGroup ${AKS_PERS_RESOURCE_GROUP} -location $AKS_PERS_LOCATION -vnet $AKS_VNET_NAME `
     -subnet $AKS_SUBNET_NAME -subnetResourceGroup $AKS_SUBNET_RESOURCE_GROUP `
@@ -128,28 +128,44 @@ $AKS_SERVICE_PRINCIPAL_CLIENTID = az ad sp list --display-name ${AKS_SERVICE_PRI
 
 $myscope = "/subscriptions/${AKS_SUBSCRIPTION_ID}/resourceGroups/${AKS_PERS_RESOURCE_GROUP}"
 
+# https://docs.microsoft.com/en-us/azure/active-directory/active-directory-passwords-policy
 if ("$AKS_SERVICE_PRINCIPAL_CLIENTID") {
     Write-Host "Service Principal already exists with name: [$AKS_SERVICE_PRINCIPAL_NAME]"
-    Write-Output "Deleting..."
-    az ad sp delete --id "$AKS_SERVICE_PRINCIPAL_CLIENTID" --verbose
-    # https://github.com/Azure/azure-cli/issues/1332
-    Write-Output "Sleeping to wait for Service Principal to propagate"
-    Start-Sleep -Seconds 30;
+    $servicePrincipalPassword = ReadSecretPassword -secretname "serviceprincipal"
+    if ([string]::IsNullOrWhiteSpace($servicePrincipalPassword)) {
+        $servicePrincipalPassword = Read-Host "Service account password to use (leave empty to recreate service account))"
+        if ([string]::IsNullOrWhiteSpace($servicePrincipalPassword)) {
+            $servicePrincipalPassword = GeneratePassword
+            Write-Output "Deleting service principal:$AKS_SERVICE_PRINCIPAL_CLIENTID ..."
+            az ad sp delete --id "$AKS_SERVICE_PRINCIPAL_CLIENTID" --verbose
+            # https://github.com/Azure/azure-cli/issues/1332
+            Write-Output "Sleeping to wait for Service Principal to propagate"
+            Start-Sleep -Seconds 30;
+    
+            Write-Output "Creating Service Principal: [$AKS_SERVICE_PRINCIPAL_NAME]"
+            $AKS_SERVICE_PRINCIPAL_CLIENTSECRET = az ad sp create-for-rbac --role="Owner" --scopes="$myscope" --name ${AKS_SERVICE_PRINCIPAL_NAME} --password $servicePrincipalPassword --query "password" --output tsv
+            # the above command changes the color because it retries role assignment creation
+            [Console]::ResetColor()
+        }
+        else {
+            $AKS_SERVICE_PRINCIPAL_CLIENTSECRET = $servicePrincipalPassword
+        }
+    }
+    else {
+        Write-Host "Found past servicePrincipalPassword: $servicePrincipalPassword"
+        $AKS_SERVICE_PRINCIPAL_CLIENTSECRET = $servicePrincipalPassword
+    }
 
-    Write-Output "Creating Service Principal: [$AKS_SERVICE_PRINCIPAL_NAME]"
-    $AKS_SERVICE_PRINCIPAL_CLIENTSECRET = az ad sp create-for-rbac --role="Owner" --scopes="$myscope" --name ${AKS_SERVICE_PRINCIPAL_NAME} --query "password" --output tsv
-    # the above command changes the color because it retries role assignment creation
-    [Console]::ResetColor()
     # https://github.com/Azure/azure-cli/issues/1332
     Write-Output "Sleeping to wait for Service Principal to propagate"
     Start-Sleep -Seconds 30;
     $AKS_SERVICE_PRINCIPAL_CLIENTID = az ad sp list --display-name ${AKS_SERVICE_PRINCIPAL_NAME} --query "[].appId" --output tsv
     Write-Output "created $AKS_SERVICE_PRINCIPAL_NAME clientId=$AKS_SERVICE_PRINCIPAL_CLIENTID clientsecret=$AKS_SERVICE_PRINCIPAL_CLIENTSECRET"
-    
 }
 else {
+    $servicePrincipalPassword = GeneratePassword
     Write-Output "Creating Service Principal: [$AKS_SERVICE_PRINCIPAL_NAME]"
-    $AKS_SERVICE_PRINCIPAL_CLIENTSECRET = az ad sp create-for-rbac --role="Contributor" --scopes="$myscope" --name ${AKS_SERVICE_PRINCIPAL_NAME} --query "password" --output tsv
+    $AKS_SERVICE_PRINCIPAL_CLIENTSECRET = az ad sp create-for-rbac --role="Contributor" --scopes="$myscope" --name ${AKS_SERVICE_PRINCIPAL_NAME} --password $servicePrincipalPassword --query "password" --output tsv
     # https://github.com/Azure/azure-cli/issues/1332
     Write-Output "Sleeping to wait for Service Principal to propagate"
     Start-Sleep -Seconds 30;
@@ -214,7 +230,7 @@ else {
 
 # subnet CIDR to mask
 # https://doc.m0n0.ch/quickstartpc/intro-CIDR.html
-$WINDOWS_PASSWORD = "replacepassword1234$"
+$WINDOWS_PASSWORD = GeneratePassword
 Write-Output "replacing values in the acs.json file"
 Write-Output "AKS_SSH_KEY: $AKS_SSH_KEY"
 Write-Output "AKS_SERVICE_PRINCIPAL_CLIENTID: $AKS_SERVICE_PRINCIPAL_CLIENTID"
@@ -390,6 +406,12 @@ Write-Output "Creating kubernetes secret for customerid: customerid"
 kubectl create secret generic customerid --from-literal=value=$customerid
 Write-Output "Creating kubernetes secret for vnet: azure-vnet"
 kubectl create secret generic azure-vnet --from-literal=vnet="${AKS_VNET_NAME}" --from-literal=subnet="${AKS_SUBNET_NAME}" --from-literal=subnetResourceGroup="${AKS_SUBNET_RESOURCE_GROUP}"
+Write-Output "Creating kubernetes secret for service principal"
+kubectl create secret generic serviceprincipal --from-literal=password="$servicePrincipalPassword"
+if (![string]::IsNullOrEmpty($WINDOWS_PASSWORD)) {
+    Write-Output "Creating kubernetes secret for windows VM"
+    kubectl create secret generic windowspassword --from-literal=password="$WINDOWS_PASSWORD"
+}
 
 kubectl get "deployments,pods,services,ingress,secrets" --namespace=kube-system -o wide
 

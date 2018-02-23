@@ -1,4 +1,4 @@
-$version = "2018.02.21.04"
+$version = "2018.02.22.01"
 
 # This script is meant for quick & easy install via:
 #   curl -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/azure/main.ps1 | iex;
@@ -20,25 +20,26 @@ while ($userinput -ne "q") {
     Write-Host "================ Health Catalyst version $version, common functions $(GetCommonVersion) ================"
     Write-Host "----- Choose Cluster -----"
     Write-Host "0: Change kube to point to another cluster"
-    Write-Host "------ Install -------"
+    Write-Host "------ Infrastructure -------"
     Write-Host "1: Create a new Azure Container Service"
     Write-Host "2: Setup Load Balancer"
-    Write-Host "3: Install NLP"
-    Write-Host "4: Install Realtime"
+    Write-Host "------ Install -------"
+    Write-Host "11: Install NLP"
+    Write-Host "12: Install Realtime"
     Write-Host "----- Troubleshooting ----"
-    Write-Host "5: Show status of cluster"
-    Write-Host "6: Launch Kubernetes Admin Dashboard"
-    Write-Host "7: Show SSH commands to VMs"
-    Write-Host "8: View status of DNS pods"
-    Write-Host "9: Restart all VMs"
+    Write-Host "21: Show status of cluster"
+    Write-Host "22: Launch Kubernetes Admin Dashboard"
+    Write-Host "23: Show SSH commands to VMs"
+    Write-Host "24: View status of DNS pods"
+    Write-Host "25: Restart all VMs"
     Write-Host "------ NLP -----"
-    Write-Host "10: Show status of NLP"
-    Write-Host "11: Test web sites"
-    Write-Host "12: Show passwords"
-    Write-Host "13: Show NLP logs"
-    Write-Host "14: Restart NLP"
+    Write-Host "30: Show status of NLP"
+    Write-Host "31: Test web sites"
+    Write-Host "32: Show passwords"
+    Write-Host "33: Show NLP logs"
+    Write-Host "34: Restart NLP"
     Write-Host "------ Realtime -----"
-    Write-Host "15: Show status of realtime"
+    Write-Host "41: Show status of realtime"
     Write-Host "-----------"
     Write-Host "q: Quit"
     $userinput = Read-Host "Please make a selection"
@@ -71,18 +72,18 @@ while ($userinput -ne "q") {
         '2' {
             Invoke-WebRequest -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/azure/setup-loadbalancer.ps1 | Invoke-Expression;
         } 
-        '3' {
+        '11' {
             Invoke-WebRequest -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/nlp/installnlpkubernetes.ps1 | Invoke-Expression;
         } 
-        '4' {
+        '12' {
             Invoke-WebRequest -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/realtime/installrealtimekubernetes.ps1 | Invoke-Expression;
         } 
-        '5' {
+        '21' {
             Write-Host "Current cluster: $(kubectl config current-context)"
             kubectl version --short
             kubectl get "deployments,pods,services,ingress,secrets" --namespace=kube-system -o wide
         } 
-        '6' {
+        '22' {
             # launch Kubernetes dashboard
             $launchJob = $true
             $existingProcess = Get-ProcessByPort 8001
@@ -120,7 +121,7 @@ while ($userinput -ne "q") {
                 Start-Process -FilePath "http://localhost:8001/api/v1/namespaces/kube-system/services/https:kubernetes-dashboard:/proxy/";
             }            
         } 
-        '7' {        
+        '23' {        
             # $AKS_PERS_RESOURCE_GROUP = ReadSecretValue -secretname azure-secret -valueName resourcegroup
             
             if ([string]::IsNullOrWhiteSpace($AKS_PERS_RESOURCE_GROUP)) {
@@ -171,7 +172,7 @@ while ($userinput -ne "q") {
             # list vm sizes available: az vm list-sizes --location "eastus" --query "[].name"
 
         } 
-        '8' {
+        '24' {
             kubectl get pods -l k8s-app=kube-dns -n kube-system -o wide
             Do { $confirmation = Read-Host "Do you want to restart DNS pods? (y/n)"}
             while ([string]::IsNullOrWhiteSpace($confirmation))
@@ -184,7 +185,7 @@ while ($userinput -ne "q") {
                 } 
             }             
         } 
-        '9' {
+        '25' {
             # restart VMs
             $AKS_PERS_RESOURCE_GROUP = ReadSecretValue -secretname azure-secret -valueName resourcegroup
             # UpdateOSInVMs -resourceGroup $AKS_PERS_RESOURCE_GROUP
@@ -192,10 +193,10 @@ while ($userinput -ne "q") {
             SetHostFileInVms -resourceGroup $AKS_PERS_RESOURCE_GROUP
             SetupCronTab -resourceGroup $AKS_PERS_RESOURCE_GROUP          
         } 
-        '10' {
+        '30' {
             kubectl get 'deployments,pods,services,ingress,secrets,persistentvolumeclaims,persistentvolumes,nodes' --namespace=fabricnlp -o wide
         } 
-        '11' {
+        '31' {
            
             $loadBalancerIP = kubectl get svc traefik-ingress-service-public -n kube-system -o jsonpath='{.status.loadBalancer.ingress[].ip}' --ignore-not-found=true
             if ([string]::IsNullOrWhiteSpace($loadBalancerIP)) {
@@ -217,22 +218,22 @@ while ($userinput -ne "q") {
             Write-Output "$loadBalancerIP nlpjobs.$customerid.healthcatalyst.net"            
 
         } 
-        '12' {
+        '32' {
             Write-Host "MySql root password: $(ReadSecretPassword -secretname mysqlrootpassword -namespace fabricnlp)"
             Write-Host "MySql NLP_APP_USER password: $(ReadSecretPassword -secretname mysqlpassword -namespace fabricnlp)"
             Write-Host "SendGrid SMTP Relay key: $(ReadSecretPassword -secretname smtprelaypassword -namespace fabricnlp)"
         } 
-        '13' {
+        '33' {
             $pods = $(kubectl get pods -n fabricnlp -o jsonpath='{.items[*].metadata.name}')
             foreach ($pod in $pods.Split(" ")) {
                 Write-Output "=============== Pod: $pod ================="
                 kubectl logs --tail=20 $pod -n fabricnlp
             }
         } 
-        '14' {
+        '34' {
             kubectl delete --all 'pods' --namespace=fabricnlp --ignore-not-found=true                        
         } 
-        '15' {
+        '41' {
             kubectl get 'deployments,pods,services,ingress,secrets,persistentvolumeclaims,persistentvolumes,nodes' --namespace=fabricrealtime -o wide
         } 
         'q' {

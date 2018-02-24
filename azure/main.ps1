@@ -1,4 +1,4 @@
-$version = "2018.02.22.02"
+$version = "2018.02.23.01"
 
 # This script is meant for quick & easy install via:
 #   curl -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/azure/main.ps1 | iex;
@@ -18,6 +18,8 @@ Invoke-WebRequest -useb $GITHUB_URL/azure/common.ps1 | Invoke-Expression;
 $userinput = ""
 while ($userinput -ne "q") {
     Write-Host "================ Health Catalyst version $version, common functions $(GetCommonVersion) ================"
+    Write-Host "=  Current cluster: $(kubectl config current-context 2> $null)  ="
+    Write-Host "===================================================="
     Write-Host "----- Choose Cluster -----"
     Write-Host "0: Change kube to point to another cluster"
     Write-Host "------ Infrastructure -------"
@@ -35,6 +37,7 @@ while ($userinput -ne "q") {
     Write-Host "22: Show SSH commands to VMs"
     Write-Host "23: View status of DNS pods"
     Write-Host "24: Restart all VMs"
+    Write-Host "25: Fix load balancers"
     Write-Host "------ NLP -----"
     Write-Host "30: Show status of NLP"
     Write-Host "31: Test web sites"
@@ -149,11 +152,11 @@ while ($userinput -ne "q") {
             }            
         } 
         '22' {        
-            # $AKS_PERS_RESOURCE_GROUP = ReadSecretValue -secretname azure-secret -valueName resourcegroup
+            $DEFAULT_RESOURCE_GROUP = ReadSecretValue -secretname azure-secret -valueName resourcegroup
             
             if ([string]::IsNullOrWhiteSpace($AKS_PERS_RESOURCE_GROUP)) {
                 Do { 
-                    $AKS_PERS_RESOURCE_GROUP = Read-Host "Resource Group"
+                    $AKS_PERS_RESOURCE_GROUP = Read-Host "Resource Group: (default: $DEFAULT_RESOURCE_GROUP)"
                     if ([string]::IsNullOrWhiteSpace($AKS_PERS_RESOURCE_GROUP)) {
                         $AKS_PERS_RESOURCE_GROUP = $DEFAULT_RESOURCE_GROUP
                     }
@@ -219,6 +222,20 @@ while ($userinput -ne "q") {
             RestartVMsInResourceGroup -resourceGroup $AKS_PERS_RESOURCE_GROUP
             SetHostFileInVms -resourceGroup $AKS_PERS_RESOURCE_GROUP
             SetupCronTab -resourceGroup $AKS_PERS_RESOURCE_GROUP          
+        } 
+        '25' {
+            $DEFAULT_RESOURCE_GROUP = ReadSecretValue -secretname azure-secret -valueName resourcegroup
+            
+            if ([string]::IsNullOrWhiteSpace($AKS_PERS_RESOURCE_GROUP)) {
+                Do { 
+                    $AKS_PERS_RESOURCE_GROUP = Read-Host "Resource Group: (default: $DEFAULT_RESOURCE_GROUP)"
+                    if ([string]::IsNullOrWhiteSpace($AKS_PERS_RESOURCE_GROUP)) {
+                        $AKS_PERS_RESOURCE_GROUP = $DEFAULT_RESOURCE_GROUP
+                    }
+                }
+                while ([string]::IsNullOrWhiteSpace($AKS_PERS_RESOURCE_GROUP))
+            }
+            FixLoadBalancers -resourceGroup $AKS_PERS_RESOURCE_GROUP
         } 
         '30' {
             kubectl get 'deployments,pods,services,ingress,secrets,persistentvolumeclaims,persistentvolumes,nodes' --namespace=fabricnlp -o wide

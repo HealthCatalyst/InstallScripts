@@ -1,6 +1,6 @@
 # This file contains common functions for Azure
 # 
-$versioncommon = "2018.02.23.01"
+$versioncommon = "2018.02.23.02"
 
 Write-Host "---- Including common.ps1 version $versioncommon -----"
 function global:GetCommonVersion() {
@@ -735,10 +735,9 @@ function global:DownloadFile($url, $targetFile) {
 
 function global:FixLoadBalancers($resourceGroup) {
     # hacks here to get around bugs in the acs-engine loadbalancer code
-    Write-Host "Checking if load balancers are setup correctly"
+    Write-Host "Checking if load balancers are setup correctly for resourceGroup: $resourceGroup"
     # 1. assign the nics to the loadbalancer
 
-    Wr
     # find loadbalancer with name 
     $loadbalancer = "${resourceGroup}-internal"
     $loadbalancerBackendPoolName = $resourceGroup # the name may change in the future so we should look it up
@@ -760,10 +759,10 @@ function global:FixLoadBalancers($resourceGroup) {
             $loadbalancerForNic = $(az network nic ip-config show --resource-group $resourceGroup --nic-name $nic --name $ipconfig --query "loadBalancerBackendAddressPools[].id" -o tsv)
             # if loadBalancerBackendAddressPools is missing then
             if ([string]::IsNullOrEmpty($loadbalancerForNic)) {
-                Write-Host "Fixing load balancer for vm: $vm by adding nic $nic to backend pool $loadbalancerBackendPoolName in load balancer $loadbalancer "
+                Write-Warning "Fixing load balancer for vm: $vm by adding nic $nic to backend pool $loadbalancerBackendPoolName in load balancer $loadbalancer "
                 # --lb-address-pools: Space-separated list of names or IDs of load balancer address pools to associate with the NIC. If names are used, --lb-name must be specified.
                 # $loadbalancerBackendPool = "/subscriptions/f8a42a3a-8b22-4be4-8413-0b6911c77242/resourceGroups/Prod-Kub-UTTX-RG/providers/Microsoft.Network/loadBalancers/Prod-Kub-UTTX-RG-internal/backendAddressPools/Prod-Kub-UTTX-RG"
-                # az network nic ip-config update --resource-group $resourceGroup --nic-name $nic --name $ipconfig --lb-name $loadbalancer --lb-address-pools $loadbalancerBackendPoolName
+                az network nic ip-config update --resource-group $resourceGroup --nic-name $nic --name $ipconfig --lb-name $loadbalancer --lb-address-pools $loadbalancerBackendPoolName
             }
             else {
                 Write-Host "Load Balancer is already setup properly for vm: $vm"
@@ -810,9 +809,10 @@ function global:FixLoadBalancers($resourceGroup) {
                         if ($($rule.frontendPort) -eq $($loadbalancerPortInfo.port)) {
                             Write-Host "Found matching frontend ports: rule: $($rule.frontendPort) of rule $($rule.name) and loadbalancer: $($loadbalancerPortInfo.port) from $($loadbalancerPortInfo.name)"
                             if ($($rule.backendPort) -ne $($loadbalancerPortInfo.nodePort)) {
-                                Write-Host "Backend ports don't match.  Will change $($rule.backendPort) to $($loadbalancerPortInfo.nodePort)"
+                                Write-Warning "Backend ports don't match.  Will change $($rule.backendPort) to $($loadbalancerPortInfo.nodePort)"
                                 # set the rule backendPort to nodePort instead
-                                # $rule.backendPort = $loadbalancerPortInfo.nodePort
+                                $rule.backendPort = $loadbalancerPortInfo.nodePort
+                                az network lb rule update --lb-name $loadbalancer --name $($rule.name) --resource-group $resourceGroup --backend-port $loadbalancerPortInfo.nodePort
                             }
                             else {
                                 Write-Host "Skipping changing backend port since it already matches $($rule.backendPort) vs $($loadbalancerPortInfo.nodePort)"

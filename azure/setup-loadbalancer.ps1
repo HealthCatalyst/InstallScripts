@@ -1,4 +1,4 @@
-Write-output "Version 2018.02.23.01"
+Write-output "Version 2018.02.23.02"
 
 #
 # This script is meant for quick & easy install via:
@@ -166,7 +166,7 @@ $AKS_PERS_NETWORK_SECURITY_GROUP = "$($AKS_PERS_RESOURCE_GROUP.ToLower())-nsg"
 if ([string]::IsNullOrWhiteSpace($(az network nsg show -g $AKS_PERS_RESOURCE_GROUP -n $AKS_PERS_NETWORK_SECURITY_GROUP))) {
 
     Write-Output "Creating the Network Security Group for the subnet"
-    az network nsg create -g $AKS_PERS_RESOURCE_GROUP -n $AKS_PERS_NETWORK_SECURITY_GROUP
+    az network nsg create -g $AKS_PERS_RESOURCE_GROUP -n $AKS_PERS_NETWORK_SECURITY_GROUP --query "provisioningState"
 }
 else {
     Write-Output "Network Security Group already exists: $AKS_PERS_NETWORK_SECURITY_GROUP"

@@ -1,4 +1,4 @@
-$version = "2018.02.23.01"
+$version = "2018.02.23.02"
 
 # This script is meant for quick & easy install via:
 #   curl -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/azure/main.ps1 | iex;
@@ -37,7 +37,8 @@ while ($userinput -ne "q") {
     Write-Host "22: Show SSH commands to VMs"
     Write-Host "23: View status of DNS pods"
     Write-Host "24: Restart all VMs"
-    Write-Host "25: Fix load balancers"
+    Write-Host "25: Test load balancer"
+    Write-Host "26: Fix load balancers"
     Write-Host "------ NLP -----"
     Write-Host "30: Show status of NLP"
     Write-Host "31: Test web sites"
@@ -224,6 +225,20 @@ while ($userinput -ne "q") {
             SetupCronTab -resourceGroup $AKS_PERS_RESOURCE_GROUP          
         } 
         '25' {
+            $loadBalancerIP = kubectl get svc traefik-ingress-service-public -n kube-system -o jsonpath='{.status.loadBalancer.ingress[].ip}' --ignore-not-found=true
+            $loadBalancerInternalIP = kubectl get svc traefik-ingress-service-internal -n kube-system -o jsonpath='{.status.loadBalancer.ingress[].ip}'
+            if ([string]::IsNullOrWhiteSpace($loadBalancerIP)) {
+                $loadBalancerIP = $loadBalancerInternalIP
+            }
+            $customerid = ReadSecret -secretname customerid
+            $customerid = $customerid.ToLower().Trim()
+                                    
+            # Invoke-WebRequest -useb -Headers @{"Host" = "nlp.$customerid.healthcatalyst.net"} -Uri http://$loadBalancerIP/nlpweb | Select-Object -Expand Content
+    
+            Write-Output "To test out the NLP services, open Git Bash and run:"
+            Write-Output "curl -L --verbose --header 'Host: dashboard.$customerid.healthcatalyst.net' 'http://$loadBalancerInternalIP/solr' -k" 
+            } 
+        '26' {
             $DEFAULT_RESOURCE_GROUP = ReadSecretValue -secretname azure-secret -valueName resourcegroup
             
             if ([string]::IsNullOrWhiteSpace($AKS_PERS_RESOURCE_GROUP)) {
@@ -241,10 +256,10 @@ while ($userinput -ne "q") {
             kubectl get 'deployments,pods,services,ingress,secrets,persistentvolumeclaims,persistentvolumes,nodes' --namespace=fabricnlp -o wide
         } 
         '31' {
-           
             $loadBalancerIP = kubectl get svc traefik-ingress-service-public -n kube-system -o jsonpath='{.status.loadBalancer.ingress[].ip}' --ignore-not-found=true
+            $loadBalancerInternalIP = kubectl get svc traefik-ingress-service-internal -n kube-system -o jsonpath='{.status.loadBalancer.ingress[].ip}'
             if ([string]::IsNullOrWhiteSpace($loadBalancerIP)) {
-                $loadBalancerIP = kubectl get svc traefik-ingress-service-internal -n kube-system -o jsonpath='{.status.loadBalancer.ingress[].ip}'
+                $loadBalancerIP = $loadBalancerInternalIP
             }
             $customerid = ReadSecret -secretname customerid
             $customerid = $customerid.ToLower().Trim()
@@ -252,7 +267,7 @@ while ($userinput -ne "q") {
             # Invoke-WebRequest -useb -Headers @{"Host" = "nlp.$customerid.healthcatalyst.net"} -Uri http://$loadBalancerIP/nlpweb | Select-Object -Expand Content
 
             Write-Output "To test out the NLP services, open Git Bash and run:"
-            Write-Output "curl -L --verbose --header 'Host: solr.$customerid.healthcatalyst.net' 'http://$loadBalancerIP/solr' -k" 
+            Write-Output "curl -L --verbose --header 'Host: solr.$customerid.healthcatalyst.net' 'http://$loadBalancerInternalIP/solr' -k" 
             Write-Output "curl -L --verbose --header 'Host: nlp.$customerid.healthcatalyst.net' 'http://$loadBalancerIP/nlpweb' -k" 
             Write-Output "curl -L --verbose --header 'Host: nlpjobs.$customerid.healthcatalyst.net' 'http://$loadBalancerIP/nlp' -k"
 

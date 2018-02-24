@@ -1,6 +1,6 @@
 # This file contains common functions for Azure
 # 
-$versioncommon = "2018.02.23.02"
+$versioncommon = "2018.02.23.03"
 
 Write-Host "---- Including common.ps1 version $versioncommon -----"
 function global:GetCommonVersion() {
@@ -832,6 +832,25 @@ function global:FixLoadBalancers($resourceGroup) {
         Write-Host ""
     }
     # end hacks
+}
+
+function global:CheckUrl($url, $hostHeader) {
+
+    [hashtable]$Return = @{} 
+
+    $Request = [Net.HttpWebRequest]::Create($url)
+    $Request.Host = $hostHeader
+    $Response = $Request.GetResponse()
+
+    $respstream = $Response.GetResponseStream(); 
+    $sr = new-object System.IO.StreamReader $respstream; 
+    $result = $sr.ReadToEnd(); 
+    write-host "$result"
+
+    $Return.Response = $result
+    $Return.StatusCode = $Response.StatusCode
+    $Return.StatusDescription = $Response.StatusDescription
+    return $Return
 }
 #-------------------
 Write-Host "end common.ps1 version $versioncommon"

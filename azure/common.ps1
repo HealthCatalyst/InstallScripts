@@ -1,6 +1,6 @@
 # This file contains common functions for Azure
 # 
-$versioncommon = "2018.02.22.05"
+$versioncommon = "2018.02.23.01"
 
 Write-Host "---- Including common.ps1 version $versioncommon -----"
 function global:GetCommonVersion() {
@@ -707,8 +707,7 @@ function global:DownloadKubectl($localFolder) {
     }
     
 }
-function global:DownloadFile($url, $targetFile)
-{
+function global:DownloadFile($url, $targetFile) {
     # from https://stackoverflow.com/questions/21422364/is-there-any-way-to-monitor-the-progress-of-a-download-using-a-webclient-object
     $uri = New-Object "System.Uri" "$url"
     $request = [System.Net.HttpWebRequest]::Create($uri)
@@ -732,6 +731,107 @@ function global:DownloadFile($url, $targetFile)
     $targetStream.Close()
     $targetStream.Dispose()
     $responseStream.Dispose()
+}
+
+function global:FixLoadBalancers($resourceGroup) {
+    # hacks here to get around bugs in the acs-engine loadbalancer code
+    Write-Host "Checking if load balancers are setup correctly"
+    # 1. assign the nics to the loadbalancer
+
+    Wr
+    # find loadbalancer with name 
+    $loadbalancer = "${resourceGroup}-internal"
+    $loadbalancerBackendPoolName = $resourceGroup # the name may change in the future so we should look it up
+    # for each worker VM
+    $virtualmachines = az vm list -g $resourceGroup --query "[].name" -o tsv
+    ForEach ($vm in $virtualmachines) {
+        if ($vm -match "master" ) {}
+        else {
+            # for each worker VM
+            Write-Host "Checking VM: $vm"
+            # get first nic
+            # $nic = "k8s-linuxagent-14964077-nic-0"
+            $nicId = $(az vm nic list -g $resourceGroup --vm-name $vm --query "[].id" -o tsv)
+            $nic = $(az network nic show --ids $nicId --resource-group $resourceGroup --query "name" -o tsv)
+
+            # get first ipconfig of nic
+            $ipconfig = $(az network nic ip-config list --resource-group $resourceGroup --nic-name $nic --query "[?primary].name" -o tsv)
+
+            $loadbalancerForNic = $(az network nic ip-config show --resource-group $resourceGroup --nic-name $nic --name $ipconfig --query "loadBalancerBackendAddressPools[].id" -o tsv)
+            # if loadBalancerBackendAddressPools is missing then
+            if ([string]::IsNullOrEmpty($loadbalancerForNic)) {
+                Write-Host "Fixing load balancer for vm: $vm by adding nic $nic to backend pool $loadbalancerBackendPoolName in load balancer $loadbalancer "
+                # --lb-address-pools: Space-separated list of names or IDs of load balancer address pools to associate with the NIC. If names are used, --lb-name must be specified.
+                # $loadbalancerBackendPool = "/subscriptions/f8a42a3a-8b22-4be4-8413-0b6911c77242/resourceGroups/Prod-Kub-UTTX-RG/providers/Microsoft.Network/loadBalancers/Prod-Kub-UTTX-RG-internal/backendAddressPools/Prod-Kub-UTTX-RG"
+                # az network nic ip-config update --resource-group $resourceGroup --nic-name $nic --name $ipconfig --lb-name $loadbalancer --lb-address-pools $loadbalancerBackendPoolName
+            }
+            else {
+                Write-Host "Load Balancer is already setup properly for vm: $vm"
+            }
+        }
+    }
+
+    # 2. fix the ports in load balancing rules
+    Write-Host "Checking if the correct ports are setup in the load balancer"
+
+    # get frontendip configs for this IP
+    # $idToIPTuplesJson=$(az network lb frontend-ip list --resource-group=$AKS_PERS_RESOURCE_GROUP --lb-name $loadbalancer --query "[*].[id,privateIpAddress]")
+    # $idToIPTuplesJson = $(az network lb frontend-ip list --resource-group=$AKS_PERS_RESOURCE_GROUP --lb-name $loadbalancer --query "[*].{id:id,ip:privateIpAddress}")
+    $idToIPTuples = $(az network lb frontend-ip list --resource-group=$resourceGroup --lb-name $loadbalancer --query "[*].{id:id,ip:privateIpAddress}") | ConvertFrom-Json
+    $services = $($(kubectl get services --all-namespaces -o json) | ConvertFrom-Json).items
+    $loadBalancerServices = @()
+    Write-Host "---- Searching for kub services of type LoadBalancer"
+    foreach ($service in $services) {
+        if ($($service.spec.type -eq "LoadBalancer")) {
+            Write-Host "Found kub services $($service.metadata.name) with $($service.status.loadBalancer.ingress[0].ip)"
+            $loadBalancerServices += $service
+        }
+    }
+    Write-Host "---- Finished searching for kub services of type LoadBalancer"
+
+    ForEach ($tuple in $idToIPTuples) {
+        Write-Host "---------- tuple: $($tuple.ip)  $($tuple.id) ------------------"
+        $rulesForIp = $(az network lb rule list --resource-group $resourceGroup --lb-name $loadbalancer --query "[?frontendIpConfiguration.id == '$($tuple.id)'].{frontid:frontendIpConfiguration.id,name:name,backendPort:backendPort,frontendPort: frontendPort}") | ConvertFrom-Json
+
+        ForEach ($service in $loadBalancerServices) {
+            Write-Host "-------- Checking kub service: $($service.metadata.name) ----"
+            # first check ports for internal loadbalancer
+            $loadBalancerIp = $($service.status.loadBalancer.ingress[0].ip)
+            # Write-Host "Checking tuple ip $($tuple.ip) with loadBalancer Ip $loadBalancerIp"
+            if ($tuple.ip -eq $loadBalancerIp) {
+                #this is the right load balancer
+                ForEach ($rule in $rulesForIp) {
+                    Write-Host "----- Checking rule $($rule.name) ----"
+                    # Write-Host "tuple $($tuple.ip) matches loadBalancerIP: $loadBalancerIp"
+                    # match rule.backendPort to $loadbalancerInfo.spec.ports
+                    ForEach ( $loadbalancerPortInfo in $($service.spec.ports)) {
+                        # Write-Host "Rule: $rule "
+                        # Write-Host "LoadBalancer:$loadbalancerPortInfo"
+                        if ($($rule.frontendPort) -eq $($loadbalancerPortInfo.port)) {
+                            Write-Host "Found matching frontend ports: rule: $($rule.frontendPort) of rule $($rule.name) and loadbalancer: $($loadbalancerPortInfo.port) from $($loadbalancerPortInfo.name)"
+                            if ($($rule.backendPort) -ne $($loadbalancerPortInfo.nodePort)) {
+                                Write-Host "Backend ports don't match.  Will change $($rule.backendPort) to $($loadbalancerPortInfo.nodePort)"
+                                # set the rule backendPort to nodePort instead
+                                # $rule.backendPort = $loadbalancerPortInfo.nodePort
+                            }
+                            else {
+                                Write-Host "Skipping changing backend port since it already matches $($rule.backendPort) vs $($loadbalancerPortInfo.nodePort)"
+                            }
+                        }
+                        else {
+                            Write-Host "Skipping rule $($rule.name): Rule port: $($rule.backendPort) is not a match for loadbalancerPort $($loadbalancerPortInfo.port) from $($loadbalancerPortInfo.name)"                    
+                        }
+                    }
+                }
+                # get port from kubernetes service
+            }
+            else {
+                Write-Host "Skipping tuple since tuple ip $($tuple.ip) does not match loadBalancerIP: $loadBalancerIp"
+            }
+        }
+        Write-Host ""
+    }
+    # end hacks
 }
 #-------------------
 Write-Host "end common.ps1 version $versioncommon"

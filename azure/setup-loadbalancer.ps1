@@ -1,4 +1,4 @@
-Write-output "Version 2018.02.22.04"
+Write-output "Version 2018.02.23.01"
 
 #
 # This script is meant for quick & easy install via:
@@ -417,6 +417,7 @@ ReadYamlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "kubernetes/loadba
 $startDate = Get-Date
 $timeoutInMinutes = 10
 
+
 if ("$AKS_OPEN_TO_PUBLIC" -eq "y") {
     $loadbalancer = "traefik-ingress-service-public"
 }
@@ -446,6 +447,7 @@ if ($AKS_CLUSTER_ACCESS_TYPE -eq "2") {
     Write-Output "Internal IP: $INTERNAL_IP"
 }
 
+FixLoadBalancers -resourceGroup $AKS_PERS_RESOURCE_GROUP
 
 $dnsrecordname = "$customerid.healthcatalyst.net"
 

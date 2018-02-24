@@ -429,6 +429,10 @@ kubectl get "deployments,pods,services,ingress,secrets" --namespace=kube-system 
 SetHostFileInVms -resourceGroup $AKS_PERS_RESOURCE_GROUP
 SetupCronTab -resourceGroup $AKS_PERS_RESOURCE_GROUP
 
+Write-Host "Removing extra stuff that acs-engine creates"
+# k8s-master-lb-24203516
+# k8s-master-ip-prod-kub-sjtn-rg-24203516
+
 # /subscriptions/f8a42a3a-8b22-4be4-8413-0b6911c77242/resourceGroups/Prod-Kub-AHMN-RG/providers/Microsoft.Network/networkInterfaces/k8s-master-37819884-nic-0
 
 # command to update hosts

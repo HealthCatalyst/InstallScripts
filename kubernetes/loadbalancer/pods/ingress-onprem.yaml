@@ -16,6 +16,7 @@ spec:
       labels:
         k8s-app: traefik-ingress-lb
         name: traefik-ingress-lb
+        k8s-traefik: traefik          
     spec:
       # hostPort is broken on CNI (https://github.com/kubernetes/kubernetes/issues/31307) we have to use hostNetwork where CNI is used
       hostNetwork: true    

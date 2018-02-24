@@ -1,4 +1,4 @@
-$version = "2018.02.23.02"
+$version = "2018.02.23.03"
 
 # This script is meant for quick & easy install via:
 #   curl -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/azure/main.ps1 | iex;
@@ -37,8 +37,10 @@ while ($userinput -ne "q") {
     Write-Host "22: Show SSH commands to VMs"
     Write-Host "23: View status of DNS pods"
     Write-Host "24: Restart all VMs"
+    Write-Host "------ Load Balancer -------"
     Write-Host "25: Test load balancer"
     Write-Host "26: Fix load balancers"
+    Write-Host "27: Show load balancer logs"
     Write-Host "------ NLP -----"
     Write-Host "30: Show status of NLP"
     Write-Host "31: Test web sites"
@@ -252,6 +254,13 @@ while ($userinput -ne "q") {
             }
             FixLoadBalancers -resourceGroup $AKS_PERS_RESOURCE_GROUP
         } 
+        '27' {
+            $pods = $(kubectl get pods -l k8s-traefik=traefik --all-namespaces -o jsonpath='{.items[*].metadata.name}')
+            foreach ($pod in $pods.Split(" ")) {
+                Write-Output "=============== Pod: $pod ================="
+                kubectl logs --tail=20 $pod --all-namespaces
+            }
+        }         
         '30' {
             kubectl get 'deployments,pods,services,ingress,secrets,persistentvolumeclaims,persistentvolumes,nodes' --namespace=fabricnlp -o wide
         } 

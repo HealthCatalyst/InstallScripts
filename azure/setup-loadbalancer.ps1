@@ -410,6 +410,10 @@ else {
         | kubectl create -f -
 }
 
+if ("$AKS_OPEN_TO_PUBLIC" -ne "y") {
+    # remove IngressPublicIP
+}
+
 # Write-Output "Setting up an internal load balancer"
 ReadYamlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "kubernetes/loadbalancer/services/external/loadbalancer-internal.yaml" -customerid $customerid `
     | kubectl create -f -

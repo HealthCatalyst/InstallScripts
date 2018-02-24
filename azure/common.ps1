@@ -1,6 +1,6 @@
 # This file contains common functions for Azure
 # 
-$versioncommon = "2018.02.23.03"
+$versioncommon = "2018.02.23.04"
 
 Write-Host "---- Including common.ps1 version $versioncommon -----"
 function global:GetCommonVersion() {
@@ -834,6 +834,59 @@ function global:FixLoadBalancers($resourceGroup) {
     # end hacks
 }
 
+function global:SetupDNS($dnsResourceGroup, $dnsrecordname, $externalIP) {
+    Write-Output "Setting DNS zones"
+
+    if ([string]::IsNullOrWhiteSpace($(az network dns zone show --name "$dnsrecordname" -g $dnsResourceGroup))) {
+        Write-Output "Creating DNS zone: $dnsrecordname"
+        az network dns zone create --name "$dnsrecordname" -g $dnsResourceGroup
+    }
+
+    Write-Output "Create A record for * in zone: $dnsrecordname"
+    az network dns record-set a add-record --ipv4-address $externalIP --record-set-name "*" --resource-group $dnsResourceGroup --zone-name "$dnsrecordname"
+
+    ShowNameServerEntries -dnsResourceGroup $dnsResourceGroup -dnsrecordname $dnsrecordname
+}
+
+function global:ShowNameServerEntries($dnsResourceGroup, $dnsrecordname) {
+    # list out the name servers
+    Write-Output "Name servers to set in GoDaddy for *.$dnsrecordname"
+    az network dns zone show -g $dnsResourceGroup -n "$dnsrecordname" --query "nameServers" -o tsv
+}
+
+function global:GetLoadBalancerIPs() {
+    [hashtable]$Return = @{} 
+
+    $startDate = Get-Date
+    $timeoutInMinutes = 10
+    $loadbalancer = "traefik-ingress-service-public"
+    $loadbalancerInternal = "traefik-ingress-service-internal" 
+
+    Write-Output "Waiting for IP to get assigned to the load balancer (Note: It can take upto 5 minutes for Azure to finish creating the load balancer)"
+    Do { 
+        Start-Sleep -Seconds 10
+        Write-Output "."
+        $externalIP = $(kubectl get svc $loadbalancer -n kube-system -o jsonpath='{.status.loadBalancer.ingress[].ip}')
+    }
+    while ([string]::IsNullOrWhiteSpace($externalIP) -and ($startDate.AddMinutes($timeoutInMinutes) -gt (Get-Date)))
+    Write-Output "External IP: $externalIP"
+    
+    if ($AKS_CLUSTER_ACCESS_TYPE -eq "2") {
+        Write-Output "Waiting for IP to get assigned to the internal load balancer (Note: It can take upto 5 minutes for Azure to finish creating the load balancer)"
+        Do { 
+            Start-Sleep -Seconds 10
+            Write-Output "."
+            $internalIP = $(kubectl get svc $loadbalancerInternal -n kube-system -o jsonpath='{.status.loadBalancer.ingress[].ip}')
+        }
+        while ([string]::IsNullOrWhiteSpace($internalIP) -and ($startDate.AddMinutes($timeoutInMinutes) -gt (Get-Date)))
+        Write-Output "Internal IP: $internalIP"
+    }
+
+    $Return.ExternalIP = $externalIP
+    $Return.InternalIP = $internalIP
+    
+    return $Return
+}
 function global:CheckUrl($url, $hostHeader) {
 
     [hashtable]$Return = @{} 

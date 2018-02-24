@@ -1,4 +1,4 @@
-$version = "2018.02.23.04"
+$version = "2018.02.23.05"
 
 # This script is meant for quick & easy install via:
 #   curl -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/azure/main.ps1 | iex;
@@ -28,6 +28,8 @@ while ($userinput -ne "q") {
     Write-Host "3: Start VMs in Resource Group"
     Write-Host "4: Stop VMs in Resource Group"
     Write-Host "5: Renew Azure token"
+    Write-Host "6: Show NameServers"
+    Write-Host "7: Setup Azure DNS entries"
     Write-Host "------ Install -------"
     Write-Host "11: Install NLP"
     Write-Host "12: Install Realtime"
@@ -105,6 +107,35 @@ while ($userinput -ne "q") {
                 az login
             }
         }         
+        '6' {
+            $DNS_RESOURCE_GROUP = Read-Host "Resource group containing DNS zones? (default: dns)"
+            if ([string]::IsNullOrWhiteSpace($DNS_RESOURCE_GROUP)) {
+                $DNS_RESOURCE_GROUP = "dns"
+            }
+
+            $customerid = ReadSecret -secretname customerid
+            $customerid = $customerid.ToLower().Trim()
+
+            $dnsrecordname = "$customerid.healthcatalyst.net"
+                    
+            ShowNameServerEntries -dnsResourceGroup $DNS_RESOURCE_GROUP -dnsrecordname $dnsrecordname
+        } 
+        '7' {
+            $DNS_RESOURCE_GROUP = Read-Host "Resource group containing DNS zones? (default: dns)"
+            if ([string]::IsNullOrWhiteSpace($DNS_RESOURCE_GROUP)) {
+                $DNS_RESOURCE_GROUP = "dns"
+            }
+
+            $customerid = ReadSecret -secretname customerid
+            $customerid = $customerid.ToLower().Trim()
+
+            $dnsrecordname = "$customerid.healthcatalyst.net"
+
+            $loadBalancerIPResult = GetLoadBalancerIPs
+            $EXTERNAL_IP = $loadBalancerIPResult.ExternalIP
+
+            SetupDNS -dnsResourceGroup $DNS_RESOURCE_GROUP -dnsrecordname $dnsrecordname -externalIP $EXTERNAL_IP 
+        }
         '11' {
             Invoke-WebRequest -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/nlp/installnlpkubernetes.ps1 | Invoke-Expression;
         } 

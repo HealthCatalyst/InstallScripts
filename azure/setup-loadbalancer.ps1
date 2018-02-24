@@ -140,7 +140,12 @@ else {
     Write-Output "SSL cert already stored as secret (traefik-cert-ahmn) so setting up SSL"
 }
 
-Do { $SETUP_DNS = Read-Host "Do you want to setup DNS entries in Azure? (y/n)"}
+Do { 
+    $SETUP_DNS = Read-Host "Do you want to setup DNS entries in Azure? (y/n) (default: n)"
+    if ([string]::IsNullOrWhiteSpace($SETUP_DNS)) {
+        $SETUP_DNS = "n"
+    }
+}
 while ([string]::IsNullOrWhiteSpace($SETUP_DNS))
 
 # if we need to setup DNS then ask which resourceGroup to use
@@ -418,38 +423,10 @@ if ("$AKS_OPEN_TO_PUBLIC" -ne "y") {
 ReadYamlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "kubernetes/loadbalancer/services/external/loadbalancer-internal.yaml" -customerid $customerid `
     | kubectl create -f -
 
-$startDate = Get-Date
-$timeoutInMinutes = 10
 
-
-if ("$AKS_OPEN_TO_PUBLIC" -eq "y") {
-    $loadbalancer = "traefik-ingress-service-public"
-}
-else {
-    $loadbalancer = "traefik-ingress-service-internal"    
-}
-
-$INTERNAL_IP = ""
-
-Write-Output "Waiting for IP to get assigned to the load balancer (Note: It can take upto 5 minutes for Azure to finish creating the load balancer)"
-Do { 
-    Start-Sleep -Seconds 10
-    Write-Output "."
-    $EXTERNAL_IP = $(kubectl get svc $loadbalancer -n kube-system -o jsonpath='{.status.loadBalancer.ingress[].ip}')
-}
-while ([string]::IsNullOrWhiteSpace($EXTERNAL_IP) -and ($startDate.AddMinutes($timeoutInMinutes) -gt (Get-Date)))
-Write-Output "External IP: $EXTERNAL_IP"
-
-if ($AKS_CLUSTER_ACCESS_TYPE -eq "2") {
-    Write-Output "Waiting for IP to get assigned to the internal load balancer (Note: It can take upto 5 minutes for Azure to finish creating the load balancer)"
-    Do { 
-        Start-Sleep -Seconds 10
-        Write-Output "."
-        $INTERNAL_IP = $(kubectl get svc traefik-ingress-service-internal -n kube-system -o jsonpath='{.status.loadBalancer.ingress[].ip}')
-    }
-    while ([string]::IsNullOrWhiteSpace($INTERNAL_IP) -and ($startDate.AddMinutes($timeoutInMinutes) -gt (Get-Date)))
-    Write-Output "Internal IP: $INTERNAL_IP"
-}
+$loadBalancerIPResult = GetLoadBalancerIPs
+$EXTERNAL_IP = $loadBalancerIPResult.ExternalIP
+$INTERNAL_IP = $loadBalancerIPResult.InternalIP
 
 FixLoadBalancers -resourceGroup $AKS_PERS_RESOURCE_GROUP
 
@@ -598,20 +575,7 @@ if ($AKS_USE_WAF -eq "y") {
 }
 
 if ($SETUP_DNS -eq "y") {
-    # set up DNS zones
-    Write-Output "Setting DNS zones"
-
-    if ([string]::IsNullOrWhiteSpace($(az network dns zone show --name "$dnsrecordname" -g $DNS_RESOURCE_GROUP))) {
-        Write-Output "Creating DNS zone: $dnsrecordname"
-        az network dns zone create --name "$dnsrecordname" -g $DNS_RESOURCE_GROUP
-    }
-
-    Write-Output "Create A record for * in zone: $dnsrecordname"
-    az network dns record-set a add-record --ipv4-address $EXTERNAL_IP --record-set-name "*" --resource-group $DNS_RESOURCE_GROUP --zone-name "$dnsrecordname"
-
-    # list out the name servers
-    Write-Output "Name servers to set in GoDaddy for *.$dnsrecordname"
-    az network dns zone show -g $DNS_RESOURCE_GROUP -n "$dnsrecordname" --query "nameServers" -o tsv
+    SetupDNS -dnsResourceGroup $DNS_RESOURCE_GROUP -dnsrecordname $dnsrecordname -externalIP $EXTERNAL_IP 
 }
 else {
     Write-Output "To access the urls from your browser, add the following entries in your c:\windows\system32\drivers\etc\hosts file"

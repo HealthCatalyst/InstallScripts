@@ -1,4 +1,4 @@
-$version = "2018.02.23.03"
+$version = "2018.02.23.04"
 
 # This script is meant for quick & easy install via:
 #   curl -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/azure/main.ps1 | iex;
@@ -238,7 +238,7 @@ while ($userinput -ne "q") {
             # Invoke-WebRequest -useb -Headers @{"Host" = "nlp.$customerid.healthcatalyst.net"} -Uri http://$loadBalancerIP/nlpweb | Select-Object -Expand Content
     
             Write-Output "To test out the NLP services, open Git Bash and run:"
-            Write-Output "curl -L --verbose --header 'Host: dashboard.$customerid.healthcatalyst.net' 'http://$loadBalancerInternalIP/solr' -k" 
+            Write-Output "curl --header 'Host: dashboard.$customerid.healthcatalyst.net' 'http://$loadBalancerInternalIP/' -k" 
             } 
         '26' {
             $DEFAULT_RESOURCE_GROUP = ReadSecretValue -secretname azure-secret -valueName resourcegroup
@@ -255,10 +255,10 @@ while ($userinput -ne "q") {
             FixLoadBalancers -resourceGroup $AKS_PERS_RESOURCE_GROUP
         } 
         '27' {
-            $pods = $(kubectl get pods -l k8s-traefik=traefik --all-namespaces -o jsonpath='{.items[*].metadata.name}')
+            $pods = $(kubectl get pods -l k8s-traefik=traefik -n kube-system -o jsonpath='{.items[*].metadata.name}')
             foreach ($pod in $pods.Split(" ")) {
                 Write-Output "=============== Pod: $pod ================="
-                kubectl logs --tail=20 $pod --all-namespaces
+                kubectl logs --tail=20 $pod -n kube-system 
             }
         }         
         '30' {

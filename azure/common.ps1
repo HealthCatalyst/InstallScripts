@@ -1,6 +1,6 @@
 # This file contains common functions for Azure
 # 
-$versioncommon = "2018.02.25.08"
+$versioncommon = "2018.02.25.09"
 
 Write-Host "---- Including common.ps1 version $versioncommon -----"
 function global:GetCommonVersion() {
@@ -967,10 +967,8 @@ function global:GetDNSCommands() {
             # $myCommands += "dnscmd cafeaddc-01.cafe.healthcatalyst.com /recordadd 10.in-addr-arpa $loadBalancerIP PTR $dns"        
         }
     }
-}
-
-$Return.Commands = $myCommands
-return $Return
+    $Return.Commands = $myCommands
+    return $Return
 }
 function global:WriteDNSCommands() {
     $myCommands = $(GetDNSCommands).Commands

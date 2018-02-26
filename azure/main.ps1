@@ -1,4 +1,4 @@
-$version = "2018.02.25.09"
+$version = "2018.02.25.10"
 
 # This script is meant for quick & easy install via:
 #   curl -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/azure/main.ps1 | iex;

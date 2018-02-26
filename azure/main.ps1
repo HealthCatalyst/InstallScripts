@@ -1,4 +1,4 @@
-$version = "2018.02.25.05"
+$version = "2018.02.25.06"
 
 # This script is meant for quick & easy install via:
 #   curl -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/azure/main.ps1 | iex;
@@ -18,8 +18,7 @@ Invoke-WebRequest -useb $GITHUB_URL/azure/common.ps1 | Invoke-Expression;
 $userinput = ""
 while ($userinput -ne "q") {
     Write-Host "================ Health Catalyst version $version, common functions $(GetCommonVersion) ================"
-    Write-Host "=  Current cluster: $(kubectl config current-context 2> $null)  ="
-    Write-Host "===================================================="
+    Write-Host "CURRENT CLUSTER: $(kubectl config current-context 2> $null)"
     Write-Host "----- Choose Cluster -----"
     Write-Host "0: Change kube to point to another cluster"
     Write-Host "------ Infrastructure -------"
@@ -44,6 +43,7 @@ while ($userinput -ne "q") {
     Write-Host "25: Test load balancer"
     Write-Host "26: Fix load balancers"
     Write-Host "27: Show load balancer logs"
+    Write-Host "28: Launch Load Balancer Dashboard"
     Write-Host "------ NLP -----"
     Write-Host "30: Show status of NLP"
     Write-Host "31: Test web sites"
@@ -301,6 +301,11 @@ while ($userinput -ne "q") {
                 kubectl logs --tail=20 $pod -n kube-system 
             }
         }         
+        '28' {
+            $customerid = ReadSecret -secretname customerid
+            $customerid = $customerid.ToLower().Trim()
+            Start-Process -FilePath "http://dashboard.$customerid.healthcatalyst.net";
+        }         
         '30' {
             kubectl get 'deployments,pods,services,ingress,secrets,persistentvolumeclaims,persistentvolumes,nodes' --namespace=fabricnlp -o wide
         } 
@@ -321,10 +326,12 @@ while ($userinput -ne "q") {
             Write-Output "curl -L --verbose --header 'Host: nlpjobs.$customerid.healthcatalyst.net' 'http://$loadBalancerIP/nlp' -k"
 
             Write-Output "If you didn't setup DNS, add the following entries in your c:\windows\system32\drivers\etc\hosts file to access the urls from your browser"
-            Write-Output "$loadBalancerIP solr.$customerid.healthcatalyst.net"            
+            Write-Output "$loadBalancerInternalIP solr.$customerid.healthcatalyst.net"            
             Write-Output "$loadBalancerIP nlp.$customerid.healthcatalyst.net"            
-            Write-Output "$loadBalancerIP nlpjobs.$customerid.healthcatalyst.net"            
-
+            Write-Output "$loadBalancerIP nlpjobs.$customerid.healthcatalyst.net"
+            
+            Start-Process -FilePath "http://solr.$customerid.healthcatalyst.net/nlpweb";
+            Start-Process -FilePath "http://nlp.$customerid.healthcatalyst.net/solr";
         } 
         '32' {
             Write-Host "MySql root password: $(ReadSecretPassword -secretname mysqlrootpassword -namespace fabricnlp)"

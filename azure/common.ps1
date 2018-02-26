@@ -1,6 +1,6 @@
 # This file contains common functions for Azure
 # 
-$versioncommon = "2018.02.25.04"
+$versioncommon = "2018.02.25.05"
 
 Write-Host "---- Including common.ps1 version $versioncommon -----"
 function global:GetCommonVersion() {
@@ -953,9 +953,9 @@ function global:GetDNSCommands() {
     return $Return
 }
 function global:WriteDNSCommands(){
+    $myCommands = $(GetDNSCommands).Commands
     Write-Host "To setup DNS entries in CAFE environment, remote desktop to CAFE DNS server: 10.5.2.4"
     Write-Host "Open Powershell window and paste the following:"
-    $myCommands = $(GetDNSCommands).Commands
     ForEach($myCommand in $myCommands){
         Write-Host $myCommand
     }

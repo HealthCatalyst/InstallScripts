@@ -1,4 +1,4 @@
-$version = "2018.02.25.02"
+$version = "2018.02.25.03"
 
 # This script is meant for quick & easy install via:
 #   curl -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/azure/main.ps1 | iex;
@@ -171,7 +171,9 @@ while ($userinput -ne "q") {
             # }
 
             if ($launchJob) {
-                $job = Start-Job -Name "KubDashboard" -ScriptBlock {kubectl proxy -p $port} -ErrorAction Stop
+                # https://stackoverflow.com/questions/19834643/powershell-how-to-pre-evaluate-variables-in-a-scriptblock-for-start-job
+                $sb = [scriptblock]::Create("kubectl proxy -p $port")
+                $job = Start-Job -Name "KubDashboard" -ScriptBlock $sb -ErrorAction Stop
                 Wait-Job $job -Timeout 5;
                 Write-Output "job state: $($job.state)"  
                 Receive-Job -Job $job 6>&1  

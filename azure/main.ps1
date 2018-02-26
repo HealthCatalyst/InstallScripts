@@ -1,4 +1,4 @@
-$version = "2018.02.25.06"
+$version = "2018.02.25.07"
 
 # This script is meant for quick & easy install via:
 #   curl -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/azure/main.ps1 | iex;
@@ -187,9 +187,11 @@ while ($userinput -ne "q") {
             # Write-Host "Your kubeconfig file is here: $env:KUBECONFIG"
             $kubectlversion = $(kubectl version --short=true)[1]
             if ($kubectlversion -match "v1.8") {
+                Write-Host "Launching http://localhost:$port/api/v1/namespaces/kube-system/services/kubernetes-dashboard/proxy in the web browser"
                 Start-Process -FilePath "http://localhost:$port/api/v1/namespaces/kube-system/services/kubernetes-dashboard/proxy";
             }
             else {
+                Write-Host "Launching http://localhost:$port/api/v1/namespaces/kube-system/services/https:kubernetes-dashboard:/proxy/ in the web browser"
                 Write-Host "Click Skip on login screen";
                 Start-Process -FilePath "http://localhost:$port/api/v1/namespaces/kube-system/services/https:kubernetes-dashboard:/proxy/";
             }            
@@ -277,7 +279,7 @@ while ($userinput -ne "q") {
                                     
             # Invoke-WebRequest -useb -Headers @{"Host" = "nlp.$customerid.healthcatalyst.net"} -Uri http://$loadBalancerIP/nlpweb | Select-Object -Expand Content
     
-            Write-Output "To test out the NLP services, open Git Bash and run:"
+            Write-Output "To test out the load balancer, open Git Bash and run:"
             Write-Output "curl --header 'Host: dashboard.$customerid.healthcatalyst.net' 'http://$loadBalancerInternalIP/' -k" 
             } 
         '26' {
@@ -304,6 +306,7 @@ while ($userinput -ne "q") {
         '28' {
             $customerid = ReadSecret -secretname customerid
             $customerid = $customerid.ToLower().Trim()
+            Write-Host "Launching http://dashboard.$customerid.healthcatalyst.net in the web browser"
             Start-Process -FilePath "http://dashboard.$customerid.healthcatalyst.net";
         }         
         '30' {
@@ -330,8 +333,10 @@ while ($userinput -ne "q") {
             Write-Output "$loadBalancerIP nlp.$customerid.healthcatalyst.net"            
             Write-Output "$loadBalancerIP nlpjobs.$customerid.healthcatalyst.net"
             
-            Start-Process -FilePath "http://solr.$customerid.healthcatalyst.net/nlpweb";
-            Start-Process -FilePath "http://nlp.$customerid.healthcatalyst.net/solr";
+            Write-Host "Launching http://solr.$customerid.healthcatalyst.net/solr in the web browser"
+            Start-Process -FilePath "http://solr.$customerid.healthcatalyst.net/solr";
+            Write-Host "Launching http://nlp.$customerid.healthcatalyst.net/nlpweb in the web browser"
+            Start-Process -FilePath "http://nlp.$customerid.healthcatalyst.net/nlpweb";
         } 
         '32' {
             Write-Host "MySql root password: $(ReadSecretPassword -secretname mysqlrootpassword -namespace fabricnlp)"

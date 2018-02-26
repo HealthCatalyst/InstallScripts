@@ -1,4 +1,4 @@
-Write-Output "--- installnlpkubernetes.ps1 Version 2018.02.25.04 ---"
+Write-Output "--- installnlpkubernetes.ps1 Version 2018.02.25.05 ---"
 
 # curl -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/nlp/installnlpkubernetes.ps1 | iex;
 
@@ -184,7 +184,14 @@ if ([string]::IsNullOrWhiteSpace($loadBalancerIP)) {
 }
 $loadBalancerInternalIP = kubectl get svc traefik-ingress-service-internal -n kube-system -o jsonpath='{.status.loadBalancer.ingress[].ip}'
 
+Write-Host "Sleeping for 10 seconds so kube services get IPs assigned"
+Start-Sleep -Seconds 10
+
+FixLoadBalancers -resourceGroup $AKS_PERS_RESOURCE_GROUP
+
+Write-Host "------------------------------------------------"
 WriteDNSCommands
+Write-Host "------------------------------------------------"
 
 Write-Output "If you didn't setup DNS in CAFE per above, add the following entries in your c:\windows\system32\drivers\etc\hosts file to access the urls from your browser"
 Write-Output "$loadBalancerInternalIP solr.$customerid.healthcatalyst.net"            

@@ -779,7 +779,7 @@ function global:FixLoadBalancers($resourceGroup) {
                 az network nic ip-config update --resource-group $resourceGroup --nic-name $nic --name $ipconfig --lb-name $loadbalancer --lb-address-pools $loadbalancerBackendPoolName
             }
             elseif (!($($loadbalancerForNic -contains $loadbalancer))) {
-                Write-Host "nic is already bound to load balancer $loadbalancerForNic"
+                Write-Host "nic is already bound to load balancer $loadbalancerForNic with ip-config $ipconfig"
                 Write-Host "adding internal load balancer to secondary ip-config"
                 # get the first secondary ipconfig
                 $ipconfig = $(az network nic ip-config list --resource-group $resourceGroup --nic-name $nic --query "[?!primary].name" -o tsv)[0]

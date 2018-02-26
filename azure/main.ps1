@@ -1,4 +1,4 @@
-$version = "2018.02.25.03"
+$version = "2018.02.25.04"
 
 # This script is meant for quick & easy install via:
 #   curl -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/azure/main.ps1 | iex;
@@ -187,11 +187,11 @@ while ($userinput -ne "q") {
             # Write-Host "Your kubeconfig file is here: $env:KUBECONFIG"
             $kubectlversion = $(kubectl version --short=true)[1]
             if ($kubectlversion -match "v1.8") {
-                Start-Process -FilePath "http://localhost:8001/api/v1/namespaces/kube-system/services/kubernetes-dashboard/proxy";
+                Start-Process -FilePath "http://localhost:$port/api/v1/namespaces/kube-system/services/kubernetes-dashboard/proxy";
             }
             else {
                 Write-Host "Click Skip on login screen";
-                Start-Process -FilePath "http://localhost:8001/api/v1/namespaces/kube-system/services/https:kubernetes-dashboard:/proxy/";
+                Start-Process -FilePath "http://localhost:$port/api/v1/namespaces/kube-system/services/https:kubernetes-dashboard:/proxy/";
             }            
         } 
         '22' {        

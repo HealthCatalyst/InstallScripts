@@ -35,7 +35,7 @@ while [[ "$input" != "q" ]]; do
     echo "31: Show status of NLP"
     echo "32: Test web sites"
     echo "33: Show passwords"
-    echo "34: Show NLP detailed status"
+    echo "34: Show detailed status of NLP"
     echo "35: Show NLP logs"
     echo "36: Restart NLP"
     echo "------ Realtime -----"

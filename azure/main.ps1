@@ -1,4 +1,4 @@
-$version = "2018.02.25.11"
+$version = "2018.02.25.12"
 
 # This script is meant for quick & easy install via:
 #   curl -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/azure/main.ps1 | iex;
@@ -49,10 +49,11 @@ while ($userinput -ne "q") {
     Write-Host "33: Launch Load Balancer Dashboard"
     Write-Host "------ NLP -----"
     Write-Host "40: Show status of NLP"
-    Write-Host "41: Test web sites"
-    Write-Host "42: Show passwords"
-    Write-Host "43: Show NLP logs"
-    Write-Host "44: Restart NLP"
+    Write-Host "41: Show detailed status of NLP"
+    Write-Host "42: Test web sites"
+    Write-Host "43: Show passwords"
+    Write-Host "44: Show NLP logs"
+    Write-Host "45: Restart NLP"
     Write-Host "------ Realtime -----"
     Write-Host "51: Show status of realtime"
     Write-Host "-----------"
@@ -320,6 +321,13 @@ while ($userinput -ne "q") {
             kubectl get 'deployments,pods,services,ingress,secrets,persistentvolumeclaims,persistentvolumes,nodes' --namespace=fabricnlp -o wide
         } 
         '41' {
+            $pods = $(kubectl get pods -n fabricnlp -o jsonpath='{.items[*].metadata.name}')
+            foreach ($pod in $pods.Split(" ")) {
+                Write-Output "=============== Describe Pod: $pod ================="
+                kubectl describe pods $pod -n fabricnlp 
+            }            
+        } 
+        '42' {
             $loadBalancerIP = kubectl get svc traefik-ingress-service-public -n kube-system -o jsonpath='{.status.loadBalancer.ingress[].ip}' --ignore-not-found=true
             $loadBalancerInternalIP = kubectl get svc traefik-ingress-service-internal -n kube-system -o jsonpath='{.status.loadBalancer.ingress[].ip}'
             if ([string]::IsNullOrWhiteSpace($loadBalancerIP)) {
@@ -346,19 +354,19 @@ while ($userinput -ne "q") {
             Write-Host "Launching http://nlp.$customerid.healthcatalyst.net/nlpweb in the web browser"
             Start-Process -FilePath "http://nlp.$customerid.healthcatalyst.net/nlpweb";
         } 
-        '42' {
+        '43' {
             Write-Host "MySql root password: $(ReadSecretPassword -secretname mysqlrootpassword -namespace fabricnlp)"
             Write-Host "MySql NLP_APP_USER password: $(ReadSecretPassword -secretname mysqlpassword -namespace fabricnlp)"
             Write-Host "SendGrid SMTP Relay key: $(ReadSecretPassword -secretname smtprelaypassword -namespace fabricnlp)"
         } 
-        '43' {
+        '44' {
             $pods = $(kubectl get pods -n fabricnlp -o jsonpath='{.items[*].metadata.name}')
             foreach ($pod in $pods.Split(" ")) {
                 Write-Output "=============== Pod: $pod ================="
                 kubectl logs --tail=20 $pod -n fabricnlp
             }
         } 
-        '44' {
+        '45' {
             kubectl delete --all 'pods' --namespace=fabricnlp --ignore-not-found=true                        
         } 
         '51' {

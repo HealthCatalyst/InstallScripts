@@ -68,6 +68,7 @@ else {
 $AKS_PERS_SHARE_NAME = "fabricnlp"
 $AKS_PERS_BACKUP_SHARE_NAME = "${AKS_PERS_SHARE_NAME}backups"
 
+Write-Host "Creating file shares if they don't exist"
 CreateShare -resourceGroup $AKS_PERS_RESOURCE_GROUP -sharename $AKS_PERS_SHARE_NAME
 CreateShare -resourceGroup $AKS_PERS_RESOURCE_GROUP -sharename $AKS_PERS_BACKUP_SHARE_NAME
 

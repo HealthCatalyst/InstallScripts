@@ -45,3 +45,9 @@ spec:
               name: nlpwebserver
             - containerPort: 8443
               name: https
+          livenessProbe:
+            httpGet:
+              path: /nlpweb
+              port: 8083
+            initialDelaySeconds: 60
+            periodSeconds: 60

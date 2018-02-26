@@ -1,6 +1,6 @@
 # This file contains common functions for Azure
 # 
-$versioncommon = "2018.02.25.05"
+$versioncommon = "2018.02.25.06"
 
 Write-Host "---- Including common.ps1 version $versioncommon -----"
 function global:GetCommonVersion() {
@@ -713,12 +713,12 @@ function global:DownloadKubectl($localFolder) {
     }
     if ( $downloadkubectl -eq "y") {
         $url = "https://storage.googleapis.com/kubernetes-release/release/${desiredKubeCtlVersion}/bin/windows/amd64/kubectl.exe"
-        Write-Output "Downloading kubectl.exe from url $url to $kubeCtlFile"
+        Write-Host "Downloading kubectl.exe from url $url to $kubeCtlFile"
         Remove-Item -Path "$kubeCtlFile"
         DownloadFile -url $url -targetFile $kubeCtlFile
     }
     else {
-        Write-Output "kubectl already exists at $kubeCtlFile"    
+        Write-Host "kubectl already exists at $kubeCtlFile"    
     }
     
 }
@@ -850,14 +850,14 @@ function global:FixLoadBalancers($resourceGroup) {
 }
 
 function global:SetupDNS($dnsResourceGroup, $dnsrecordname, $externalIP) {
-    Write-Output "Setting DNS zones"
+    Write-Host "Setting DNS zones"
 
     if ([string]::IsNullOrWhiteSpace($(az network dns zone show --name "$dnsrecordname" -g $dnsResourceGroup))) {
-        Write-Output "Creating DNS zone: $dnsrecordname"
+        Write-Host "Creating DNS zone: $dnsrecordname"
         az network dns zone create --name "$dnsrecordname" -g $dnsResourceGroup
     }
 
-    Write-Output "Create A record for * in zone: $dnsrecordname"
+    Write-Host "Create A record for * in zone: $dnsrecordname"
     az network dns record-set a add-record --ipv4-address $externalIP --record-set-name "*" --resource-group $dnsResourceGroup --zone-name "$dnsrecordname"
 
     ShowNameServerEntries -dnsResourceGroup $dnsResourceGroup -dnsrecordname $dnsrecordname
@@ -865,7 +865,7 @@ function global:SetupDNS($dnsResourceGroup, $dnsrecordname, $externalIP) {
 
 function global:ShowNameServerEntries($dnsResourceGroup, $dnsrecordname) {
     # list out the name servers
-    Write-Output "Name servers to set in GoDaddy for *.$dnsrecordname"
+    Write-Host "Name servers to set in GoDaddy for *.$dnsrecordname"
     az network dns zone show -g $dnsResourceGroup -n "$dnsrecordname" --query "nameServers" -o tsv
 }
 
@@ -877,24 +877,24 @@ function global:GetLoadBalancerIPs() {
     $loadbalancer = "traefik-ingress-service-public"
     $loadbalancerInternal = "traefik-ingress-service-internal" 
 
-    Write-Output "Waiting for IP to get assigned to the load balancer (Note: It can take upto 5 minutes for Azure to finish creating the load balancer)"
+    Write-Host "Waiting for IP to get assigned to the load balancer (Note: It can take upto 5 minutes for Azure to finish creating the load balancer)"
     Do { 
         Start-Sleep -Seconds 10
-        Write-Output "."
+        Write-Host "."
         $externalIP = $(kubectl get svc $loadbalancer -n kube-system -o jsonpath='{.status.loadBalancer.ingress[].ip}')
     }
     while ([string]::IsNullOrWhiteSpace($externalIP) -and ($startDate.AddMinutes($timeoutInMinutes) -gt (Get-Date)))
-    Write-Output "External IP: $externalIP"
+    Write-Host "External IP: $externalIP"
     
     if ($AKS_CLUSTER_ACCESS_TYPE -eq "2") {
-        Write-Output "Waiting for IP to get assigned to the internal load balancer (Note: It can take upto 5 minutes for Azure to finish creating the load balancer)"
+        Write-Host "Waiting for IP to get assigned to the internal load balancer (Note: It can take upto 5 minutes for Azure to finish creating the load balancer)"
         Do { 
             Start-Sleep -Seconds 10
-            Write-Output "."
+            Write-Host "."
             $internalIP = $(kubectl get svc $loadbalancerInternal -n kube-system -o jsonpath='{.status.loadBalancer.ingress[].ip}')
         }
         while ([string]::IsNullOrWhiteSpace($internalIP) -and ($startDate.AddMinutes($timeoutInMinutes) -gt (Get-Date)))
-        Write-Output "Internal IP: $internalIP"
+        Write-Host "Internal IP: $internalIP"
     }
 
     $Return.ExternalIP = $externalIP

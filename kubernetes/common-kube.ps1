@@ -1,5 +1,5 @@
 # this file contains common functions for kubernetes
-$versionkubecommon = "2018.02.22.02"
+$versionkubecommon = "2018.02.25.01"
 
 Write-Host "Including common-kube.ps1 version $versionkubecommon"
 function global:GetCommonKubeVersion() {
@@ -74,7 +74,7 @@ function global:AskForPassword ($secretname, $prompt, $namespace) {
         kubectl create secret generic $secretname --namespace=$namespace --from-literal=password=$mysqlrootpassword
     }
     else {
-        Write-Output "$secretname secret already set so will reuse it"
+        Write-Host "$secretname secret already set so will reuse it"
     }
 }
 
@@ -98,7 +98,7 @@ function global:AskForPasswordAnyCharacters ($secretname, $prompt, $namespace, $
         kubectl create secret generic $secretname --namespace=$namespace --from-literal=password=$mysqlrootpassword
     }
     else {
-        Write-Output "$secretname secret already set so will reuse it"
+        Write-Host "$secretname secret already set so will reuse it"
     }
 }
 
@@ -115,7 +115,7 @@ function global:AskForSecretValue ($secretname, $prompt, $namespace) {
         kubectl create secret generic $secretname --namespace=$namespace --from-literal=value=$certhostname
     }
     else {
-        Write-Output "$secretname secret already set so will reuse it"
+        Write-Host "$secretname secret already set so will reuse it"
     }    
 }
 
@@ -128,7 +128,7 @@ function global:ReadYamlAndReplaceCustomer($baseUrl, $templateFile, $customerid 
             | Foreach-Object {$_ -replace 'CUSTOMERID', "$customerid"}
     }
     else {
-        #        Write-Output "Reading from local file: $GITHUB_URL/$templateFile"
+        #        Write-Host "Reading from local file: $GITHUB_URL/$templateFile"
         Get-Content -Path "$baseUrl/$templateFile" `
             | Foreach-Object {$_ -replace 'CUSTOMERID', "$customerid"} 
     }
@@ -151,7 +151,7 @@ function global:Stop-ProcessByPort( [ValidateNotNullOrEmpty()] [int] $Port ) {
 
 function global:CleanOutNamespace($namespace){
 
-    Write-Output "--- Cleaning out any old resources in $namespace ---"
+    Write-Host "--- Cleaning out any old resources in $namespace ---"
 
     # note kubectl doesn't like spaces in between commas below
     kubectl delete --all 'deployments,pods,services,ingress,persistentvolumeclaims,jobs,cronjobs' --namespace=$namespace --ignore-not-found=true
@@ -162,7 +162,7 @@ function global:CleanOutNamespace($namespace){
     $CLEANUP_DONE="n"
     Do {
         $CLEANUP_DONE=$(kubectl get 'deployments,pods,services,ingress,persistentvolumeclaims,jobs,cronjobs' --namespace=$namespace -o jsonpath="{.items[*].metadata.name}")
-        Write-Output "Remaining items: $CLEANUP_DONE"
+        Write-Host "Remaining items: $CLEANUP_DONE"
         Start-Sleep 5
     }
     while (![string]::IsNullOrEmpty($CLEANUP_DONE))

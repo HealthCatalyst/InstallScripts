@@ -45,6 +45,12 @@ spec:
           ports:
             - containerPort: 8084
               name: jobserver
+          livenessProbe:
+            httpGet:
+              path: /nlp
+              port: 8084
+            initialDelaySeconds: 60
+            periodSeconds: 60
           volumeMounts:
             - name: jobs-persistent-storage
               mountPath: /opt/jobWork/

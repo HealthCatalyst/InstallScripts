@@ -1,4 +1,4 @@
-Write-output "--- create-acs-cluster Version 2018.02.22.04 ----"
+Write-output "--- create-acs-cluster Version 2018.02.25.01 ----"
 
 #
 # This script is meant for quick & easy install via:
@@ -369,9 +369,15 @@ if (!(Test-Path -Path "$AKS_LOCAL_TEMP_FOLDER\.kube")) {
     New-Item -ItemType directory -Path "$AKS_LOCAL_TEMP_FOLDER\.kube"
 }
 
-Copy-Item -Path "$acsoutputfolder\kubeconfig\kubeconfig.$AKS_PERS_LOCATION.json" -Destination "$env:userprofile\.kube\config"
+Write-Host "Replace master vm name with private ip in kube config file"
+$kubeconfigjsonfile="$acsoutputfolder\kubeconfig\kubeconfig.$AKS_PERS_LOCATION.json"
+$publicNameOfMasterVM = $(GetPublicNameofMasterVM).Name
+$privateIpOfMasterVM = $(GetPrivateIPofMasterVM -resourceGroup $AKS_PERS_RESOURCE_GROUP).PrivateIP
+(Get-Content "$kubeconfigjsonfile").replace("$publicNameOfMasterVM", "$privateIpOfMasterVM") | Set-Content "$kubeconfigjsonfile"
 
-Copy-Item -Path "$acsoutputfolder\kubeconfig\kubeconfig.$AKS_PERS_LOCATION.json" -Destination "$AKS_LOCAL_TEMP_FOLDER\.kube\config"
+Copy-Item -Path "$kubeconfigjsonfile" -Destination "$env:userprofile\.kube\config"
+
+Copy-Item -Path "$kubeconfigjsonfile" -Destination "$AKS_LOCAL_TEMP_FOLDER\.kube\config"
 
 # If ((Get-Content "$($env:windir)\system32\Drivers\etc\hosts" ) -notcontains "127.0.0.1 hostname1")  
 #  {ac -Encoding UTF8  "$($env:windir)\system32\Drivers\etc\hosts" "127.0.0.1 hostname1" }

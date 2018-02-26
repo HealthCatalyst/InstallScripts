@@ -1,6 +1,6 @@
 # This file contains common functions for Azure
 # 
-$versioncommon = "2018.02.25.02"
+$versioncommon = "2018.02.25.03"
 
 Write-Host "---- Including common.ps1 version $versioncommon -----"
 function global:GetCommonVersion() {
@@ -945,6 +945,31 @@ function global:WriteDNSCommands(){
         Write-Host $myCommand
     }
     Write-Host ""
+}
+
+function global:GetPublicNameofMasterVM($resourceGroup){
+    [hashtable]$Return = @{} 
+
+    $resourceGroupLocation = az group show --name $resourceGroup --query "location" -o tsv
+
+    $masterVMName = "${resourceGroup}.${resourceGroupLocation}.cloudapp.azure.com"
+
+    $Return.Name = $masterVMName
+    return $Return
+}
+
+function global:GetPrivateIPofMasterVM($resourceGroup){
+    [hashtable]$Return = @{} 
+
+    $virtualmachines = az vm list -g $resourceGroup --query "[?storageProfile.osDisk.osType != 'Windows'].name" -o tsv
+    ForEach ($vm in $virtualmachines) {
+        if ($vm -match "master" ) {
+            $firstprivateip = az vm list-ip-addresses -g $resourceGroup -n $vm --query "[].virtualMachine.network.privateIpAddresses[0]" -o tsv
+        }
+    }
+
+    $Return.PrivateIP = $firstprivateip
+    return $Return
 }
 #-------------------
 Write-Host "end common.ps1 version $versioncommon"

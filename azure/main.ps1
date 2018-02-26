@@ -1,4 +1,4 @@
-$version = "2018.02.25.04"
+$version = "2018.02.25.05"
 
 # This script is meant for quick & easy install via:
 #   curl -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/azure/main.ps1 | iex;
@@ -154,7 +154,7 @@ while ($userinput -ne "q") {
         '21' {
             # launch Kubernetes dashboard
             $launchJob = $true
-            $myPortArray = 8001,8002,8003,8004,8005,8006,8007,8008,8009,8010,8011,8012,8013,8014,8015,8016,8017,8018,8019
+            $myPortArray = 8001,8002,8003,8004,8005,8006,8007,8008,8009,8010,8011,8012,8013,8014,8015,8016,8017,8018,8019,8020,8021,8022,8023,8024,8025,8026,8027,8028,8029,8030,8031,8032,8033,8034,8035,8036,8037,8038,8039
             $port = $(FindOpenPort -portArray $myPortArray).Port
             Write-Host "Starting Kub Dashboard on port $port"
             # $existingProcess = Get-ProcessByPort 8001

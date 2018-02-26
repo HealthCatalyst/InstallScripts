@@ -1,4 +1,4 @@
-$version = "2018.02.25.10"
+$version = "2018.02.25.11"
 
 # This script is meant for quick & easy install via:
 #   curl -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/azure/main.ps1 | iex;
@@ -6,10 +6,13 @@ $version = "2018.02.25.10"
 
 $GITHUB_URL = "https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master"
 
-Invoke-WebRequest -useb ${GITHUB_URL}/kubernetes/common-kube.ps1 | Invoke-Expression;
+$set = "abcdefghijklmnopqrstuvwxyz0123456789".ToCharArray()
+$randomstring += $set | Get-Random
+
+Invoke-WebRequest -useb ${GITHUB_URL}/kubernetes/common-kube.ps1?f=$randomstring | Invoke-Expression;
 # Get-Content ./kubernetes/common-kube.ps1 -Raw | Invoke-Expression;
 
-Invoke-WebRequest -useb $GITHUB_URL/azure/common.ps1 | Invoke-Expression;
+Invoke-WebRequest -useb $GITHUB_URL/azure/common.ps1?f=$randomstring | Invoke-Expression;
 # Get-Content ./azure/common.ps1 -Raw | Invoke-Expression;
 
 

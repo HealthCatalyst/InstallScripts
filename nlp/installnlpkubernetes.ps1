@@ -1,14 +1,17 @@
-Write-Output "--- installnlpkubernetes.ps1 Version 2018.02.25.02 ---"
+Write-Output "--- installnlpkubernetes.ps1 Version 2018.02.25.03 ---"
 
 # curl -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/nlp/installnlpkubernetes.ps1 | iex;
 
 $GITHUB_URL = "https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master"
 # $GITHUB_URL = "C:\Catalyst\git\Installscripts"
 
-Invoke-WebRequest -useb ${GITHUB_URL}/kubernetes/common-kube.ps1 | Invoke-Expression;
+$set = "abcdefghijklmnopqrstuvwxyz0123456789".ToCharArray()
+$randomstring += $set | Get-Random
+
+Invoke-WebRequest -useb ${GITHUB_URL}/kubernetes/common-kube.ps1?f=$randomstring | Invoke-Expression;
 # Get-Content ./kubernetes/common-kube.ps1 -Raw | Invoke-Expression;
 
-Invoke-WebRequest -useb $GITHUB_URL/azure/common.ps1 | Invoke-Expression;
+Invoke-WebRequest -useb $GITHUB_URL/azure/common.ps1?f=$randomstring | Invoke-Expression;
 # Get-Content ./azure/common.ps1 -Raw | Invoke-Expression;
 
 $loggedInUser = az account show --query "user.name"  --output tsv

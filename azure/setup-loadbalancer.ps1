@@ -1,4 +1,4 @@
-Write-output "Version 2018.02.23.02"
+Write-output "Version 2018.02.25.01"
 
 #
 # This script is meant for quick & easy install via:
@@ -9,10 +9,13 @@ $GITHUB_URL = "https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/m
 
 Write-Host "GITHUB_URL: $GITHUB_URL"
 
-Invoke-WebRequest -useb ${GITHUB_URL}/kubernetes/common-kube.ps1 | Invoke-Expression;
+$set = "abcdefghijklmnopqrstuvwxyz0123456789".ToCharArray()
+$randomstring += $set | Get-Random
+
+Invoke-WebRequest -useb ${GITHUB_URL}/kubernetes/common-kube.ps1?f=$randomstring | Invoke-Expression;
 # Get-Content ./kubernetes/common-kube.ps1 -Raw | Invoke-Expression;
 
-Invoke-WebRequest -useb $GITHUB_URL/azure/common.ps1 | Invoke-Expression;
+Invoke-WebRequest -useb $GITHUB_URL/azure/common.ps1?f=$randomstring | Invoke-Expression;
 # Get-Content ./azure/common.ps1 -Raw | Invoke-Expression;
 
 $AKS_OPEN_TO_PUBLIC = ""

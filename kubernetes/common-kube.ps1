@@ -1,5 +1,8 @@
 # this file contains common functions for kubernetes
-$versionkubecommon = "2018.02.25.01"
+$versionkubecommon = "2018.02.25.02"
+
+$set = "abcdefghijklmnopqrstuvwxyz0123456789".ToCharArray()
+$randomstring += $set | Get-Random
 
 Write-Host "Including common-kube.ps1 version $versionkubecommon"
 function global:GetCommonKubeVersion() {
@@ -123,7 +126,7 @@ function global:ReadYamlAndReplaceCustomer($baseUrl, $templateFile, $customerid 
     Write-Host "Reading from url: ${baseUrl}/${templateFile}"
 
     if ($baseUrl.StartsWith("http")) { 
-        Invoke-WebRequest -Uri "${baseUrl}/${templateFile}" -UseBasicParsing -ContentType "text/plain; charset=utf-8" `
+        Invoke-WebRequest -Uri "${baseUrl}/${templateFile}?f=${randomstring}" -UseBasicParsing -ContentType "text/plain; charset=utf-8" `
             | Select-Object -Expand Content `
             | Foreach-Object {$_ -replace 'CUSTOMERID', "$customerid"}
     }

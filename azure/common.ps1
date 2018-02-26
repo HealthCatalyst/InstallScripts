@@ -1,6 +1,6 @@
 # This file contains common functions for Azure
 # 
-$versioncommon = "2018.02.25.10"
+$versioncommon = "2018.02.25.11"
 
 Write-Host "---- Including common.ps1 version $versioncommon -----"
 function global:GetCommonVersion() {
@@ -10,7 +10,7 @@ function global:GetCommonVersion() {
 function global:CreateShareInStorageAccount($storageAccountName, $resourceGroup, $sharename, $deleteExisting) { 
     $AZURE_STORAGE_CONNECTION_STRING = az storage account show-connection-string -n $storageAccountName -g $resourceGroup -o tsv
     
-    Write-Host "Storage connection string: $AZURE_STORAGE_CONNECTION_STRING"
+    # Write-Host "Storage connection string: $AZURE_STORAGE_CONNECTION_STRING"
 
     if ($deleteExisting) {
         if ($(az storage share exists -n $sharename --connection-string $AZURE_STORAGE_CONNECTION_STRING --query "exists" -o tsv)) {
@@ -811,8 +811,13 @@ function global:FixLoadBalancers($resourceGroup) {
     Write-Host "---- Searching for kub services of type LoadBalancer"
     foreach ($service in $services) {
         if ($($service.spec.type -eq "LoadBalancer")) {
-            Write-Host "Found kub services $($service.metadata.name) with $($service.status.loadBalancer.ingress[0].ip)"
-            $loadBalancerServices += $service
+            if($service.status.loadBalancer.ingress.Count -gt 0){
+                Write-Host "Found kub services $($service.metadata.name) with $($service.status.loadBalancer.ingress[0].ip)"
+                $loadBalancerServices += $service
+            }
+            else {
+                Write-Host "Found kub services $($service.metadata.name) but it has no ingress IP so skipping it"
+            }
         }
     }
     Write-Host "---- Finished searching for kub services of type LoadBalancer"

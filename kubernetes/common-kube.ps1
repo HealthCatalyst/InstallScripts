@@ -1,5 +1,5 @@
 # this file contains common functions for kubernetes
-$versionkubecommon = "2018.02.25.02"
+$versionkubecommon = "2018.02.25.03"
 
 $set = "abcdefghijklmnopqrstuvwxyz0123456789".ToCharArray()
 $randomstring += $set | Get-Random
@@ -152,7 +152,7 @@ function global:Stop-ProcessByPort( [ValidateNotNullOrEmpty()] [int] $Port ) {
 
 
 
-function global:CleanOutNamespace($namespace){
+function global:CleanOutNamespace($namespace) {
 
     Write-Host "--- Cleaning out any old resources in $namespace ---"
 
@@ -162,11 +162,13 @@ function global:CleanOutNamespace($namespace){
     # can't delete persistent volume claims since they are not scoped to namespace
     kubectl delete 'pv' -l namespace=$namespace --ignore-not-found=true
 
-    $CLEANUP_DONE="n"
+    $CLEANUP_DONE = "n"
     Do {
-        $CLEANUP_DONE=$(kubectl get 'deployments,pods,services,ingress,persistentvolumeclaims,jobs,cronjobs' --namespace=$namespace -o jsonpath="{.items[*].metadata.name}")
-        Write-Host "Remaining items: $CLEANUP_DONE"
-        Start-Sleep 5
+        $CLEANUP_DONE = $(kubectl get 'deployments,pods,services,ingress,persistentvolumeclaims,jobs,cronjobs' --namespace=$namespace -o jsonpath="{.items[*].metadata.name}")
+        if (![string]::IsNullOrEmpty($CLEANUP_DONE)) {
+            Write-Host "Remaining items: $CLEANUP_DONE"
+            Start-Sleep 5
+        }
     }
     while (![string]::IsNullOrEmpty($CLEANUP_DONE))
 }

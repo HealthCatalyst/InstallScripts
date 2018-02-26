@@ -1,4 +1,4 @@
-Write-Output "--- installnlpkubernetes.ps1 Version 2018.02.22.01 ---"
+Write-Output "--- installnlpkubernetes.ps1 Version 2018.02.25.01 ---"
 
 # curl -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/nlp/installnlpkubernetes.ps1 | iex;
 
@@ -172,13 +172,17 @@ $loadBalancerIP = kubectl get svc traefik-ingress-service-public -n kube-system 
 if ([string]::IsNullOrWhiteSpace($loadBalancerIP)) {
     $loadBalancerIP = kubectl get svc traefik-ingress-service-internal -n kube-system -o jsonpath='{.status.loadBalancer.ingress[].ip}'
 }
+$loadBalancerInternalIP = kubectl get svc traefik-ingress-service-internal -n kube-system -o jsonpath='{.status.loadBalancer.ingress[].ip}'
+
+WriteDNSCommands
+
+Write-Output "If you didn't setup DNS in CAFE per above, add the following entries in your c:\windows\system32\drivers\etc\hosts file to access the urls from your browser"
+Write-Output "$loadBalancerInternalIP solr.$customerid.healthcatalyst.net"            
+Write-Output "$loadBalancerIP nlp.$customerid.healthcatalyst.net"            
+Write-Output "$loadBalancerIP nlpjobs.$customerid.healthcatalyst.net"            
 
 Write-Output "To test out the NLP services, open Git Bash and run:"
-Write-Output "curl -L --verbose --header 'Host: solr.$customerid.healthcatalyst.net' 'http://$loadBalancerIP/solr' -k"
+Write-Output "curl -L --verbose --header 'Host: solr.$customerid.healthcatalyst.net' 'http://$loadBalancerInternalIP/solr' -k"
 Write-Output "curl -L --verbose --header 'Host: nlp.$customerid.healthcatalyst.net' 'http://$loadBalancerIP/nlpweb' -k"
 Write-Output "curl -L --verbose --header 'Host: nlpjobs.$customerid.healthcatalyst.net' 'http://$loadBalancerIP/nlp' -k"
 
-Write-Output "If you didn't setup DNS, add the following entries in your c:\windows\system32\drivers\etc\hosts file to access the urls from your browser"
-Write-Output "$loadBalancerIP solr.$customerid.healthcatalyst.net"            
-Write-Output "$loadBalancerIP nlp.$customerid.healthcatalyst.net"            
-Write-Output "$loadBalancerIP nlpjobs.$customerid.healthcatalyst.net"            

@@ -1,4 +1,4 @@
-$version = "2018.02.23.05"
+$version = "2018.02.25.01"
 
 # This script is meant for quick & easy install via:
 #   curl -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/azure/main.ps1 | iex;
@@ -30,6 +30,7 @@ while ($userinput -ne "q") {
     Write-Host "5: Renew Azure token"
     Write-Host "6: Show NameServers"
     Write-Host "7: Setup Azure DNS entries"
+    Write-Host "8: Show DNS entries to make in CAFE DNS"
     Write-Host "------ Install -------"
     Write-Host "11: Install NLP"
     Write-Host "12: Install Realtime"
@@ -136,6 +137,9 @@ while ($userinput -ne "q") {
 
             SetupDNS -dnsResourceGroup $DNS_RESOURCE_GROUP -dnsrecordname $dnsrecordname -externalIP $EXTERNAL_IP 
         }
+        '8' {
+            WriteDNSCommands
+        } 
         '11' {
             Invoke-WebRequest -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/nlp/installnlpkubernetes.ps1 | Invoke-Expression;
         } 

@@ -1,6 +1,6 @@
 # This file contains common functions for Azure
 # 
-$versioncommon = "2018.02.23.04"
+$versioncommon = "2018.02.25.01"
 
 Write-Host "---- Including common.ps1 version $versioncommon -----"
 function global:GetCommonVersion() {
@@ -904,6 +904,42 @@ function global:CheckUrl($url, $hostHeader) {
     $Return.StatusCode = $Response.StatusCode
     $Return.StatusDescription = $Response.StatusDescription
     return $Return
+}
+function global:GetDNSCommands() {
+
+    [hashtable]$Return = @{} 
+
+    $myCommands = @()
+
+    $loadBalancerInternalIP = kubectl get svc traefik-ingress-service-internal -n kube-system -o jsonpath='{.status.loadBalancer.ingress[].ip}'
+    
+    $internalDNSEntries = kubectl get ing --all-namespaces -l expose=internal -o jsonpath="{.items[*]..spec.rules[*].host}"
+    ForEach ($dns in $internalDNSEntries.Split(" ")) { 
+        $dnsWithoutDomain = $dns -replace ".healthcatalyst.net", ""
+        $myCommands += "dnscmd cafeaddc-01.cafe.healthcatalyst.com /recorddelete healthcatalyst.net $dnsWithoutDomain A"
+        $myCommands += "dnscmd cafeaddc-01.cafe.healthcatalyst.com /recordadd healthcatalyst.net $dnsWithoutDomain A $loadBalancerInternalIP"
+    }
+
+    $loadBalancerIP = kubectl get svc traefik-ingress-service-public -n kube-system -o jsonpath='{.status.loadBalancer.ingress[].ip}' --ignore-not-found=true
+    
+    $externalDNSEntries = kubectl get ing --all-namespaces -l expose=external -o jsonpath="{.items[*]..spec.rules[*].host}"
+
+    ForEach ($dns in $externalDNSEntries.Split(" ")) { 
+        $dnsWithoutDomain = $dns -replace ".healthcatalyst.net", ""
+        $myCommands += "dnscmd cafeaddc-01.cafe.healthcatalyst.com /recorddelete healthcatalyst.net $dnsWithoutDomain A"
+        $myCommands += "dnscmd cafeaddc-01.cafe.healthcatalyst.com /recordadd healthcatalyst.net $dnsWithoutDomain A $loadBalancerIP"
+    }
+
+    $Return.Commands = $myCommands
+    return $Return
+}
+function global:WriteDNSCommands(){
+    Write-Host "To setup DNS entries in CAFE environment, remote desktop to CAFE DNS server: 10.5.2.4"
+    Write-Host "Open Powershell window and paste the following:"
+    $myCommands = $(GetDNSCommands).Commands
+    ForEach($myCommand in $myCommands){
+        Write-Host $myCommand
+    }    
 }
 #-------------------
 Write-Host "end common.ps1 version $versioncommon"

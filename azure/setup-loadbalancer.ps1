@@ -379,9 +379,9 @@ foreach ($file in "dashboard.yaml dashboard-internal.yaml".Split(" ")) {
 
 Write-Host "Deploying ingress"
 $folder = "kubernetes/loadbalancer/ingress"
-foreach ($file in "default.yaml default-internal.yaml".Split(" ")) { 
-    ReadYamlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "${folder}/${file}" -customerid $customerid | kubectl apply -f -
-}    
+# foreach ($file in "default.yaml default-internal.yaml".Split(" ")) { 
+#     ReadYamlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "${folder}/${file}" -customerid $customerid | kubectl apply -f -
+# }    
 
 if ($AKS_USE_SSL -eq "y" ) {
     foreach ($file in "dashboard.ssl.yaml".Split(" ")) { 

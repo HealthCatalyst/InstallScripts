@@ -1,4 +1,4 @@
-Write-Output "--- installnlpkubernetes.ps1 Version 2018.02.25.03 ---"
+Write-Output "--- installnlpkubernetes.ps1 Version 2018.02.25.04 ---"
 
 # curl -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/nlp/installnlpkubernetes.ps1 | iex;
 
@@ -148,12 +148,12 @@ foreach ($file in "solrserver.yaml jobserver.yaml nlpwebserver.yaml".Split(" "))
 Write-Host "-- Deploying HTTP proxies --"
 $folder = "ingress/http"
 if ($AKS_USE_SSL -eq "y" ) {
-    foreach ($file in "web.ssl.yaml solr.ssl.yaml".Split(" ")) { 
+    foreach ($file in "web.ssl.yaml solr.ssl.yaml web.ssl.internal.yaml".Split(" ")) { 
         ReadYamlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "nlp/${folder}/${file}" -customerid $customerid | kubectl apply -f -
     }
 }
 else {
-    foreach ($file in "web.yaml solr.yaml".Split(" ")) { 
+    foreach ($file in "web.yaml solr.yaml web.internal.yaml".Split(" ")) { 
         ReadYamlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "nlp/${folder}/${file}" -customerid $customerid | kubectl apply -f -
     }
 }

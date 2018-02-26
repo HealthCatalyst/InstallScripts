@@ -1,0 +1,24 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+    name: nlp-ingress-internal
+    namespace: fabricnlp
+    labels:  
+        expose: internal
+    annotations:
+        kubernetes.io/ingress.class: traefik
+spec:
+    rules:
+    - host: nlp.CUSTOMERID.healthcatalyst.net
+      http:
+        paths:
+        - backend:
+            serviceName: nlpserverpublic
+            servicePort: 80
+    - host: nlpjobs.CUSTOMERID.healthcatalyst.net
+      http:
+        paths:
+        - backend:
+            serviceName: nlpjobsserverpublic
+            servicePort: 80
+---

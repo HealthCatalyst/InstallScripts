@@ -1,6 +1,6 @@
 # This file contains common functions for Azure
 # 
-$versioncommon = "2018.02.25.06"
+$versioncommon = "2018.02.25.07"
 
 Write-Host "---- Including common.ps1 version $versioncommon -----"
 function global:GetCommonVersion() {
@@ -481,12 +481,12 @@ function global:Get-ProcessByPort( [ValidateNotNullOrEmpty()] [int] $Port ) {
     return $p_id;
 }
 
-function global:FindOpenPort($portArray){
+function global:FindOpenPort($portArray) {
     [hashtable]$Return = @{} 
 
-    ForEach($port in $portArray){
+    ForEach ($port in $portArray) {
         $result = Get-ProcessByPort $port
-        if([string]::IsNullOrEmpty($result)){
+        if ([string]::IsNullOrEmpty($result)) {
             $Return.Port = $port
             return $Return
         }
@@ -774,9 +774,17 @@ function global:FixLoadBalancers($resourceGroup) {
             $loadbalancerForNic = $(az network nic ip-config show --resource-group $resourceGroup --nic-name $nic --name $ipconfig --query "loadBalancerBackendAddressPools[].id" -o tsv)
             # if loadBalancerBackendAddressPools is missing then
             if ([string]::IsNullOrEmpty($loadbalancerForNic)) {
-                Write-Warning "Fixing load balancer for vm: $vm by adding nic $nic to backend pool $loadbalancerBackendPoolName in load balancer $loadbalancer "
+                Write-Warning "Fixing load balancer for vm: $vm by adding nic $nic with ip-config $ipconfig to backend pool $loadbalancerBackendPoolName in load balancer $loadbalancer "
                 # --lb-address-pools: Space-separated list of names or IDs of load balancer address pools to associate with the NIC. If names are used, --lb-name must be specified.
-                # $loadbalancerBackendPool = "/subscriptions/f8a42a3a-8b22-4be4-8413-0b6911c77242/resourceGroups/Prod-Kub-UTTX-RG/providers/Microsoft.Network/loadBalancers/Prod-Kub-UTTX-RG-internal/backendAddressPools/Prod-Kub-UTTX-RG"
+                az network nic ip-config update --resource-group $resourceGroup --nic-name $nic --name $ipconfig --lb-name $loadbalancer --lb-address-pools $loadbalancerBackendPoolName
+            }
+            elseif (!($($loadbalancerForNic -contains $loadbalancer))) {
+                Write-Host "nic is already bound to load balancer $loadbalancerForNic"
+                Write-Host "adding internal load balancer to secondary ip-config"
+                # get the first secondary ipconfig
+                $ipconfig = $(az network nic ip-config list --resource-group $resourceGroup --nic-name $nic --query "[?!primary].name" -o tsv)[0]
+                Write-Warning "Fixing load balancer for vm: $vm by adding nic $nic with ip-config $ipconfig to backend pool $loadbalancerBackendPoolName in load balancer $loadbalancer "
+                # --lb-address-pools: Space-separated list of names or IDs of load balancer address pools to associate with the NIC. If names are used, --lb-name must be specified.
                 az network nic ip-config update --resource-group $resourceGroup --nic-name $nic --name $ipconfig --lb-name $loadbalancer --lb-address-pools $loadbalancerBackendPoolName
             }
             else {
@@ -952,17 +960,17 @@ function global:GetDNSCommands() {
     $Return.Commands = $myCommands
     return $Return
 }
-function global:WriteDNSCommands(){
+function global:WriteDNSCommands() {
     $myCommands = $(GetDNSCommands).Commands
     Write-Host "To setup DNS entries in CAFE environment, remote desktop to CAFE DNS server: 10.5.2.4"
     Write-Host "Open Powershell window and paste the following:"
-    ForEach($myCommand in $myCommands){
+    ForEach ($myCommand in $myCommands) {
         Write-Host $myCommand
     }
     Write-Host ""
 }
 
-function global:GetPublicNameofMasterVM($resourceGroup){
+function global:GetPublicNameofMasterVM($resourceGroup) {
     [hashtable]$Return = @{} 
 
     $resourceGroupLocation = az group show --name $resourceGroup --query "location" -o tsv
@@ -973,7 +981,7 @@ function global:GetPublicNameofMasterVM($resourceGroup){
     return $Return
 }
 
-function global:GetPrivateIPofMasterVM($resourceGroup){
+function global:GetPrivateIPofMasterVM($resourceGroup) {
     [hashtable]$Return = @{} 
 
     $virtualmachines = az vm list -g $resourceGroup --query "[?storageProfile.osDisk.osType != 'Windows'].name" -o tsv

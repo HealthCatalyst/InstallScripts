@@ -1,4 +1,4 @@
-$version = "2018.02.25.08"
+$version = "2018.02.25.09"
 
 # This script is meant for quick & easy install via:
 #   curl -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/azure/main.ps1 | iex;
@@ -38,19 +38,20 @@ while ($userinput -ne "q") {
     Write-Host "22: Show SSH commands to VMs"
     Write-Host "23: View status of DNS pods"
     Write-Host "24: Restart all VMs"
+    Write-Host "25: Flush DNS on local machine"
     Write-Host "------ Load Balancer -------"
-    Write-Host "25: Test load balancer"
-    Write-Host "26: Fix load balancers"
-    Write-Host "27: Show load balancer logs"
-    Write-Host "28: Launch Load Balancer Dashboard"
+    Write-Host "30: Test load balancer"
+    Write-Host "31: Fix load balancers"
+    Write-Host "32: Show load balancer logs"
+    Write-Host "33: Launch Load Balancer Dashboard"
     Write-Host "------ NLP -----"
-    Write-Host "30: Show status of NLP"
-    Write-Host "31: Test web sites"
-    Write-Host "32: Show passwords"
-    Write-Host "33: Show NLP logs"
-    Write-Host "34: Restart NLP"
+    Write-Host "40: Show status of NLP"
+    Write-Host "41: Test web sites"
+    Write-Host "42: Show passwords"
+    Write-Host "43: Show NLP logs"
+    Write-Host "44: Restart NLP"
     Write-Host "------ Realtime -----"
-    Write-Host "41: Show status of realtime"
+    Write-Host "51: Show status of realtime"
     Write-Host "-----------"
     Write-Host "q: Quit"
     $userinput = Read-Host "Please make a selection"
@@ -268,6 +269,10 @@ while ($userinput -ne "q") {
             SetupCronTab -resourceGroup $AKS_PERS_RESOURCE_GROUP          
         } 
         '25' {
+            Read-Host "Script needs elevated privileges to flushdns.  Hit ENTER to launch script to set PATH"
+            Start-Process powershell -verb RunAs -ArgumentList "ipconfig /flushdns"
+        } 
+        '30' {
             $loadBalancerIP = kubectl get svc traefik-ingress-service-public -n kube-system -o jsonpath='{.status.loadBalancer.ingress[].ip}' --ignore-not-found=true
             $loadBalancerInternalIP = kubectl get svc traefik-ingress-service-internal -n kube-system -o jsonpath='{.status.loadBalancer.ingress[].ip}'
             if ([string]::IsNullOrWhiteSpace($loadBalancerIP)) {
@@ -281,7 +286,7 @@ while ($userinput -ne "q") {
             Write-Output "To test out the load balancer, open Git Bash and run:"
             Write-Output "curl --header 'Host: dashboard.$customerid.healthcatalyst.net' 'http://$loadBalancerInternalIP/' -k" 
             } 
-        '26' {
+        '31' {
             $DEFAULT_RESOURCE_GROUP = ReadSecretValue -secretname azure-secret -valueName resourcegroup
             
             if ([string]::IsNullOrWhiteSpace($AKS_PERS_RESOURCE_GROUP)) {
@@ -295,23 +300,23 @@ while ($userinput -ne "q") {
             }
             FixLoadBalancers -resourceGroup $AKS_PERS_RESOURCE_GROUP
         } 
-        '27' {
+        '32' {
             $pods = $(kubectl get pods -l k8s-traefik=traefik -n kube-system -o jsonpath='{.items[*].metadata.name}')
             foreach ($pod in $pods.Split(" ")) {
                 Write-Output "=============== Pod: $pod ================="
                 kubectl logs --tail=20 $pod -n kube-system 
             }
         }         
-        '28' {
+        '33' {
             $customerid = ReadSecret -secretname customerid
             $customerid = $customerid.ToLower().Trim()
             Write-Host "Launching http://dashboard.$customerid.healthcatalyst.net in the web browser"
             Start-Process -FilePath "http://dashboard.$customerid.healthcatalyst.net";
         }         
-        '30' {
+        '40' {
             kubectl get 'deployments,pods,services,ingress,secrets,persistentvolumeclaims,persistentvolumes,nodes' --namespace=fabricnlp -o wide
         } 
-        '31' {
+        '41' {
             $loadBalancerIP = kubectl get svc traefik-ingress-service-public -n kube-system -o jsonpath='{.status.loadBalancer.ingress[].ip}' --ignore-not-found=true
             $loadBalancerInternalIP = kubectl get svc traefik-ingress-service-internal -n kube-system -o jsonpath='{.status.loadBalancer.ingress[].ip}'
             if ([string]::IsNullOrWhiteSpace($loadBalancerIP)) {
@@ -338,22 +343,22 @@ while ($userinput -ne "q") {
             Write-Host "Launching http://nlp.$customerid.healthcatalyst.net/nlpweb in the web browser"
             Start-Process -FilePath "http://nlp.$customerid.healthcatalyst.net/nlpweb";
         } 
-        '32' {
+        '42' {
             Write-Host "MySql root password: $(ReadSecretPassword -secretname mysqlrootpassword -namespace fabricnlp)"
             Write-Host "MySql NLP_APP_USER password: $(ReadSecretPassword -secretname mysqlpassword -namespace fabricnlp)"
             Write-Host "SendGrid SMTP Relay key: $(ReadSecretPassword -secretname smtprelaypassword -namespace fabricnlp)"
         } 
-        '33' {
+        '43' {
             $pods = $(kubectl get pods -n fabricnlp -o jsonpath='{.items[*].metadata.name}')
             foreach ($pod in $pods.Split(" ")) {
                 Write-Output "=============== Pod: $pod ================="
                 kubectl logs --tail=20 $pod -n fabricnlp
             }
         } 
-        '34' {
+        '44' {
             kubectl delete --all 'pods' --namespace=fabricnlp --ignore-not-found=true                        
         } 
-        '41' {
+        '51' {
             kubectl get 'deployments,pods,services,ingress,secrets,persistentvolumeclaims,persistentvolumes,nodes' --namespace=fabricrealtime -o wide
         } 
         'q' {

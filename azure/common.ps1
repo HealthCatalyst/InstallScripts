@@ -1,6 +1,6 @@
 # This file contains common functions for Azure
 # 
-$versioncommon = "2018.02.25.07"
+$versioncommon = "2018.02.25.08"
 
 Write-Host "---- Including common.ps1 version $versioncommon -----"
 function global:GetCommonVersion() {
@@ -783,12 +783,18 @@ function global:FixLoadBalancers($resourceGroup) {
                 Write-Host "adding internal load balancer to secondary ip-config"
                 # get the first secondary ipconfig
                 $ipconfig = $(az network nic ip-config list --resource-group $resourceGroup --nic-name $nic --query "[?!primary].name" -o tsv)[0]
-                Write-Warning "Fixing load balancer for vm: $vm by adding nic $nic with ip-config $ipconfig to backend pool $loadbalancerBackendPoolName in load balancer $loadbalancer "
-                # --lb-address-pools: Space-separated list of names or IDs of load balancer address pools to associate with the NIC. If names are used, --lb-name must be specified.
-                az network nic ip-config update --resource-group $resourceGroup --nic-name $nic --name $ipconfig --lb-name $loadbalancer --lb-address-pools $loadbalancerBackendPoolName
+                $loadbalancerForNic = $(az network nic ip-config show --resource-group $resourceGroup --nic-name $nic --name $ipconfig --query "loadBalancerBackendAddressPools[].id" -o tsv)
+                if ([string]::IsNullOrEmpty($loadbalancerForNic)) {
+                    Write-Warning "Fixing load balancer for vm: $vm by adding nic $nic with ip-config $ipconfig to backend pool $loadbalancerBackendPoolName in load balancer $loadbalancer "
+                    # --lb-address-pools: Space-separated list of names or IDs of load balancer address pools to associate with the NIC. If names are used, --lb-name must be specified.
+                    az network nic ip-config update --resource-group $resourceGroup --nic-name $nic --name $ipconfig --lb-name $loadbalancer --lb-address-pools $loadbalancerBackendPoolName
+                }
+                else {
+                    Write-Host "Load Balancer with ip-config $ipconfig is already setup properly for vm: $vm"
+                }
             }
             else {
-                Write-Host "Load Balancer is already setup properly for vm: $vm"
+                Write-Host "Load Balancer with ip-config $ipconfig is already setup properly for vm: $vm"
             }
         }
     }
@@ -934,10 +940,10 @@ function global:GetDNSCommands() {
 
     $myCommands = @()
 
-    $loadBalancerInternalIP = kubectl get svc traefik-ingress-service-internal -n kube-system -o jsonpath='{.status.loadBalancer.ingress[].ip}'
+    $loadBalancerInternalIP = kubectl get svc traefik-ingress-service-internal -n kube-system -o jsonpath='{.status.loadBalancer.ingress[].ip}' --ignore-not-found=true
     
-    $internalDNSEntries = kubectl get ing --all-namespaces -l expose=internal -o jsonpath="{.items[*]..spec.rules[*].host}"
-    ForEach ($dns in $internalDNSEntries.Split(" ")) { 
+    $internalDNSEntries = $(kubectl get ing --all-namespaces -l expose=internal -o jsonpath="{.items[*]..spec.rules[*].host}" --ignore-not-found=true).Split(" ")
+    ForEach ($dns in $internalDNSEntries) { 
         $dnsWithoutDomain = $dns -replace ".healthcatalyst.net", ""
         $myCommands += "dnscmd cafeaddc-01.cafe.healthcatalyst.com /recorddelete healthcatalyst.net $dnsWithoutDomain A /f"
         $myCommands += "dnscmd cafeaddc-01.cafe.healthcatalyst.com /recordadd healthcatalyst.net $dnsWithoutDomain A $loadBalancerInternalIP"
@@ -947,18 +953,24 @@ function global:GetDNSCommands() {
 
     $loadBalancerIP = kubectl get svc traefik-ingress-service-public -n kube-system -o jsonpath='{.status.loadBalancer.ingress[].ip}' --ignore-not-found=true
     
-    $externalDNSEntries = kubectl get ing --all-namespaces -l expose=external -o jsonpath="{.items[*]..spec.rules[*].host}"
+    $externalDNSEntries = $(kubectl get ing --all-namespaces -l expose=external -o jsonpath="{.items[*]..spec.rules[*].host}" --ignore-not-found=true).Split(" ")
 
-    ForEach ($dns in $externalDNSEntries.Split(" ")) { 
-        $dnsWithoutDomain = $dns -replace ".healthcatalyst.net", ""
-        $myCommands += "dnscmd cafeaddc-01.cafe.healthcatalyst.com /recorddelete healthcatalyst.net $dnsWithoutDomain A /f"
-        $myCommands += "dnscmd cafeaddc-01.cafe.healthcatalyst.com /recordadd healthcatalyst.net $dnsWithoutDomain A $loadBalancerIP"
-        # $myCommands += "dnscmd cafeaddc-01.cafe.healthcatalyst.com /recorddelete healthcatalyst.net $dns PTR /f"
-        # $myCommands += "dnscmd cafeaddc-01.cafe.healthcatalyst.com /recordadd 10.in-addr-arpa $loadBalancerIP PTR $dns"        
+    ForEach ($dns in $externalDNSEntries) { 
+        if (($internalDNSEntries.Contains($dns))) {
+            # already included in internal load balancer
+        }
+        else {
+            $dnsWithoutDomain = $dns -replace ".healthcatalyst.net", ""
+            $myCommands += "dnscmd cafeaddc-01.cafe.healthcatalyst.com /recorddelete healthcatalyst.net $dnsWithoutDomain A /f"
+            $myCommands += "dnscmd cafeaddc-01.cafe.healthcatalyst.com /recordadd healthcatalyst.net $dnsWithoutDomain A $loadBalancerIP"
+            # $myCommands += "dnscmd cafeaddc-01.cafe.healthcatalyst.com /recorddelete healthcatalyst.net $dns PTR /f"
+            # $myCommands += "dnscmd cafeaddc-01.cafe.healthcatalyst.com /recordadd 10.in-addr-arpa $loadBalancerIP PTR $dns"        
+        }
     }
+}
 
-    $Return.Commands = $myCommands
-    return $Return
+$Return.Commands = $myCommands
+return $Return
 }
 function global:WriteDNSCommands() {
     $myCommands = $(GetDNSCommands).Commands

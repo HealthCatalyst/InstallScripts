@@ -1,4 +1,4 @@
-Write-Output "--- installnlpkubernetes.ps1 Version 2018.02.25.01 ---"
+Write-Output "--- installnlpkubernetes.ps1 Version 2018.02.25.02 ---"
 
 # curl -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/nlp/installnlpkubernetes.ps1 | iex;
 
@@ -74,7 +74,13 @@ if ([string]::IsNullOrWhiteSpace($(kubectl get namespace $namespace --ignore-not
     kubectl create namespace $namespace
 }
 else {
-    Do { $deleteSecrets = Read-Host "Namespace exists.  Do you want to delete passwords and ALL data stored in this namespace? (y/n)"}
+    Write-Warning "Namespace already exists.  Do you want to delete passwords and ALL data stored in this namespace or keep the current data and passwords"
+    Do {
+        $deleteSecrets = Read-Host "Delete passwords and ALL data stored in this namespace? (y/n) (default: n)"
+        if([string]::IsNullOrEmpty($deleteSecrets)){
+            $deleteSecrets = "n"
+        }
+    }
     while ([string]::IsNullOrWhiteSpace($deleteSecrets))    
     
     if ($deleteSecrets -eq "y" ) {

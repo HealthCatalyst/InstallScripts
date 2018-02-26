@@ -1,6 +1,6 @@
 # This file contains common functions for Azure
 # 
-$versioncommon = "2018.02.25.01"
+$versioncommon = "2018.02.25.02"
 
 Write-Host "---- Including common.ps1 version $versioncommon -----"
 function global:GetCommonVersion() {
@@ -916,8 +916,10 @@ function global:GetDNSCommands() {
     $internalDNSEntries = kubectl get ing --all-namespaces -l expose=internal -o jsonpath="{.items[*]..spec.rules[*].host}"
     ForEach ($dns in $internalDNSEntries.Split(" ")) { 
         $dnsWithoutDomain = $dns -replace ".healthcatalyst.net", ""
-        $myCommands += "dnscmd cafeaddc-01.cafe.healthcatalyst.com /recorddelete healthcatalyst.net $dnsWithoutDomain A"
+        $myCommands += "dnscmd cafeaddc-01.cafe.healthcatalyst.com /recorddelete healthcatalyst.net $dnsWithoutDomain A /f"
         $myCommands += "dnscmd cafeaddc-01.cafe.healthcatalyst.com /recordadd healthcatalyst.net $dnsWithoutDomain A $loadBalancerInternalIP"
+        $myCommands += "dnscmd cafeaddc-01.cafe.healthcatalyst.com /recorddelete healthcatalyst.net $dns PTR /f"
+        $myCommands += "dnscmd cafeaddc-01.cafe.healthcatalyst.com /recordadd 10.in-addr-arpa $loadBalancerInternalIP PTR $dns"
     }
 
     $loadBalancerIP = kubectl get svc traefik-ingress-service-public -n kube-system -o jsonpath='{.status.loadBalancer.ingress[].ip}' --ignore-not-found=true
@@ -926,8 +928,10 @@ function global:GetDNSCommands() {
 
     ForEach ($dns in $externalDNSEntries.Split(" ")) { 
         $dnsWithoutDomain = $dns -replace ".healthcatalyst.net", ""
-        $myCommands += "dnscmd cafeaddc-01.cafe.healthcatalyst.com /recorddelete healthcatalyst.net $dnsWithoutDomain A"
+        $myCommands += "dnscmd cafeaddc-01.cafe.healthcatalyst.com /recorddelete healthcatalyst.net $dnsWithoutDomain A /f"
         $myCommands += "dnscmd cafeaddc-01.cafe.healthcatalyst.com /recordadd healthcatalyst.net $dnsWithoutDomain A $loadBalancerIP"
+        $myCommands += "dnscmd cafeaddc-01.cafe.healthcatalyst.com /recorddelete healthcatalyst.net $dns PTR /f"
+        $myCommands += "dnscmd cafeaddc-01.cafe.healthcatalyst.com /recordadd 10.in-addr-arpa $loadBalancerIP PTR $dns"        
     }
 
     $Return.Commands = $myCommands
@@ -939,7 +943,8 @@ function global:WriteDNSCommands(){
     $myCommands = $(GetDNSCommands).Commands
     ForEach($myCommand in $myCommands){
         Write-Host $myCommand
-    }    
+    }
+    Write-Host ""
 }
 #-------------------
 Write-Host "end common.ps1 version $versioncommon"

@@ -1,4 +1,4 @@
-$version = "2018.02.25.01"
+$version = "2018.02.25.02"
 
 # This script is meant for quick & easy install via:
 #   curl -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/azure/main.ps1 | iex;
@@ -28,7 +28,7 @@ while ($userinput -ne "q") {
     Write-Host "3: Start VMs in Resource Group"
     Write-Host "4: Stop VMs in Resource Group"
     Write-Host "5: Renew Azure token"
-    Write-Host "6: Show NameServers"
+    Write-Host "6: Show NameServers to add in GoDaddy"
     Write-Host "7: Setup Azure DNS entries"
     Write-Host "8: Show DNS entries to make in CAFE DNS"
     Write-Host "------ Install -------"
@@ -154,21 +154,24 @@ while ($userinput -ne "q") {
         '21' {
             # launch Kubernetes dashboard
             $launchJob = $true
-            $existingProcess = Get-ProcessByPort 8001
-            if (!([string]::IsNullOrWhiteSpace($existingProcess))) {
-                Do { $confirmation = Read-Host "Another process is listening on 8001.  Do you want to kill that process? (y/n)"}
-                while ([string]::IsNullOrWhiteSpace($confirmation))
+            $myPortArray = 8001,8002,8003,8004,8005,8006,8007,8008,8009,8010,8011,8012,8013,8014,8015,8016,8017,8018,8019
+            $port = $(FindOpenPort -portArray $myPortArray).Port
+            Write-Host "Starting Kub Dashboard on port $port"
+            # $existingProcess = Get-ProcessByPort 8001
+            # if (!([string]::IsNullOrWhiteSpace($existingProcess))) {
+            #     Do { $confirmation = Read-Host "Another process is listening on 8001.  Do you want to kill that process? (y/n)"}
+            #     while ([string]::IsNullOrWhiteSpace($confirmation))
             
-                if ($confirmation -eq "y") {
-                    Stop-ProcessByPort 8001
-                }
-                else {
-                    $launchJob = $false
-                }
-            }
+            #     if ($confirmation -eq "y") {
+            #         Stop-ProcessByPort 8001
+            #     }
+            #     else {
+            #         $launchJob = $false
+            #     }
+            # }
 
             if ($launchJob) {
-                $job = Start-Job -Name "KubDashboard" -ScriptBlock {kubectl proxy} -ErrorAction Stop
+                $job = Start-Job -Name "KubDashboard" -ScriptBlock {kubectl proxy -p $port} -ErrorAction Stop
                 Wait-Job $job -Timeout 5;
                 Write-Output "job state: $($job.state)"  
                 Receive-Job -Job $job 6>&1  

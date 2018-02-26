@@ -481,6 +481,21 @@ function global:Get-ProcessByPort( [ValidateNotNullOrEmpty()] [int] $Port ) {
     return $p_id;
 }
 
+function global:FindOpenPort($portArray){
+    [hashtable]$Return = @{} 
+
+    ForEach($port in $portArray){
+        $result = Get-ProcessByPort $port
+        if([string]::IsNullOrEmpty($result)){
+            $Return.Port = $port
+            return $Return
+        }
+    }   
+    $Return.Port = 0
+
+    return $Return
+}
+
 function global:AddFolderToPathEnvironmentVariable($folder) {
     # add the c:\kubernetes folder to system PATH
     Write-Host "Checking if $folder is in PATH"

@@ -27,11 +27,11 @@ if($installDatabase){
         $authorizationDb = $userEnteredAuthorizationDb
     }
 
-    Write-Host "Deploying Fabric.Identity datbase..."
+    Write-Host "Deploying Fabric.Identity database..."
     .$dacPacPath /a:Publish /Profile:"Fabric.Identity.SqlServerIncludingTables.publish.xml" /SourceFile:"Fabric.Identity.SqlServer.dacpac" /TargetServerName:$databaseServer /TargetDatabaseName:$identityDb
     Write-Host ""
 
-    Write-Host "Deploying Fabric.Authorization datbase..."
+    Write-Host "Deploying Fabric.Authorization database..."
     .$dacPacPath /a:Publish /Profile:"Fabric.Authorization.SqlServer.publish.xml" /SourceFile:"Fabric.Authorization.SqlServer.dacpac" /TargetServerName:$databaseServer /TargetDatabaseName:$authorizationDb
     Write-Host ""
 }

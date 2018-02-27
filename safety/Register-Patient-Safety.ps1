@@ -118,25 +118,25 @@ if(!(Test-IsRunAsAdministrator))
 
 $installSettings = Get-InstallationSettings "registration"
 $fabricInstallerSecret = $installSettings.fabricInstallerSecret
-$authorizationSerivceURL =  $installSettings.authorizationSerivce
-$identityServerUrl = $installSettings.identityService
+$authorizationServiceURL =  $installSettings.authorizationService
+$identityServiceUrl = $installSettings.identityService
 $safetySurveillanceUrl = $installSettings.safetySurveillanceService
 $groupName = $installSettings.groupName
 
 if([string]::IsNullOrEmpty($installSettings.identityService))  
 {
-	$identityServerUrl = Get-IdentityServiceUrl
+	$identityServiceUrl = Get-IdentityServiceUrl
 } else
 {
-	$identityServerUrl = $installSettings.identityService
+	$identityServiceUrl = $installSettings.identityService
 }
 
-if([string]::IsNullOrEmpty($installSettings.authorizationSerivce))  
+if([string]::IsNullOrEmpty($installSettings.authorizationServiceURL))  
 {
-	$authorizationSerivceURL = Get-AuthorizationServiceUrl
+	$authorizationServiceURL = Get-AuthorizationServiceUrl
 } else
 {
-	$authorizationSerivceURL = $installSettings.authorizationSerivce
+	$authorizationServiceURL = $installSettings.authorizationService
 }
 
 if([string]::IsNullOrEmpty($installSettings.safetySurveillanceService))  
@@ -167,10 +167,10 @@ if(![string]::IsNullOrEmpty($userEnteredAuthorizationServiceURL)){
      $authorizationSerivceURL = $userEnteredAuthorizationServiceURL
 }
 
-$userEnteredIdentityServiceURL = Read-Host  "Enter the URL for the Identity Service or hit enter to accept the default [$identityServerUrl]"
+$userEnteredIdentityServiceURL = Read-Host  "Enter the URL for the Identity Service or hit enter to accept the default [$identityServiceUrl]"
 Write-Host ""
 if(![string]::IsNullOrEmpty($userEnteredIdentityServiceURL)){   
-     $identityServerUrl = $userEnteredIdentityServiceURL
+     $identityServiceUrl = $userEnteredIdentityServiceURL
 }
 
 $userEnteredSafetySurveillanceURL = Read-Host  "Enter the URL for the Identity Service or hit enter to accept the default [$safetySurveillanceUrl]"
@@ -185,7 +185,28 @@ if(![string]::IsNullOrEmpty($userEnteredGroupName)){
      $groupName = $userEnteredGroupName
 }
 
-$accessToken = Get-AccessToken $identityServerUrl "fabric-installer" "fabric/identity.manageresources fabric/authorization.write fabric/authorization.read fabric/authorization.manageclients" $fabricInstallerSecret
+if([string]::IsNullOrWhiteSpace($fabricInstallerSecret))
+{
+    Write-Error "You must enter a value for the installer secret" -ErrorAction Stop
+}
+if([string]::IsNullOrWhiteSpace($authorizationSerivceURL))
+{
+    Write-Error "You must enter a value for the Fabric.Authorization URL" -ErrorAction Stop
+}
+if([string]::IsNullOrWhiteSpace($identityServiceUrl))
+{
+    Write-Error "You must enter a value for the Fabric.Identity URL." -ErrorAction Stop
+}
+if([string]::IsNullOrWhiteSpace($safetySurveillanceUrl))
+{
+    Write-Error "You must enter a value for the Safety Surveillance URL" -ErrorAction Stop
+}
+if([string]::IsNullOrWhiteSpace($groupName))
+{
+    Write-Error "You must enter a value for the Group." -ErrorAction Stop
+}
+
+$accessToken = Get-AccessToken $identityServiceUrl "fabric-installer" "fabric/identity.manageresources fabric/authorization.write fabric/authorization.read fabric/authorization.manageclients" $fabricInstallerSecret
 
 #Register safety surveillance api
 $body = @'
@@ -198,8 +219,8 @@ $body = @'
 
 Write-Host "Registering Safety Surveillance API with Fabric.Identity."
 try {
-	$authorizationApiSecret = Add-ApiRegistration -authUrl $identityServerUrl -body $body -accessToken $accessToken
-	Write-Host "Safety Surveillance apiSecret: $authorizationApiSecret"
+	$authorizationApiSecret = Add-ApiRegistration -authUrl $identityServiceUrl -body $body -accessToken $accessToken
+	Write-Success "Safety Surveillance apiSecret: $authorizationApiSecret"
 	Write-Host ""
 } catch {
     $exception = $_.Exception
@@ -231,8 +252,8 @@ $body = @{
 $body = (ConvertTo-Json $body)
 Write-Host "Registering Safety Surveillance Client with Fabric.Identity."
 try{
-	$authorizationClientSecret = Add-ClientRegistration -authUrl $identityServerUrl -body $body -accessToken $accessToken
-	Write-Host "Safety Surveillance clientSecret: $authorizationClientSecret"
+	$authorizationClientSecret = Add-ClientRegistration -authUrl $identityServiceUrl -body $body -accessToken $accessToken
+	Write-Success "Safety Surveillance clientSecret: $authorizationClientSecret"
 	Write-Host ""
 } catch {
     $exception = $_.Exception

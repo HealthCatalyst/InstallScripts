@@ -1,4 +1,4 @@
-$version = "2018.02.27.02"
+$version = "2018.02.27.03"
 
 # This script is meant for quick & easy install via:
 #   curl -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/azure/main.ps1 | iex;
@@ -383,7 +383,10 @@ while ($userinput -ne "q") {
             return
         }
     }
-    Read-Host -Prompt "Press Enter to continue"
+    $userinput = Read-Host -Prompt "Press Enter to continue or q to exit"
+    if($userinput -eq "q"){
+        return
+    }
     [Console]::ResetColor()
     Clear-Host
 }

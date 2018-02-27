@@ -1,4 +1,4 @@
-$version = "2018.02.25.12"
+$version = "2018.02.27.02"
 
 # This script is meant for quick & easy install via:
 #   curl -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/azure/main.ps1 | iex;
@@ -54,6 +54,7 @@ while ($userinput -ne "q") {
     Write-Host "43: Show passwords"
     Write-Host "44: Show NLP logs"
     Write-Host "45: Restart NLP"
+    Write-Host "46: Show commands to SSH to NLP containers"
     Write-Host "------ Realtime -----"
     Write-Host "51: Show status of realtime"
     Write-Host "-----------"
@@ -222,8 +223,8 @@ while ($userinput -ne "q") {
             $SSH_PRIVATE_KEY_FILE = "$AKS_FOLDER_FOR_SSH_KEY\id_rsa"
             $SSH_PRIVATE_KEY_FILE_UNIX_PATH = "/" + (($SSH_PRIVATE_KEY_FILE -replace "\\", "/") -replace ":", "").ToLower().Trim("/")                                       
             $MASTER_VM_NAME = "${AKS_PERS_RESOURCE_GROUP}.${AKS_PERS_LOCATION}.cloudapp.azure.com"
-            Write-Output "You can connect to master VM in Git Bash for debugging using:"
-            Write-Output "ssh -i ${SSH_PRIVATE_KEY_FILE_UNIX_PATH} azureuser@${MASTER_VM_NAME}"            
+            # Write-Output "You can connect to master VM in Git Bash for debugging using:"
+            # Write-Output "ssh -i ${SSH_PRIVATE_KEY_FILE_UNIX_PATH} azureuser@${MASTER_VM_NAME}"            
 
             $virtualmachines = az vm list -g $AKS_PERS_RESOURCE_GROUP --query "[?storageProfile.osDisk.osType != 'Windows'].name" -o tsv
             ForEach ($vm in $virtualmachines) {
@@ -232,7 +233,7 @@ while ($userinput -ne "q") {
                     $firstpublicip = az vm show -g $AKS_PERS_RESOURCE_GROUP -n $vm -d --query privateIps -otsv
                     $firstpublicip = $firstpublicip.Split(",")[0]
                 }
-                Write-Output "Connect to $vm"
+                Write-Output "Connect to ${vm}:"
                 Write-Output "ssh -i ${SSH_PRIVATE_KEY_FILE_UNIX_PATH} azureuser@${firstpublicip}"            
             }
 
@@ -368,6 +369,12 @@ while ($userinput -ne "q") {
         } 
         '45' {
             kubectl delete --all 'pods' --namespace=fabricnlp --ignore-not-found=true                        
+        } 
+        '46' {
+            $pods = $(kubectl get pods -n fabricnlp -o jsonpath='{.items[*].metadata.name}')
+            foreach ($pod in $pods.Split(" ")) {
+                Write-Output "kubectl exec -it $pod -n fabricnlp -- sh"
+            }
         } 
         '51' {
             kubectl get 'deployments,pods,services,ingress,secrets,persistentvolumeclaims,persistentvolumes,nodes' --namespace=fabricrealtime -o wide

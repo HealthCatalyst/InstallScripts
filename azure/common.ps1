@@ -1,6 +1,6 @@
 # This file contains common functions for Azure
 # 
-$versioncommon = "2018.02.25.11"
+$versioncommon = "2018.02.27.01"
 
 Write-Host "---- Including common.ps1 version $versioncommon -----"
 function global:GetCommonVersion() {
@@ -150,9 +150,24 @@ function global:RestartVMsInResourceGroup( $resourceGroup) {
             az vm run-command invoke -g $resourceGroup -n $vm --command-id RunShellScript --scripts "systemctl restart etcd"
         }
     }
+
+    # systemctl enable etcd.service
     
 
 }
+
+function global:FixEtcdRestartIssueOnMaster( $resourceGroup) {
+
+    $virtualmachines = az vm list -g $resourceGroup --query "[].name" -o tsv
+    ForEach ($vm in $virtualmachines) {
+        if ($vm -match "master" ) {
+            Write-Host "Sending command to master($vm) to enable etcd due to bug: https://github.com/Azure/acs-engine/issues/2282"
+            # https://github.com/Azure/acs-engine/pull/2329/commits/e3ef0578f268bf00e6065414acffdfd7ebb4e90b
+            az vm run-command invoke -g $resourceGroup -n $vm --command-id RunShellScript --scripts "systemctl enable etcd.service"
+        }
+    }
+}
+
 
 function global:SetHostFileInVms( $resourceGroup) {
     $AKS_PERS_LOCATION = az group show --name $resourceGroup --query "location" -o tsv

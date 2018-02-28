@@ -1,6 +1,6 @@
 # This file contains common functions for Azure
 # 
-$versioncommon = "2018.02.27.03"
+$versioncommon = "2018.02.27.04"
 
 Write-Host "---- Including common.ps1 version $versioncommon -----"
 function global:GetCommonVersion() {
@@ -1052,6 +1052,35 @@ function global:GetPrivateIPofMasterVM($resourceGroup) {
 
     $Return.PrivateIP = $firstprivateip
     return $Return
+}
+
+function global:CreateVM($vm, $resourceGroup, $subnetId, $networkSecurityGroup, $publicKeyFile, $image) {
+    [hashtable]$Return = @{} 
+
+    $publicIP = "${vm}PublicIP"
+    Write-Host "Creating public IP: $publicIP"
+    $ip = az network public-ip create --name $publicIP `
+        --resource-group $resourceGroup `
+        --allocation-method Static --query "publicIp.ipAddress" -o tsv
+    
+    Write-Host "Creating NIC: ${vm}-nic"
+    az network nic create `
+        --resource-group $resourceGroup `
+        --name "${vm}-nic" `
+        --subnet $subnetId `
+        --network-security-group $networkSecurityGroup `
+        --public-ip-address $publicIP `
+        --query "provisioningState" -o tsv
+    
+    Write-Host "Creating VM: ${vm} from image: $urn"
+    az vm create --resource-group $resourceGroup --name $vm `
+        --image "$image" `
+        --size Standard_DS2_v2 `
+        --admin-username azureuser --ssh-key-value $publicKeyFile `
+        --nics "${vm}-nic"    
+        
+    $Return.IP = $ip
+    return $Return                 
 }
 #-------------------
 Write-Host "end common.ps1 version $versioncommon"

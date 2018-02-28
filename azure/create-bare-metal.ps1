@@ -1,4 +1,4 @@
-Write-Host "--- create-bare-metal Version 2018.02.27.01 ----"
+Write-Host "--- create-bare-metal Version 2018.02.27.02 ----"
 
 #
 # This script is meant for quick & easy install via:
@@ -102,7 +102,6 @@ Write-Host "Using Storage Account: $AKS_PERS_STORAGE_ACCOUNT_NAME"
 
 CreateShareInStorageAccount -storageAccountName $AKS_PERS_STORAGE_ACCOUNT_NAME -resourceGroup $AKS_PERS_RESOURCE_GROUP -sharename "data"
 
-$MASTER_VM_NAME = "k8s-master"
 $NETWORK_SECURITY_GROUP = "cluster-nsg"
 Write-Host "Creating network security group: $NETWORK_SECURITY_GROUP"
 $nsg = az network nsg create --name $NETWORK_SECURITY_GROUP --resource-group $AKS_PERS_RESOURCE_GROUP --query "id" -o tsv 
@@ -168,47 +167,31 @@ az network vnet subnet update -n "${AKS_SUBNET_NAME}" -g "${AKS_SUBNET_RESOURCE_
 $urn = "OpenLogic:CentOS:7.4:latest"
 
 Write-Host "Creating master"
-$PUBLIC_IP_NAME = "${MASTER_VM_NAME}PublicIP"
-$ip = az network public-ip create --name $PUBLIC_IP_NAME `
-    --resource-group $AKS_PERS_RESOURCE_GROUP `
-    --allocation-method Static --query "publicIp.ipAddress" -o tsv
+$VMInfo = CreateVM -vm "k8s-master" -resourceGroup $AKS_PERS_RESOURCE_GROUP `
+    -subnetId $AKS_SUBNET_ID `
+    -networkSecurityGroup $NETWORK_SECURITY_GROUP `
+    -publicKeyFile $SSH_PUBLIC_KEY_FILE `
+    -image $urn
 
-az network nic create `
-    --resource-group $AKS_PERS_RESOURCE_GROUP `
-    --name "${MASTER_VM_NAME}-nic" `
-    --subnet $AKS_SUBNET_ID `
-    --network-security-group $NETWORK_SECURITY_GROUP `
-    --public-ip-address $PUBLIC_IP_NAME
-
-az vm create --resource-group $AKS_PERS_RESOURCE_GROUP --name $MASTER_VM_NAME `
-    --image "$urn" `
-    --size Standard_DS2_v2 `
-    --admin-username azureuser --ssh-key-value $SSH_PUBLIC_KEY_FILE `
-    --nics "${MASTER_VM_NAME}-nic"
-
-Write-Host "ssh -i ${SSH_PRIVATE_KEY_FILE_UNIX_PATH} azureuser@${ip}"
+Write-Host "ssh -i ${SSH_PRIVATE_KEY_FILE_UNIX_PATH} azureuser@$($VMInfo.IP)"
 
 Write-Host "Creating linux vm 1"
-$vm = "k8s-linux-agent-1"
-$PUBLIC_IP_NAME = "${vm}PublicIP"
-$ip = az network public-ip create --name $PUBLIC_IP_NAME `
-    --resource-group $AKS_PERS_RESOURCE_GROUP `
-    --allocation-method Static --query "publicIp.ipAddress" -o tsv
+CreateVM -vm "k8s-linux-agent-1" -resourceGroup $AKS_PERS_RESOURCE_GROUP `
+    -subnetId $AKS_SUBNET_ID `
+    -networkSecurityGroup $NETWORK_SECURITY_GROUP `
+    -publicKeyFile $SSH_PUBLIC_KEY_FILE `
+    -image $urn
 
-az network nic create `
-    --resource-group $AKS_PERS_RESOURCE_GROUP `
-    --name "${vm}-nic" `
-    --subnet $AKS_SUBNET_ID `
-    --network-security-group $NETWORK_SECURITY_GROUP `
-    --public-ip-address $PUBLIC_IP_NAME
+Write-Host "ssh -i ${SSH_PRIVATE_KEY_FILE_UNIX_PATH} azureuser@$($VMInfo.IP)"
 
-az vm create --resource-group $AKS_PERS_RESOURCE_GROUP --name $vm `
-    --image "$urn" `
-    --size Standard_DS2_v2 `
-    --admin-username azureuser --ssh-key-value $SSH_PUBLIC_KEY_FILE `
-    --nics "${vm}-nic"
+Write-Host "Creating linux vm 2"
+CreateVM -vm "k8s-linux-agent-2" -resourceGroup $AKS_PERS_RESOURCE_GROUP `
+    -subnetId $AKS_SUBNET_ID `
+    -networkSecurityGroup $NETWORK_SECURITY_GROUP `
+    -publicKeyFile $SSH_PUBLIC_KEY_FILE `
+    -image $urn
 
-Write-Host "ssh -i ${SSH_PRIVATE_KEY_FILE_UNIX_PATH} azureuser@${ip}"
+Write-Host "ssh -i ${SSH_PRIVATE_KEY_FILE_UNIX_PATH} azureuser@$($VMInfo.IP)"
 
 if ($AKS_SUPPORT_WINDOWS_CONTAINERS -eq "y") {
     Write-Host "Creating windows vm 1"
@@ -235,7 +218,8 @@ if ($AKS_SUPPORT_WINDOWS_CONTAINERS -eq "y") {
         --image "$urn" `
         --size Standard_DS2_v2 `
         --admin-username azureuser --admin-password $AdminPassword `
-        --nics "${vm}-nic"
+        --nics "${vm}-nic" `
+        --query "provisioningState" -o tsv
 
     # https://stackoverflow.com/questions/43914269/how-to-run-simple-custom-commands-on-a-azure-vm-win-7-8-10-server-post-deploy
     # az vm extension set -n CustomScriptExtension --publisher Microsoft.Compute --version 1.8 --vm-name DVWinServerVMB --resource-group DVResourceGroup --settings "{'commandToExecute': 'powershell.exe md c:\\test'}"

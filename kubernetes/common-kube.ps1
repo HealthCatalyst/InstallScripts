@@ -1,5 +1,5 @@
 # this file contains common functions for kubernetes
-$versionkubecommon = "2018.02.25.03"
+$versionkubecommon = "2018.02.27.03"
 
 $set = "abcdefghijklmnopqrstuvwxyz0123456789".ToCharArray()
 $randomstring += $set | Get-Random
@@ -172,5 +172,39 @@ function global:CleanOutNamespace($namespace) {
     }
     while (![string]::IsNullOrEmpty($CLEANUP_DONE))
 }
+
+function global:SwitchToKubCluster($kubfolder, $clustername) {
+    $fileToUse = "$kubfolder\$clustername\temp\.kube\config"
+    if (Test-Path -Path $fileToUse) {
+        Write-Host "Switching kube config to this cluster: $clustername"
+
+        $userKubeConfigFolder = "$env:userprofile\.kube"
+        If (!(Test-Path $userKubeConfigFolder)) {
+            Write-Output "Creating $userKubeConfigFolder"
+            New-Item -ItemType Directory -Force -Path "$userKubeConfigFolder"
+        }            
+
+        $destinationFile = "${userKubeConfigFolder}\config"
+        Write-Host "Copying $fileToUse to $destinationFile"
+        Copy-Item -Path "$fileToUse" -Destination "$destinationFile"
+        # set environment variable KUBECONFIG to point to this location
+        $env:KUBECONFIG = "$destinationFile"
+        [Environment]::SetEnvironmentVariable("KUBECONFIG", "$destinationFile", [EnvironmentVariableTarget]::User)
+        Write-Host "Current cluster: $(kubectl config current-context)"    
+    }
+    else {
+        Write-Error "$fileToUse not found"
+    }
+}
+function global:CleanKubConfig() {
+    Write-Host "Clearing out kube config"
+    $userKubeConfigFolder = "$env:userprofile\.kube"
+    $destinationFile = "${userKubeConfigFolder}\config"
+    Remove-Item -Path "$destinationFile" -Force
+    # set environment variable KUBECONFIG to point to this location
+    $env:KUBECONFIG = ""
+    [Environment]::SetEnvironmentVariable("KUBECONFIG", "", [EnvironmentVariableTarget]::User)
+}
+
 # --------------------
 Write-Host "end common-kube.ps1 version $versioncommon"

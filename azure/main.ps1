@@ -1,4 +1,4 @@
-$version = "2018.02.27.03"
+$version = "2018.02.27.04"
 
 # This script is meant for quick & easy install via:
 #   curl -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/azure/main.ps1 | iex;
@@ -69,19 +69,8 @@ while ($userinput -ne "q") {
             }              
             $index = Read-Host "Enter number of folder to use (1 - $($folders.count))"
             $folderToUse = $($folders[$index - 1])
-            $fileToUse = "C:\kubernetes\$folderToUse\temp\.kube\config"
-            $userKubeConfigFolder = "$env:userprofile\.kube"
-            If (!(Test-Path $userKubeConfigFolder)) {
-                Write-Output "Creating $userKubeConfigFolder"
-                New-Item -ItemType Directory -Force -Path "$userKubeConfigFolder"
-            }            
-            $destinationFile = "${userKubeConfigFolder}\config"
-            Write-Host "Copying $fileToUse to $destinationFile"
-            Copy-Item -Path "$fileToUse" -Destination "$destinationFile"
-            # set environment variable KUBECONFIG to point to this location
-            $env:KUBECONFIG = "$destinationFile"
-            [Environment]::SetEnvironmentVariable("KUBECONFIG", "$destinationFile", [EnvironmentVariableTarget]::User)
-            Write-Host "Current cluster: $(kubectl config current-context)"            
+
+            SwitchToKubCluster -folderToUse $folderToUse
         } 
         '1' {
             Invoke-WebRequest -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/azure/create-acs-cluster.ps1 | Invoke-Expression;

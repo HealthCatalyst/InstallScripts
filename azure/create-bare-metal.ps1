@@ -1,4 +1,4 @@
-Write-output "--- create-bare-metal Version 2018.02.15.03 ----"
+Write-Host "--- create-bare-metal Version 2018.02.27.01 ----"
 
 #
 # This script is meant for quick & easy install via:
@@ -27,7 +27,7 @@ $AKS_SUBSCRIPTION_ID = $(CheckIfUserLogged).AKS_SUBSCRIPTION_ID
 Do { $customerid = Read-Host "Health Catalyst Customer ID (e.g., ahmn)"}
 while ([string]::IsNullOrWhiteSpace($customerid))
 
-Write-Output "Customer ID: $customerid"
+Write-Host "Customer ID: $customerid"
 
 # ask for resource group name to create
 $DEFAULT_RESOURCE_GROUP = "Test-Kub-$($customerid.ToUpper())-RG"
@@ -53,7 +53,7 @@ $AKS_LOCAL_FOLDER = Read-Host "Folder to store SSH keys (default: c:\kubernetes)
 if ([string]::IsNullOrWhiteSpace($AKS_LOCAL_FOLDER)) {$AKS_LOCAL_FOLDER = "C:\kubernetes"}
 
 if (!(Test-Path -Path "$AKS_LOCAL_FOLDER")) {
-    Write-Output "$AKS_LOCAL_FOLDER does not exist.  Creating it..."
+    Write-Host "$AKS_LOCAL_FOLDER does not exist.  Creating it..."
     New-Item -ItemType directory -Path $AKS_LOCAL_FOLDER
 }
 
@@ -64,6 +64,26 @@ $SSH_PUBLIC_KEY_FILE = $SSHKeyInfo.SSH_PUBLIC_KEY_FILE
 $SSH_PRIVATE_KEY_FILE_UNIX_PATH = $SSHKeyInfo.SSH_PRIVATE_KEY_FILE_UNIX_PATH
 
 DownloadKubectl -localFolder $AKS_LOCAL_FOLDER
+
+if ([string]::IsNullOrEmpty($(kubectl config current-context 2> $null))) {
+    Write-Host "kube config is not set"
+}
+else {
+    if (${AKS_PERS_RESOURCE_GROUP} -ieq $(kubectl config current-context 2> $null) ) {
+        Write-Host "Current kub config points to this cluster"
+    }
+    else {
+        $clustername = "${AKS_PERS_RESOURCE_GROUP}"
+        $fileToUse = "$AKS_LOCAL_FOLDER\$clustername\temp\.kube\config"
+        if (Test-Path $fileToUse) {
+            SwitchToKubCluster -kubfolder $AKS_LOCAL_FOLDER -clustername $clustername 
+        }
+        else {
+            CleanKubConfig
+        }        
+    }        
+}
+
 
 # see if the user wants to use a specific virtual network
 $VnetInfo = GetVnet -subscriptionId $AKS_SUBSCRIPTION_ID
@@ -78,6 +98,8 @@ CleanResourceGroup -resourceGroup ${AKS_PERS_RESOURCE_GROUP} -location $AKS_PERS
 
 $AKS_PERS_STORAGE_ACCOUNT_NAME = $(CreateStorageIfNotExists -resourceGroup $AKS_PERS_RESOURCE_GROUP).AKS_PERS_STORAGE_ACCOUNT_NAME
 
+Write-Host "Using Storage Account: $AKS_PERS_STORAGE_ACCOUNT_NAME"
+
 CreateShareInStorageAccount -storageAccountName $AKS_PERS_STORAGE_ACCOUNT_NAME -resourceGroup $AKS_PERS_RESOURCE_GROUP -sharename "data"
 
 $MASTER_VM_NAME = "k8s-master"
@@ -85,14 +107,14 @@ $NETWORK_SECURITY_GROUP = "cluster-nsg"
 Write-Host "Creating network security group: $NETWORK_SECURITY_GROUP"
 $nsg = az network nsg create --name $NETWORK_SECURITY_GROUP --resource-group $AKS_PERS_RESOURCE_GROUP --query "id" -o tsv 
 
-Write-Output "Creating rule: allow_ssh"
+Write-Host "Creating rule: allow_ssh"
 az network nsg rule create -g $AKS_PERS_RESOURCE_GROUP --nsg-name $NETWORK_SECURITY_GROUP -n allow_ssh --priority 100 `
     --source-address-prefixes "*" --source-port-ranges '*' `
     --destination-address-prefixes '*' --destination-port-ranges 22 --access Allow `
     --protocol Tcp --description "allow ssh access." `
     --query "provisioningState" -o tsv
 
-Write-Output "Creating rule: allow_rdp"
+Write-Host "Creating rule: allow_rdp"
 az network nsg rule create -g $AKS_PERS_RESOURCE_GROUP --nsg-name $NETWORK_SECURITY_GROUP -n allow_rdp `
     --priority 101 `
     --source-address-prefixes "*" --source-port-ranges '*' `
@@ -102,7 +124,7 @@ az network nsg rule create -g $AKS_PERS_RESOURCE_GROUP --nsg-name $NETWORK_SECUR
 
 $sourceTagForHttpAccess = "Internet"
 if ([string]::IsNullOrWhiteSpace($(az network nsg rule show --name "HttpPort" --nsg-name $NETWORK_SECURITY_GROUP --resource-group $AKS_PERS_RESOURCE_GROUP))) {
-    Write-Output "Creating rule: HttpPort"
+    Write-Host "Creating rule: HttpPort"
     az network nsg rule create -g $AKS_PERS_RESOURCE_GROUP --nsg-name $NETWORK_SECURITY_GROUP -n HttpPort --priority 500 `
         --source-address-prefixes "$sourceTagForHttpAccess" --source-port-ranges '*' `
         --destination-address-prefixes '*' --destination-port-ranges 80 --access Allow `
@@ -110,7 +132,7 @@ if ([string]::IsNullOrWhiteSpace($(az network nsg rule show --name "HttpPort" --
         --query "provisioningState" -o tsv
 }
 else {
-    Write-Output "Updating rule: HttpPort"
+    Write-Host "Updating rule: HttpPort"
     az network nsg rule update -g $AKS_PERS_RESOURCE_GROUP --nsg-name $NETWORK_SECURITY_GROUP -n HttpPort --priority 500 `
         --source-address-prefixes "$sourceTagForHttpAccess" --source-port-ranges '*' `
         --destination-address-prefixes '*' --destination-port-ranges 80 --access Allow `
@@ -119,7 +141,7 @@ else {
 }
 
 if ([string]::IsNullOrWhiteSpace($(az network nsg rule show --name "HttpsPort" --nsg-name $NETWORK_SECURITY_GROUP --resource-group $AKS_PERS_RESOURCE_GROUP))) {
-    Write-Output "Creating rule: HttpsPort"
+    Write-Host "Creating rule: HttpsPort"
     az network nsg rule create -g $AKS_PERS_RESOURCE_GROUP --nsg-name $NETWORK_SECURITY_GROUP -n HttpsPort --priority 501 `
         --source-address-prefixes "$sourceTagForHttpAccess" --source-port-ranges '*' `
         --destination-address-prefixes '*' --destination-port-ranges 443 --access Allow `
@@ -127,7 +149,7 @@ if ([string]::IsNullOrWhiteSpace($(az network nsg rule show --name "HttpsPort" -
         --query "provisioningState" -o tsv
 }
 else {
-    Write-Output "Updating rule: HttpsPort"
+    Write-Host "Updating rule: HttpsPort"
     az network nsg rule update -g $AKS_PERS_RESOURCE_GROUP --nsg-name $NETWORK_SECURITY_GROUP -n HttpsPort --priority 501 `
         --source-address-prefixes "$sourceTagForHttpAccess" --source-port-ranges '*' `
         --destination-address-prefixes '*' --destination-port-ranges 443 --access Allow `
@@ -136,16 +158,16 @@ else {
 }    
 
 $nsgid = az network nsg list --resource-group ${AKS_PERS_RESOURCE_GROUP} --query "[?name == '${NETWORK_SECURITY_GROUP}'].id" -o tsv
-Write-Output "Found ID for ${AKS_PERS_NETWORK_SECURITY_GROUP}: $nsgid"
+Write-Host "Found ID for ${AKS_PERS_NETWORK_SECURITY_GROUP}: $nsgid"
 
-Write-Output "Setting NSG into subnet"
+Write-Host "Setting NSG into subnet"
 az network vnet subnet update -n "${AKS_SUBNET_NAME}" -g "${AKS_SUBNET_RESOURCE_GROUP}" --vnet-name "${AKS_VNET_NAME}" --network-security-group "$nsgid" --query "provisioningState" -o tsv
 
 # to list available images: az vm image list --output table
 # to list CentOS images: az vm image list --offer CentOS --publisher OpenLogic --all --output table
 $urn = "OpenLogic:CentOS:7.4:latest"
 
-Write-Output "Creating master"
+Write-Host "Creating master"
 $PUBLIC_IP_NAME = "${MASTER_VM_NAME}PublicIP"
 $ip = az network public-ip create --name $PUBLIC_IP_NAME `
     --resource-group $AKS_PERS_RESOURCE_GROUP `
@@ -164,9 +186,9 @@ az vm create --resource-group $AKS_PERS_RESOURCE_GROUP --name $MASTER_VM_NAME `
     --admin-username azureuser --ssh-key-value $SSH_PUBLIC_KEY_FILE `
     --nics "${MASTER_VM_NAME}-nic"
 
-Write-Output "ssh -i ${SSH_PRIVATE_KEY_FILE_UNIX_PATH} azureuser@${ip}"
+Write-Host "ssh -i ${SSH_PRIVATE_KEY_FILE_UNIX_PATH} azureuser@${ip}"
 
-Write-Output "Creating linux vm 1"
+Write-Host "Creating linux vm 1"
 $vm = "k8s-linux-agent-1"
 $PUBLIC_IP_NAME = "${vm}PublicIP"
 $ip = az network public-ip create --name $PUBLIC_IP_NAME `
@@ -186,36 +208,38 @@ az vm create --resource-group $AKS_PERS_RESOURCE_GROUP --name $vm `
     --admin-username azureuser --ssh-key-value $SSH_PUBLIC_KEY_FILE `
     --nics "${vm}-nic"
 
-Write-Output "ssh -i ${SSH_PRIVATE_KEY_FILE_UNIX_PATH} azureuser@${ip}"
+Write-Host "ssh -i ${SSH_PRIVATE_KEY_FILE_UNIX_PATH} azureuser@${ip}"
 
-Write-Output "Creating windows vm 1"
-$vm = "k8swindows1"
-$PUBLIC_IP_NAME = "${vm}PublicIP"
-$ip = az network public-ip create --name $PUBLIC_IP_NAME `
-    --resource-group $AKS_PERS_RESOURCE_GROUP `
-    --allocation-method Static --query "publicIp.ipAddress" -o tsv
+if ($AKS_SUPPORT_WINDOWS_CONTAINERS -eq "y") {
+    Write-Host "Creating windows vm 1"
+    $vm = "k8swindows1"
+    $PUBLIC_IP_NAME = "${vm}PublicIP"
+    $ip = az network public-ip create --name $PUBLIC_IP_NAME `
+        --resource-group $AKS_PERS_RESOURCE_GROUP `
+        --allocation-method Static --query "publicIp.ipAddress" -o tsv
 
-az network nic create `
-    --resource-group $AKS_PERS_RESOURCE_GROUP `
-    --name "${vm}-nic" `
-    --subnet $AKS_SUBNET_ID `
-    --network-security-group $NETWORK_SECURITY_GROUP `
-    --public-ip-address $PUBLIC_IP_NAME
+    az network nic create `
+        --resource-group $AKS_PERS_RESOURCE_GROUP `
+        --name "${vm}-nic" `
+        --subnet $AKS_SUBNET_ID `
+        --network-security-group $NETWORK_SECURITY_GROUP `
+        --public-ip-address $PUBLIC_IP_NAME
 
-# Update for your admin password
-$AdminPassword = "ChangeYourAdminPassword1"
+    # Update for your admin password
+    $AdminPassword = "ChangeYourAdminPassword1"
 
-# to list Windows images: az vm image list --offer WindowsServer --all --output table
-$urn = "MicrosoftWindowsServer:WindowsServerSemiAnnual:Datacenter-Core-1709-with-Containers-smalldisk:1709.0.20171012"
-$urn = "Win2016Datacenter"
-az vm create --resource-group $AKS_PERS_RESOURCE_GROUP --name $vm `
-    --image "$urn" `
-    --size Standard_DS2_v2 `
-    --admin-username azureuser --admin-password $AdminPassword `
-    --nics "${vm}-nic"
+    # to list Windows images: az vm image list --offer WindowsServer --all --output table
+    $urn = "MicrosoftWindowsServer:WindowsServerSemiAnnual:Datacenter-Core-1709-with-Containers-smalldisk:1709.0.20171012"
+    $urn = "Win2016Datacenter"
+    az vm create --resource-group $AKS_PERS_RESOURCE_GROUP --name $vm `
+        --image "$urn" `
+        --size Standard_DS2_v2 `
+        --admin-username azureuser --admin-password $AdminPassword `
+        --nics "${vm}-nic"
 
+    # https://stackoverflow.com/questions/43914269/how-to-run-simple-custom-commands-on-a-azure-vm-win-7-8-10-server-post-deploy
+    # az vm extension set -n CustomScriptExtension --publisher Microsoft.Compute --version 1.8 --vm-name DVWinServerVMB --resource-group DVResourceGroup --settings "{'commandToExecute': 'powershell.exe md c:\\test'}"
 
+}
 
-# https://stackoverflow.com/questions/43914269/how-to-run-simple-custom-commands-on-a-azure-vm-win-7-8-10-server-post-deploy
-# az vm extension set -n CustomScriptExtension --publisher Microsoft.Compute --version 1.8 --vm-name DVWinServerVMB --resource-group DVResourceGroup --settings "{'commandToExecute': 'powershell.exe md c:\\test'}"
 

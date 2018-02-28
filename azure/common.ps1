@@ -1,6 +1,6 @@
 # This file contains common functions for Azure
 # 
-$versioncommon = "2018.02.27.02"
+$versioncommon = "2018.02.27.03"
 
 Write-Host "---- Including common.ps1 version $versioncommon -----"
 function global:GetCommonVersion() {
@@ -342,6 +342,9 @@ function global:CreateStorageIfNotExists($resourceGroup) {
         # remove non-alphanumeric characters and use lowercase since azure doesn't allow those in a storage account
         $storageAccountName = $storageAccountName -replace '[^a-zA-Z0-9]', ''
         $storageAccountName = $storageAccountName.ToLower()
+        if ($storageAccountName.Length > 24) {
+            $storageAccountName = $storageAccountName.Substring(0, 24) # azure does not allow names longer than 24
+        }
         Write-Host "Using storage account: [$storageAccountName]"
     }
     Write-Host "Checking to see if storage account exists"
@@ -376,14 +379,30 @@ function global:GetVnet($subscriptionId) {
 
     Write-Host "Subscription Id; $subscriptionId"
 
-    Do { $confirmation = Read-Host "Would you like to connect to an existing virtual network? (y/n)"}
-    while ([string]::IsNullOrWhiteSpace($confirmation))
+    $confirmation = 'y'
+    # Do { $confirmation = Read-Host "Would you like to connect to an existing virtual network? (y/n)"}
+    # while ([string]::IsNullOrWhiteSpace($confirmation))
     
     if ($confirmation -eq 'y') {
+
         # see if we had previously connected to a vnet
         $vnetName = ReadSecretValue -secretname azure-vnet -valueName vnet
         $subnetName = ReadSecretValue -secretname azure-vnet -valueName subnet
         $subnetResourceGroup = ReadSecretValue -secretname azure-vnet -valueName subnetResourceGroup
+
+        
+        if ([string]::IsNullOrEmpty($vnetName)) {
+        }
+        else {
+            Do {
+                $confirmation = Read-Host "Kubernetes secret shows vnet=$vnetName and subnet=$subnetName.  Do you want to use these? (y/n)"
+            }
+            while ([string]::IsNullOrEmpty($confirmation))
+
+            if ($confirmation -eq "n") {
+                $vnetName = ""
+            }
+        }
 
         if ([string]::IsNullOrEmpty($vnetName)) {
             Write-Host "Finding existing vnets..."
@@ -398,11 +417,16 @@ function global:GetVnet($subscriptionId) {
                 }    
                 Write-Host "------  End vnets -------"
     
-                $index = Read-Host "Enter number of vnet to use (1 - $($vnets.count))"
+                Do {
+                    $index = Read-Host "Enter number of vnet to use (1 - $($vnets.count))"
+                }
+                while ([string]::IsNullOrWhiteSpace($index)) 
+
                 $vnetName = $($vnets[$index - 1])
             }
             while ([string]::IsNullOrWhiteSpace($vnetName))    
     
+            Write-Host "Searching for vnet named $vnetName ..."
             $subnetResourceGroup = az network vnet list --query "[?name == '$vnetName'].resourceGroup" -o tsv
             Write-Host "Using subnet resource group: [$subnetResourceGroup]"
     
@@ -758,7 +782,7 @@ function global:DownloadFile($url, $targetFile) {
         $downloadedBytes = $downloadedBytes + $count
         Write-Progress -activity "Downloading file '$($url.split('/') | Select-Object -Last 1)'" -status "Downloaded ($([System.Math]::Floor($downloadedBytes/1024))K of $($totalLength)K): " -PercentComplete ((([System.Math]::Floor($downloadedBytes / 1024)) / $totalLength) * 100)
         [System.Console]::CursorLeft = 0 
-        [System.Console]::Write("Downloading '$($url.split('/') | Select-Object -Last 1)': {0}K of {1}K", [System.Math]::Floor($downloadedBytes/1024), $totalLength) 
+        [System.Console]::Write("Downloading '$($url.split('/') | Select-Object -Last 1)': {0}K of {1}K", [System.Math]::Floor($downloadedBytes / 1024), $totalLength) 
     }
 
     Write-Progress -activity "Finished downloading file '$($url.split('/') | Select-Object -Last 1)'"
@@ -831,7 +855,7 @@ function global:FixLoadBalancers($resourceGroup) {
     Write-Host "---- Searching for kub services of type LoadBalancer"
     foreach ($service in $services) {
         if ($($service.spec.type -eq "LoadBalancer")) {
-            if($service.status.loadBalancer.ingress.Count -gt 0){
+            if ($service.status.loadBalancer.ingress.Count -gt 0) {
                 Write-Host "Found kub services $($service.metadata.name) with $($service.status.loadBalancer.ingress[0].ip)"
                 $loadBalancerServices += $service
             }

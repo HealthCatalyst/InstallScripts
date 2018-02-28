@@ -1,4 +1,4 @@
-Write-Host "--- create-bare-metal Version 2018.02.27.02 ----"
+Write-Host "--- create-bare-metal Version 2018.02.27.03 ----"
 
 #
 # This script is meant for quick & easy install via:
@@ -176,7 +176,7 @@ $VMInfo = CreateVM -vm "k8s-master" -resourceGroup $AKS_PERS_RESOURCE_GROUP `
 Write-Host "ssh -i ${SSH_PRIVATE_KEY_FILE_UNIX_PATH} azureuser@$($VMInfo.IP)"
 
 Write-Host "Creating linux vm 1"
-CreateVM -vm "k8s-linux-agent-1" -resourceGroup $AKS_PERS_RESOURCE_GROUP `
+$VMInfo = CreateVM -vm "k8s-linux-agent-1" -resourceGroup $AKS_PERS_RESOURCE_GROUP `
     -subnetId $AKS_SUBNET_ID `
     -networkSecurityGroup $NETWORK_SECURITY_GROUP `
     -publicKeyFile $SSH_PUBLIC_KEY_FILE `
@@ -185,7 +185,7 @@ CreateVM -vm "k8s-linux-agent-1" -resourceGroup $AKS_PERS_RESOURCE_GROUP `
 Write-Host "ssh -i ${SSH_PRIVATE_KEY_FILE_UNIX_PATH} azureuser@$($VMInfo.IP)"
 
 Write-Host "Creating linux vm 2"
-CreateVM -vm "k8s-linux-agent-2" -resourceGroup $AKS_PERS_RESOURCE_GROUP `
+$VMInfo = CreateVM -vm "k8s-linux-agent-2" -resourceGroup $AKS_PERS_RESOURCE_GROUP `
     -subnetId $AKS_SUBNET_ID `
     -networkSecurityGroup $NETWORK_SECURITY_GROUP `
     -publicKeyFile $SSH_PUBLIC_KEY_FILE `

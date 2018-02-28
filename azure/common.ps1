@@ -1,6 +1,6 @@
 # This file contains common functions for Azure
 # 
-$versioncommon = "2018.02.27.01"
+$versioncommon = "2018.02.27.02"
 
 Write-Host "---- Including common.ps1 version $versioncommon -----"
 function global:GetCommonVersion() {
@@ -721,6 +721,7 @@ function global:DownloadKubectl($localFolder) {
     }
     else {
         $kubectlversion = kubectl version --client=true --short=true
+        Write-Host "kubectl version: $kubectlversion"
         $kubectlversionMatches = $($kubectlversion -match "$desiredKubeCtlVersion")
         if (!$kubectlversionMatches) {
             $downloadkubectl = "y"
@@ -746,14 +747,18 @@ function global:DownloadFile($url, $targetFile) {
     $totalLength = [System.Math]::Floor($response.get_ContentLength() / 1024)
     $responseStream = $response.GetResponseStream()
     $targetStream = New-Object -TypeName System.IO.FileStream -ArgumentList $targetFile, Create
-    $buffer = new-object byte[] 10KB
+    $buffer = new-object byte[] 4096KB
+    Write-Host "Buffer length: $($buffer.length)"
     $count = $responseStream.Read($buffer, 0, $buffer.length)
     $downloadedBytes = $count
     while ($count -gt 0) {
         $targetStream.Write($buffer, 0, $count)
         $count = $responseStream.Read($buffer, 0, $buffer.length)
+        # Write-Host "read: $count bytes"
         $downloadedBytes = $downloadedBytes + $count
         Write-Progress -activity "Downloading file '$($url.split('/') | Select-Object -Last 1)'" -status "Downloaded ($([System.Math]::Floor($downloadedBytes/1024))K of $($totalLength)K): " -PercentComplete ((([System.Math]::Floor($downloadedBytes / 1024)) / $totalLength) * 100)
+        [System.Console]::CursorLeft = 0 
+        [System.Console]::Write("Downloading '$($url.split('/') | Select-Object -Last 1)': {0}K of {1}K", [System.Math]::Floor($downloadedBytes/1024), $totalLength) 
     }
 
     Write-Progress -activity "Finished downloading file '$($url.split('/') | Select-Object -Last 1)'"

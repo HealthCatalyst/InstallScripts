@@ -131,7 +131,7 @@ if([string]::IsNullOrEmpty($installSettings.identityService))
 	$identityServiceUrl = $installSettings.identityService
 }
 
-if([string]::IsNullOrEmpty($installSettings.authorizationServiceURL))  
+if([string]::IsNullOrEmpty($installSettings.authorizationService))  
 {
 	$authorizationServiceURL = Get-AuthorizationServiceUrl
 } else
@@ -161,10 +161,10 @@ if(![string]::IsNullOrEmpty($userEnteredFabricInstallerSecret)){
      $fabricInstallerSecret = $userEnteredFabricInstallerSecret
 }
 
-$userEnteredAuthorizationServiceURL = Read-Host  "Enter the URL for the Authorization Service or hit enter to accept the default [$authorizationSerivceURL]"
+$userEnteredAuthorizationServiceURL = Read-Host  "Enter the URL for the Authorization Service or hit enter to accept the default [$authorizationServiceURL]"
 Write-Host ""
 if(![string]::IsNullOrEmpty($userEnteredAuthorizationServiceURL)){   
-     $authorizationSerivceURL = $userEnteredAuthorizationServiceURL
+     $authorizationServiceURL = $userEnteredAuthorizationServiceURL
 }
 
 $userEnteredIdentityServiceURL = Read-Host  "Enter the URL for the Identity Service or hit enter to accept the default [$identityServiceUrl]"
@@ -189,7 +189,7 @@ if([string]::IsNullOrWhiteSpace($fabricInstallerSecret))
 {
     Write-Error "You must enter a value for the installer secret" -ErrorAction Stop
 }
-if([string]::IsNullOrWhiteSpace($authorizationSerivceURL))
+if([string]::IsNullOrWhiteSpace($authorizationServiceURL))
 {
     Write-Error "You must enter a value for the Fabric.Authorization URL" -ErrorAction Stop
 }
@@ -271,23 +271,23 @@ $clientId = "safety-surveillance-webapp"
 $grain = "app"
 
 Write-Host "Registering Safety Surveillance Client with Fabric.Authorization."
-$client = Add-AuthorizationRegistration -authUrl $authorizationSerivceURL -clientId $clientId -clientName "Safety Surveillance Web App" -accessToken $accessToken
+$client = Add-AuthorizationRegistration -authUrl $authorizationServiceURL -clientId $clientId -clientName "Safety Surveillance Web App" -accessToken $accessToken
 
 Write-Host "Creating 'candocument' permission."
-$permission = Add-Permission -authUrl $authorizationSerivceURL -name "candocument" -grain $grain -securableItem $clientId -accessToken $accessToken
+$permission = Add-Permission -authUrl $authorizationServiceURL -name "candocument" -grain $grain -securableItem $clientId -accessToken $accessToken
 
 Write-Host "Creating 'documenter' role."
-$role = Add-Role -authUrl $authorizationSerivceURL -name "documenter" -grain $grain -securableItem $clientId -accessToken $accessToken
+$role = Add-Role -authUrl $authorizationServiceURL -name "documenter" -grain $grain -securableItem $clientId -accessToken $accessToken
 
 Write-Host "Adding '$groupName' group."
-$group = Add-Group -authUrl $authorizationSerivceURL -name $groupName -source "Windows" -accessToken $accessToken
+$group = Add-Group -authUrl $authorizationServiceURL -name $groupName -source "Windows" -accessToken $accessToken
 
 if($permission -ne $null -and $role -ne $null){
     Write-Host "Associating permission with role."
-    $rolePermission = Add-PermissionToRole -authUrl $authorizationSerivceURL -roleId $role.id -permission $permission -accessToken $accessToken
+    $rolePermission = Add-PermissionToRole -authUrl $authorizationServiceURL -roleId $role.id -permission $permission -accessToken $accessToken
 }
 
 if($group -ne $null -and $role -ne $null){
     Write-Host "Associating role with group."
-    $groupRole = Add-RoleToGroup -authUrl $authorizationSerivceURL -groupName $groupName -role $role -accessToken $accessToken
+    $groupRole = Add-RoleToGroup -authUrl $authorizationServiceURL -groupName $groupName -role $role -accessToken $accessToken
 }

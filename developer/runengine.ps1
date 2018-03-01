@@ -5,7 +5,7 @@
 
 # Get-Content ./runengine.ps1 -Raw | Invoke-Expression;
 
-$dpsUrl = "http://localhost/DataProcessingServiceDev"
+$dpsUrl = "http://localhost/DataProcessingService"
 $metadataUrl = "http://localhost/MetadataService" 
 function listdatamarts() {
     $api = "${metadataUrl}/v1/DataMarts"
@@ -209,11 +209,21 @@ function cancelBatch($batchExecutionId) {
     return $Return  
 }
 
-function executeDataMart() {
+function executeJsonDataMart() {
+    [hashtable]$Return = @{} 
+
     $api = "${dpsUrl}/v1/ExecuteDataMart"
     $body = Get-Content ./datamart.json -Raw
     $result = Invoke-RestMethod -Uri $api -UseDefaultCredentials -Method POST -Body $body -ContentType 'application/json'
-    Write-Host $result
+
+    $batchExecutionId = $result.value.Id
+    Write-Host "Batch execution id=$batchExecutionId"
+
+    $status = $(waitForBatchExecution -batchExecutionId $batchExecutionId).Status
+
+    $Return.Status = $status
+    $Return.BatchExecutionId = $batchExecutionId
+    return $Return  
 }
 
 function createBatchDefinitionForDataMart($datamartName){
@@ -255,6 +265,7 @@ function runAndWaitForDatamart($datamartName){
     return $Return
 }
 
+
 function runSharedDataMarts(){
     createBatchDefinitions
 
@@ -291,6 +302,8 @@ while ($userinput -ne "q") {
     Write-Host "11: Run Shared Datamarts"
     Write-Host "12: Run Shared Clinical + Sepsis"
     Write-Host "13: Run EW Sepsis Only"
+    Write-Host "---------------------"
+    Write-Host "21: Run R datamart"
     Write-Host "q: Quit"
     $userinput = Read-Host "Please make a selection"
     switch ($userinput) {
@@ -311,6 +324,9 @@ while ($userinput -ne "q") {
         } 
         '13' {
             runEarlyWarningSepsis
+        } 
+        '21' {
+            executeJsonDataMart
         } 
         'q' {
             return

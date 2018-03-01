@@ -16,7 +16,7 @@ function listdatamarts() {
     }
 }
 
-function getdataMartIDbyName($datamartName){
+function getdataMartIDbyName([ValidateNotNull()] $datamartName){
     [hashtable]$Return = @{} 
 
     $api = "${metadataUrl}/v1/DataMarts" + '?$filter=Name eq ' + "'$datamartName'"
@@ -41,7 +41,7 @@ function listBatchDefinitions() {
     }
 }
 
-function createNewBatchDefinition($datamartId, $datamartName) {
+function createNewBatchDefinition([ValidateNotNull()] $datamartId, [ValidateNotNull()] $datamartName) {
 
     [hashtable]$Return = @{} 
 
@@ -68,7 +68,7 @@ function createNewBatchDefinition($datamartId, $datamartName) {
     return $Return      
 }
 
-function getBatchDefinitionForDataMart($dataMartId) {
+function getBatchDefinitionForDataMart([ValidateNotNull()] $dataMartId) {
     [hashtable]$Return = @{} 
 
     $api = "${dpsUrl}" + '/v1/BatchDefinitions?$filter=DataMartId eq ' + $dataMartId
@@ -91,7 +91,7 @@ function getBatchDefinitionForDataMart($dataMartId) {
     return $Return  
 }
 
-function getLastBatchExecutionForDatamart($dataMartId) {
+function getLastBatchExecutionForDatamart([ValidateNotNull()] $dataMartId) {
     [hashtable]$Return = @{} 
 
     $api = "${dpsUrl}" + '/v1/BatchExecutions?$filter=DataMartId eq ' + $dataMartId
@@ -123,7 +123,7 @@ function getLastBatchExecutionForDatamart($dataMartId) {
     return $Return  
 }
 
-function getBatchExecution($batchExecutionId) {
+function getBatchExecution([ValidateNotNull()] $batchExecutionId) {
     [hashtable]$Return = @{} 
 
     $api = "${dpsUrl}" + '/v1/BatchExecutions?$filter=Id eq ' + $batchExecutionId
@@ -151,7 +151,7 @@ function getBatchExecution($batchExecutionId) {
     return $Return  
 }
 
-function waitForBatchExecution($batchExecutionId) {
+function waitForBatchExecution([ValidateNotNull()] $batchExecutionId) {
     [hashtable]$Return = @{} 
 
     Do {
@@ -166,7 +166,7 @@ function waitForBatchExecution($batchExecutionId) {
     return $Return      
 }
 
-function executeBatch($batchdefinitionId) {
+function executeBatch([ValidateNotNull()] $batchdefinitionId) {
     [hashtable]$Return = @{} 
 
     #then execute the batch definiton
@@ -188,7 +188,7 @@ function executeBatch($batchdefinitionId) {
     return $Return  
 }
 
-function cancelBatch($batchExecutionId) {
+function cancelBatch([ValidateNotNull()] $batchExecutionId) {
     [hashtable]$Return = @{} 
 
     #then execute the batch definiton
@@ -219,14 +219,11 @@ function executeJsonDataMart() {
     $batchExecutionId = $result.value.Id
     Write-Host "Batch execution id=$batchExecutionId"
 
-    $status = $(waitForBatchExecution -batchExecutionId $batchExecutionId).Status
-
-    $Return.Status = $status
     $Return.BatchExecutionId = $batchExecutionId
     return $Return  
 }
 
-function createBatchDefinitionForDataMart($datamartName){
+function createBatchDefinitionForDataMart([ValidateNotNull()] $datamartName){
 
     $result = $(getdataMartIDbyName $datamartName)
     $datamartId = $result.Id
@@ -250,7 +247,7 @@ function createBatchDefinitions() {
     createBatchDefinitionForDataMart -datamartName "Early Warning Sepsis"
 }
 
-function runAndWaitForDatamart($datamartName){
+function runAndWaitForDatamart([ValidateNotNull()] $datamartName){
     [hashtable]$Return = @{} 
 
     $result = $(getdataMartIDbyName $datamartName)
@@ -282,11 +279,17 @@ function runSharedDataMarts(){
 }
 
 function runEarlyWarningSepsis(){
+    createBatchDefinitionForDataMart -datamartName "Sepsis"
+    createBatchDefinitionForDataMart -datamartName "Early Warning Sepsis"
+
     $result = runAndWaitForDatamart -datamartName "Early Warning Sepsis"    
     if($($result.Status) -ne "Succeeded") {return;}  
 }
 
 function runSepsis(){
+    createBatchDefinitionForDataMart -datamartName "Sepsis"
+    createBatchDefinitionForDataMart -datamartName "Early Warning Sepsis"
+    
     $result = runAndWaitForDatamart -datamartName "Sepsis"
     if($($result.Status) -ne "Succeeded") {return;}
     $result = runAndWaitForDatamart -datamartName "Early Warning Sepsis"    

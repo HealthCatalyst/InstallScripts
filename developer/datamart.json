@@ -62,7 +62,7 @@
                 "BindingType": "R",
                 "LoadTypeCode": "Full",
                 "UserDefinedSql": "foo",
-                "Script": "foo"
+                "Script": "C:\\himss\\sepsis\\test.r"
             },
             {
                 "Id": -9,

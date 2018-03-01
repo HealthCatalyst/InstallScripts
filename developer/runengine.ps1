@@ -26,7 +26,7 @@ function getdataMartIDbyName($datamartName){
     $Return.Id = $result.value.Id
     $Return.Name = $result.value.Name
 
-    Write-Host "Found datamart id=$Return.Id for $datamartName"
+    Write-Host "Found datamart id=$($Return.Id) for $datamartName"
     
     return $Return
 }
@@ -255,8 +255,7 @@ function runAndWaitForDatamart($datamartName){
     return $Return
 }
 
-function runBatchExecutions(){
-
+function runSharedDataMarts(){
     createBatchDefinitions
 
     $result = runAndWaitForDatamart -datamartName "SharedPersonSourceProvider"
@@ -269,12 +268,58 @@ function runBatchExecutions(){
     if($($result.Status) -ne "Succeeded") {return;}
     $result = runAndWaitForDatamart -datamartName "SharedClinical"
     if($($result.Status) -ne "Succeeded") {return;}
-    $result = runAndWaitForDatamart -datamartName "Sepsis"
-    if($($result.Status) -ne "Succeeded") {return;}
-    $result = runAndWaitForDatamart -datamartName "Early Warning Sepsis"    
-    if($($result.Status) -ne "Succeeded") {return;}
 }
 
 function runEarlyWarningSepsis(){
     $result = runAndWaitForDatamart -datamartName "Early Warning Sepsis"    
+    if($($result.Status) -ne "Succeeded") {return;}  
+}
+
+function runSepsis(){
+    $result = runAndWaitForDatamart -datamartName "Sepsis"
+    if($($result.Status) -ne "Succeeded") {return;}
+    $result = runAndWaitForDatamart -datamartName "Early Warning Sepsis"    
+    if($($result.Status) -ne "Succeeded") {return;}    
+}
+
+$userinput = ""
+while ($userinput -ne "q") {
+    Write-Host "================ Health Catalyst Developer Tools ================"
+    Write-Host "1: List data marts"
+    Write-Host "2: List Batch definitions"
+    Write-Host "-----------"
+    Write-Host "11: Run Shared Datamarts"
+    Write-Host "12: Run Shared Clinical + Sepsis"
+    Write-Host "13: Run EW Sepsis Only"
+    Write-Host "q: Quit"
+    $userinput = Read-Host "Please make a selection"
+    switch ($userinput) {
+        '0' {
+        } 
+        '1' {
+            listdatamarts
+        } 
+        '2' {
+            listBatchDefinitions
+        } 
+        '11' {
+            runSharedDataMarts
+        } 
+        '12' {
+            runSharedDataMarts
+            runSepsis
+        } 
+        '13' {
+            runEarlyWarningSepsis
+        } 
+        'q' {
+            return
+        }
+    }
+    $userinput = Read-Host -Prompt "Press Enter to continue or q to exit"
+    if($userinput -eq "q"){
+        return
+    }
+    [Console]::ResetColor()
+    Clear-Host
 }

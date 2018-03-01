@@ -173,7 +173,7 @@ if(![string]::IsNullOrEmpty($userEnteredIdentityServiceURL)){
      $identityServiceUrl = $userEnteredIdentityServiceURL
 }
 
-$userEnteredSafetySurveillanceURL = Read-Host  "Enter the URL for the Identity Service or hit enter to accept the default [$safetySurveillanceUrl]"
+$userEnteredSafetySurveillanceURL = Read-Host  "Enter the URL for the Safety Surveillance Service or hit enter to accept the default [$safetySurveillanceUrl]"
 Write-Host ""
 if(![string]::IsNullOrEmpty($userEnteredSafetySurveillanceURL)){   
      $safetySurveillanceUrl = $userEnteredSafetySurveillanceURL

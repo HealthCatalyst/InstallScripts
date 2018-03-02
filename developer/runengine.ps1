@@ -10,6 +10,8 @@ $metadataUrl = "http://localhost/MetadataService"
 
 $ewSepsisDataMartName = "Early Warning Sepsis"
 $ewSepsisEntityName = "EWSSummaryPatientRisk"
+#$ewsRScriptFile = "C:\\himss\\sepsis\\test.r"
+$ewsRScriptFile = "C:\\himss\\healthcareai_predictingScript_sepsisDemo_20180224.r"
 
 # http://localhost/MetadataService/swagger/ui/index#/
 function listdatamarts() {
@@ -103,7 +105,10 @@ function updateBindingType([ValidateNotNull()] $datamartid, [ValidateNotNull()] 
 
 function setAttributeInBinding([ValidateNotNull()] $datamartid, [ValidateNotNull()] $entityId, [ValidateNotNull()] $bindingId, $attributeName, $attributeValue) {
     # POST /v1/DataMarts({dataMartId})/Entities({entityId})/SourceBindings({bindingId})/AttributeValues
-    $api = "${metadataUrl}/v1/DataMarts($datamartid)/Entities($entityId)/SourceBindings($bindingId)/AttributeValues"  
+
+    # see if binding exists
+    $api = "${metadataUrl}/v1/DataMarts($datamartid)/Entities($entityId)/SourceBindings($bindingId)/AttributeValues" + '?$filter=AttributeName eq ' + "'$attributeName'"
+    $result = Invoke-Restmethod $api -UseDefaultCredentials 
 
     $bodyAsJson = "{
         'AttributeName': '$attributeName',
@@ -111,16 +116,29 @@ function setAttributeInBinding([ValidateNotNull()] $datamartid, [ValidateNotNull
       }"
     $headerJSON = @{ "content-type" = "application/json;odata=verbose"}
 
-    Invoke-RestMethod -Uri $api -UseDefaultCredentials `
-        -Headers $headerJSON -Method POST `
-        -Body $bodyAsJson    
+    # if result is null then add else patch
+    if ($($result.value) -eq $null) {
+        Write-Host "Attribute $attributeName does not exist, adding it"
+        $api = "${metadataUrl}/v1/DataMarts($datamartid)/Entities($entityId)/SourceBindings($bindingId)/AttributeValues"  
 
-    Invoke-Restmethod $api -UseDefaultCredentials 
+        Invoke-RestMethod -Uri $api -UseDefaultCredentials `
+            -Headers $headerJSON -Method POST `
+            -Body $bodyAsJson    
+    }
+    else {
+        $attributeId=$($result.value.Id)
+        Write-Host "Attribute $attributeName already exists with id: $attributeId so patching it"
+        $api = "${metadataUrl}/v1/DataMarts($datamartid)/Entities($entityId)/SourceBindings($bindingId)/AttributeValues($attributeId)"  
+        
+        Invoke-RestMethod -Uri $api -UseDefaultCredentials `
+            -Headers $headerJSON -Method PATCH `
+            -Body $bodyAsJson    
+    }
 }
 
-function setBindingTypeForPatientRisk($bindingType) {
-    $datamartName=$ewSepsisDataMartName
-    $entityname=$ewSepsisEntityName
+function setBindingTypeForPatientRisk($bindingType, $scriptFile) {
+    $datamartName = $ewSepsisDataMartName
+    $entityname = $ewSepsisEntityName
     $result = $(getdataMartIDbyName $datamartName)
     $datamartId = $result.Id
 
@@ -129,7 +147,7 @@ function setBindingTypeForPatientRisk($bindingType) {
 
     Write-Host "Updating binding type to R"
 
-    setAttributeInBinding $datamartid $entityId $bindingId "Script" "C:\\himss\\sepsis\\test.r"
+    setAttributeInBinding $datamartid $entityId $bindingId "Script" $scriptFile 
 
     updateBindingType $datamartid $entityId $bindingId $bindingType
 
@@ -138,8 +156,8 @@ function showBindingForPatientRisk() {
 
     [hashtable]$Return = @{} 
 
-    $datamartName=$ewSepsisDataMartName
-    $entityname=$ewSepsisEntityName
+    $datamartName = $ewSepsisDataMartName
+    $entityname = $ewSepsisEntityName
     $result = $(getdataMartIDbyName $datamartName)
     $datamartId = $result.Id
 
@@ -458,10 +476,10 @@ while ($userinput -ne "q") {
             executeJsonDataMart
         } 
         '22' {
-            setBindingTypeForPatientRisk "R"
+            setBindingTypeForPatientRisk "R" $ewsRScriptFile
         } 
         '23' {
-            setBindingTypeForPatientRisk "SQL"
+            setBindingTypeForPatientRisk "SQL" $ewsRScriptFile
         } 
         '24' {
             downloaddataMartIDbyName $ewSepsisDataMartName

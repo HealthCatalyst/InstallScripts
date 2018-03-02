@@ -7,6 +7,7 @@
 
 $dpsUrl = "http://localhost/DataProcessingService"
 $metadataUrl = "http://localhost/MetadataService" 
+# http://localhost/MetadataService/swagger/ui/index#/
 function listdatamarts() {
     $api = "${metadataUrl}/v1/DataMarts"
     $result = Invoke-Restmethod $api -UseDefaultCredentials 
@@ -16,21 +17,87 @@ function listdatamarts() {
     }
 }
 
-function getdataMartIDbyName([ValidateNotNull()] $datamartName){
+function downloaddataMartIDbyName([ValidateNotNull()] $datamartName) {
     [hashtable]$Return = @{} 
 
-    $api = "${metadataUrl}/v1/DataMarts" + '?$filter=Name eq ' + "'$datamartName'"
+    $result = $(getdataMartIDbyName $datamartName)
+    $datamartId = $result.Id
+
+    $api = "${metadataUrl}/v1/DataMarts($datamartId)" + '?%24expand=Entities'
     $result = Invoke-Restmethod $api -UseDefaultCredentials 
-    
 
-    $Return.Id = $result.value.Id
-    $Return.Name = $result.value.Name
+    Write-Host $result
+    $file = "c:\himss\sepsis\mysam.json"
+    $result | ConvertTo-Json | Out-File $file
 
-    Write-Host "Found datamart id=$($Return.Id) for $datamartName"
+    Write-Host "Wrote datamart json to $file"
     
+    # notepad.exe $file
     return $Return
 }
 
+# EWSSummaryPatientRisk
+# http://localhost/MetadataService/v1/DataMarts(24)/Entities(1427)/SourceBindings
+
+function getIdForEntity([ValidateNotNull()] $datamartid, [ValidateNotNull()] $entityname) {
+    [hashtable]$Return = @{} 
+
+    $api = "${metadataUrl}/v1/DataMarts($datamartId)/Entities" + '?$filter=EntityName eq ' + "'$entityname'"
+    $result = Invoke-Restmethod $api -UseDefaultCredentials 
+
+    # Write-Host $result
+    $Return.EntityId = $result.value.Id
+    return $Return    
+}
+
+function getIdForBinding([ValidateNotNull()] $datamartid, [ValidateNotNull()] $entityId) {
+    # http://localhost/MetadataService/v1/DataMarts(24)/Entities(1427)/SourceBindings
+    [hashtable]$Return = @{} 
+
+    $api = "${metadataUrl}/v1/DataMarts($datamartid)/Entities($entityId)/SourceBindings"
+    $result = Invoke-Restmethod $api -UseDefaultCredentials 
+    
+    Write-Host "Binding: $result.value"
+    $Return.BindingId = $result.value.Id
+    return $Return    
+}
+
+function updateBindingType([ValidateNotNull()] $datamartid, [ValidateNotNull()] $entityId, [ValidateNotNull()] $bindingId) {
+    # /v1/DataMarts({dataMartId})/Entities({entityId})/SourceBindings({id})
+    [hashtable]$Return = @{} 
+
+    $api = "${metadataUrl}/v1/DataMarts($datamartid)/Entities($entityId)/SourceBindings($bindingId)"  
+    $body = @{
+        BindingType = "R"
+    }
+    $bodyAsJson = $body | ConvertTo-Json
+    $headerJSON = @{ "content-type" = "application/json;odata=verbose"}
+
+    Write-Host "API: $api"
+    Write-Host "Body: $bodyAsJson"
+    
+    Invoke-RestMethod -Uri $api -UseDefaultCredentials `
+        -Headers $headerJSON -Method PATCH `
+        -Body $bodyAsJson    
+    
+    Invoke-Restmethod $api -UseDefaultCredentials 
+    return $Return    
+
+}
+
+function setBindingTypeForPatientRisk(){
+    $datamartName ="Early Warning Sepsis"
+    $entityname="EWSSummaryPatientRisk"
+    $result = $(getdataMartIDbyName $datamartName)
+    $datamartId = $result.Id
+
+    $entityId = $(getIdForEntity $datamartid $entityname).EntityId
+    $bindingId = $(getIdForBinding $datamartid $entityId).BindingId
+
+    Write-Host "Updating binding type to R"
+
+    updateBindingType $datamartid $entityId $bindingId
+}
 function listBatchDefinitions() {
     $api = "${dpsUrl}/v1/BatchDefinitions"
     $result = Invoke-Restmethod $api -UseDefaultCredentials 
@@ -199,8 +266,8 @@ function cancelBatch([ValidateNotNull()] $batchExecutionId) {
     $bodyAsJson = $body | ConvertTo-Json
     $headerJSON = @{ "content-type" = "application/json;odata=verbose"}
     $result = Invoke-RestMethod -Uri $api -UseDefaultCredentials `
-                                 -Headers $headerJSON -Method PATCH `
-                                 -Body $bodyAsJson
+        -Headers $headerJSON -Method PATCH `
+        -Body $bodyAsJson
 
     $batchExecutionId = $result.Id
     Write-Host "Batch execution id=$batchExecutionId"
@@ -223,15 +290,16 @@ function executeJsonDataMart() {
     return $Return  
 }
 
-function createBatchDefinitionForDataMart([ValidateNotNull()] $datamartName){
+function createBatchDefinitionForDataMart([ValidateNotNull()] $datamartName) {
 
     $result = $(getdataMartIDbyName $datamartName)
     $datamartId = $result.Id
     $batchDefinitionId = $(getBatchDefinitionForDataMart $datamartId).BatchDefinitionId
-    if ($batchDefinitionId -eq $null){
+    if ($batchDefinitionId -eq $null) {
         Write-Host "Creating batch definition for datamart $datamartName with Id: $datamartId"
         createNewBatchDefinition -datamartId $datamartId -datamartName $datamartName
-    } else {
+    }
+    else {
         Write-Host "Batch definition already found for datamart $datamartName with Id: $datamartId"
     }
     
@@ -247,7 +315,7 @@ function createBatchDefinitions() {
     createBatchDefinitionForDataMart -datamartName "Early Warning Sepsis"
 }
 
-function runAndWaitForDatamart([ValidateNotNull()] $datamartName){
+function runAndWaitForDatamart([ValidateNotNull()] $datamartName) {
     [hashtable]$Return = @{} 
 
     $result = $(getdataMartIDbyName $datamartName)
@@ -263,37 +331,31 @@ function runAndWaitForDatamart([ValidateNotNull()] $datamartName){
 }
 
 
-function runSharedDataMarts(){
-    createBatchDefinitions
-
+function runSharedDataMarts() {
     $result = runAndWaitForDatamart -datamartName "SharedPersonSourceProvider"
-    if($($result.Status) -ne "Succeeded") {return;}
+    if ($($result.Status) -ne "Succeeded") {return; }
     $result = runAndWaitForDatamart -datamartName "SharedPersonSourcePatient"
-    if($($result.Status) -ne "Succeeded") {return;}
+    if ($($result.Status) -ne "Succeeded") {return; }
     $result = runAndWaitForDatamart -datamartName "SharedPersonProvider"
-    if($($result.Status) -ne "Succeeded") {return;}
+    if ($($result.Status) -ne "Succeeded") {return; }
     $result = runAndWaitForDatamart -datamartName "SharedPersonPatient"
-    if($($result.Status) -ne "Succeeded") {return;}
+    if ($($result.Status) -ne "Succeeded") {return; }
     $result = runAndWaitForDatamart -datamartName "SharedClinical"
-    if($($result.Status) -ne "Succeeded") {return;}
+    if ($($result.Status) -ne "Succeeded") {return; }
 }
 
-function runEarlyWarningSepsis(){
-    createBatchDefinitionForDataMart -datamartName "Sepsis"
-    createBatchDefinitionForDataMart -datamartName "Early Warning Sepsis"
+function runEarlyWarningSepsis() {
 
     $result = runAndWaitForDatamart -datamartName "Early Warning Sepsis"    
-    if($($result.Status) -ne "Succeeded") {return;}  
+    if ($($result.Status) -ne "Succeeded") {return; }  
 }
 
-function runSepsis(){
-    createBatchDefinitionForDataMart -datamartName "Sepsis"
-    createBatchDefinitionForDataMart -datamartName "Early Warning Sepsis"
-    
+function runSepsis() {
+
     $result = runAndWaitForDatamart -datamartName "Sepsis"
-    if($($result.Status) -ne "Succeeded") {return;}
+    if ($($result.Status) -ne "Succeeded") {return; }
     $result = runAndWaitForDatamart -datamartName "Early Warning Sepsis"    
-    if($($result.Status) -ne "Succeeded") {return;}    
+    if ($($result.Status) -ne "Succeeded") {return; }    
 }
 
 $userinput = ""
@@ -302,11 +364,13 @@ while ($userinput -ne "q") {
     Write-Host "1: List data marts"
     Write-Host "2: List Batch definitions"
     Write-Host "-----------"
+    Write-Host "10: Create batch definitions"
     Write-Host "11: Run Shared Datamarts"
-    Write-Host "12: Run Shared Clinical + Sepsis"
+    Write-Host "12: Run Shared Datamarts + Sepsis"
     Write-Host "13: Run EW Sepsis Only"
     Write-Host "---------------------"
     Write-Host "21: Run R datamart"
+    Write-Host "22: Fix R binding on EWS datamart"
     Write-Host "q: Quit"
     $userinput = Read-Host "Please make a selection"
     switch ($userinput) {
@@ -317,6 +381,9 @@ while ($userinput -ne "q") {
         } 
         '2' {
             listBatchDefinitions
+        } 
+        '10' {
+            createBatchDefinitions
         } 
         '11' {
             runSharedDataMarts
@@ -331,12 +398,16 @@ while ($userinput -ne "q") {
         '21' {
             executeJsonDataMart
         } 
+        '22' {
+            setBindingTypeForPatientRisk
+        } 
+        
         'q' {
             return
         }
     }
     $userinput = Read-Host -Prompt "Press Enter to continue or q to exit"
-    if($userinput -eq "q"){
+    if ($userinput -eq "q") {
         return
     }
     [Console]::ResetColor()

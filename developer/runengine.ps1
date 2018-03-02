@@ -7,6 +7,10 @@
 
 $dpsUrl = "http://localhost/DataProcessingService"
 $metadataUrl = "http://localhost/MetadataService" 
+
+$ewSepsisDataMartName = "Early Warning Sepsis"
+$ewSepsisEntityName = "EWSSummaryPatientRisk"
+
 # http://localhost/MetadataService/swagger/ui/index#/
 function listdatamarts() {
     $api = "${metadataUrl}/v1/DataMarts"
@@ -23,7 +27,7 @@ function downloaddataMartIDbyName([ValidateNotNull()] $datamartName) {
     $result = $(getdataMartIDbyName $datamartName)
     $datamartId = $result.Id
 
-    $api = "${metadataUrl}/v1/DataMarts($datamartId)" + '?%24expand=Entities'
+    $api = "${metadataUrl}/v1/DataMarts($datamartId)" + '?$expand=Entities($expand=SourceBindings)'
     $result = Invoke-Restmethod $api -UseDefaultCredentials 
 
     Write-Host $result
@@ -47,6 +51,18 @@ function getIdForEntity([ValidateNotNull()] $datamartid, [ValidateNotNull()] $en
 
     # Write-Host $result
     $Return.EntityId = $result.value.Id
+    return $Return    
+}
+
+function getBinding([ValidateNotNull()] $datamartid, [ValidateNotNull()] $entityId) {
+    # http://localhost/MetadataService/v1/DataMarts(24)/Entities(1427)/SourceBindings
+    [hashtable]$Return = @{} 
+
+    $api = "${metadataUrl}/v1/DataMarts($datamartid)/Entities($entityId)/SourceBindings" + '?$expand=AttributeValues'
+    $result = Invoke-Restmethod $api -UseDefaultCredentials 
+    
+    Write-Host "Binding: $($result.value)"
+    $Return.Binding = $($result.value)
     return $Return    
 }
 
@@ -102,9 +118,9 @@ function setAttributeInBinding([ValidateNotNull()] $datamartid, [ValidateNotNull
     Invoke-Restmethod $api -UseDefaultCredentials 
 }
 
-function setBindingTypeForPatientRisk() {
-    $datamartName = "Early Warning Sepsis"
-    $entityname = "EWSSummaryPatientRisk"
+function setBindingTypeForPatientRisk($bindingType) {
+    $datamartName=$ewSepsisDataMartName
+    $entityname=$ewSepsisEntityName
     $result = $(getdataMartIDbyName $datamartName)
     $datamartId = $result.Id
 
@@ -115,8 +131,26 @@ function setBindingTypeForPatientRisk() {
 
     setAttributeInBinding $datamartid $entityId $bindingId "Script" "C:\\himss\\sepsis\\test.r"
 
-    updateBindingType $datamartid $entityId $bindingId "R"
+    updateBindingType $datamartid $entityId $bindingId $bindingType
 
+}
+function showBindingForPatientRisk() {
+
+    [hashtable]$Return = @{} 
+
+    $datamartName=$ewSepsisDataMartName
+    $entityname=$ewSepsisEntityName
+    $result = $(getdataMartIDbyName $datamartName)
+    $datamartId = $result.Id
+
+    $entityId = $(getIdForEntity $datamartid $entityname).EntityId
+    # $bindingId = $(getIdForBinding $datamartid $entityId).BindingId
+
+    
+
+    $Return.Binding = $(getBinding $datamartId $entityId).Binding
+
+    return $Return
 }
 
 
@@ -392,7 +426,10 @@ while ($userinput -ne "q") {
     Write-Host "13: Run EW Sepsis Only"
     Write-Host "---------------------"
     Write-Host "21: Run R datamart"
-    Write-Host "22: Fix R binding on EWS datamart"
+    Write-Host "22: Set binding to R on EWS datamart"
+    Write-Host "23: Set binding to SQL on EWS datamart"
+    Write-Host "24: Download EWS datamart as json"
+    Write-Host "25: Show EWS Risk binding"
     Write-Host "q: Quit"
     $userinput = Read-Host "Please make a selection"
     switch ($userinput) {
@@ -421,9 +458,18 @@ while ($userinput -ne "q") {
             executeJsonDataMart
         } 
         '22' {
-            setBindingTypeForPatientRisk
+            setBindingTypeForPatientRisk "R"
         } 
-        
+        '23' {
+            setBindingTypeForPatientRisk "SQL"
+        } 
+        '24' {
+            downloaddataMartIDbyName $ewSepsisDataMartName
+        } 
+        '25' {
+            $result = showBindingForPatientRisk $ewSepsisDataMartName
+            Write-Host "Binding Type: $($result.Binding.BindingType)"
+        } 
         'q' {
             return
         }

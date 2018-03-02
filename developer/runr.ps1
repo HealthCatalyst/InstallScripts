@@ -23,3 +23,5 @@ Start-Process "C:\Program Files\R\R-3.4.3\bin\Rscript.exe" -Credential ($credent
 # Write-Host "stdout: $stdout"
 # Write-Host "stderr: $stderr"
 # Write-Host "exit code: " + $p.ExitCode
+
+# "C:\Program Files\R\R-3.4.3\bin\Rscript.exe" "C:\\himss\\healthcareai_predictingScript_sepsisDemo_20180224.r"

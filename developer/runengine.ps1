@@ -4,6 +4,7 @@
 # Invoke-WebRequest -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/developer/runengine.ps1 | Invoke-Expression;
 
 # Get-Content ./runengine.ps1 -Raw | Invoke-Expression;
+Write-output "--- runengine.ps1 Version 2018.03.02.01 ----"
 
 $dpsUrl = "http://localhost/DataProcessingService"
 $metadataUrl = "http://localhost/MetadataService" 
@@ -23,6 +24,20 @@ function listdatamarts() {
     }
 }
 
+function getdataMartIDbyName($datamartName){
+    [hashtable]$Return = @{} 
+
+    $api = "${metadataUrl}/v1/DataMarts" + '?$filter=Name eq ' + "'$datamartName'"
+    $result = Invoke-Restmethod $api -UseDefaultCredentials 
+    
+
+    $Return.Id = $result.value.Id
+    $Return.Name = $result.value.Name
+
+    Write-Host "Found datamart id=$($Return.Id) for $datamartName"
+    
+    return $Return
+}
 function downloaddataMartIDbyName([ValidateNotNull()] $datamartName) {
     [hashtable]$Return = @{} 
 
@@ -267,13 +282,13 @@ function getLastBatchExecutionForDatamart([ValidateNotNull()] $dataMartId) {
 function getBatchExecution([ValidateNotNull()] $batchExecutionId) {
     [hashtable]$Return = @{} 
 
-    $api = "${dpsUrl}" + '/v1/BatchExecutions?$filter=Id eq ' + $batchExecutionId
+    $api = "${dpsUrl}/v1/BatchExecutions($batchExecutionId)"
 
     $result = Invoke-Restmethod $api -UseDefaultCredentials 
-    # Write-Host $result.value
+    # Write-Host $result
     # $batchDefinitionId = $result.value[0].BatchDefinitionId
 
-    $lastExecution = $($result.value | Sort-Object CreationDateTime -Descending)[0]
+    $lastExecution = $($result)
     $batchDefinitionId = $lastExecution.BatchDefinitionId
     $status = $lastExecution.Status
     $startDateTime = $lastExecution.StartDateTime

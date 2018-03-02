@@ -115,3 +115,6 @@ echo "running stack: $stackfilename"
 echo "https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/$myreleaseversion/realtime/${stackfilename}"
 
 curl -sSL "https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/$myreleaseversion/realtime/${stackfilename}" | docker stack deploy --compose-file - fabricrealtime
+
+
+# to resolve to host from dockers, use host.docker.internal 

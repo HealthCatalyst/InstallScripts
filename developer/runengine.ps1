@@ -62,20 +62,20 @@ function getIdForBinding([ValidateNotNull()] $datamartid, [ValidateNotNull()] $e
     return $Return    
 }
 
-function updateBindingType([ValidateNotNull()] $datamartid, [ValidateNotNull()] $entityId, [ValidateNotNull()] $bindingId) {
+function updateBindingType([ValidateNotNull()] $datamartid, [ValidateNotNull()] $entityId, [ValidateNotNull()] $bindingId, [ValidateNotNull()] $bindingType) {
     # /v1/DataMarts({dataMartId})/Entities({entityId})/SourceBindings({id})
     [hashtable]$Return = @{} 
 
     $api = "${metadataUrl}/v1/DataMarts($datamartid)/Entities($entityId)/SourceBindings($bindingId)"  
     $body = @{
-        BindingType = "R"
+        BindingType = "$bindingType"
     }
     $bodyAsJson = $body | ConvertTo-Json
     $headerJSON = @{ "content-type" = "application/json;odata=verbose"}
 
     Write-Host "API: $api"
     Write-Host "Body: $bodyAsJson"
-    
+
     Invoke-RestMethod -Uri $api -UseDefaultCredentials `
         -Headers $headerJSON -Method PATCH `
         -Body $bodyAsJson    
@@ -85,9 +85,26 @@ function updateBindingType([ValidateNotNull()] $datamartid, [ValidateNotNull()] 
 
 }
 
-function setBindingTypeForPatientRisk(){
-    $datamartName ="Early Warning Sepsis"
-    $entityname="EWSSummaryPatientRisk"
+function setAttributeInBinding([ValidateNotNull()] $datamartid, [ValidateNotNull()] $entityId, [ValidateNotNull()] $bindingId, $attributeName, $attributeValue) {
+    # POST /v1/DataMarts({dataMartId})/Entities({entityId})/SourceBindings({bindingId})/AttributeValues
+    $api = "${metadataUrl}/v1/DataMarts($datamartid)/Entities($entityId)/SourceBindings($bindingId)/AttributeValues"  
+
+    $bodyAsJson = "{
+        'AttributeName': '$attributeName',
+        'AttributeValue': '$attributeValue'
+      }"
+    $headerJSON = @{ "content-type" = "application/json;odata=verbose"}
+
+    Invoke-RestMethod -Uri $api -UseDefaultCredentials `
+        -Headers $headerJSON -Method POST `
+        -Body $bodyAsJson    
+
+    Invoke-Restmethod $api -UseDefaultCredentials 
+}
+
+function setBindingTypeForPatientRisk() {
+    $datamartName = "Early Warning Sepsis"
+    $entityname = "EWSSummaryPatientRisk"
     $result = $(getdataMartIDbyName $datamartName)
     $datamartId = $result.Id
 
@@ -96,8 +113,13 @@ function setBindingTypeForPatientRisk(){
 
     Write-Host "Updating binding type to R"
 
-    updateBindingType $datamartid $entityId $bindingId
+    setAttributeInBinding $datamartid $entityId $bindingId "Script" "C:\\himss\\sepsis\\test.r"
+
+    updateBindingType $datamartid $entityId $bindingId "R"
+
 }
+
+
 function listBatchDefinitions() {
     $api = "${dpsUrl}/v1/BatchDefinitions"
     $result = Invoke-Restmethod $api -UseDefaultCredentials 

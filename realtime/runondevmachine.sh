@@ -73,7 +73,9 @@ else
 fi
 
 
-export DISABLE_SSL="true"
+# export DISABLE_SSL="false"
+export CERT_HOSTNAME="HC2034.hqcatalyst.local"
+
 export SHARED_DRIVE=c:/tmp/fabricrealtime
 mkdir -p ${SHARED_DRIVE}
 

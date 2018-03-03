@@ -4,7 +4,7 @@
 # Invoke-WebRequest -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/developer/runengine.ps1 | Invoke-Expression;
 
 # Get-Content ./runengine.ps1 -Raw | Invoke-Expression;
-Write-output "--- runengine.ps1 Version 2018.03.02.01 ----"
+Write-output "--- runengine.ps1 Version 2018.03.03.01 ----"
 
 $dpsUrl = "http://localhost/DataProcessingService"
 $metadataUrl = "http://localhost/MetadataService" 
@@ -13,6 +13,8 @@ $ewSepsisDataMartName = "Early Warning Sepsis"
 $ewSepsisEntityName = "EWSSummaryPatientRisk"
 #$ewsRScriptFile = "C:\\himss\\sepsis\\test.r"
 $ewsRScriptFile = "C:\\himss\\healthcareai_predictingScript_sepsisDemo_20180224.r"
+
+$connectionString = "Server=(local);Database=EdwAdmin;Trusted_Connection=True;"
 
 # http://localhost/MetadataService/swagger/ui/index#/
 function listdatamarts() {
@@ -314,7 +316,7 @@ function waitForBatchExecution([ValidateNotNull()] $batchExecutionId) {
         $result = getBatchExecution($batchExecutionId)
         $status = $result.Status
         Write-Host "Status: $status"
-        Start-Sleep -Seconds 10
+        Start-Sleep -Seconds 1
     }
     while ($status -ne "Succeeded" -and $status -ne "Failed" -and $status -ne "Canceled")
 
@@ -435,7 +437,11 @@ function runSharedDataMarts() {
 
 function runEarlyWarningSepsis() {
 
-    $result = runAndWaitForDatamart -datamartName "Early Warning Sepsis"    
+    $StartDateTime = Get-Date
+    $result = runAndWaitForDatamart -datamartName "Early Warning Sepsis"   
+    $EndDateTime = Get-Date 
+    $duration = $EndDateTime - $StartDateTime
+    Write-Host "Runtime in seconds: $($duration.TotalSeconds)"
     if ($($result.Status) -ne "Succeeded") {return; }  
 }
 
@@ -447,6 +453,9 @@ function runSepsis() {
     if ($($result.Status) -ne "Succeeded") {return; }    
 }
 
+function runSql([ValidateNotNull()] $sql){
+    Invoke-Sqlcmd -Query $sql -ConnectionString $connectionString -Verbose
+}
 $userinput = ""
 while ($userinput -ne "q") {
     Write-Host "================ Health Catalyst Developer Tools ================"
@@ -462,7 +471,9 @@ while ($userinput -ne "q") {
     Write-Host "22: Set binding to R on EWS datamart"
     Write-Host "23: Set binding to SQL on EWS datamart"
     Write-Host "24: Download EWS datamart as json"
-    Write-Host "25: Show EWS Risk binding"
+    Write-Host "-------- Troubleshooting ------"
+    Write-Host "32: fix discovery service url"
+    Write-Host "33: Show EWS Risk binding"
     Write-Host "q: Quit"
     $userinput = Read-Host "Please make a selection"
     switch ($userinput) {
@@ -499,7 +510,10 @@ while ($userinput -ne "q") {
         '24' {
             downloaddataMartIDbyName $ewSepsisDataMartName
         } 
-        '25' {
+        '32' {
+            runSql "update [EDWAdmin].[CatalystAdmin].[ObjectAttributeBASE] set AttributeValueTXT = 'http://localhost/DiscoveryService/v1' where AttributeNM = 'DiscoveryServiceUri'"
+        } 
+        '33' {
             $result = showBindingForPatientRisk $ewSepsisDataMartName
             Write-Host "Binding Type: $($result.Binding.BindingType)"
         } 

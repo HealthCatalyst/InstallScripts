@@ -9,7 +9,7 @@ Write-output "--- runengine.ps1 Version 2018.03.04.01 ----"
 $dpsUrl = "http://localhost/DataProcessingService"
 $metadataUrl = "http://localhost/MetadataService" 
 
-$ewSepsisDataMartName = "Early Warning Sepsis"
+$ewSepsisDataMartName = "Early Warning Sepsis Risk"
 $ewSepsisEntityName = "EWSSummaryPatientRisk"
 #$ewsRScriptFile = "C:\\himss\\sepsis\\test.r"
 $ewsRScriptFile = "C:\\himss\\healthcareai_predictingScript_sepsisDemo_20180224.r"
@@ -405,7 +405,7 @@ function createBatchDefinitions() {
     createBatchDefinitionForDataMart -datamartName "Sepsis"
     createBatchDefinitionForDataMart -datamartName "Hospital Account to Facility Account"
     
-    createBatchDefinitionForDataMart -datamartName "Early Warning Sepsis"
+    createBatchDefinitionForDataMart -datamartName "Early Warning Sepsis Risk"
 }
 
 function runAndWaitForDatamart([ValidateNotNull()] $datamartName) {
@@ -440,7 +440,7 @@ function runSharedDataMarts() {
 function runEarlyWarningSepsis() {
 
     $StartDateTime = Get-Date
-    $result = runAndWaitForDatamart -datamartName "Early Warning Sepsis"   
+    $result = runAndWaitForDatamart -datamartName "Early Warning Sepsis Risk"   
     $EndDateTime = Get-Date 
     $duration = $EndDateTime - $StartDateTime
     Write-Host "Runtime in seconds: $($duration.TotalSeconds)"
@@ -455,7 +455,7 @@ function runSepsis() {
     $result = runAndWaitForDatamart -datamartName "Sepsis"
     if ($($result.Status) -ne "Succeeded") {return; }
 
-    $result = runAndWaitForDatamart -datamartName "Early Warning Sepsis"    
+    $result = runAndWaitForDatamart -datamartName "Early Warning Sepsis Risk"    
     if ($($result.Status) -ne "Succeeded") {return; }    
 }
 

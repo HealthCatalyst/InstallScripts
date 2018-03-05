@@ -4,7 +4,7 @@
 # Invoke-WebRequest -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/developer/runengine.ps1 | Invoke-Expression;
 
 # Get-Content ./runengine.ps1 -Raw | Invoke-Expression;
-Write-output "--- runengine.ps1 Version 2018.03.03.01 ----"
+Write-output "--- runengine.ps1 Version 2018.03.04.01 ----"
 
 $dpsUrl = "http://localhost/DataProcessingService"
 $metadataUrl = "http://localhost/MetadataService" 
@@ -403,6 +403,8 @@ function createBatchDefinitions() {
     createBatchDefinitionForDataMart -datamartName "SharedPersonPatient"
     createBatchDefinitionForDataMart -datamartName "SharedClinical"
     createBatchDefinitionForDataMart -datamartName "Sepsis"
+    createBatchDefinitionForDataMart -datamartName "Hospital Account to Facility Account"
+    
     createBatchDefinitionForDataMart -datamartName "Early Warning Sepsis"
 }
 
@@ -447,8 +449,12 @@ function runEarlyWarningSepsis() {
 
 function runSepsis() {
 
+    $result = runAndWaitForDatamart -datamartName "Hospital Account to Facility Account"
+    if ($($result.Status) -ne "Succeeded") {return; }
+
     $result = runAndWaitForDatamart -datamartName "Sepsis"
     if ($($result.Status) -ne "Succeeded") {return; }
+
     $result = runAndWaitForDatamart -datamartName "Early Warning Sepsis"    
     if ($($result.Status) -ne "Succeeded") {return; }    
 }
@@ -465,7 +471,8 @@ while ($userinput -ne "q") {
     Write-Host "10: Create batch definitions"
     Write-Host "11: Run Shared Datamarts"
     Write-Host "12: Run Shared Datamarts + Sepsis"
-    Write-Host "13: Run EW Sepsis Only"
+    Write-Host "13: Run Sepsis and EW Sepsis"
+    Write-Host "14: Run EW Sepsis Only"
     Write-Host "---------------------"
     Write-Host "21: Run R datamart"
     Write-Host "22: Set binding to R on EWS datamart"
@@ -496,6 +503,10 @@ while ($userinput -ne "q") {
             runSepsis
         } 
         '13' {
+            runSepsis
+            runEarlyWarningSepsis
+        } 
+        '14' {
             runEarlyWarningSepsis
         } 
         '21' {

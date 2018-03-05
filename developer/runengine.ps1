@@ -462,9 +462,40 @@ function runSepsis() {
 function runSql([ValidateNotNull()] $sql){
     Invoke-Sqlcmd -Query $sql -ConnectionString $connectionString -Verbose
 }
+
+function createNodeUserOnSqlDatabase(){
+    $sql = 
+@"
+IF NOT EXISTS 
+    (SELECT name  
+     FROM master.sys.server_principals
+     WHERE name = 'nodeuser')
+BEGIN
+CREATE LOGIN [nodeuser] WITH PASSWORD=N'ILoveNode2017', DEFAULT_DATABASE=[SAM], DEFAULT_LANGUAGE=[us_english], CHECK_EXPIRATION=ON, CHECK_POLICY=ON
+END
+"@
+    Invoke-Sqlcmd -Query $sql -ConnectionString $connectionString -Verbose
+    $sql = 
+@"
+USE [SAM];
+GO
+CREATE USER [nodeuser] FOR LOGIN [nodeuser]
+GO
+"@
+    Invoke-Sqlcmd -Query $sql -ConnectionString $connectionString -Verbose
+    $sql = 
+@"
+USE [SAM];
+GO
+exec sp_addrolemember 'db_datareader', 'nodeuser';
+GO
+"@
+    Invoke-Sqlcmd -Query $sql -ConnectionString $connectionString -Verbose
+}
 $userinput = ""
 while ($userinput -ne "q") {
     Write-Host "================ Health Catalyst Developer Tools ================"
+    Write-Host "0: Setup HIMSS Demo"
     Write-Host "1: List data marts"
     Write-Host "2: List Batch definitions"
     Write-Host "-----------"
@@ -485,6 +516,7 @@ while ($userinput -ne "q") {
     $userinput = Read-Host "Please make a selection"
     switch ($userinput) {
         '0' {
+            createNodeUserOnSqlDatabase
         } 
         '1' {
             listdatamarts

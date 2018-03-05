@@ -4,7 +4,7 @@
 # Invoke-WebRequest -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/developer/runengine.ps1 | Invoke-Expression;
 
 # Get-Content ./runengine.ps1 -Raw | Invoke-Expression;
-Write-output "--- runengine.ps1 Version 2018.03.04.01 ----"
+Write-output "--- runengine.ps1 Version 2018.03.05.01 ----"
 
 $dpsUrl = "http://localhost/DataProcessingService"
 $metadataUrl = "http://localhost/MetadataService" 
@@ -492,6 +492,11 @@ GO
 "@
     Invoke-Sqlcmd -Query $sql -ConnectionString $connectionString -Verbose
 }
+
+function runFabricEHRDocker(){
+    docker run -d --rm -p 3000:3000 --name fabric.ehr healthcatalyst/fabric.ehr
+}
+
 $userinput = ""
 while ($userinput -ne "q") {
     Write-Host "================ Health Catalyst Developer Tools ================"
@@ -516,6 +521,7 @@ while ($userinput -ne "q") {
     $userinput = Read-Host "Please make a selection"
     switch ($userinput) {
         '0' {
+            runFabricEHRDocker
             createNodeUserOnSqlDatabase
         } 
         '1' {

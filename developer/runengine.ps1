@@ -4,7 +4,7 @@
 # Invoke-WebRequest -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/developer/runengine.ps1 | Invoke-Expression;
 
 # Get-Content ./runengine.ps1 -Raw | Invoke-Expression;
-Write-output "--- runengine.ps1 Version 2018.03.06.01 ----"
+Write-output "--- runengine.ps1 Version 2018.03.06.02 ----"
 
 $dpsUrl = "http://localhost/DataProcessingService"
 $metadataUrl = "http://localhost/MetadataService" 
@@ -26,7 +26,7 @@ function listdatamarts() {
     }
 }
 
-function getdataMartIDbyName($datamartName){
+function getdataMartIDbyName($datamartName) {
     [hashtable]$Return = @{} 
 
     $api = "${metadataUrl}/v1/DataMarts" + '?$filter=Name eq ' + "'$datamartName'"
@@ -143,7 +143,7 @@ function setAttributeInBinding([ValidateNotNull()] $datamartid, [ValidateNotNull
             -Body $bodyAsJson    
     }
     else {
-        $attributeId=$($result.value.Id)
+        $attributeId = $($result.value.Id)
         Write-Host "Attribute $attributeName already exists with id: $attributeId so patching it"
         $api = "${metadataUrl}/v1/DataMarts($datamartid)/Entities($entityId)/SourceBindings($bindingId)/AttributeValues($attributeId)"  
         
@@ -482,7 +482,7 @@ function runSepsis() {
     if ($($result.Status) -ne "Succeeded") {return; }    
 }
 
-function runHL7Sourcemart(){
+function runHL7Sourcemart() {
     $datamartName = "HL7Demo"
     $result = $(getdataMartIDbyName $datamartName)
     $datamartId = $result.Id
@@ -491,13 +491,20 @@ function runHL7Sourcemart(){
     Write-Host "Running batch definition $batchdefinitionId for datamart $datamartName id: $datamartId"
     $(executeBatchAsStreaming -batchdefinitionId $batchdefinitionId).BatchExecutionId
 }
-function runSql([ValidateNotNull()] $sql){
+function runSql([ValidateNotNull()] $sql) {
     Invoke-Sqlcmd -Query $sql -ConnectionString $connectionString -Verbose
 }
 
-function createNodeUserOnSqlDatabase(){
+function downloadCerts() {
+    $url = "http://localhost:8081/client/fabricrabbitmquser_client_cert.p12"
+    Write-Host "Download: $url"
+    Write-Host "Double-click and install in Local Machine. password: roboconf2"
+    Write-Host "Open Certificate Management, right click on cert and give everyone access to key"
+    $url = "http://localhost:8081/client/fabric_ca_cert.p12"
+}
+function createNodeUserOnSqlDatabase() {
     $sql = 
-@"
+    @"
 IF NOT EXISTS 
     (SELECT name  
      FROM master.sys.server_principals
@@ -508,7 +515,7 @@ END
 "@
     Invoke-Sqlcmd -Query $sql -ConnectionString $connectionString -Verbose
     $sql = 
-@"
+    @"
 USE [SAM];
 GO
 CREATE USER [nodeuser] FOR LOGIN [nodeuser]
@@ -516,7 +523,7 @@ GO
 "@
     Invoke-Sqlcmd -Query $sql -ConnectionString $connectionString -Verbose
     $sql = 
-@"
+    @"
 USE [SAM];
 GO
 exec sp_addrolemember 'db_datareader', 'nodeuser';
@@ -525,7 +532,7 @@ GO
     Invoke-Sqlcmd -Query $sql -ConnectionString $connectionString -Verbose
 }
 
-function runFabricEHRDocker(){
+function runFabricEHRDocker() {
     docker run -d --rm -p 3000:3000 --name fabric.ehr healthcatalyst/fabric.ehr
 }
 
@@ -548,6 +555,7 @@ while ($userinput -ne "q") {
     Write-Host "23: Set binding to SQL on EWS datamart"
     Write-Host "24: Download EWS datamart as json"
     Write-Host "-------- Troubleshooting ------"
+    Write-Host "31: Download RabbitMq certs"
     Write-Host "32: fix discovery service url"
     Write-Host "33: Show EWS Risk binding"
     Write-Host "q: Quit"
@@ -594,6 +602,9 @@ while ($userinput -ne "q") {
         } 
         '24' {
             downloaddataMartIDbyName $ewSepsisDataMartName
+        } 
+        '31' {
+            downloadCerts
         } 
         '32' {
             runSql "update [EDWAdmin].[CatalystAdmin].[ObjectAttributeBASE] set AttributeValueTXT = 'http://localhost/DiscoveryService/v1' where AttributeNM = 'DiscoveryServiceUri'"

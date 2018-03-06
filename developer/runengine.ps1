@@ -334,8 +334,8 @@ function executeBatch([ValidateNotNull()] $batchdefinitionId) {
         Status            = "Queued"
         PipelineType      = "Batch"
         LoggingLevel      = "Diagnostic"
-        LoadType          = "All"
-        OverrideLoadType  = "Full"
+        # LoadType          = "All"
+        # OverrideLoadType  = "Full"
     }
     $result = Invoke-RestMethod -Uri $api -UseDefaultCredentials -Method POST -Body $body
 

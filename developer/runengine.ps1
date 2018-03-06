@@ -4,7 +4,7 @@
 # Invoke-WebRequest -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/developer/runengine.ps1 | Invoke-Expression;
 
 # Get-Content ./runengine.ps1 -Raw | Invoke-Expression;
-Write-output "--- runengine.ps1 Version 2018.03.05.01 ----"
+Write-output "--- runengine.ps1 Version 2018.03.06.01 ----"
 
 $dpsUrl = "http://localhost/DataProcessingService"
 $metadataUrl = "http://localhost/MetadataService" 
@@ -345,6 +345,27 @@ function executeBatch([ValidateNotNull()] $batchdefinitionId) {
     $Return.BatchExecutionId = $batchExecutionId
     return $Return  
 }
+function executeBatchAsStreaming([ValidateNotNull()] $batchdefinitionId) {
+    [hashtable]$Return = @{} 
+
+    #then execute the batch definiton
+    $api = "${dpsUrl}/v1/BatchExecutions"
+    $body = @{
+        BatchDefinitionId = $batchDefinitionId
+        Status            = "Queued"
+        PipelineType      = "Streaming"
+        LoggingLevel      = "Diagnostic"
+        # LoadType          = "All"
+        # OverrideLoadType  = "Full"
+    }
+    $result = Invoke-RestMethod -Uri $api -UseDefaultCredentials -Method POST -Body $body
+
+    $batchExecutionId = $result.Id
+    Write-Host "Batch execution id=$batchExecutionId"
+
+    $Return.BatchExecutionId = $batchExecutionId
+    return $Return  
+}
 
 function cancelBatch([ValidateNotNull()] $batchExecutionId) {
     [hashtable]$Return = @{} 
@@ -397,6 +418,8 @@ function createBatchDefinitionForDataMart([ValidateNotNull()] $datamartName) {
 }
 
 function createBatchDefinitions() {
+    createBatchDefinitionForDataMart -datamartName "HL7Demo"
+
     createBatchDefinitionForDataMart -datamartName "SharedPersonSourcePatient"
     createBatchDefinitionForDataMart -datamartName "SharedPersonSourceProvider"
     createBatchDefinitionForDataMart -datamartName "SharedPersonProvider"
@@ -459,6 +482,15 @@ function runSepsis() {
     if ($($result.Status) -ne "Succeeded") {return; }    
 }
 
+function runHL7Sourcemart(){
+    $datamartName = "HL7Demo"
+    $result = $(getdataMartIDbyName $datamartName)
+    $datamartId = $result.Id
+
+    $batchdefinitionId = $(getBatchDefinitionForDataMart -dataMartId $datamartId).BatchDefinitionId
+    Write-Host "Running batch definition $batchdefinitionId for datamart $datamartName id: $datamartId"
+    $(executeBatchAsStreaming -batchdefinitionId $batchdefinitionId).BatchExecutionId
+}
 function runSql([ValidateNotNull()] $sql){
     Invoke-Sqlcmd -Query $sql -ConnectionString $connectionString -Verbose
 }
@@ -505,10 +537,11 @@ while ($userinput -ne "q") {
     Write-Host "2: List Batch definitions"
     Write-Host "-----------"
     Write-Host "10: Create batch definitions"
-    Write-Host "11: Run Shared Datamarts"
-    Write-Host "12: Run Shared Datamarts + Sepsis"
-    Write-Host "13: Run Sepsis and EW Sepsis"
-    Write-Host "14: Run EW Sepsis Only"
+    Write-Host "11: Run HL7 Source mart"
+    Write-Host "12: Run Shared Datamarts"
+    Write-Host "13: Run Shared Datamarts + Sepsis"
+    Write-Host "14: Run Sepsis and EW Sepsis"
+    Write-Host "15: Run EW Sepsis Only"
     Write-Host "---------------------"
     Write-Host "21: Run R datamart"
     Write-Host "22: Set binding to R on EWS datamart"
@@ -534,17 +567,20 @@ while ($userinput -ne "q") {
             createBatchDefinitions
         } 
         '11' {
-            runSharedDataMarts
+            runHL7Sourcemart
         } 
         '12' {
             runSharedDataMarts
-            runSepsis
         } 
         '13' {
+            runSharedDataMarts
+            runSepsis
+        } 
+        '14' {
             runSepsis
             runEarlyWarningSepsis
         } 
-        '14' {
+        '15' {
             runEarlyWarningSepsis
         } 
         '21' {

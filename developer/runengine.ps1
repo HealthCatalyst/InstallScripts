@@ -536,6 +536,9 @@ function runFabricEHRDocker() {
     docker run -d --rm -p 3000:3000 --name fabric.ehr healthcatalyst/fabric.ehr
 }
 
+function startFabricEHRNodeJs(){
+}
+
 $userinput = ""
 while ($userinput -ne "q") {
     Write-Host "================ Health Catalyst Developer Tools ================"

@@ -9,7 +9,7 @@ GITHUB_URL="https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/mast
 source <(curl -sSL "$GITHUB_URL/kubernetes/common.sh")
 # source ./kubernetes/common.sh
 
-version="2018.02.14.01"
+version="2018.03.13.01"
 
 echo "---- setup-loadbalancer.sh version $version ------"
 
@@ -29,21 +29,27 @@ SaveSecretValue customerid "value" $customerid
 
 # ReadYamlAndReplaceCustomer $GITHUB_URL "azure/ingress-roles.yml" $customerid
 
+echo "Downloading $GITHUB_URL/kubernetes/loadbalancer/configmaps/config.yaml"
 ReadYamlAndReplaceCustomer $GITHUB_URL "kubernetes/loadbalancer/configmaps/config.yaml" $customerid \
         | kubectl apply -f -
 
+echo "Downloading $GITHUB_URL/kubernetes/loadbalancer/roles/ingress-roles.yaml"
 ReadYamlAndReplaceCustomer $GITHUB_URL "kubernetes/loadbalancer/roles/ingress-roles.yaml" $customerid \
         | kubectl apply -f -
 
+echo "Downloading $GITHUB_URL/kubernetes/loadbalancer/pods/ingress-onprem.yaml"
 ReadYamlAndReplaceCustomer $GITHUB_URL "kubernetes/loadbalancer/pods/ingress-onprem.yaml" $customerid \
         | kubectl apply -f -
 
+echo "Downloading $GITHUB_URL/kubernetes/loadbalancer/services/loadbalancer-internal.yaml"
 ReadYamlAndReplaceCustomer $GITHUB_URL "kubernetes/loadbalancer/services/loadbalancer-internal.yaml" $customerid \
         | kubectl apply -f -
 
+echo "Downloading $GITHUB_URL/kubernetes/loadbalancer/ingress/dashboard-internal.yaml"
 ReadYamlAndReplaceCustomer $GITHUB_URL "kubernetes/loadbalancer/ingress/dashboard-internal.yaml" $customerid \
         | kubectl apply -f -
 
+echo "Downloading $GITHUB_URL/kubernetes/loadbalancer/ingress/default-internal.yaml"
 ReadYamlAndReplaceCustomer $GITHUB_URL "kubernetes/loadbalancer/ingress/default-internal.yaml" $customerid \
         | kubectl apply -f -
 

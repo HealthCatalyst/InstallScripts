@@ -5,7 +5,7 @@ set -e
 #   curl -sSL https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/kubernetes/main.sh | bash
 #
 #
-version="2018.03.13.01"
+version="2018.03.13.02"
 
 GITHUB_URL="https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master"
 
@@ -21,8 +21,9 @@ while [[ "$input" != "q" ]]; do
     echo "2: Add this VM as Worker"
     echo "3: Join a new node to this cluster"
     echo "4: Mount shared folder"
-    echo "5: Setup Load Balancer"
-    echo "6: Test DNS"
+    echo "5: Mount Azure Storage as shared folder"
+    echo "6: Setup Load Balancer"
+    echo "7: Test DNS"
     echo "------ Product Install -------"
     echo "15: Install NLP"
     echo "16: Install Realtime"
@@ -59,9 +60,11 @@ while [[ "$input" != "q" ]]; do
         ;;
     4)  mountSMB
         ;;
-    5)  curl -sSL https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/kubernetes/setup-loadbalancer.sh?p=$RANDOM | bash
+    4)  mountAzureFile
         ;;
-    6)  # from https://kubernetes.io/docs/tasks/administer-cluster/dns-custom-nameservers/#debugging-dns-resolution
+    6)  curl -sSL https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/kubernetes/setup-loadbalancer.sh?p=$RANDOM | bash
+        ;;
+    7)  # from https://kubernetes.io/docs/tasks/administer-cluster/dns-custom-nameservers/#debugging-dns-resolution
         echo "To resolve DNS issues: https://kubernetes.io/docs/tasks/administer-cluster/dns-custom-nameservers/#debugging-dns-resolution"
         echo "----------- Checking if DNS pods are running -----------"
         kubectl get pods --namespace=kube-system -l k8s-app=kube-dns

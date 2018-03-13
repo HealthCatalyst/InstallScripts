@@ -210,6 +210,17 @@ function mountSMB(){
     mountSMBWithParams $pathToShare $username $password
 }
 
+function mountAzureFile(){
+    read -p "Storage Account Name: " storageAccountName < /dev/tty    
+    read -p "Storage Share Name: " shareName < /dev/tty    
+    $pathToShare="//${storageAccountName}.file.core.windows.net/${shareName}"
+    $username="$storageAccountName"
+    read -s -p "storage account key: " storageAccountKey < /dev/tty
+
+    mountSMBWithParams $pathToShare $username $storageAccountKey
+}
+
+
 function mountSMBWithParams(){
     local pathToShare=$1
     local username=$2 #<storage-account-name>

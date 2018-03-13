@@ -6,10 +6,10 @@
 
 $GITHUB_URL = "https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master"
 
-Invoke-WebRequest -useb ${GITHUB_URL}/developer/doslibrary.ps1 | Invoke-Expression;
-# Get-Content ./developer/doslibrary.ps1 -Raw | Invoke-Expression;
+# Invoke-WebRequest -useb ${GITHUB_URL}/developer/doslibrary.ps1 | Invoke-Expression;
+Get-Content ./developer/doslibrary.ps1 -Raw | Invoke-Expression;
 
-Write-output "--- runengine.ps1 Version 2018.03.11.01 ----"
+Write-output "--- runengine.ps1 Version 2018.03.13.01 ----"
 
 $userinput = ""
 while ($userinput -ne "q") {
@@ -35,7 +35,7 @@ while ($userinput -ne "q") {
     Write-Host "31: Download RabbitMq certs"
     Write-Host "32: fix discovery service url"
     Write-Host "33: Show EWS Risk binding"
-    Write-Host "34: do foo"
+    Write-Host "34: Set Config for AI"
     Write-Host "q: Quit"
     $userinput = Read-Host "Please make a selection"
     switch ($userinput) {
@@ -99,6 +99,8 @@ while ($userinput -ne "q") {
             Write-Host "Binding Type: $($result.Binding.BindingType)"
         } 
         '34' {
+            setETLObjectAttributeText "PathToRExecutable" "C:\Program Files\R\R-3.4.3\bin\Rscript.exe"
+            setETLObjectAttributeText "PathToRModelFolder" "C:/himss/R"            
         } 
         'q' {
             return

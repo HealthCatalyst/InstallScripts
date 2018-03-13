@@ -3,7 +3,7 @@
 # You can run this by pasting the following in powershell
 # Invoke-WebRequest -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/developer/doslibrary.ps1 | Invoke-Expression;
 
-Write-output "--- doslibrary.ps1 Version 2018.03.11.01 ----"
+Write-output "--- doslibrary.ps1 Version 2018.03.13.01 ----"
 
 $dpsUrl = "http://localhost/DataProcessingService"
 $metadataUrl = "http://localhost/MetadataService" 
@@ -489,7 +489,7 @@ function runHL7Sourcemart() {
     $(executeBatchAsStreaming -batchdefinitionId $batchdefinitionId).BatchExecutionId
 }
 function runSql([ValidateNotNull()] $sql) {
-    Invoke-Sqlcmd -Query $sql -ConnectionString $connectionString -Verbose
+    Invoke-Sqlcmd -Query $sql -ConnectionString $connectionString
 }
 
 function downloadCerts() {
@@ -558,6 +558,46 @@ function showUserPermissions() {
     foreach ($row in $rows) {
         Write-Host $row
     }
+}
+
+function setETLObjectAttribute($attributeName, $attributeValueTXT, $attributeValueNBR){
+    [hashtable]$Return = @{} 
+
+    $sql =
+@"
+IF NOT EXISTS(SELECT 1 FROM [EDWAdmin].[CatalystAdmin].[ETLObjectAttributeBASE] WHERE [AttributeNM] = '$attributeName')
+BEGIN
+	INSERT INTO [EDWAdmin].[CatalystAdmin].[ETLObjectAttributeBASE]([ObjectID], [ObjectTypeCD],[AttributeNM],[AttributeValueTXT],[AttributeValueNBR])
+	VALUES(0, 'System', '$attributeName','$attributeValueTXT',$attributeValueNBR)
+END
+ELSE
+BEGIN
+	UPDATE [EDWAdmin].[CatalystAdmin].[ETLObjectAttributeBASE]
+	SET [AttributeValueTXT] = '$attributeValueTXT', [AttributeValueNBR]=$attributeValueNBR
+	WHERE [AttributeNM] = '$attributeName'
+END
+"@
+    # Write-Host $sql
+    runSql $sql
+
+    return $Return
+}
+
+function setETLObjectAttributeText($attributeName, $attributeValueTXT){
+    [hashtable]$Return = @{} 
+
+    setETLObjectAttribute "$attributeName" "$attributeValueTXT" "NULL"
+    Write-Host "setETLObjectAttributeText: '$attributeName' '$attributeValueTXT'"
+
+    return $Return
+}
+function setETLObjectAttributeNumber($attributeName, $attributeValueNBR){
+    [hashtable]$Return = @{} 
+
+    setETLObjectAttribute "$attributeName" "NULL" $attributeValueNBR
+    Write-Host "setETLObjectAttributeNumber: '$attributeName' $attributeValueNBR"
+
+    return $Return
 }
 
 function listWebSites() {

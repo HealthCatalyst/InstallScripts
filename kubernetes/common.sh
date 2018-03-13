@@ -1,5 +1,5 @@
 
-versioncommon="2018.02.16.02"
+versioncommon="2018.03.13.01"
 
 echo "--- Including common.sh version $versioncommon ---"
 function GetCommonVersion() {
@@ -33,6 +33,8 @@ function ReadYamlAndReplaceCustomer () {
     local baseUrl=$1
     local templateFile=$2
     local customerid=$3
+
+    echo "Downloading $baseUrl/$templateFile"
 
     curl -sSL "$baseUrl/$templateFile" \
         | ReplaceText CUSTOMERID $customerid

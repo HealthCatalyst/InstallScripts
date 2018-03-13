@@ -3,7 +3,6 @@
 # You can run this by pasting the following in powershell
 # Invoke-WebRequest -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/developer/doslibrary.ps1 | Invoke-Expression;
 
-# Get-Content ./runengine.ps1 -Raw | Invoke-Expression;
 Write-output "--- doslibrary.ps1 Version 2018.03.11.01 ----"
 
 $dpsUrl = "http://localhost/DataProcessingService"
@@ -11,8 +10,6 @@ $metadataUrl = "http://localhost/MetadataService"
 
 $ewSepsisDataMartName = "Early Warning Sepsis Risk"
 $ewSepsisEntityName = "EWSSummaryPatientRisk"
-#$ewsRScriptFile = "C:\\himss\\sepsis\\test.r"
-$ewsRScriptFile = "C:\\himss\\healthcareai_predictingScript_sepsisDemo_20180224.r"
 
 $connectionString = "Server=(local);Database=EdwAdmin;Trusted_Connection=True;"
 

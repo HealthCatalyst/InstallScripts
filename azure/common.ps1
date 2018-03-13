@@ -1,6 +1,6 @@
 # This file contains common functions for Azure
 # 
-$versioncommon = "2018.02.27.04"
+$versioncommon = "2018.03.13.01"
 
 Write-Host "---- Including common.ps1 version $versioncommon -----"
 function global:GetCommonVersion() {
@@ -738,7 +738,7 @@ function global:DeleteNetworkSecurityGroupRule($resourceGroup, $networkSecurityG
 function global:DownloadKubectl($localFolder) {
     # download kubectl
     $kubeCtlFile = "$localFolder\kubectl.exe"
-    $desiredKubeCtlVersion = "v1.9.3"
+    $desiredKubeCtlVersion = "v1.9.2"
     $downloadkubectl = "n"
     if (!(Test-Path "$kubeCtlFile")) {
         $downloadkubectl = "y"
@@ -754,7 +754,7 @@ function global:DownloadKubectl($localFolder) {
     if ( $downloadkubectl -eq "y") {
         $url = "https://storage.googleapis.com/kubernetes-release/release/${desiredKubeCtlVersion}/bin/windows/amd64/kubectl.exe"
         Write-Host "Downloading kubectl.exe from url $url to $kubeCtlFile"
-        Remove-Item -Path "$kubeCtlFile"
+        Remove-Item -Path "$kubeCtlFile" -Force
         DownloadFile -url $url -targetFile $kubeCtlFile
     }
     else {
@@ -762,11 +762,17 @@ function global:DownloadKubectl($localFolder) {
     }
     
 }
+
+function global:DownloadFileNew($url, $targetFile) {
+    $wc = New-Object net.webclient
+    $wc.Downloadfile($url, $targetFile)
+}
 function global:DownloadFile($url, $targetFile) {
     # from https://stackoverflow.com/questions/21422364/is-there-any-way-to-monitor-the-progress-of-a-download-using-a-webclient-object
     $uri = New-Object "System.Uri" "$url"
     $request = [System.Net.HttpWebRequest]::Create($uri)
     $request.set_Timeout(15000) #15 second timeout
+    # $request.Proxy = $null
     $response = $request.GetResponse()
     $totalLength = [System.Math]::Floor($response.get_ContentLength() / 1024)
     $responseStream = $response.GetResponseStream()

@@ -1,12 +1,13 @@
+# Powershell functions for DOS
 This is not production ready code!  This is currently for us to use in our developer machines.
 
 These are Powershell functions that wrap the REST APIs of MDS and v2 engine.  In addition there are functions that do some of the common developer tasks like showing permissions, logs, fixing discovery service url etc.
 
 To bring up the main menu, just open PowerShell and paste:
-Invoke-WebRequest -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/3/developer/runengine.ps1 | Invoke-Expression;
+`Invoke-WebRequest -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/3/developer/runengine.ps1 | Invoke-Expression;`
 
 This uses a library of functions that automate some parts of DOS.  You can just pull in the library only by pasting:
-Invoke-WebRequest -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/3/developer/doslibrary.ps1 | Invoke-Expression;
+`Invoke-WebRequest -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/3/developer/doslibrary.ps1 | Invoke-Expression;`
 
 Here's some of the functions available in this Powershell library:
 1. List all datamarts on your system: listdatamarts

@@ -5,7 +5,7 @@ set -e
 #   curl -sSL https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/kubernetes/main.sh | bash
 #
 #
-version="2018.03.13.02"
+version="2018.03.14.01"
 
 GITHUB_URL="https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master"
 
@@ -60,7 +60,7 @@ while [[ "$input" != "q" ]]; do
         ;;
     4)  mountSMB
         ;;
-    4)  mountAzureFile
+    5)  mountAzureFile
         ;;
     6)  curl -sSL https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/kubernetes/setup-loadbalancer.sh?p=$RANDOM | bash
         ;;

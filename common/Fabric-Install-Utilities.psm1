@@ -1,6 +1,17 @@
 Import-Module WebAdministration
 Add-Type -AssemblyName System.IO.Compression.FileSystem
 
+function Invoke-WaitForWebAppPoolToChangeState($name, $state){
+	$currentState = Get-WebAppPoolState -Name $name
+	Write-Host "Waiting for app pool '$name' to enter the '$state' state" -NoNewLine
+	DO{
+		Write-Host "." -NoNewLine
+		Start-Sleep 1
+		$currentState = Get-WebAppPoolState -Name $name
+	}while($currentState.Value -ne $state)
+	Write-Host ""
+}
+
 function Add-EnvironmentVariable($variableName, $variableValue, $config){
 	$environmentVariablesNode = $config.configuration.'system.webServer'.aspNetCore.environmentVariables
 	$existingEnvironmentVariable = $environmentVariablesNode.environmentVariable | Where-Object {$_.name -eq $variableName}
@@ -70,10 +81,10 @@ function New-AppPool($appName, $userName, $credential){
 		$appPool.processModel.loaduserprofile = $true
 		$appPool | Set-Item
 		$appPool.Stop()
-		Start-Sleep -Seconds 3
+		Invoke-WaitForWebAppPoolToChangeState -name $appPool.Name -state "Stopped"
 	}
 	$appPool.Start()
-	Start-Sleep -Seconds 3
+	Invoke-WaitForWebAppPoolToChangeState -name $appPool.Name -state "Started"
 }
 
 function New-Site($appName, $portNumber, $appDirectory, $hostHeader){
@@ -106,7 +117,7 @@ function Publish-WebSite($zipPackage, $appDirectory, $appName, $overwriteWebConf
 
 	try{
 		Stop-WebAppPool -Name $appName
-		Start-Sleep -Seconds 3
+		Invoke-WaitForWebAppPoolToChangeState -name $appName -state "Stopped"
 	}catch [System.InvalidOperationException]{
 		Write-Console "AppPool $appName is already stopped, continuing."
 	}
@@ -141,7 +152,7 @@ function Publish-WebSite($zipPackage, $appDirectory, $appName, $overwriteWebConf
 	}
 	$archive.Dispose()
 	Start-WebAppPool -Name $appName
-	Start-Sleep -Seconds 3
+	Invoke-WaitForWebAppPoolToChangeState -name $appPool.Name -state "Started"
 }
 
 function Test-IsDirectory($path)

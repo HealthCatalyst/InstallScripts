@@ -5,7 +5,7 @@ set -e
 #   curl -sSL https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/kubernetes/main.sh | bash
 #
 #
-version="2018.03.14.01"
+version="2018.03.14.02"
 
 GITHUB_URL="https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master"
 
@@ -16,14 +16,17 @@ input=""
 while [[ "$input" != "q" ]]; do
 
     echo "================ Health Catalyst version $version, common functions $(GetCommonVersion) ================"
-    echo "------ Infrastructure -------"
+    echo "------ Master Node -------"
     echo "1: Add this VM as Master"
-    echo "2: Add this VM as Worker"
     echo "3: Join a new node to this cluster"
     echo "4: Mount shared folder"
     echo "5: Mount Azure Storage as shared folder"
     echo "6: Setup Load Balancer"
     echo "7: Test DNS"
+    echo "------ Worker Node -------"
+    echo "2: Add this VM as Worker"
+    echo "4: Mount shared folder"
+    echo "5: Mount Azure Storage as shared folder"
     echo "------ Product Install -------"
     echo "15: Install NLP"
     echo "16: Install Realtime"

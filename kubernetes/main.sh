@@ -5,7 +5,7 @@ set -e
 #   curl -sSL https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/kubernetes/main.sh | bash
 #
 #
-version="2018.03.14.03"
+version="2018.03.14.04"
 
 GITHUB_URL="https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master"
 
@@ -33,16 +33,16 @@ while [[ "$input" != "q" ]]; do
     echo "26: Install Realtime"
     echo "----- Troubleshooting ----"
     echo "31: Show status of cluster"
-    echo "32: Launch Kubernetes Admin Dashboard"
-    echo "33: View status of DNS pods"
-    echo "34: Apply updates and restart all VMs"
+    # echo "32: Launch Kubernetes Admin Dashboard"
+    # echo "33: View status of DNS pods"
+    # echo "34: Apply updates and restart all VMs"
     echo "------ NLP -----"
     echo "41: Show status of NLP"
-    echo "42: Test web sites"
+    # echo "42: Test web sites"
     echo "43: Show passwords"
     echo "44: Show detailed status of NLP"
     echo "45: Show NLP logs"
-    echo "46: Restart NLP"
+    # echo "46: Restart NLP"
     echo "------ Realtime -----"
     echo "51: Show status of realtime"
     echo "54: Show Realtime detailed status"

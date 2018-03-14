@@ -9,7 +9,7 @@ $GITHUB_URL = "https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/m
 Invoke-WebRequest -useb ${GITHUB_URL}/developer/doslibrary.ps1 | Invoke-Expression;
 # Get-Content ./developer/doslibrary.ps1 -Raw | Invoke-Expression;
 
-Write-output "--- runengine.ps1 Version 2018.03.13.01 ----"
+Write-output "--- runengine.ps1 Version 2018.03.14.01 ----"
 
 $userinput = ""
 while ($userinput -ne "q") {
@@ -77,7 +77,7 @@ while ($userinput -ne "q") {
             runEarlyWarningSepsis
         } 
         '21' {
-            executeJsonDataMart
+            executeJsonDataMart "./datamart.json"
         } 
         '22' {
             setBindingTypeForPatientRisk "R" $ewsRScriptFile

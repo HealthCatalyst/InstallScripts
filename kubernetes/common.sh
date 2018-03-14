@@ -1,5 +1,5 @@
 
-versioncommon="2018.03.13.04"
+versioncommon="2018.03.14.01"
 
 echo "--- Including common.sh version $versioncommon ---"
 function GetCommonVersion() {
@@ -213,8 +213,8 @@ function mountSMB(){
 function mountAzureFile(){
     read -p "Storage Account Name: " storageAccountName < /dev/tty    
     read -p "Storage Share Name: " shareName < /dev/tty    
-    $pathToShare="//${storageAccountName}.file.core.windows.net/${shareName}"
-    $username="$storageAccountName"
+    pathToShare="//${storageAccountName}.file.core.windows.net/${shareName}"
+    username="$storageAccountName"
     read -s -p "storage account key: " storageAccountKey < /dev/tty
 
     mountSMBWithParams $pathToShare $username $storageAccountKey

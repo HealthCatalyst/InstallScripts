@@ -5,7 +5,7 @@ set -e
 #   curl -sSL https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/kubernetes/main.sh | bash
 #
 #
-version="2018.03.14.04"
+version="2018.03.14.05"
 
 GITHUB_URL="https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master"
 
@@ -24,6 +24,7 @@ while [[ "$input" != "q" ]]; do
     echo "5: Mount Azure Storage as shared folder"
     echo "6: Setup Load Balancer"
     echo "7: Test DNS"
+    echo "8: Show contents of shared folder"
     echo "------ Worker Node -------"
     echo "12: Add this VM as Worker"
     echo "14: Mount shared folder"
@@ -97,6 +98,8 @@ while [[ "$input" != "q" ]]; do
         kubectl exec busybox nslookup kubernetes.default
         kubectl exec busybox cat /etc/resolv.conf
         kubectl delete -f https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/kubernetes/busybox.yml
+        ;;
+    8)  ls -al /mnt/data
         ;;
     12)  curl -sSL https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/kubernetes/setupnode.txt?p=$RANDOM | bash
         ;;

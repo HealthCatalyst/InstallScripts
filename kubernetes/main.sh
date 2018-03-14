@@ -5,7 +5,7 @@ set -e
 #   curl -sSL https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/kubernetes/main.sh | bash
 #
 #
-version="2018.03.14.02"
+version="2018.03.14.03"
 
 GITHUB_URL="https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master"
 
@@ -18,34 +18,35 @@ while [[ "$input" != "q" ]]; do
     echo "================ Health Catalyst version $version, common functions $(GetCommonVersion) ================"
     echo "------ Master Node -------"
     echo "1: Add this VM as Master"
+    echo "2: Show all nodes"
     echo "3: Join a new node to this cluster"
     echo "4: Mount shared folder"
     echo "5: Mount Azure Storage as shared folder"
     echo "6: Setup Load Balancer"
     echo "7: Test DNS"
     echo "------ Worker Node -------"
-    echo "2: Add this VM as Worker"
-    echo "4: Mount shared folder"
-    echo "5: Mount Azure Storage as shared folder"
+    echo "12: Add this VM as Worker"
+    echo "14: Mount shared folder"
+    echo "15: Mount Azure Storage as shared folder"
     echo "------ Product Install -------"
-    echo "15: Install NLP"
-    echo "16: Install Realtime"
+    echo "25: Install NLP"
+    echo "26: Install Realtime"
     echo "----- Troubleshooting ----"
-    echo "21: Show status of cluster"
-    echo "22: Launch Kubernetes Admin Dashboard"
-    echo "23: View status of DNS pods"
-    echo "24: Apply updates and restart all VMs"
+    echo "31: Show status of cluster"
+    echo "32: Launch Kubernetes Admin Dashboard"
+    echo "33: View status of DNS pods"
+    echo "34: Apply updates and restart all VMs"
     echo "------ NLP -----"
-    echo "31: Show status of NLP"
-    echo "32: Test web sites"
-    echo "33: Show passwords"
-    echo "34: Show detailed status of NLP"
-    echo "35: Show NLP logs"
-    echo "36: Restart NLP"
+    echo "41: Show status of NLP"
+    echo "42: Test web sites"
+    echo "43: Show passwords"
+    echo "44: Show detailed status of NLP"
+    echo "45: Show NLP logs"
+    echo "46: Restart NLP"
     echo "------ Realtime -----"
-    echo "41: Show status of realtime"
-    echo "44: Show Realtime detailed status"
-    echo "45: Show Realtime logs"
+    echo "51: Show status of realtime"
+    echo "54: Show Realtime detailed status"
+    echo "55: Show Realtime logs"
     echo "-----------"
     echo "q: Quit"
 
@@ -56,7 +57,9 @@ while [[ "$input" != "q" ]]; do
         curl -sSL https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/kubernetes/setupmaster.txt?p=$RANDOM | bash
         curl -sSL https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/kubernetes/setup-loadbalancer.sh?p=$RANDOM | bash
         ;;
-    2)  curl -sSL https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/kubernetes/setupnode.txt?p=$RANDOM | bash
+    2)  echo "Current cluster: $(kubectl config current-context)"
+        kubectl version --short
+        kubectl get "nodes"
         ;;
     3)  echo "Run this command on the new node to join this cluster:"
         echo "sudo $(sudo kubeadm token create --print-join-command)"
@@ -95,21 +98,27 @@ while [[ "$input" != "q" ]]; do
         kubectl exec busybox cat /etc/resolv.conf
         kubectl delete -f https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/kubernetes/busybox.yml
         ;;
-    15)  curl -sSL https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/nlp/installnlpkubernetes.sh?p=$RANDOM | bash
+    12)  curl -sSL https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/kubernetes/setupnode.txt?p=$RANDOM | bash
         ;;
-    16)  curl -sSL https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/realtime/installrealtimekubernetes.sh?p=$RANDOM | bash
+    14)  mountSMB
         ;;
-    21)  echo "Current cluster: $(kubectl config current-context)"
+    15)  mountAzureFile
+        ;;
+    25)  curl -sSL https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/nlp/installnlpkubernetes.sh?p=$RANDOM | bash
+        ;;
+    26)  curl -sSL https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/realtime/installrealtimekubernetes.sh?p=$RANDOM | bash
+        ;;
+    31)  echo "Current cluster: $(kubectl config current-context)"
         kubectl version --short
         kubectl get "deployments,pods,services,nodes,ingress,secrets" --namespace=kube-system -o wide
         ;;
-    31)  kubectl get 'deployments,pods,services,ingress,secrets,persistentvolumeclaims,persistentvolumes,nodes' --namespace=fabricnlp -o wide
+    41)  kubectl get 'deployments,pods,services,ingress,secrets,persistentvolumeclaims,persistentvolumes,nodes' --namespace=fabricnlp -o wide
         ;;
-    33)  Write-Host "MySql root password: $(ReadSecretPassword mysqlrootpassword fabricnlp)"
+    43)  Write-Host "MySql root password: $(ReadSecretPassword mysqlrootpassword fabricnlp)"
             Write-Host "MySql NLP_APP_USER password: $(ReadSecretPassword mysqlpassword fabricnlp)"
             Write-Host "SendGrid SMTP Relay key: $(ReadSecretPassword smtprelaypassword fabricnlp)"
         ;;
-    34)  pods=$(kubectl get pods -n fabricnlp -o jsonpath='{.items[*].metadata.name}')
+    44)  pods=$(kubectl get pods -n fabricnlp -o jsonpath='{.items[*].metadata.name}')
         for pod in $pods
         do
                 Write-Output "=============== Describe Pod: $pod ================="
@@ -117,7 +126,7 @@ while [[ "$input" != "q" ]]; do
                 read -n1 -r -p "Press space to continue..." key < /dev/tty
         done
         ;;
-    35)  pods=$(kubectl get pods -n fabricnlp -o jsonpath='{.items[*].metadata.name}')
+    45)  pods=$(kubectl get pods -n fabricnlp -o jsonpath='{.items[*].metadata.name}')
         for pod in $pods
         do
                 Write-Output "=============== Logs for Pod: $pod ================="
@@ -125,15 +134,15 @@ while [[ "$input" != "q" ]]; do
                 read -n1 -r -p "Press space to continue..." key < /dev/tty
         done
         ;;
-    41)  kubectl get 'deployments,pods,services,ingress,secrets,persistentvolumeclaims,persistentvolumes,nodes' --namespace=fabricrealtime -o wide
+    51)  kubectl get 'deployments,pods,services,ingress,secrets,persistentvolumeclaims,persistentvolumes,nodes' --namespace=fabricrealtime -o wide
         ;;
-    43)  Write-Host "MySql root password: $(ReadSecretPassword mysqlrootpassword fabricrealtime)"
+    53)  Write-Host "MySql root password: $(ReadSecretPassword mysqlrootpassword fabricrealtime)"
             Write-Host "MySql NLP_APP_USER password: $(ReadSecretPassword mysqlpassword fabricrealtime)"
             Write-Host "certhostname: $(ReadSecretPassword certhostname fabricrealtime)"
             Write-Host "certpassword: $(ReadSecretPassword certpassword fabricrealtime)"
             Write-Host "rabbitmqmgmtuipassword: $(ReadSecretPassword rabbitmqmgmtuipassword fabricrealtime)"
         ;;
-    44)  pods=$(kubectl get pods -n fabricrealtime -o jsonpath='{.items[*].metadata.name}')
+    54)  pods=$(kubectl get pods -n fabricrealtime -o jsonpath='{.items[*].metadata.name}')
         for pod in $pods
         do
                 Write-Output "=============== Describe Pod: $pod ================="
@@ -141,7 +150,7 @@ while [[ "$input" != "q" ]]; do
                 read -n1 -r -p "Press space to continue..." key < /dev/tty
         done
         ;;
-    45)  pods=$(kubectl get pods -n fabricrealtime -o jsonpath='{.items[*].metadata.name}')
+    55)  pods=$(kubectl get pods -n fabricrealtime -o jsonpath='{.items[*].metadata.name}')
         for pod in $pods
         do
                 Write-Output "=============== Logs for Pod: $pod ================="

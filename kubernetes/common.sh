@@ -1,5 +1,5 @@
 
-versioncommon="2018.03.14.01"
+versioncommon="2018.03.14.02"
 
 echo "--- Including common.sh version $versioncommon ---"
 function GetCommonVersion() {
@@ -203,19 +203,31 @@ function WaitForPodsInNamespace(){
 }
 
 function mountSMB(){
-    read -p "path to SMB share (e.g., //myserver.mydomain/myshare): " pathToShare < /dev/tty    
+    while [[ -z "$pathToShare" ]]; do
+        read -p "path to SMB share (e.g., //myserver.mydomain/myshare): " pathToShare < /dev/tty    
+    done  
+    while [[ -z "$username" ]]; do
     read -p "username: " username < /dev/tty
-    read -s -p "password: " password < /dev/tty
+    done  
+    while [[ -z "$password" ]]; do
+        read -p "password: " password < /dev/tty
+    done  
 
     mountSMBWithParams $pathToShare $username $password
 }
 
 function mountAzureFile(){
-    read -p "Storage Account Name: " storageAccountName < /dev/tty    
-    read -p "Storage Share Name: " shareName < /dev/tty    
+    while [[ -z "$storageAccountName" ]]; do
+        read -p "Storage Account Name: " storageAccountName < /dev/tty  
+    done  
+    while [[ -z "$shareName" ]]; do
+        read -p "Storage Share Name: " shareName < /dev/tty    
+    done  
     pathToShare="//${storageAccountName}.file.core.windows.net/${shareName}"
     username="$storageAccountName"
-    read -s -p "storage account key: " storageAccountKey < /dev/tty
+    while [[ -z "$storageAccountKey" ]]; do
+        read -p "storage account key: " storageAccountKey < /dev/tty
+    done
 
     mountSMBWithParams $pathToShare $username $storageAccountKey
 }

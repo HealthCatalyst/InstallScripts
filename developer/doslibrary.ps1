@@ -3,7 +3,7 @@
 # You can run this by pasting the following in powershell
 # Invoke-WebRequest -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/developer/doslibrary.ps1 | Invoke-Expression;
 
-Write-output "--- doslibrary.ps1 Version 2018.03.13.01 ----"
+Write-output "--- doslibrary.ps1 Version 2018.03.14.01 ----"
 
 $dpsUrl = "http://localhost/DataProcessingService"
 $metadataUrl = "http://localhost/MetadataService" 
@@ -385,11 +385,11 @@ function cancelBatch([ValidateNotNull()] $batchExecutionId) {
     return $Return  
 }
 
-function executeJsonDataMart() {
+function executeJsonDataMart($file) {
     [hashtable]$Return = @{} 
 
     $api = "${dpsUrl}/v1/ExecuteDataMart"
-    $body = Get-Content ./datamart.json -Raw
+    $body = Get-Content $file -Raw
     $result = Invoke-RestMethod -Uri $api -UseDefaultCredentials -Method POST -Body $body -ContentType 'application/json'
 
     $batchExecutionId = $result.value.Id

@@ -1,4 +1,4 @@
-Write-Output "--- installnlpkubernetes.ps1 Version 2018.02.25.05 ---"
+Write-Output "--- installnlpkubernetes.ps1 Version 2018.03.14.01 ---"
 
 # curl -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/nlp/installnlpkubernetes.ps1 | iex;
 
@@ -13,6 +13,8 @@ Invoke-WebRequest -useb ${GITHUB_URL}/kubernetes/common-kube.ps1?f=$randomstring
 
 Invoke-WebRequest -useb $GITHUB_URL/azure/common.ps1?f=$randomstring | Invoke-Expression;
 # Get-Content ./azure/common.ps1 -Raw | Invoke-Expression;
+
+DownloadAzCliIfNeeded
 
 $loggedInUser = az account show --query "user.name"  --output tsv
 $AKS_USE_SSL = ""

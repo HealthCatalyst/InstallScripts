@@ -152,7 +152,7 @@ function Publish-WebSite($zipPackage, $appDirectory, $appName, $overwriteWebConf
 	}
 	$archive.Dispose()
 	Start-WebAppPool -Name $appName
-	Invoke-WaitForWebAppPoolToChangeState -name $appPool.Name -state "Started"
+	Invoke-WaitForWebAppPoolToChangeState -name $appName -state "Started"
 }
 
 function Test-IsDirectory($path)

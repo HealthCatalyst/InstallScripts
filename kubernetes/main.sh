@@ -5,7 +5,7 @@ set -e
 #   curl -sSL https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/kubernetes/main.sh | bash
 #
 #
-version="2018.03.15.01"
+version="2018.03.15.02"
 
 GITHUB_URL="https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master"
 
@@ -49,6 +49,7 @@ while [[ "$input" != "q" ]]; do
     echo "53: Show realtime passwords"
     echo "54: Show Realtime detailed status"
     echo "55: Show Realtime logs"
+    echo "56: Show urls to download client certificates"
     echo "-----------"
     echo "q: Quit"
 
@@ -161,6 +162,19 @@ while [[ "$input" != "q" ]]; do
                 kubectl logs --tail=20 $pod -n fabricrealtime
                 read -n1 -r -p "Press space to continue..." key < /dev/tty
         done
+        ;;
+    56) certhostname=$(ReadSecretPassword certhostname fabricrealtime)
+        certpassword=$(ReadSecretPassword certpassword fabricrealtime)
+        url="http://${certhostname}:8081/client/fabricrabbitmquser_client_cert.p12"
+        echo "Download the client certificate:"
+        echo "$url"
+        echo "Double-click and install in Local Machine. password: $certpassword"
+        echo "Open Certificate Management, right click on cert and give everyone access to key"
+        
+        url="http://${certhostname}:8081/client/fabric_ca_cert.p12"
+        echo "Optional: Download the CA certificate:"
+        echo "$url"
+        echo "Double-click and install in Local Machine. password: $certpassword"
         ;;
 
     q) echo  "Exiting" 

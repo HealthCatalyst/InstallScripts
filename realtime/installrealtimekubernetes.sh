@@ -5,7 +5,7 @@ set -e
 #   curl -sSL https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/nlp/installnlpkubernetes.sh | bash
 #
 GITHUB_URL="https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master"
-version="2018.03.14.02"
+version="2018.03.15.01"
 
 echo "---- installrealtimekubernetes.sh version $version ------"
 
@@ -60,7 +60,7 @@ AskForPassword  "mysqlrootpassword" "MySQL root password (> 8 chars, min 1 numbe
 
 AskForPassword "mysqlpassword" "MySQL root password (> 8 chars, min 1 number, 1 lowercase, 1 uppercase, 1 special [!.*@] )" "$namespace"
 
-AskForSecretValue "certhostname" "Client Certificate hostname" "$namespace"
+AskForSecretValue "certhostname" "Client Certificate hostname (Should be DNS name used to connect to the master VM)" "$namespace"
 
 AskForPassword "certpassword" "Client Certificate password (> 8 chars, min 1 number, 1 lowercase, 1 uppercase, 1 special [!.*@] )" "$namespace"
 

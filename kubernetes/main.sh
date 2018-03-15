@@ -5,7 +5,7 @@ set -e
 #   curl -sSL https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/kubernetes/main.sh | bash
 #
 #
-version="2018.03.14.05"
+version="2018.03.15.01"
 
 GITHUB_URL="https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master"
 
@@ -40,12 +40,13 @@ while [[ "$input" != "q" ]]; do
     echo "------ NLP -----"
     echo "41: Show status of NLP"
     # echo "42: Test web sites"
-    echo "43: Show passwords"
+    echo "43: Show NLP passwords"
     echo "44: Show detailed status of NLP"
     echo "45: Show NLP logs"
     # echo "46: Restart NLP"
     echo "------ Realtime -----"
     echo "51: Show status of realtime"
+    echo "53: Show realtime passwords"
     echo "54: Show Realtime detailed status"
     echo "55: Show Realtime logs"
     echo "-----------"

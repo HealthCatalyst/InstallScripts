@@ -40,6 +40,9 @@ while ($userinput -ne "q") {
     $userinput = Read-Host "Please make a selection"
     switch ($userinput) {
         '0' {
+
+            startDockerService
+            
             runFabricEHRDocker
 
             createNodeUserOnSqlDatabase

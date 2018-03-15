@@ -1,5 +1,5 @@
 
-versioncommon="2018.03.14.02"
+versioncommon="2018.03.15.01"
 
 echo "--- Including common.sh version $versioncommon ---"
 function GetCommonVersion() {
@@ -119,7 +119,7 @@ function AskForPassword () {
         mysqlrootpassword=""
         # MySQL password requirements: https://dev.mysql.com/doc/refman/5.6/en/validate-password-plugin.html
         # we also use sed to replace configs: https://unix.stackexchange.com/questions/32907/what-characters-do-i-need-to-escape-when-using-sed-in-a-sh-script
-        read -s -p "$prompt (leave empty for auto-generated)" mypasswordsecure < /dev/tty
+        read -p "$prompt (leave empty for auto-generated)" mypasswordsecure < /dev/tty
         echo "" # to get a new line
         if [[ -z  "$mypasswordsecure" ]]; then
             mypassword="$(GeneratePassword)"
@@ -147,7 +147,7 @@ function AskForPasswordAnyCharacters () {
         mysqlrootpassword=""
         # MySQL password requirements: https://dev.mysql.com/doc/refman/5.6/en/validate-password-plugin.html
         # we also use sed to replace configs: https://unix.stackexchange.com/questions/32907/what-characters-do-i-need-to-escape-when-using-sed-in-a-sh-script
-        read -s -p "$prompt (leave empty for auto-generated)" mypasswordsecure < /dev/tty
+        read -p "$prompt (leave empty for auto-generated)" mypasswordsecure < /dev/tty
         echo "" # to get a new line
         if [[ -z  "$mypasswordsecure" ]]; then
             mypassword="$defaultvalue"

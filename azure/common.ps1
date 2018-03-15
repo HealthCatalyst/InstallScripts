@@ -1,6 +1,6 @@
 # This file contains common functions for Azure
 # 
-$versioncommon = "2018.03.13.01"
+$versioncommon = "2018.03.15.01"
 
 Write-Host "---- Including common.ps1 version $versioncommon -----"
 function global:GetCommonVersion() {
@@ -738,7 +738,7 @@ function global:DeleteNetworkSecurityGroupRule($resourceGroup, $networkSecurityG
 function global:DownloadKubectl($localFolder) {
     # download kubectl
     $kubeCtlFile = "$localFolder\kubectl.exe"
-    $desiredKubeCtlVersion = "v1.9.2"
+    $desiredKubeCtlVersion = "v1.9.3"
     $downloadkubectl = "n"
     if (!(Test-Path "$kubeCtlFile")) {
         $downloadkubectl = "y"
@@ -754,7 +754,11 @@ function global:DownloadKubectl($localFolder) {
     if ( $downloadkubectl -eq "y") {
         $url = "https://storage.googleapis.com/kubernetes-release/release/${desiredKubeCtlVersion}/bin/windows/amd64/kubectl.exe"
         Write-Host "Downloading kubectl.exe from url $url to $kubeCtlFile"
-        Remove-Item -Path "$kubeCtlFile" -Force
+
+        If (Test-Path -Path "$kubeCtlFile"){
+            Remove-Item -Path "$kubeCtlFile" -Force
+        }
+        
         DownloadFile -url $url -targetFile $kubeCtlFile
     }
     else {
@@ -763,11 +767,39 @@ function global:DownloadKubectl($localFolder) {
     
 }
 
-function global:DownloadFileNew($url, $targetFile) {
-    $wc = New-Object net.webclient
-    $wc.Downloadfile($url, $targetFile)
-}
 function global:DownloadFile($url, $targetFile) {
+    # https://learn-powershell.net/2013/02/08/powershell-and-events-object-events/
+    $web = New-Object System.Net.WebClient
+    $web.UseDefaultCredentials = $True
+    $Index = $url.LastIndexOf("/")
+    $file = $url.Substring($Index+1)
+    $newurl = $url.Substring(0,$index)
+    Register-ObjectEvent -InputObject $web -EventName DownloadFileCompleted `
+    -SourceIdentifier Web.DownloadFileCompleted -Action {    
+        $Global:isDownloaded = $True
+    }
+    Register-ObjectEvent -InputObject $web -EventName DownloadProgressChanged `
+    -SourceIdentifier Web.DownloadProgressChanged -Action {
+        $Global:Data = $event
+    }
+    $web.DownloadFileAsync($url,($targetFile -f $file))
+    While (-Not $isDownloaded) {
+        $percent = $Global:Data.SourceArgs.ProgressPercentage
+        $totalBytes = $Global:Data.SourceArgs.TotalBytesToReceive
+        $receivedBytes = $Global:Data.SourceArgs.BytesReceived
+        If ($percent -ne $null) {
+            Write-Progress -Activity ("Downloading {0} from {1}" -f $file,$newurl) `
+            -Status ("{0} bytes \ {1} bytes" -f $receivedBytes,$totalBytes)  -PercentComplete $percent
+        }
+    }
+    Write-Progress -Activity ("Downloading {0} from {1}" -f $file,$newurl) `
+    -Status ("{0} bytes \ {1} bytes" -f $receivedBytes,$totalBytes)  -Completed
+
+    Unregister-Event -SourceIdentifier Web.DownloadFileCompleted
+    Unregister-Event -SourceIdentifier Web.DownloadProgressChanged
+    #endregion Download file from website    
+}
+function global:DownloadFileOld($url, $targetFile) {
     # from https://stackoverflow.com/questions/21422364/is-there-any-way-to-monitor-the-progress-of-a-download-using-a-webclient-object
     $uri = New-Object "System.Uri" "$url"
     $request = [System.Net.HttpWebRequest]::Create($uri)

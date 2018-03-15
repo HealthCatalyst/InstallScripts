@@ -745,3 +745,8 @@ function downloadArtifactFromLatestBuild() {
     
     Write-Verbose -Verbose ('Build artifacts extracted into ' + $Env:BUILD_STAGINGDIRECTORY)    
 }
+
+function global:startDockerService(){
+    # net start "com.docker.service"
+    # "C:\Program Files\Docker\Docker\Docker for Windows.exe"
+}

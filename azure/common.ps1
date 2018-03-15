@@ -1,6 +1,6 @@
 # This file contains common functions for Azure
 # 
-$versioncommon = "2018.03.15.01"
+$versioncommon = "2018.03.15.02"
 
 Write-Host "---- Including common.ps1 version $versioncommon -----"
 function global:GetCommonVersion() {
@@ -348,11 +348,9 @@ function global:CreateStorageIfNotExists($resourceGroup) {
         Write-Host "Using storage account: [$storageAccountName]"
     }
     Write-Host "Checking to see if storage account exists"
-    $storageAccountCanBeCreated = az storage account check-name --name $storageAccountName --query "nameAvailable" --output tsv
-    
-    if ($storageAccountCanBeCreated -ne "True" ) {
-        az storage account check-name --name $storageAccountName   
-        
+
+    $storageAccountConnectionString = az storage account show-connection-string --name $storageAccountName --resource-group $resourceGroup --query "name" --output tsv
+    if (![string]::IsNullOrEmpty($storageAccountConnectionString)) {
         Write-Warning "Storage account, [$storageAccountName], already exists.  Deleting it will remove this data permanently"
         Do { $confirmation = Read-Host "Delete storage account: (WARNING: deletes data) (y/n)"}
         while ([string]::IsNullOrWhiteSpace($confirmation)) 
@@ -365,9 +363,15 @@ function global:CreateStorageIfNotExists($resourceGroup) {
         }    
     }
     else {
-        Write-Host "Creating storage account: [${storageAccountName}]"
-        az storage account create -n $storageAccountName -g $resourceGroup -l $location --kind StorageV2 --sku Standard_LRS            
-    }    
+        $storageAccountCanBeCreated = az storage account check-name --name $storageAccountName --query "nameAvailable" --output tsv        
+        if ($storageAccountCanBeCreated -ne "True" ) {
+            az storage account check-name --name $storageAccountName   
+            Write-Error "$storageAccountName is not a valid storage account name"
+        }
+        else {
+            az storage account create -n $storageAccountName -g $resourceGroup -l $location --kind StorageV2 --sku Standard_LRS                       
+        }
+    }
 
     $Return.AKS_PERS_STORAGE_ACCOUNT_NAME = $storageAccountName
     return $Return
@@ -755,7 +759,7 @@ function global:DownloadKubectl($localFolder) {
         $url = "https://storage.googleapis.com/kubernetes-release/release/${desiredKubeCtlVersion}/bin/windows/amd64/kubectl.exe"
         Write-Host "Downloading kubectl.exe from url $url to $kubeCtlFile"
 
-        If (Test-Path -Path "$kubeCtlFile"){
+        If (Test-Path -Path "$kubeCtlFile") {
             Remove-Item -Path "$kubeCtlFile" -Force
         }
         
@@ -772,28 +776,28 @@ function global:DownloadFile($url, $targetFile) {
     $web = New-Object System.Net.WebClient
     $web.UseDefaultCredentials = $True
     $Index = $url.LastIndexOf("/")
-    $file = $url.Substring($Index+1)
-    $newurl = $url.Substring(0,$index)
+    $file = $url.Substring($Index + 1)
+    $newurl = $url.Substring(0, $index)
     Register-ObjectEvent -InputObject $web -EventName DownloadFileCompleted `
-    -SourceIdentifier Web.DownloadFileCompleted -Action {    
+        -SourceIdentifier Web.DownloadFileCompleted -Action {    
         $Global:isDownloaded = $True
     }
     Register-ObjectEvent -InputObject $web -EventName DownloadProgressChanged `
-    -SourceIdentifier Web.DownloadProgressChanged -Action {
+        -SourceIdentifier Web.DownloadProgressChanged -Action {
         $Global:Data = $event
     }
-    $web.DownloadFileAsync($url,($targetFile -f $file))
+    $web.DownloadFileAsync($url, ($targetFile -f $file))
     While (-Not $isDownloaded) {
         $percent = $Global:Data.SourceArgs.ProgressPercentage
         $totalBytes = $Global:Data.SourceArgs.TotalBytesToReceive
         $receivedBytes = $Global:Data.SourceArgs.BytesReceived
         If ($percent -ne $null) {
-            Write-Progress -Activity ("Downloading {0} from {1}" -f $file,$newurl) `
-            -Status ("{0} bytes \ {1} bytes" -f $receivedBytes,$totalBytes)  -PercentComplete $percent
+            Write-Progress -Activity ("Downloading {0} from {1}" -f $file, $newurl) `
+                -Status ("{0} bytes \ {1} bytes" -f $receivedBytes, $totalBytes)  -PercentComplete $percent
         }
     }
-    Write-Progress -Activity ("Downloading {0} from {1}" -f $file,$newurl) `
-    -Status ("{0} bytes \ {1} bytes" -f $receivedBytes,$totalBytes)  -Completed
+    Write-Progress -Activity ("Downloading {0} from {1}" -f $file, $newurl) `
+        -Status ("{0} bytes \ {1} bytes" -f $receivedBytes, $totalBytes)  -Completed
 
     Unregister-Event -SourceIdentifier Web.DownloadFileCompleted
     Unregister-Event -SourceIdentifier Web.DownloadProgressChanged

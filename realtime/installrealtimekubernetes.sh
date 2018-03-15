@@ -5,7 +5,7 @@ set -e
 #   curl -sSL https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/nlp/installnlpkubernetes.sh | bash
 #
 GITHUB_URL="https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master"
-version="2018.03.14.01"
+version="2018.03.14.02"
 
 echo "---- installrealtimekubernetes.sh version $version ------"
 
@@ -40,9 +40,14 @@ else
         kubectl delete secret certpassword -n $namespace --ignore-not-found=true
         kubectl delete secret rabbitmqmgmtuipassword -n $namespace --ignore-not-found=true
 
+        # have to remove the existing containers before we can delete the files
+        CleanOutNamespace $namespace
+
         sudo rm -rf /mnt/data/fabricrealtime
     fi
 fi
+
+sudo mkdir -p /mnt/data/fabricrealtime
 
 customerid="$(ReadSecret customerid)"
 if [[ -z "$customerid" ]]; then

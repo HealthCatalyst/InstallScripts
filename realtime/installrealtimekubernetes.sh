@@ -5,7 +5,7 @@ set -e
 #   curl -sSL https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/nlp/installnlpkubernetes.sh | bash
 #
 GITHUB_URL="https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master"
-version="2018.03.15.01"
+version="2018.03.16.01"
 
 echo "---- installrealtimekubernetes.sh version $version ------"
 
@@ -132,18 +132,5 @@ Write-Output "To test out the NLP services, open Git Bash and run:"
 Write-Output "curl -L --verbose --header 'Host: certificates.$customerid.healthcatalyst.net' 'http://$loadBalancerIP/client'"
 
 Write-Output "Connect to interface engine at: $publicip port 6661"
-
-Write-Output "if you want, you can download the CA (Certificate Authority) cert from this url"
-Write-Output "http://certificates.$customerid.healthcatalyst.net/client/fabric_ca_cert.p12"
-
-Write-Output "-------------------------------"
-Write-Output "you can download the client certificate from this url:"
-Write-Output "http://certificates.$customerid.healthcatalyst.net/client/fabricrabbitmquser_client_cert.p12"
-Write-Output "-------------------------------"
-
-echo "If you didn't setup DNS, add the following entries in your c:\windows\system32\drivers\etc\hosts file to access the urls from your browser"
-echo "$loadBalancerIP solr.$customerid.healthcatalyst.net"            
-echo "$loadBalancerIP nlp.$customerid.healthcatalyst.net"            
-echo "$loadBalancerIP nlpjobs.$customerid.healthcatalyst.net"            
 
 echo "---- end of installrealtimekubernetes.sh version $version ------"

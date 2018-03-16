@@ -5,7 +5,7 @@ set -e
 #   curl -sSL https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/kubernetes/main.sh | bash
 #
 #
-version="2018.03.15.02"
+version="2018.03.16.01"
 
 GITHUB_URL="https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master"
 
@@ -40,13 +40,14 @@ while [[ "$input" != "q" ]]; do
     echo "35: Show load balancer logs"
     echo "------ NLP -----"
     echo "41: Show status of NLP"
-    # echo "42: Test web sites"
+    echo "42: Test web sites"
     echo "43: Show NLP passwords"
     echo "44: Show detailed status of NLP"
     echo "45: Show NLP logs"
     # echo "46: Restart NLP"
     echo "------ Realtime -----"
     echo "51: Show status of realtime"
+    echo "52: Show web site urls"
     echo "53: Show realtime passwords"
     echo "54: Show Realtime detailed status"
     echo "55: Show Realtime logs"
@@ -121,7 +122,7 @@ while [[ "$input" != "q" ]]; do
         ;;
     35) kubectl logs --namespace=kube-system -l k8s-app=traefik-ingress-lb-onprem
     ;;
-   41)  kubectl get 'deployments,pods,services,ingress,secrets,persistentvolumeclaims,persistentvolumes,nodes' --namespace=fabricnlp -o wide
+    41)  kubectl get 'deployments,pods,services,ingress,secrets,persistentvolumeclaims,persistentvolumes,nodes' --namespace=fabricnlp -o wide
         ;;
     43)  Write-Host "MySql root password: $(ReadSecretPassword mysqlrootpassword fabricnlp)"
             Write-Host "MySql NLP_APP_USER password: $(ReadSecretPassword mysqlpassword fabricnlp)"
@@ -144,6 +145,8 @@ while [[ "$input" != "q" ]]; do
         done
         ;;
     51)  kubectl get 'deployments,pods,services,ingress,secrets,persistentvolumeclaims,persistentvolumes,nodes' --namespace=fabricrealtime -o wide
+        ;;
+    52) echo ""
         ;;
     53)  Write-Host "MySql root password: $(ReadSecretPassword mysqlrootpassword fabricrealtime)"
             Write-Host "MySql NLP_APP_USER password: $(ReadSecretPassword mysqlpassword fabricrealtime)"
@@ -169,30 +172,22 @@ while [[ "$input" != "q" ]]; do
         ;;
     56) certhostname=$(ReadSecretPassword certhostname fabricrealtime)
         certpassword=$(ReadSecretPassword certpassword fabricrealtime)
-        url="http://${certhostname}:8081/client/fabricrabbitmquser_client_cert.p12"
+        url="http://${certhostname}/certificates/client/fabricrabbitmquser_client_cert.p12"
         echo "Download the client certificate:"
         echo "$url"
         echo "Double-click and install in Local Machine. password: $certpassword"
         echo "Open Certificate Management, right click on cert and give everyone access to key"
         
-        url="http://${certhostname}:8081/client/fabric_ca_cert.p12"
+        url="http://${certhostname}/certificates/client/fabric_ca_cert.p12"
         echo "Optional: Download the CA certificate:"
         echo "$url"
         echo "Double-click and install in Local Machine. password: $certpassword"
         ;;
-    56) certhostname=$(ReadSecretPassword certhostname fabricrealtime)
-        certpassword=$(ReadSecretPassword certpassword fabricrealtime)
-        url="http://${certhostname}:8081/client/fabricrabbitmquser_client_cert.p12"
-        echo "Download the client certificate:"
-        echo "$url"
-        echo "Double-click and install in Local Machine. password: $certpassword"
-        echo "Open Certificate Management, right click on cert and give everyone access to key"
-        
-        url="http://${certhostname}:8081/client/fabric_ca_cert.p12"
-        echo "Optional: Download the CA certificate:"
-        echo "$url"
-        echo "Double-click and install in Local Machine. password: $certpassword"
-        ;;
+    57) echo "If you didn't setup DNS, add the following entries in your c:\windows\system32\drivers\etc\hosts file to access the urls from your browser"
+        loadBalancerIP="$(dig +short myip.opendns.com @resolver1.opendns.com)"
+        certhostname=$(ReadSecretPassword certhostname fabricrealtime)
+        echo "$loadBalancerIP $certhostname"            
+    ;;
     q) echo  "Exiting" 
     ;;
     *) echo "Menu item $1 is not known"

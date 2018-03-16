@@ -4,18 +4,18 @@ metadata:
   name: traefik-ingress-controller
   namespace: kube-system
   labels:
-    k8s-app: traefik-ingress-lb
+    k8s-app: traefik-ingress-lb-onprem
     k8s-traefik: traefik  
 spec:
   replicas: 1
   selector:
     matchLabels:
-      k8s-app: traefik-ingress-lb
+      k8s-app: traefik-ingress-lb-onprem
   template:
     metadata:
       labels:
-        k8s-app: traefik-ingress-lb
-        name: traefik-ingress-lb
+        k8s-app: traefik-ingress-lb-onprem
+        name: traefik-ingress-lb-onprem
         k8s-traefik: traefik          
     spec:
       # hostPort is broken on CNI (https://github.com/kubernetes/kubernetes/issues/31307) we have to use hostNetwork where CNI is used
@@ -39,7 +39,7 @@ spec:
             name: traefik-conf
       containers:
       - image: traefik:1.5
-        name: traefik-ingress-lb
+        name: traefik-ingress-lb-onprem
         volumeMounts:
           - mountPath: "/config"
             name: "config"        

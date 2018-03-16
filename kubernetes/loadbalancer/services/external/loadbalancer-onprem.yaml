@@ -1,0 +1,19 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: traefik-ingress-service-onprem
+  namespace: kube-system
+  labels:
+    k8s-traefik: traefik  
+spec:
+  selector:
+    k8s-app: traefik-ingress-lb-onprem
+  ports:
+    - protocol: TCP
+      port: 80
+      name: web
+    - protocol: TCP
+      port: 443
+      name: ssl      
+  type: LoadBalancer
+---

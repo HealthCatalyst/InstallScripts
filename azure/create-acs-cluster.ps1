@@ -1,4 +1,4 @@
-Write-output "--- create-acs-cluster Version 2018.02.25.01 ----"
+Write-output "--- create-acs-cluster Version 2018.03.16.01 ----"
 
 #
 # This script is meant for quick & easy install via:
@@ -306,6 +306,12 @@ if ("$AKS_SUPPORT_WINDOWS_CONTAINERS" -eq "y") {
 #     --agent-count=3 --agent-vm-size Standard_D2 `
 #     --master-vnet-subnet-id="$mysubnetid" `
 #     --agent-vnet-subnet-id="$mysubnetid"
+
+Write-Output "Validating deployment"
+az group deployment validate `
+    --template-file "$acsoutputfolder\azuredeploy.json" `
+    --resource-group $AKS_PERS_RESOURCE_GROUP `
+    --parameters "$acsoutputfolder\azuredeploy.parameters.json"
 
 Write-Output "Starting deployment..."
 

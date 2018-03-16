@@ -1,6 +1,6 @@
 # This file contains common functions for Azure
 # 
-$versioncommon = "2018.03.15.02"
+$versioncommon = "2018.03.16.01"
 
 Write-Host "---- Including common.ps1 version $versioncommon -----"
 function global:GetCommonVersion() {
@@ -673,6 +673,8 @@ function global:CheckIfUserLogged() {
     $subscriptionId = $(az account show --query "id" --output tsv)
 
     Write-Host "SubscriptionId: ${subscriptionId}"
+
+    az account get-access-token --subscription $subscriptionId
 
     $Return.AKS_SUBSCRIPTION_ID = "$subscriptionId"
     return $Return

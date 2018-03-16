@@ -50,6 +50,7 @@ while [[ "$input" != "q" ]]; do
     echo "54: Show Realtime detailed status"
     echo "55: Show Realtime logs"
     echo "56: Show urls to download client certificates"
+    echo "57: Show DNS entries for /etc/hosts"
     echo "-----------"
     echo "q: Quit"
 
@@ -176,7 +177,19 @@ while [[ "$input" != "q" ]]; do
         echo "$url"
         echo "Double-click and install in Local Machine. password: $certpassword"
         ;;
-
+    56) certhostname=$(ReadSecretPassword certhostname fabricrealtime)
+        certpassword=$(ReadSecretPassword certpassword fabricrealtime)
+        url="http://${certhostname}:8081/client/fabricrabbitmquser_client_cert.p12"
+        echo "Download the client certificate:"
+        echo "$url"
+        echo "Double-click and install in Local Machine. password: $certpassword"
+        echo "Open Certificate Management, right click on cert and give everyone access to key"
+        
+        url="http://${certhostname}:8081/client/fabric_ca_cert.p12"
+        echo "Optional: Download the CA certificate:"
+        echo "$url"
+        echo "Double-click and install in Local Machine. password: $certpassword"
+        ;;
     q) echo  "Exiting" 
     ;;
     *) echo "Menu item $1 is not known"

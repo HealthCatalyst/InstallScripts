@@ -5,7 +5,7 @@ set -e
 #   curl -sSL https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/nlp/installnlpkubernetes.sh | bash
 #
 GITHUB_URL="https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master"
-version="2018.03.16.01"
+version="2018.03.16.02"
 
 echo "---- installrealtimekubernetes.sh version $version ------"
 
@@ -22,8 +22,8 @@ fi
 
 if [[ -z $(kubectl get namespace $namespace --ignore-not-found=true) ]]; then
     echo "Creating namespace: $namespace"
-    # kubectl create -f $GITHUB_URL/nlp/nlp-namespace.yml
-    kubectl create namespace $namespace
+    # kubectl apply -f $GITHUB_URL/nlp/nlp-namespace.yml
+    kubectl apply namespace $namespace
 else
     while : ; do
         read -p "Namespace exists.  Do you want to delete passwords and ALL data stored in this namespace? (y/n): " deleteSecrets < /dev/tty
@@ -73,7 +73,7 @@ folder="volumes"
 for fname in "certificateserver.onprem.yaml" "mysqlserver.onprem.yaml" "rabbitmq-cert.onprem.yaml" "rabbitmq.onprem.yaml"
 do
     echo "Deploying realtime/$folder/$fname"
-    ReadYamlAndReplaceCustomer $GITHUB_URL "realtime/$folder/$fname" $customerid | kubectl create -f -
+    ReadYamlAndReplaceCustomer $GITHUB_URL "realtime/$folder/$fname" $customerid | kubectl apply -f -
 done
 
 echo "-- Deploying volume claims --"
@@ -81,7 +81,7 @@ folder="volumeclaims"
 for fname in "certificateserver.yaml" "mysqlserver.yaml" "rabbitmq-cert.yaml" "rabbitmq.yaml"
 do
     echo "Deploying realtime/$folder/$fname"
-    ReadYamlAndReplaceCustomer $GITHUB_URL "realtime/$folder/$fname" $customerid | kubectl create -f -
+    ReadYamlAndReplaceCustomer $GITHUB_URL "realtime/$folder/$fname" $customerid | kubectl apply -f -
 done
 
 echo "-- Deploying pods --"
@@ -89,7 +89,7 @@ folder="pods"
 for fname in "certificateserver.yaml" "mysqlserver.yaml" "interfaceengine.yaml" "rabbitmq.yaml"
 do
     echo "Deploying realtime/$folder/$fname"
-    ReadYamlAndReplaceCustomer $GITHUB_URL "realtime/$folder/$fname" $customerid | kubectl create -f -
+    ReadYamlAndReplaceCustomer $GITHUB_URL "realtime/$folder/$fname" $customerid | kubectl apply -f -
 done
 
 echo "-- Deploying cluster services --"
@@ -97,7 +97,7 @@ folder="services/cluster"
 for fname in "certificateserver.yaml" "mysqlserver.yaml" "interfaceengine.yaml" "rabbitmq.yaml"
 do
     echo "Deploying realtime/$folder/$fname"
-    ReadYamlAndReplaceCustomer $GITHUB_URL "realtime/$folder/$fname" $customerid | kubectl create -f -
+    ReadYamlAndReplaceCustomer $GITHUB_URL "realtime/$folder/$fname" $customerid | kubectl apply -f -
 done
 
 echo "-- Deploying external services --"
@@ -105,7 +105,7 @@ folder="services/external"
 for fname in "certificateserver.yaml"
 do
     echo "Deploying realtime/$folder/$fname"
-    ReadYamlAndReplaceCustomer $GITHUB_URL "realtime/$folder/$fname" $customerid | kubectl create -f -
+    ReadYamlAndReplaceCustomer $GITHUB_URL "realtime/$folder/$fname" $customerid | kubectl apply -f -
 done
 
 echo "-- Deploying HTTP proxies --"
@@ -113,7 +113,7 @@ folder="ingress/http"
 for fname in "web.onprem.yaml"
 do
     echo "Deploying realtime/$folder/$fname"
-    ReadYamlAndReplaceCustomer $GITHUB_URL "realtime/$folder/$fname" $customerid | kubectl create -f -
+    ReadYamlAndReplaceCustomer $GITHUB_URL "realtime/$folder/$fname" $customerid | kubectl apply -f -
 done
 
 kubectl get 'deployments,pods,services,ingress,secrets,persistentvolumeclaims,persistentvolumes,nodes' --namespace=$namespace -o wide
@@ -123,7 +123,7 @@ WaitForPodsInNamespace $namespace 5
 # to get a shell
 # kubectl exec -it fabric.nlp.nlpwebserver-85c8cb86b5-gkphh bash --namespace=fabricnlp
 
-# kubectl create secret generic azure-secret --namespace=fabricnlp --from-literal=azurestorageaccountname="fabricnlp7storage" --from-literal=azurestorageaccountkey="/bYhXNstTodg3MdOvTMog/vDLSFrQDpxG/Zgkp2MlnjtOWhDBNQ2xOs6zjRoZYNjmJHya34MfzqdfOwXkMDN2A=="
+# kubectl apply secret generic azure-secret --namespace=fabricnlp --from-literal=azurestorageaccountname="fabricnlp7storage" --from-literal=azurestorageaccountkey="/bYhXNstTodg3MdOvTMog/vDLSFrQDpxG/Zgkp2MlnjtOWhDBNQ2xOs6zjRoZYNjmJHya34MfzqdfOwXkMDN2A=="
 
 loadBalancerIP="$(dig +short myip.opendns.com @resolver1.opendns.com)"
 echo "My WAN/Public IP address: ${loadBalancerIP}"

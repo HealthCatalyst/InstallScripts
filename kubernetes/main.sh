@@ -37,6 +37,7 @@ while [[ "$input" != "q" ]]; do
     # echo "32: Launch Kubernetes Admin Dashboard"
     # echo "33: View status of DNS pods"
     # echo "34: Apply updates and restart all VMs"
+    echo "35: Show load balancer logs"
     echo "------ NLP -----"
     echo "41: Show status of NLP"
     # echo "42: Test web sites"
@@ -118,7 +119,9 @@ while [[ "$input" != "q" ]]; do
         kubectl version --short
         kubectl get "deployments,pods,services,nodes,ingress,secrets" --namespace=kube-system -o wide
         ;;
-    41)  kubectl get 'deployments,pods,services,ingress,secrets,persistentvolumeclaims,persistentvolumes,nodes' --namespace=fabricnlp -o wide
+    35) kubectl logs --namespace=kube-system -l k8s-app=traefik-ingress-lb-onprem
+    ;;
+   41)  kubectl get 'deployments,pods,services,ingress,secrets,persistentvolumeclaims,persistentvolumes,nodes' --namespace=fabricnlp -o wide
         ;;
     43)  Write-Host "MySql root password: $(ReadSecretPassword mysqlrootpassword fabricnlp)"
             Write-Host "MySql NLP_APP_USER password: $(ReadSecretPassword mysqlpassword fabricnlp)"

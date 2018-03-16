@@ -5,7 +5,7 @@ set -e
 #   curl -sSL https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/kubernetes/main.sh | bash
 #
 #
-version="2018.03.16.01"
+version="2018.03.16.02"
 
 GITHUB_URL="https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master"
 
@@ -150,7 +150,7 @@ while [[ "$input" != "q" ]]; do
         ;;
     53)  Write-Host "MySql root password: $(ReadSecretPassword mysqlrootpassword fabricrealtime)"
             Write-Host "MySql NLP_APP_USER password: $(ReadSecretPassword mysqlpassword fabricrealtime)"
-            Write-Host "certhostname: $(ReadSecretPassword certhostname fabricrealtime)"
+            Write-Host "certhostname: $(ReadSecret certhostname fabricrealtime)"
             Write-Host "certpassword: $(ReadSecretPassword certpassword fabricrealtime)"
             Write-Host "rabbitmqmgmtuipassword: $(ReadSecretPassword rabbitmqmgmtuipassword fabricrealtime)"
         ;;
@@ -170,7 +170,7 @@ while [[ "$input" != "q" ]]; do
                 read -n1 -r -p "Press space to continue..." key < /dev/tty
         done
         ;;
-    56) certhostname=$(ReadSecretPassword certhostname fabricrealtime)
+    56) certhostname=$(ReadSecret certhostname fabricrealtime)
         certpassword=$(ReadSecretPassword certpassword fabricrealtime)
         url="http://${certhostname}/certificates/client/fabricrabbitmquser_client_cert.p12"
         echo "Download the client certificate:"
@@ -185,7 +185,7 @@ while [[ "$input" != "q" ]]; do
         ;;
     57) echo "If you didn't setup DNS, add the following entries in your c:\windows\system32\drivers\etc\hosts file to access the urls from your browser"
         loadBalancerIP="$(dig +short myip.opendns.com @resolver1.opendns.com)"
-        certhostname=$(ReadSecretPassword certhostname fabricrealtime)
+        certhostname="$(ReadSecret certhostname fabricrealtime)"
         echo "$loadBalancerIP $certhostname"            
     ;;
     q) echo  "Exiting" 

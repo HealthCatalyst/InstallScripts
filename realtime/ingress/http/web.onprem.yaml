@@ -10,11 +10,14 @@ metadata:
       # change /certificates to /
       # https://docs.giantswarm.io/guides/advanced-ingress-configuration/
       ingress.kubernetes.io/rewrite-target: /      
+      ingress.kubernetes.io/add-base-url: 'true'
+      # https://docs.traefik.io/configuration/backends/kubernetes/
+      # traefik.frontend.rule.type: pathprefixstrip
 spec:
   rules:
   - http:
       paths:
-      - path: /certificates
+      - path: /certificates/
         backend:
           serviceName: certificateserverpublic
           servicePort: 80

@@ -3,6 +3,8 @@ kind: Ingress
 metadata:
   name: realtime.ingress
   namespace: fabricrealtime
+  labels:  
+    expose: external          
   annotations:
     kubernetes.io/ingress.class: traefik
 spec:

@@ -9,7 +9,7 @@ GITHUB_URL="https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/mast
 source <(curl -sSL "$GITHUB_URL/kubernetes/common.sh?p=$RANDOM")
 # source ./kubernetes/common.sh
 
-version="2018.03.13.03"
+version="2018.03.16.01"
 
 echo "---- setup-loadbalancer.sh version $version ------"
 
@@ -27,30 +27,34 @@ dnsrecordname="$customerid.healthcatalyst.net"
 
 SaveSecretValue customerid "value" $customerid
 
-# ReadYamlAndReplaceCustomer $GITHUB_URL "azure/ingress-roles.yml" $customerid
-
-echo "Downloading $GITHUB_URL/kubernetes/loadbalancer/configmaps/config.yaml"
-ReadYamlAndReplaceCustomer $GITHUB_URL "kubernetes/loadbalancer/configmaps/config.yaml" $customerid \
+yamlfile="kubernetes/loadbalancer/configmaps/config.yaml"
+echo "Downloading $GITHUB_URL/$yamlfile"
+ReadYamlAndReplaceCustomer $GITHUB_URL "$yamlfile" $customerid \
         | kubectl apply -f -
 
-echo "Downloading $GITHUB_URL/kubernetes/loadbalancer/roles/ingress-roles.yaml"
-ReadYamlAndReplaceCustomer $GITHUB_URL "kubernetes/loadbalancer/roles/ingress-roles.yaml" $customerid \
+yamlfile="kubernetes/loadbalancer/roles/ingress-roles.yaml"
+echo "Downloading $GITHUB_URL/$yamlfile"
+ReadYamlAndReplaceCustomer $GITHUB_URL "$yamlfile" $customerid \
         | kubectl apply -f -
 
-echo "Downloading $GITHUB_URL/kubernetes/loadbalancer/pods/ingress-onprem.yaml"
-ReadYamlAndReplaceCustomer $GITHUB_URL "kubernetes/loadbalancer/pods/ingress-onprem.yaml" $customerid \
+yamlfile="kubernetes/loadbalancer/pods/ingress-onprem.yaml"
+echo "Downloading $GITHUB_URL/$yamlfile"
+ReadYamlAndReplaceCustomer $GITHUB_URL "$yamlfile" $customerid \
         | kubectl apply -f -
 
-echo "Downloading $GITHUB_URL/kubernetes/loadbalancer/services/external/loadbalancer-internal.yaml"
-ReadYamlAndReplaceCustomer $GITHUB_URL "kubernetes/loadbalancer/services/external/loadbalancer-internal.yaml" $customerid \
+yamlfile="kubernetes/loadbalancer/services/cluster/dashboard-onprem.yaml"
+echo "Downloading $GITHUB_URL/$yamlfile"
+ReadYamlAndReplaceCustomer $GITHUB_URL "$yamlfile" $customerid \
         | kubectl apply -f -
 
-echo "Downloading $GITHUB_URL/kubernetes/loadbalancer/ingress/dashboard.yaml"
-ReadYamlAndReplaceCustomer $GITHUB_URL "kubernetes/loadbalancer/ingress/dashboard.yaml" $customerid \
+yamlfile="kubernetes/loadbalancer/services/external/loadbalancer-onprem.yaml"
+echo "Downloading $GITHUB_URL/$yamlfile"
+ReadYamlAndReplaceCustomer $GITHUB_URL "$yamlfile" $customerid \
         | kubectl apply -f -
 
-echo "Downloading $GITHUB_URL/kubernetes/loadbalancer/ingress/default-internal.yaml"
-ReadYamlAndReplaceCustomer $GITHUB_URL "kubernetes/loadbalancer/ingress/default-internal.yaml" $customerid \
+yamlfile="kubernetes/loadbalancer/ingress/default-onprem.yaml"
+echo "Downloading $GITHUB_URL/$yamlfile"
+ReadYamlAndReplaceCustomer $GITHUB_URL "$yamlfile" $customerid \
         | kubectl apply -f -
 
 loadbalancer="traefik-ingress-service-public"

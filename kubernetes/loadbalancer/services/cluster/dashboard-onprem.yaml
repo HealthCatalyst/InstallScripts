@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: traefik-dashboard-onprem
+  namespace: kube-system
+  labels:
+    k8s-traefik: traefik    
+spec:
+  selector:
+    k8s-app: traefik-ingress-lb-onprem
+  ports:
+  - port: 80
+    targetPort: 8080

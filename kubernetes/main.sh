@@ -120,7 +120,7 @@ while [[ "$input" != "q" ]]; do
         kubectl version --short
         kubectl get "deployments,pods,services,nodes,ingress,secrets" --namespace=kube-system -o wide
         ;;
-    35) kubectl logs --namespace=kube-system -l k8s-app=traefik-ingress-lb-onprem
+    35) kubectl logs --namespace=kube-system -l k8s-app=traefik-ingress-lb-onprem --tail=100
     ;;
     41)  kubectl get 'deployments,pods,services,ingress,secrets,persistentvolumeclaims,persistentvolumes,nodes' --namespace=fabricnlp -o wide
         ;;

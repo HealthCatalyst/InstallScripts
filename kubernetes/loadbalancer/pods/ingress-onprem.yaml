@@ -52,4 +52,6 @@ spec:
         - --configfile=/config/traefik.toml
         - --logLevel=INFO
         - --kubernetes.labelselector=expose=external
+        - --kubernetes.debugloggeneratedtemplate
+        - --accesslog        
 ---

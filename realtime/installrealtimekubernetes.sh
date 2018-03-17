@@ -102,7 +102,7 @@ done
 
 echo "-- Deploying external services --"
 folder="services/external"
-for fname in "certificateserver.yaml"
+for fname in "certificateserver.yaml" "rabbitmq.yaml"
 do
     echo "Deploying realtime/$folder/$fname"
     ReadYamlAndReplaceCustomer $GITHUB_URL "realtime/$folder/$fname" $customerid | kubectl apply -f -
@@ -110,7 +110,7 @@ done
 
 echo "-- Deploying HTTP proxies --"
 folder="ingress/http"
-for fname in "web.onprem.yaml"
+for fname in "web.onprem.yaml" "rabbitmq-onprem.yaml"
 do
     echo "Deploying realtime/$folder/$fname"
     ReadYamlAndReplaceCustomer $GITHUB_URL "realtime/$folder/$fname" $customerid | kubectl apply -f -

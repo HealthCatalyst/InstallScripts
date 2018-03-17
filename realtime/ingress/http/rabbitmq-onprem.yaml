@@ -13,14 +13,14 @@ metadata:
       # https://github.com/kubernetes/ingress-nginx/blob/master/docs/user-guide/annotations.md
       # https://github.com/kubernetes/ingress-nginx/blob/master/docs/examples/rewrite/README.md
       # ingress.kubernetes.io/rewrite-target: /      
-      ingress.kubernetes.io/add-base-url: "true"
+      # ingress.kubernetes.io/add-base-url: "true"
       # https://docs.traefik.io/configuration/backends/kubernetes/
-      traefik.frontend.rule.type: PathPrefixStrip
+      # traefik.frontend.rule.type: PathPrefixStrip
 spec:
   rules:
   - http:
       paths:
-      - path: /rabbitmq
+      - path: /rabbitmqmgmt
         backend:
           serviceName: rabbitmqpublic
           servicePort: 80

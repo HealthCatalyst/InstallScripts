@@ -45,8 +45,8 @@ spec:
               value: "/opt/rabbitmq"
             - name: RABBITMQ_LOGS
               value: "-"
-            - name: DISABLE_SSL
-              value: "true"
+            # - name: DISABLE_SSL
+            #   value: "true"
           ports:
             # expose port 3000
             - containerPort: 5671

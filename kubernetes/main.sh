@@ -182,6 +182,8 @@ while [[ "$input" != "q" ]]; do
         echo "Optional: Download the CA certificate:"
         echo "$url"
         echo "Double-click and install in Local Machine. password: $certpassword"
+
+        echo "RabbitMq Mgmt UI is at: http://${certhostname}/rabbitmqmgmt/"
         ;;
     57) echo "If you didn't setup DNS, add the following entries in your c:\windows\system32\drivers\etc\hosts file to access the urls from your browser"
         loadBalancerIP="$(dig +short myip.opendns.com @resolver1.opendns.com)"

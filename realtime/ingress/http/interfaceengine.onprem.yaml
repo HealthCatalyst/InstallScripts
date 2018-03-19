@@ -15,12 +15,12 @@ metadata:
       # ingress.kubernetes.io/rewrite-target: /      
       # ingress.kubernetes.io/add-base-url: "true"
       # https://docs.traefik.io/configuration/backends/kubernetes/
-      traefik.frontend.rule.type: PathPrefixStrip
+      # traefik.frontend.rule.type: PathPrefixStrip
 spec:
   rules:
   - http:
       paths:
-      - path: /mirth
+      - path: /webadmin
         backend:
           serviceName: interfaceenginepublic
           servicePort: 80

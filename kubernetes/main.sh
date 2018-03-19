@@ -5,7 +5,7 @@ set -e
 #   curl -sSL https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/kubernetes/main.sh | bash
 #
 #
-version="2018.03.19.01"
+version="2018.03.19.02"
 
 GITHUB_URL="https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master"
 
@@ -150,6 +150,7 @@ while [[ "$input" != "q" ]]; do
         echo "Send HL7 to Mirth: server=${certhostname} port=6661"
         echo "Rabbitmq Queue: server=${certhostname} port=5671"
         echo "RabbitMq Mgmt UI is at: http://${certhostname}/rabbitmqmgmt/"
+        echo "Mirth Mgmt UI is at: http://${certhostname}/webadmin/"        
         ;;
     53)  Write-Host "MySql root password: $(ReadSecretPassword mysqlrootpassword fabricrealtime)"
             Write-Host "MySql NLP_APP_USER password: $(ReadSecretPassword mysqlpassword fabricrealtime)"

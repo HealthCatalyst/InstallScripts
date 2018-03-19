@@ -5,7 +5,7 @@ set -e
 #   curl -sSL https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/nlp/installnlpkubernetes.sh | bash
 #
 GITHUB_URL="https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master"
-version="2018.03.16.02"
+version="2018.03.19.01"
 
 echo "---- installrealtimekubernetes.sh version $version ------"
 
@@ -102,7 +102,7 @@ done
 
 echo "-- Deploying external services --"
 folder="services/external"
-for fname in "certificateserver.yaml" "rabbitmq.yaml"
+for fname in "certificateserver.yaml" "rabbitmq.yaml" "interfaceengine.yaml"
 do
     echo "Deploying realtime/$folder/$fname"
     ReadYamlAndReplaceCustomer $GITHUB_URL "realtime/$folder/$fname" $customerid | kubectl apply -f -
@@ -110,7 +110,7 @@ done
 
 echo "-- Deploying HTTP proxies --"
 folder="ingress/http"
-for fname in "web.onprem.yaml" "rabbitmq-onprem.yaml"
+for fname in "web.onprem.yaml" "rabbitmq.onprem.yaml" "interfaceengine.onprem.yaml"
 do
     echo "Deploying realtime/$folder/$fname"
     ReadYamlAndReplaceCustomer $GITHUB_URL "realtime/$folder/$fname" $customerid | kubectl apply -f -

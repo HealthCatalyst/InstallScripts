@@ -1,0 +1,14 @@
+# ----- Services exposed to the outside world ------
+# solr web server
+kind: Service
+apiVersion: v1
+metadata:
+  name: interfaceenginepublic
+  namespace: fabricrealtime
+spec:
+  selector:
+    app: interfaceengine
+  ports:
+  - port: 80
+    targetPort: 8080
+---

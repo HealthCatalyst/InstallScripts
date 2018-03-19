@@ -116,6 +116,14 @@ do
     ReadYamlAndReplaceCustomer $GITHUB_URL "realtime/$folder/$fname" $customerid | kubectl apply -f -
 done
 
+echo "-- Deploying TCP proxies --"
+folder="ingress/tcp"
+for fname in "mysqlserver.onprem.yaml" "interfaceengine.onprem.yaml" "rabbitmq.onprem.yaml"
+do
+    echo "Deploying realtime/$folder/$fname"
+    ReadYamlAndReplaceCustomer $GITHUB_URL "realtime/$folder/$fname" $customerid | kubectl apply -f -
+done
+
 kubectl get 'deployments,pods,services,ingress,secrets,persistentvolumeclaims,persistentvolumes,nodes' --namespace=$namespace -o wide
 
 WaitForPodsInNamespace $namespace 5

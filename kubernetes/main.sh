@@ -5,7 +5,7 @@ set -e
 #   curl -sSL https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/kubernetes/main.sh | bash
 #
 #
-version="2018.03.16.02"
+version="2018.03.19.01"
 
 GITHUB_URL="https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master"
 
@@ -146,7 +146,10 @@ while [[ "$input" != "q" ]]; do
         ;;
     51)  kubectl get 'deployments,pods,services,ingress,secrets,persistentvolumeclaims,persistentvolumes,nodes' --namespace=fabricrealtime -o wide
         ;;
-    52) echo ""
+    52) certhostname=$(ReadSecret certhostname fabricrealtime)
+        echo "Send HL7 to Mirth: server=${certhostname} port=6661"
+        echo "Rabbitmq Queue: server=${certhostname} port=5671"
+        echo "RabbitMq Mgmt UI is at: http://${certhostname}/rabbitmqmgmt/"
         ;;
     53)  Write-Host "MySql root password: $(ReadSecretPassword mysqlrootpassword fabricrealtime)"
             Write-Host "MySql NLP_APP_USER password: $(ReadSecretPassword mysqlpassword fabricrealtime)"

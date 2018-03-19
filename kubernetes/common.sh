@@ -1,5 +1,5 @@
 
-versioncommon="2018.03.15.01"
+versioncommon="2018.03.19.01"
 
 echo "--- Including common.sh version $versioncommon ---"
 function GetCommonVersion() {
@@ -277,10 +277,12 @@ function CleanOutNamespace(){
     # can't delete persistent volume claims since they are not scoped to namespace
     kubectl delete 'pv' -l namespace=$namespace --ignore-not-found=true
 
-    CLEANUP_DONE="n"
-    while [[ ! -z "$CLEANUP_DONE" ]]; do
-        CLEANUP_DONE=$(kubectl get 'deployments,pods,services,ingress,persistentvolumeclaims' --namespace=$namespace -o jsonpath="{.items[*].metadata.name}")
-        echo "Remaining items: $CLEANUP_DONE"
-        sleep 5
+    REMAINING_ITEMS="n"
+    while [[ ! -z "$REMAINING_ITEMS" ]]; do
+        REMAINING_ITEMS=$(kubectl get 'deployments,pods,services,ingress,persistentvolumeclaims' --namespace=$namespace -o jsonpath="{.items[*].metadata.name}")
+        echo "Waiting on: $REMAINING_ITEMS"
+        if [[ ! -z "$REMAINING_ITEMS" ]]; then
+            sleep 5
+        fi
     done
 }

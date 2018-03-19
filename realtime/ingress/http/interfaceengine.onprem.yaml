@@ -24,10 +24,4 @@ spec:
         backend:
           serviceName: interfaceenginepublic
           servicePort: 80
-  - http:
-      paths:
-      - path: /webadmin
-        backend:
-          serviceName: interfaceenginepublic
-          servicePort: 443
       

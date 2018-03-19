@@ -44,5 +44,5 @@ spec:
         ports:
         - name: tcp
           protocol: TCP
-          containerPort: 3306
+          containerPort: 3307
 ---

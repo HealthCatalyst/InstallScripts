@@ -16,6 +16,11 @@ spec:
     targetPort: 5671
     protocol: TCP
     name: "main"
+  - port: 5672
+  # port in the pod we map to  
+    targetPort: 5672
+    protocol: TCP
+    name: "main2"   
   - port: 15672
 # port in the pod we map to  
     targetPort: 15672

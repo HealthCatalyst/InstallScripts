@@ -27,6 +27,7 @@ spec:
       containers:
       - image: traefik:1.5
         name: traefik-ingress-lb-internal
+        imagePullPolicy: Always        
         volumeMounts:
           - mountPath: "/config"
             name: "config"        

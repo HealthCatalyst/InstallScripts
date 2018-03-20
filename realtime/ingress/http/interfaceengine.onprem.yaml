@@ -23,5 +23,5 @@ spec:
       - path: /mirth
         backend:
           serviceName: interfaceenginepublic
-          servicePort: 80
+          servicePort: 443
       

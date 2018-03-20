@@ -20,7 +20,7 @@ spec:
   rules:
   - http:
       paths:
-      - path: /rabbitmqmgmt
+      - path: /rabbitmq
         backend:
           serviceName: rabbitmqpublic
           servicePort: 80

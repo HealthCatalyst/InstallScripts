@@ -5,7 +5,7 @@ set -e
 #   curl -sSL https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/kubernetes/main.sh | bash
 #
 #
-version="2018.03.19.02"
+version="2018.03.19.03"
 
 GITHUB_URL="https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master"
 
@@ -19,8 +19,10 @@ if [[ ! -f "$installscript" ]]; then
     echo "curl -sSL $GITHUB_URL/kubernetes/main.sh?p=$RANDOM | bash" >> $installscript
     chmod +x $installscript
     echo "NOTE: Next time just type 'dos' to bring up this menu"
-fi
 
+    # from http://web.archive.org/web/20120621035133/http://www.ibb.net/~anne/keyboard/keyboard.html
+    # curl -o ~/.inputrc "$GITHUB_URL/kubernetes/inputrc"
+fi
 
 input=""
 while [[ "$input" != "q" ]]; do
@@ -159,14 +161,14 @@ while [[ "$input" != "q" ]]; do
     52) certhostname=$(ReadSecret certhostname fabricrealtime)
         echo "Send HL7 to Mirth: server=${certhostname} port=6661"
         echo "Rabbitmq Queue: server=${certhostname} port=5671"
-        echo "RabbitMq Mgmt UI is at: http://${certhostname}/rabbitmqmgmt/"
-        echo "Mirth Mgmt UI is at: http://${certhostname}/webadmin/"        
+        echo "RabbitMq Mgmt UI is at: http://${certhostname}/rabbitmq/"
+        echo "Mirth Mgmt UI is at: http://${certhostname}/mirth/"        
         ;;
     53)  Write-Host "MySql root password: $(ReadSecretPassword mysqlrootpassword fabricrealtime)"
             Write-Host "MySql NLP_APP_USER password: $(ReadSecretPassword mysqlpassword fabricrealtime)"
             Write-Host "certhostname: $(ReadSecret certhostname fabricrealtime)"
             Write-Host "certpassword: $(ReadSecretPassword certpassword fabricrealtime)"
-            Write-Host "rabbitmqmgmtuipassword: $(ReadSecretPassword rabbitmqmgmtuipassword fabricrealtime)"
+            Write-Host "rabbitmq mgmtui user: admin password: $(ReadSecretPassword rabbitmqmgmtuipassword fabricrealtime)"
         ;;
     54)  pods=$(kubectl get pods -n fabricrealtime -o jsonpath='{.items[*].metadata.name}')
         for pod in $pods
@@ -197,7 +199,6 @@ while [[ "$input" != "q" ]]; do
         echo "$url"
         echo "Double-click and install in Local Machine. password: $certpassword"
 
-        echo "RabbitMq Mgmt UI is at: http://${certhostname}/rabbitmqmgmt/"
         ;;
     57) echo "If you didn't setup DNS, add the following entries in your c:\windows\system32\drivers\etc\hosts file to access the urls from your browser"
         loadBalancerIP="$(dig +short myip.opendns.com @resolver1.opendns.com)"

@@ -9,7 +9,7 @@ GITHUB_URL="https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/mast
 source <(curl -sSL "$GITHUB_URL/kubernetes/common.sh?p=$RANDOM")
 # source ./kubernetes/common.sh
 
-version="2018.03.16.01"
+version="2018.03.19.01"
 
 echo "---- setup-loadbalancer.sh version $version ------"
 
@@ -23,10 +23,10 @@ kubectl delete ServiceAccount traefik-ingress-controller-serviceaccount -n kube-
 AKS_IP_WHITELIST=""
 publicip=""
 
-AskForSecretValue "customerid" "Customer ID: "
+AskForSecretValue "customerid" "Customer ID "
 customerid=$(ReadSecret "customerid")
 
-AskForSecretValue "dnshostname" "DNS name used to connect to the master VM: "
+AskForSecretValue "dnshostname" "DNS name used to connect to the master VM "
 dnsrecordname=$(ReadSecret "dnshostname")
 
 yamlfile="kubernetes/loadbalancer/configmaps/config.yaml"

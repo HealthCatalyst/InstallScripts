@@ -19,3 +19,4 @@ data:
       address = ":80"
       [entryPoints.https]
       address = ":443"
+      [entryPoints.https.tls]      

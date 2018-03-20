@@ -35,8 +35,7 @@ while [[ "$input" != "q" ]]; do
     echo "4: Mount shared folder"
     echo "5: Mount Azure Storage as shared folder"
     echo "6: Setup Load Balancer"
-    echo "7: Test DNS"
-    echo "8: Show contents of shared folder"
+    echo "7: Setup Kubernetes Dashboard"
     echo "------ Worker Node -------"
     echo "12: Add this VM as Worker"
     echo "14: Mount shared folder"
@@ -50,6 +49,8 @@ while [[ "$input" != "q" ]]; do
     # echo "33: View status of DNS pods"
     # echo "34: Apply updates and restart all VMs"
     echo "35: Show load balancer logs"
+    echo "37: Test DNS"
+    echo "38: Show contents of shared folder"
     echo "------ NLP -----"
     echo "41: Show status of NLP"
     echo "42: Test web sites"
@@ -88,7 +89,25 @@ while [[ "$input" != "q" ]]; do
         ;;
     6)  curl -sSL https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/kubernetes/setup-loadbalancer.sh?p=$RANDOM | bash
         ;;
-    7)  # from https://kubernetes.io/docs/tasks/administer-cluster/dns-custom-nameservers/#debugging-dns-resolution
+    7)  curl -sSL https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/kubernetes/dashboard/setup-kubdashboard.sh?p=$RANDOM | bash
+        ;;
+    12)  curl -sSL https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/kubernetes/setupnode.txt?p=$RANDOM | bash
+        ;;
+    14)  mountSMB
+        ;;
+    15)  mountAzureFile
+        ;;
+    25)  curl -sSL https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/nlp/installnlpkubernetes.sh?p=$RANDOM | bash
+        ;;
+    26)  curl -sSL https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/realtime/installrealtimekubernetes.sh?p=$RANDOM | bash
+        ;;
+    31)  echo "Current cluster: $(kubectl config current-context)"
+        kubectl version --short
+        kubectl get "deployments,pods,services,nodes,ingress,secrets" --namespace=kube-system -o wide
+        ;;
+    35) kubectl logs --namespace=kube-system -l k8s-app=traefik-ingress-lb-onprem --tail=100
+    ;;
+    37)  # from https://kubernetes.io/docs/tasks/administer-cluster/dns-custom-nameservers/#debugging-dns-resolution
         echo "To resolve DNS issues: https://kubernetes.io/docs/tasks/administer-cluster/dns-custom-nameservers/#debugging-dns-resolution"
         echo "----------- Checking if DNS pods are running -----------"
         kubectl get pods --namespace=kube-system -l k8s-app=kube-dns
@@ -116,24 +135,8 @@ while [[ "$input" != "q" ]]; do
         kubectl exec busybox cat /etc/resolv.conf
         kubectl delete -f https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/kubernetes/busybox.yml
         ;;
-    8)  ls -al /mnt/data
+    38)  ls -al /mnt/data
         ;;
-    12)  curl -sSL https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/kubernetes/setupnode.txt?p=$RANDOM | bash
-        ;;
-    14)  mountSMB
-        ;;
-    15)  mountAzureFile
-        ;;
-    25)  curl -sSL https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/nlp/installnlpkubernetes.sh?p=$RANDOM | bash
-        ;;
-    26)  curl -sSL https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/realtime/installrealtimekubernetes.sh?p=$RANDOM | bash
-        ;;
-    31)  echo "Current cluster: $(kubectl config current-context)"
-        kubectl version --short
-        kubectl get "deployments,pods,services,nodes,ingress,secrets" --namespace=kube-system -o wide
-        ;;
-    35) kubectl logs --namespace=kube-system -l k8s-app=traefik-ingress-lb-onprem --tail=100
-    ;;
     41)  kubectl get 'deployments,pods,services,ingress,secrets,persistentvolumeclaims,persistentvolumes,nodes' --namespace=fabricnlp -o wide
         ;;
     43)  Write-Host "MySql root password: $(ReadSecretPassword mysqlrootpassword fabricnlp)"

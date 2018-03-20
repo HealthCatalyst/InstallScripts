@@ -20,7 +20,7 @@ spec:
   rules:
   - http:
       paths:
-      - path: /webadmin
+      - path: /mirth
         backend:
           serviceName: interfaceenginepublic
           servicePort: 80

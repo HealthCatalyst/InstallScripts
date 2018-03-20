@@ -45,7 +45,7 @@ spec:
             - name: HTTPS_PORT
               value: 443
             - name: HTTP_CONTEXTPATH
-              value: /mirth/
+              value: "/mirth/"
           ports:
             # expose port 3000
             - containerPort: 80

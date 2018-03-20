@@ -12,6 +12,15 @@ GITHUB_URL="https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/mast
 source <(curl -sSL "$GITHUB_URL/kubernetes/common.sh?p=$RANDOM")
 # source ./kubernetes/common.sh
 
+mkdir -p $HOME/bin
+installscript="$HOME/bin/dos"
+if [[ ! -f "$installscript" ]]; then
+    echo "#!/bin/bash" > $installscript
+    echo "curl -sSL $GITHUB_URL/kubernetes/main.sh?p=$RANDOM | bash" >> $installscript
+    chmod +x $installscript
+fi
+
+
 input=""
 while [[ "$input" != "q" ]]; do
 

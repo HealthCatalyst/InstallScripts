@@ -54,5 +54,7 @@ spec:
         - --logLevel=INFO
         - --kubernetes.labelselector=expose=external
         - --kubernetes.debugloggeneratedtemplate
-        - --accesslog        
+        - --accesslog
+        - --insecureskipverify
+        - --kubernetes.enablepasstlscert
 ---

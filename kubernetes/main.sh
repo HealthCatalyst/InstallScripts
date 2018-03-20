@@ -5,7 +5,7 @@ set -e
 #   curl -sSL https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/kubernetes/main.sh | bash
 #
 #
-version="2018.03.19.03"
+version="2018.03.20.01"
 
 GITHUB_URL="https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master"
 
@@ -51,6 +51,7 @@ while [[ "$input" != "q" ]]; do
     echo "35: Show load balancer logs"
     echo "37: Test DNS"
     echo "38: Show contents of shared folder"
+    echo "39: Show dashboard url"
     echo "------ NLP -----"
     echo "41: Show status of NLP"
     echo "42: Test web sites"
@@ -136,6 +137,14 @@ while [[ "$input" != "q" ]]; do
         kubectl delete -f https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/kubernetes/busybox.yml
         ;;
     38)  ls -al /mnt/data
+        ;;
+    39)  dnshostname=$(ReadSecret "dnshostname")
+        echo "You can access the kubernetes dashboard at: https://${dnshostname}/api/ "
+        secretname=$(kubectl -n kube-system get secret | grep admin-user | awk '{print $1}')
+        token=$(ReadSecretValue "$secretname" "token" "kube-system")
+        echo "----------- Bearer Token ---------------"
+        echo $token
+        echo "-------- End of Bearer Token -------------"
         ;;
     41)  kubectl get 'deployments,pods,services,ingress,secrets,persistentvolumeclaims,persistentvolumes,nodes' --namespace=fabricnlp -o wide
         ;;

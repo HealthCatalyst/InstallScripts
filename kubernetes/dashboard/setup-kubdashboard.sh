@@ -16,13 +16,17 @@ echo "---- setup-kubdashboard.sh version $version ------"
 # enable running pods on master
 # kubectl taint node mymasternode node-role.kubernetes.io/master:NoSchedule
 
+kubectl -n kube-system delete $(kubectl -n kube-system get pod -o name | grep dashboard)
+
 # kubectl delete 'pods,services,configMaps,deployments,ingress' -l k8s-traefik=traefik -n kube-system --ignore-not-found=true
 
 # kubectl delete ServiceAccount traefik-ingress-controller-serviceaccount -n kube-system --ignore-not-found=true
 
+# https://github.com/kubernetes/dashboard/wiki/Accessing-Dashboard---1.7.X-and-above
+
 echo "-- Deploying roles --"
 folder="roles"
-for fname in "heapster-rbac.yaml"
+for fname in "heapster-rbac.yaml" "dashboard-user.yaml"
 do
     echo "Deploying kubernetes/dashboard/$folder/$fname"
     ReadYamlAndReplaceCustomer $GITHUB_URL "kubernetes/dashboard/$folder/$fname" "" | kubectl apply -f -

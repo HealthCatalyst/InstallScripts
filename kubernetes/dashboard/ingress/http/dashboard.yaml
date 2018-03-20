@@ -7,12 +7,13 @@ metadata:
     k8s-traefik: traefik    
     expose: external
   annotations:
-    kubernetes.io/ingress.class: traefik 
+    kubernetes.io/ingress.class: traefik
+    traefik.frontend.rule.type: PathPrefixStrip
 spec:
   rules:
   - http:
       paths:
-      - path: /admin
+      - path: /api
         backend:
           serviceName: kubernetes-dashboard
           servicePort: 443

@@ -40,7 +40,7 @@ spec:
       - name: proxy-tcp
         image: healthcatalyst/tcp-proxy:latest
         imagePullPolicy: Always
-        args: [ "tcp", "3306", "mysqlserver.fabricrealtime.svc.cluster.local" ]
+        args: [ "tcp", "3307", "mysqlserver.fabricrealtime.svc.cluster.local" ]
         ports:
         - name: tcp
           protocol: TCP

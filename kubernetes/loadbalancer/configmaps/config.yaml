@@ -1,6 +1,7 @@
-# format: https://docs.traefik.io/configuration/backends/kubernetes/
+# Traefik Ingress reverse proxy
+# based on https://github.com/containous/traefik/issues/2329
+
 # the config for Traefik so it knows where the certificates are
-# https://docs.traefik.io/configuration/commons/
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -11,10 +12,10 @@ metadata:
 data:
   traefik.toml: |
     # traefik.toml
-    defaultEntryPoints = ["http"]
+    defaultEntryPoints = ["http","https"]
     [accessLog]
     [entryPoints]
       [entryPoints.http]
       address = ":80"
-
-
+      [entryPoints.https]
+      address = ":443"

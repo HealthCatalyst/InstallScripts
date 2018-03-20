@@ -1,14 +1,14 @@
 apiVersion: extensions/v1beta1
 kind: Ingress
 metadata:
-  name: realtime.ingress.interfaceengine
+  name: realtime.ingress.rabbitmq
   namespace: fabricrealtime
   labels:  
     expose: external        
   annotations:
       kubernetes.io/ingress.class: traefik
-      ingress.kubernetes.io/ssl-passthrough: "true"     
-      # change /mirth to /
+      ingress.kubernetes.io/ssl-passthrough: "true"
+      # change /certificates to /
       # https://docs.giantswarm.io/guides/advanced-ingress-configuration/
       # https://github.com/kubernetes/ingress-nginx/blob/master/docs/user-guide/annotations.md
       # https://github.com/kubernetes/ingress-nginx/blob/master/docs/examples/rewrite/README.md
@@ -23,5 +23,4 @@ spec:
       - path: /mirth
         backend:
           serviceName: interfaceenginepublic
-          servicePort: 443
-      
+          servicePort: 80

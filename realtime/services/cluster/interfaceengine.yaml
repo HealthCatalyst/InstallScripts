@@ -11,9 +11,9 @@ metadata:
 spec:
   ports:
 # port that other services can use to connect to this service
-  - port: 8080
+  - port: 80
 # port in the pod we map to  
-    targetPort: 8080
+    targetPort: 80
     protocol: TCP
     name: "http"
   - port: 8443

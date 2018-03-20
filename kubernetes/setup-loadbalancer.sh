@@ -22,10 +22,12 @@ kubectl delete ServiceAccount traefik-ingress-controller-serviceaccount -n kube-
 
 AKS_IP_WHITELIST=""
 publicip=""
-customerid="hcut"
-dnsrecordname="$customerid.healthcatalyst.net"
 
-SaveSecretValue customerid "value" $customerid
+AskForSecretValue "customerid" "Customer ID: "
+customerid=$(ReadSecret "customerid")
+
+AskForSecretValue "dnshostname" "DNS name used to connect to the master VM: "
+dnsrecordname=$(ReadSecret "dnshostname")
 
 yamlfile="kubernetes/loadbalancer/configmaps/config.yaml"
 echo "Downloading $GITHUB_URL/$yamlfile"
@@ -62,6 +64,6 @@ loadBalancerIP="$(dig +short myip.opendns.com @resolver1.opendns.com)"
 echo "My WAN/Public IP address: ${loadBalancerIP}"
     
 echo "To test out the load balancer, open Git Bash and run:"
-echo "curl -L --verbose --header 'Host: dashboard.$dnsrecordname' 'http://$loadBalancerIP/' -k"        
+echo "curl -L --verbose --header 'Host: $dnsrecordname' 'http://$loadBalancerIP/' -k"        
 
 echo "---- end of setup-loadbalancer.sh version $version ------"

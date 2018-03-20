@@ -18,6 +18,7 @@ if [[ ! -f "$installscript" ]]; then
     echo "#!/bin/bash" > $installscript
     echo "curl -sSL $GITHUB_URL/kubernetes/main.sh?p=$RANDOM | bash" >> $installscript
     chmod +x $installscript
+    echo "NOTE: Next time just type 'dos' to bring up this menu"
 fi
 
 

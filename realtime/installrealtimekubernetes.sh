@@ -60,7 +60,12 @@ AskForPassword  "mysqlrootpassword" "MySQL root password (> 8 chars, min 1 numbe
 
 AskForPassword "mysqlpassword" "MySQL root password (> 8 chars, min 1 number, 1 lowercase, 1 uppercase, 1 special [!.*@] )" "$namespace"
 
-AskForSecretValue "certhostname" "Client Certificate hostname (Should be DNS name used to connect to the master VM)" "$namespace"
+dnsrecordname=$(ReadSecret "dnshostname")
+if [[ -z "$dnsrecordname" ]]; then
+    AskForSecretValue "certhostname" "Client Certificate hostname (Should be DNS name used to connect to the master VM)" "$namespace"
+else
+    SaveSecretValue "certhostname" "value" "$dnsrecordname" "$namespace"
+fi
 
 AskForPassword "certpassword" "Client Certificate password (> 8 chars, min 1 number, 1 lowercase, 1 uppercase, 1 special [!.*@] )" "$namespace"
 

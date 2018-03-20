@@ -41,9 +41,9 @@ spec:
             - name: MYSQL_USER
               value: mirthuser
             - name: HTTP_PORT
-              value: 80
+              value: "80"
             - name: HTTPS_PORT
-              value: 443
+              value: "443"
             - name: HTTP_CONTEXTPATH
               value: "/mirth/"
           ports:

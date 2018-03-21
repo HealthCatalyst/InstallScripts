@@ -34,6 +34,14 @@ if ! [ $allowunsafeeval ]; then
 	allowunsafeeval="false"
 fi
 
+if [ $7 ]; then
+	authority=$7
+fi
+
+if ! [ $authority ]; then
+	authority="http://localhost:5001"
+fi
+
 #
 # This script is meant for quick & easy install via:
 #   curl -sSL https://healthcatalyst.github.io/InstallScripts/identity/installidentity.txt | sh /dev/stdin [couchdb_username] [couchdb_password]
@@ -68,6 +76,7 @@ docker run -d --name fabric.identity \
     -e "CouchDbSettings__Server=http://couchdb:5984" \
     -e "CouchDbSettings__Username=$couchdb_username" \
     -e "CouchDbSettings__Password=$couchdb_password" \
+    -e "IdentityServerConfidentialClientSettings__Authority=$authority" \
     -p 5001:5001 \
     --link fabric.couchdb:couchdb \
     healthcatalyst/fabric.identity:$identityversion

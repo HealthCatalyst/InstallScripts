@@ -34,6 +34,9 @@ spec:
       serviceAccountName: traefik-ingress-serviceaccount
       terminationGracePeriodSeconds: 60
       volumes:
+        - name: ssl-ahmn
+          secret:
+            secretName: traefik-cert-ahmn        
         - name: config
           configMap:
             name: traefik-conf
@@ -42,6 +45,8 @@ spec:
         name: traefik-ingress-lb-onprem
         imagePullPolicy: Always        
         volumeMounts:
+          - mountPath: "/ssl/ahmn"
+            name: "ssl-ahmn"           
           - mountPath: "/config"
             name: "config"        
         ports:

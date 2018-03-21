@@ -43,7 +43,7 @@ spec:
             - name: HTTP_PORT
               value: "80"
             - name: HTTPS_PORT
-              value: "8443"
+              value: "443"
             - name: HTTP_CONTEXTPATH
               value: "/mirth/"
           ports:
@@ -51,7 +51,7 @@ spec:
             - containerPort: 80
               # name of the port
               name: http
-            - containerPort: 8443
+            - containerPort: 443
               # name of the port
               name: https 
             - containerPort: 6661

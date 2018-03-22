@@ -1,4 +1,4 @@
-Write-output "--- create-acs-cluster Version 2018.03.22.02 ----"
+Write-output "--- create-acs-cluster Version 2018.03.22.03 ----"
 
 #
 # This script is meant for quick & easy install via:
@@ -380,19 +380,41 @@ $publicNameOfMasterVM = $(GetPublicNameofMasterVM -resourceGroup $AKS_PERS_RESOU
 $kubeconfigjsonfile = "$acsoutputfolder\kubeconfig\kubeconfig.$AKS_PERS_LOCATION.json"
 
 Write-Host "Testing if we can connect to private IP Address: $privateIpOfMasterVM"
+# from https://stackoverflow.com/questions/11696944/powershell-v3-invoke-webrequest-https-error
+add-type @"
+using System.Net;
+using System.Security.Cryptography.X509Certificates;
+public class TrustAllCertsPolicy : ICertificatePolicy {
+    public bool CheckValidationResult(
+        ServicePoint srvPoint, X509Certificate certificate,
+        WebRequest request, int certificateProblem) {
+        return true;
+    }
+}
+"@
+$AllProtocols = [System.Net.SecurityProtocolType]'Ssl3,Tls,Tls11,Tls12'
+$previousSecurityProtocol=[System.Net.ServicePointManager]::SecurityProtocol
+[System.Net.ServicePointManager]::SecurityProtocol = $AllProtocols
+$previousSecurityPolicy = [System.Net.ServicePointManager]::CertificatePolicy
+[System.Net.ServicePointManager]::CertificatePolicy = New-Object TrustAllCertsPolicy
+
 $canConnectToPrivateIP = $(Test-NetConnection $privateIpOfMasterVM -Port 443 -InformationLevel Quiet)
 
 if ($canConnectToPrivateIP -eq "True") {
     Write-Host "Replacing master vm name, [$publicNameOfMasterVM], with private ip, [$privateIpOfMasterVM], in kube config file"
     (Get-Content "$kubeconfigjsonfile").replace("$publicNameOfMasterVM", "$privateIpOfMasterVM") | Set-Content "$kubeconfigjsonfile"
-} else {
+}
+else {
     Write-Host "Could not connect to private IP, [$privateIpOfMasterVM], so leaving the master VM name [$publicNameOfMasterVM] in the kubeconfig"
     $canConnectToMasterVM = $(Test-NetConnection $publicNameOfMasterVM -Port 443 -InformationLevel Quiet)
-    if ($canConnectToMasterVM -ne "True"){
+    if ($canConnectToMasterVM -ne "True") {
         Write-Error "Cannot connect to master VM: $publicNameOfMasterVM"
         Test-NetConnection $publicNameOfMasterVM -Port 443
     }
 }
+
+[System.Net.ServicePointManager]::CertificatePolicy = $previousSecurityPolicy
+[System.Net.ServicePointManager]::SecurityProtocol = $previousSecurityProtocol
 
 Copy-Item -Path "$kubeconfigjsonfile" -Destination "$env:userprofile\.kube\config"
 

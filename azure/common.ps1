@@ -1,6 +1,6 @@
 # This file contains common functions for Azure
 # 
-$versioncommon = "2018.03.16.01"
+$versioncommon = "2018.03.22.01"
 
 Write-Host "---- Including common.ps1 version $versioncommon -----"
 function global:GetCommonVersion() {
@@ -349,7 +349,7 @@ function global:CreateStorageIfNotExists($resourceGroup) {
     }
     Write-Host "Checking to see if storage account exists"
 
-    $storageAccountConnectionString = az storage account show-connection-string --name $storageAccountName --resource-group $resourceGroup --query "name" --output tsv
+    $storageAccountConnectionString = az storage account show-connection-string --name $storageAccountName --resource-group $resourceGroup --query "connectionString" --output tsv
     if (![string]::IsNullOrEmpty($storageAccountConnectionString)) {
         Write-Warning "Storage account, [$storageAccountName], already exists.  Deleting it will remove this data permanently"
         Do { $confirmation = Read-Host "Delete storage account: (WARNING: deletes data) (y/n)"}
@@ -365,7 +365,7 @@ function global:CreateStorageIfNotExists($resourceGroup) {
     else {
         $storageAccountCanBeCreated = az storage account check-name --name $storageAccountName --query "nameAvailable" --output tsv        
         if ($storageAccountCanBeCreated -ne "True" ) {
-            az storage account check-name --name $storageAccountName   
+            Write-Warning "$(az storage account check-name --name $storageAccountName --query 'message' --output tsv)"
             Write-Error "$storageAccountName is not a valid storage account name"
         }
         else {

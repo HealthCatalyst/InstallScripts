@@ -1,4 +1,4 @@
-Write-output "--- create-acs-cluster Version 2018.03.22.01 ----"
+Write-output "--- create-acs-cluster Version 2018.03.22.02 ----"
 
 #
 # This script is meant for quick & easy install via:
@@ -375,11 +375,24 @@ if (!(Test-Path -Path "$AKS_LOCAL_TEMP_FOLDER\.kube")) {
     New-Item -ItemType directory -Path "$AKS_LOCAL_TEMP_FOLDER\.kube"
 }
 
-Write-Host "Replace master vm name with private ip in kube config file"
-$kubeconfigjsonfile="$acsoutputfolder\kubeconfig\kubeconfig.$AKS_PERS_LOCATION.json"
-$publicNameOfMasterVM = $(GetPublicNameofMasterVM -resourceGroup $AKS_PERS_RESOURCE_GROUP).Name
 $privateIpOfMasterVM = $(GetPrivateIPofMasterVM -resourceGroup $AKS_PERS_RESOURCE_GROUP).PrivateIP
-(Get-Content "$kubeconfigjsonfile").replace("$publicNameOfMasterVM", "$privateIpOfMasterVM") | Set-Content "$kubeconfigjsonfile"
+$publicNameOfMasterVM = $(GetPublicNameofMasterVM -resourceGroup $AKS_PERS_RESOURCE_GROUP).Name
+$kubeconfigjsonfile = "$acsoutputfolder\kubeconfig\kubeconfig.$AKS_PERS_LOCATION.json"
+
+Write-Host "Testing if we can connect to private IP Address: $privateIpOfMasterVM"
+$canConnectToPrivateIP = $(Test-NetConnection $privateIpOfMasterVM -Port 443 -InformationLevel Quiet)
+
+if ($canConnectToPrivateIP -eq "True") {
+    Write-Host "Replacing master vm name, [$publicNameOfMasterVM], with private ip, [$privateIpOfMasterVM], in kube config file"
+    (Get-Content "$kubeconfigjsonfile").replace("$publicNameOfMasterVM", "$privateIpOfMasterVM") | Set-Content "$kubeconfigjsonfile"
+} else {
+    Write-Host "Could not connect to private IP, [$privateIpOfMasterVM], so leaving the master VM name [$publicNameOfMasterVM] in the kubeconfig"
+    $canConnectToMasterVM = $(Test-NetConnection $publicNameOfMasterVM -Port 443 -InformationLevel Quiet)
+    if ($canConnectToMasterVM -ne "True"){
+        Write-Error "Cannot connect to master VM: $publicNameOfMasterVM"
+        Test-NetConnection $publicNameOfMasterVM -Port 443
+    }
+}
 
 Copy-Item -Path "$kubeconfigjsonfile" -Destination "$env:userprofile\.kube\config"
 

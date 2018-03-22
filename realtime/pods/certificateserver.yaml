@@ -52,8 +52,15 @@ spec:
             - name: certificateserver-persistent-storage
               # point the /var/lib/mysql folder inside the container to the volume called mysql-persistent-storage
               mountPath: /opt/certs/
-              subPath: certs              
+              subPath: certs
+            - name: tls
+              mountPath: "/opt/tls/"
+              readOnly: true
       volumes:
       - name: certificateserver-persistent-storage
         persistentVolumeClaim:
-          claimName: realtime.certificateserver        
+          claimName: realtime.certificateserver
+      - name: tls
+        secret:
+          secretName: traefik-cert-ahmn
+  

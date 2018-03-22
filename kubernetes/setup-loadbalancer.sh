@@ -53,6 +53,7 @@ if [[ -z "$sslsecret" ]]; then
                 openssl genrsa -out tls.key 2048
                 openssl req -new -key tls.key -subj /CN=$dnsrecordname/O=HealthCatalyst/ -out tls.csr
                 openssl x509 -req -in tls.csr -CA rootCA.crt -CAkey rootCA.key -CAcreateserial -out tls.crt -days 3650 -sha256
+                cp tls.crt tls.pem
         fi
 
         ls -al "$certfolder"

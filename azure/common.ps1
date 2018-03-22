@@ -1,6 +1,6 @@
 # This file contains common functions for Azure
 # 
-$versioncommon = "2018.03.22.01"
+$versioncommon = "2018.03.22.02"
 
 Write-Host "---- Including common.ps1 version $versioncommon -----"
 function global:GetCommonVersion() {
@@ -356,7 +356,7 @@ function global:CreateStorageIfNotExists($resourceGroup) {
         while ([string]::IsNullOrWhiteSpace($confirmation)) 
     
         if ($confirmation -eq 'y') {
-            az storage account delete -n $storageAccountName -g $resourceGroup
+            az storage account delete -n $storageAccountName -g $resourceGroup --yes
             Write-Host "Creating storage account: [${storageAccountName}]"
             # https://docs.microsoft.com/en-us/azure/storage/common/storage-quickstart-create-account?tabs=azure-cli
             az storage account create -n $storageAccountName -g $resourceGroup -l $location --kind StorageV2 --sku Standard_LRS                       

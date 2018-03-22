@@ -350,6 +350,7 @@ function global:CreateStorageIfNotExists($resourceGroup) {
     Write-Host "Checking to see if storage account exists"
 
     $storageAccountConnectionString = az storage account show-connection-string --name $storageAccountName --resource-group $resourceGroup --query "connectionString" --output tsv
+    [Console]::ResetColor()
     if (![string]::IsNullOrEmpty($storageAccountConnectionString)) {
         Write-Warning "Storage account, [$storageAccountName], already exists.  Deleting it will remove this data permanently"
         Do { $confirmation = Read-Host "Delete storage account: (WARNING: deletes data) (y/n)"}

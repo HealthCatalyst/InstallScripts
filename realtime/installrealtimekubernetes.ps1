@@ -1,4 +1,4 @@
-Write-Output "Version 2018.01.21.01"
+Write-Output "Version 2018.03.21.01"
 
 # curl -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/realtime/installrealtimekubernetes.ps1 | iex;
 
@@ -11,9 +11,25 @@ Invoke-WebRequest -useb ${GITHUB_URL}/kubernetes/common-kube.ps1 | Invoke-Expres
 Invoke-WebRequest -useb $GITHUB_URL/azure/common.ps1 | Invoke-Expression;
 # Get-Content ./azure/common.ps1 -Raw | Invoke-Expression;
 
+DownloadAzCliIfNeeded
+
 $loggedInUser = az account show --query "user.name"  --output tsv
+$AKS_USE_SSL = ""
 
 Write-Output "user: $loggedInUser"
+
+$AKS_PERS_RESOURCE_GROUP_BASE64 = kubectl get secret azure-secret -o jsonpath='{.data.resourcegroup}'
+if (![string]::IsNullOrWhiteSpace($AKS_PERS_RESOURCE_GROUP_BASE64)) {
+    $AKS_PERS_RESOURCE_GROUP = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($AKS_PERS_RESOURCE_GROUP_BASE64))
+}
+
+if ([string]::IsNullOrWhiteSpace($AKS_PERS_RESOURCE_GROUP)) {
+    Do { $AKS_PERS_RESOURCE_GROUP = Read-Host "Resource Group (e.g., fabricnlp-rg)"}
+    while ([string]::IsNullOrWhiteSpace($AKS_PERS_RESOURCE_GROUP))
+}
+else {
+    Write-Output "Using resource group: $AKS_PERS_RESOURCE_GROUP"        
+}
 
 if ( "$loggedInUser" ) {
     $SUBSCRIPTION_NAME = az account show --query "name"  --output tsv
@@ -31,19 +47,6 @@ else {
     az login
 }
 
-$AKS_PERS_RESOURCE_GROUP_BASE64 = kubectl get secret azure-secret -o jsonpath='{.data.resourcegroup}'
-if (![string]::IsNullOrWhiteSpace($AKS_PERS_RESOURCE_GROUP_BASE64)) {
-    $AKS_PERS_RESOURCE_GROUP = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($AKS_PERS_RESOURCE_GROUP_BASE64))
-}
-
-if ([string]::IsNullOrWhiteSpace($AKS_PERS_RESOURCE_GROUP)) {
-    Do { $AKS_PERS_RESOURCE_GROUP = Read-Host "Resource Group (e.g., fabricnlp-rg)"}
-    while ([string]::IsNullOrWhiteSpace($AKS_PERS_RESOURCE_GROUP))
-}
-else {
-    Write-Output "Using resource group: $AKS_PERS_RESOURCE_GROUP"        
-}
-
 if ([string]::IsNullOrWhiteSpace($(kubectl get namespace fabricrealtime --ignore-not-found=true))) {
     kubectl create namespace fabricrealtime
 }
@@ -59,11 +62,6 @@ else {
         kubectl delete secret rabbitmqmgmtuipassword -n fabricrealtime --ignore-not-found=true
     }
 }
-
-Do { $AKS_USE_SSL = Read-Host "Do you want to setup SSL? (y/n)"}
-while ([string]::IsNullOrWhiteSpace($AKS_USE_SSL))
-
-
 
 AskForPassword -secretname "mysqlrootpassword"  -prompt "MySQL root password (> 8 chars, min 1 number, 1 lowercase, 1 uppercase, 1 special [!.*@] )" -namespace "fabricrealtime"
 
@@ -86,108 +84,63 @@ $AZURE_STORAGE_CONNECTION_STRING = az storage account show-connection-string -n 
 Write-Output "Create the file share: $AKS_PERS_SHARE_NAME"
 az storage share create -n $AKS_PERS_SHARE_NAME --connection-string $AZURE_STORAGE_CONNECTION_STRING --quota 512
 
-ReadYamlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "realtime/realtime-kubernetes-storage.yml" -customerid $customerid | kubectl create -f -
+AskForSecretValue -secretname "customerid" -prompt "Health Catalyst Customer ID (e.g., ahmn)"
 
-ReadYamlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "realtime/realtime-kubernetes.yml" -customerid $customerid | kubectl create -f -
+$customerid = ReadSecret -secretname customerid
+$customerid = $customerid.ToLower().Trim()
+Write-Output "Customer ID: $customerid"
 
-ReadYamlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "realtime/realtime-kubernetes-public.yml" -customerid $customerid | kubectl create -f -
-
-$ipname = "InterfaceEnginePublicIP"
-$publicip = az network public-ip show -g $AKS_PERS_RESOURCE_GROUP -n $ipname --query "ipAddress" -o tsv;
-if ([string]::IsNullOrWhiteSpace($publicip)) {
-    az network public-ip create -g $AKS_PERS_RESOURCE_GROUP -n $ipname --allocation-method Static
-    $publicip = az network public-ip show -g $AKS_PERS_RESOURCE_GROUP -n $ipname --query "ipAddress" -o tsv;
-} 
-Write-Host "Using Interface Engine Public IP: [$publicip]"
-
-# Write-Output "Checking if DNS entries exist"
-# https://kubernetes.io/docs/reference/kubectl/jsonpath/
-
-# setup DNS
-# az network dns zone create -g $AKS_PERS_RESOURCE_GROUP -n nlp.allina.healthcatalyst.net
-# az network dns record-set a add-record --ipv4-address j `
-#                                        --record-set-name nlp.allina.healthcatalyst.net `
-#                                        --resource-group $AKS_PERS_RESOURCE_GROUP `
-#                                        --zone-name 
-
-$serviceyaml = @"
-kind: Service
-apiVersion: v1
-metadata:
-  name: interfaceengine-direct-port
-  namespace: fabricrealtime
-spec:
-  selector:
-    app: interfaceengine
-  ports:
-  - name: interfaceengine
-    protocol: TCP
-    port: 6661
-    targetPort: 6661
-  type: LoadBalancer  
-  # Special notes for Azure: To use user-specified public type loadBalancerIP, a static type public IP address resource needs to be created first, 
-  # and it should be in the same resource group of the cluster. 
-  # Then you could specify the assigned IP address as loadBalancerIP
-  # https://kubernetes.io/docs/concepts/services-networking/service/#type-loadbalancer
-  loadBalancerIP: $publicip
----
-"@
-
-Write-Output $serviceyaml | kubectl create -f -
-
-AskForSecretValue -secretname "customerid" -prompt "Health Catalyst Customer ID (e.g., ahmn)" -namespace "fabricrealtime"
-
-$customeridbase64 = kubectl get secret customerid -n fabricrealtime -o jsonpath='{.data.value}'
-$customerid = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($customeridbase64))
-Write-Output "Customer ID:" $customerid
-
-$templateFile = "realtime/realtime-ingress.yml"
-if ($AKS_USE_SSL -eq "y" ) {
-    $templateFile = "realtime/realtime-ingress-ssl.yml"    
+Write-Host "-- Deploying volumes --"
+$folder = "volumes"
+foreach ($file in "certificateserver.yaml mysqlserver.yaml rabbitmq-cert.yaml rabbitmq.yaml".Split(" ")) { 
+    ReadYamlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "realtime/${folder}/${file}" -customerid $customerid | kubectl apply -f -
 }
 
-Write-Output "Using template: $templateFile"
+Write-Host "-- Deploying volume claims --"
+$folder = "volumeclaims"
+foreach ($file in "certificateserver.yaml mysqlserver.yaml rabbitmq-cert.yaml rabbitmq.yaml".Split(" ")) { 
+    ReadYamlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "realtime/${folder}/${file}" -customerid $customerid | kubectl apply -f -
+}
 
-ReadYamlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile $templateFile -customerid $customerid
+Write-Host "-- Deploying pods --"
+$folder = "pods"
+foreach ($file in "certificateserver.yaml mysqlserver.yaml interfaceengine.yaml rabbitmq.yaml".Split(" ")) { 
+    ReadYamlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "realtime/${folder}/${file}" -customerid $customerid | kubectl apply -f -
+}
+
+Write-Host "-- Deploying cluster services --"
+$folder = "services/cluster"
+foreach ($file in "certificateserver.yaml mysqlserver.yaml interfaceengine.yaml rabbitmq.yaml".Split(" ")) { 
+    ReadYamlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "realtime/${folder}/${file}" -customerid $customerid | kubectl apply -f -
+}
+
+Write-Host "-- Deploying external services --"
+$folder = "services/external"
+foreach ($file in "certificateserver.yaml rabbitmq.yaml interfaceengine.yaml".Split(" ")) { 
+    ReadYamlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "realtime/${folder}/${file}" -customerid $customerid | kubectl apply -f -
+}
+
+Write-Host "-- Deploying HTTP proxies --"
+$folder = "ingress/http"
+    foreach ($file in "web.yaml rabbitmq.yaml interfaceengine.yaml".Split(" ")) { 
+        ReadYamlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "realtime/${folder}/${file}" -customerid $customerid | kubectl apply -f -
+    }
+
+Write-Host "-- Deploying TCP proxies --"
+$folder = "ingress/tcp"
+foreach ($file in "mysqlserver.yaml interfaceengine.yaml rabbitmq.yaml".Split(" ")) { 
+    ReadYamlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "realtime/${folder}/${file}" -customerid $customerid | kubectl apply -f -
+}
 
 kubectl get 'deployments,pods,services,ingress,secrets,persistentvolumeclaims,persistentvolumes,nodes' --namespace=fabricrealtime -o wide
 
-# to get a shell
-# kubectl exec -it fabric.nlp.nlpwebserver-85c8cb86b5-gkphh bash --namespace=fabricrealtime
-
-# kubectl create secret generic azure-secret --namespace=fabricrealtime --from-literal=azurestorageaccountname="fabricrealtime7storage" --from-literal=azurestorageaccountkey="/bYhXNstTodg3MdOvTMog/vDLSFrQDpxG/Zgkp2MlnjtOWhDBNQ2xOs6zjRoZYNjmJHya34MfzqdfOwXkMDN2A=="
-
-Write-Output "To get status of Fabric.NLP run:"
-Write-Output "kubectl get deployments,pods,services,ingress,secrets,persistentvolumeclaims,persistentvolumes,nodes --namespace=fabricrealtime -o wide"
-
-Write-Output "To launch the dashboard UI, run:"
-Write-Output "kubectl proxy"
-Write-Output "and then in your browser, navigate to: http://127.0.0.1:8001/ui"
-
-$loadBalancerIP = kubectl get svc traefik-ingress-service-public -n kube-system -o jsonpath='{.status.loadBalancer.ingress[].ip}'
+$loadBalancerIP = kubectl get svc traefik-ingress-service-public -n kube-system -o jsonpath='{.status.loadBalancer.ingress[].ip}' --ignore-not-found=true
 if ([string]::IsNullOrWhiteSpace($loadBalancerIP)) {
     $loadBalancerIP = kubectl get svc traefik-ingress-service-internal -n kube-system -o jsonpath='{.status.loadBalancer.ingress[].ip}'
 }
+$loadBalancerInternalIP = kubectl get svc traefik-ingress-service-internal -n kube-system -o jsonpath='{.status.loadBalancer.ingress[].ip}'
 
-Write-Output "To test out the NLP services, open Git Bash and run:"
-Write-Output "curl -L --verbose --header 'Host: certificates.$customerid.healthcatalyst.net' 'http://$loadBalancerIP/client'"
+Write-Host "Sleeping for 10 seconds so kube services get IPs assigned"
+Start-Sleep -Seconds 10
 
-Write-Output "Connect to interface engine at: $publicip port 6661"
-
-Write-Output "if you want, you can download the CA (Certificate Authority) cert from this url"
-Write-Output "http://certificates.$customerid.healthcatalyst.net/client/fabric_ca_cert.p12"
-
-Write-Output "-------------------------------"
-Write-Output "you can download the client certificate from this url:"
-Write-Output "http://certificates.$customerid.healthcatalyst.net/client/fabricrabbitmquser_client_cert.p12"
-Write-Output "-------------------------------"
-
-Write-Output "Waiting for load balancer IP to get assigned to interface engine..."
-Do {
-    $loadBalancerIP = $(kubectl get service interfaceengine-direct-port -n fabricrealtime -o jsonpath='{.spec.loadBalancerIP}');
-    Write-Output "."
-    Start-Sleep -Seconds 5
-}
-while ([string]::IsNullOrWhiteSpace($loadBalancerIP))
-
-Write-Output "Load Balancer IP: $loadBalancerIP"
+FixLoadBalancers -resourceGroup $AKS_PERS_RESOURCE_GROUP

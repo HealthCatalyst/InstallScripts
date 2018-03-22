@@ -1,4 +1,4 @@
-Write-Output "Version 2018.03.21.01"
+Write-Output "Version 2018.03.22.01"
 
 # curl -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/realtime/installrealtimekubernetes.ps1 | iex;
 
@@ -14,7 +14,7 @@ Invoke-WebRequest -useb $GITHUB_URL/azure/common.ps1 | Invoke-Expression;
 DownloadAzCliIfNeeded
 
 $loggedInUser = az account show --query "user.name"  --output tsv
-$AKS_USE_SSL = ""
+$namespace = "fabricrealtime"
 
 Write-Output "user: $loggedInUser"
 
@@ -122,9 +122,9 @@ foreach ($file in "certificateserver.yaml rabbitmq.yaml interfaceengine.yaml".Sp
 
 Write-Host "-- Deploying HTTP proxies --"
 $folder = "ingress/http"
-    foreach ($file in "web.yaml rabbitmq.yaml interfaceengine.yaml".Split(" ")) { 
-        ReadYamlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "realtime/${folder}/${file}" -customerid $customerid | kubectl apply -f -
-    }
+foreach ($file in "web.yaml rabbitmq.yaml interfaceengine.yaml".Split(" ")) { 
+    ReadYamlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "realtime/${folder}/${file}" -customerid $customerid | kubectl apply -f -
+}
 
 Write-Host "-- Deploying TCP proxies --"
 $folder = "ingress/tcp"

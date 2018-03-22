@@ -9,7 +9,7 @@ function global:GetCommonKubeVersion() {
     return $versionkubecommon
 }
 
-function global:ReadSecretValue($secretname, $valueName, $namespace) {
+function global:ReadSecretValue([ValidateNotNullOrEmpty()] $secretname, [ValidateNotNullOrEmpty()] $valueName, $namespace) {
     if ([string]::IsNullOrWhiteSpace($namespace)) { $namespace = "default"}
 
     $secretbase64 = kubectl get secret $secretname -o jsonpath="{.data.${valueName}}" -n $namespace --ignore-not-found=true 2> $null
@@ -22,11 +22,11 @@ function global:ReadSecretValue($secretname, $valueName, $namespace) {
     return "";
 }
 
-function global:ReadSecret($secretname, $namespace) {
+function global:ReadSecret([ValidateNotNullOrEmpty()] $secretname, $namespace) {
     return ReadSecretValue -secretname $secretname -valueName "value" -namespace $namespace
 }
 
-function global:ReadSecretPassword($secretname, $namespace) {
+function global:ReadSecretPassword([ValidateNotNullOrEmpty()] $secretname, $namespace) {
     return ReadSecretValue -secretname $secretname -valueName "password" -namespace $namespace
 }
 
@@ -46,7 +46,7 @@ function global:GeneratePassword() {
     return $result
 }
 
-function global:SaveSecretValue($secretname, $valueName, $value, $namespace) {
+function global:SaveSecretValue([ValidateNotNullOrEmpty()] $secretname, [ValidateNotNullOrEmpty()] $valueName, $value, $namespace) {
     # secretname must be lower case alphanumeric characters, '-' or '.', and must start and end with an alphanumeric character
     if ([string]::IsNullOrWhiteSpace($namespace)) { $namespace = "default"}
 
@@ -57,7 +57,7 @@ function global:SaveSecretValue($secretname, $valueName, $value, $namespace) {
     kubectl create secret generic $secretname --namespace=$namespace --from-literal=${valueName}=$value
 }
 
-function global:AskForPassword ($secretname, $prompt, $namespace) {
+function global:AskForPassword ([ValidateNotNullOrEmpty()] $secretname, $prompt, $namespace) {
     if ([string]::IsNullOrWhiteSpace($namespace)) { $namespace = "default"}
     if ([string]::IsNullOrWhiteSpace($(kubectl get secret $secretname -n $namespace -o jsonpath='{.data}' --ignore-not-found=true))) {
 
@@ -81,7 +81,7 @@ function global:AskForPassword ($secretname, $prompt, $namespace) {
     }
 }
 
-function global:AskForPasswordAnyCharacters ($secretname, $prompt, $namespace, $defaultvalue) {
+function global:AskForPasswordAnyCharacters ([ValidateNotNullOrEmpty()] $secretname, $prompt, $namespace, $defaultvalue) {
     if ([string]::IsNullOrWhiteSpace($namespace)) { $namespace = "default"}
     if ([string]::IsNullOrWhiteSpace($(kubectl get secret $secretname -n $namespace -o jsonpath='{.data}' --ignore-not-found=true))) {
 
@@ -105,7 +105,7 @@ function global:AskForPasswordAnyCharacters ($secretname, $prompt, $namespace, $
     }
 }
 
-function global:AskForSecretValue ($secretname, $prompt, $namespace) {
+function global:AskForSecretValue ([ValidateNotNullOrEmpty()] $secretname, $prompt, $namespace) {
     if ([string]::IsNullOrWhiteSpace($namespace)) { $namespace = "default"}
     if ([string]::IsNullOrWhiteSpace($(kubectl get secret $secretname -n $namespace -o jsonpath='{.data}' --ignore-not-found=true))) {
 
@@ -122,7 +122,7 @@ function global:AskForSecretValue ($secretname, $prompt, $namespace) {
     }    
 }
 
-function global:ReadYamlAndReplaceCustomer($baseUrl, $templateFile, $customerid ) {
+function global:ReadYamlAndReplaceCustomer([ValidateNotNullOrEmpty()] $baseUrl, [ValidateNotNullOrEmpty()] $templateFile, $customerid ) {
     Write-Host "Reading from url: ${baseUrl}/${templateFile}"
 
     if ($baseUrl.StartsWith("http")) { 
@@ -152,7 +152,7 @@ function global:Stop-ProcessByPort( [ValidateNotNullOrEmpty()] [int] $Port ) {
 
 
 
-function global:CleanOutNamespace($namespace) {
+function global:CleanOutNamespace([ValidateNotNullOrEmpty()] $namespace) {
 
     Write-Host "--- Cleaning out any old resources in $namespace ---"
 
@@ -173,7 +173,7 @@ function global:CleanOutNamespace($namespace) {
     while (![string]::IsNullOrEmpty($CLEANUP_DONE))
 }
 
-function global:SwitchToKubCluster($kubfolder, $clustername) {
+function global:SwitchToKubCluster([ValidateNotNullOrEmpty()] $kubfolder, [ValidateNotNullOrEmpty()] $clustername) {
     $fileToUse = "$kubfolder\$clustername\temp\.kube\config"
     if (Test-Path -Path $fileToUse) {
         Write-Host "Switching kube config to this cluster: $clustername"

@@ -1,4 +1,4 @@
-Write-output "--- create-acs-cluster Version 2018.03.16.01 ----"
+Write-output "--- create-acs-cluster Version 2018.03.22.01 ----"
 
 #
 # This script is meant for quick & easy install via:
@@ -377,7 +377,7 @@ if (!(Test-Path -Path "$AKS_LOCAL_TEMP_FOLDER\.kube")) {
 
 Write-Host "Replace master vm name with private ip in kube config file"
 $kubeconfigjsonfile="$acsoutputfolder\kubeconfig\kubeconfig.$AKS_PERS_LOCATION.json"
-$publicNameOfMasterVM = $(GetPublicNameofMasterVM).Name
+$publicNameOfMasterVM = $(GetPublicNameofMasterVM -resourceGroup $AKS_PERS_RESOURCE_GROUP).Name
 $privateIpOfMasterVM = $(GetPrivateIPofMasterVM -resourceGroup $AKS_PERS_RESOURCE_GROUP).PrivateIP
 (Get-Content "$kubeconfigjsonfile").replace("$publicNameOfMasterVM", "$privateIpOfMasterVM") | Set-Content "$kubeconfigjsonfile"
 

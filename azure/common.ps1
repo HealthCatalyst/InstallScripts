@@ -7,7 +7,7 @@ function global:GetCommonVersion() {
     return $versioncommon
 }
 
-function global:CreateShareInStorageAccount($storageAccountName, $resourceGroup, $sharename, $deleteExisting) { 
+function global:CreateShareInStorageAccount([ValidateNotNullOrEmpty()] $storageAccountName, [ValidateNotNullOrEmpty()] $resourceGroup, [ValidateNotNullOrEmpty()] $sharename, $deleteExisting) { 
     $AZURE_STORAGE_CONNECTION_STRING = az storage account show-connection-string -n $storageAccountName -g $resourceGroup -o tsv
     
     # Write-Host "Storage connection string: $AZURE_STORAGE_CONNECTION_STRING"
@@ -36,7 +36,7 @@ function global:CreateShareInStorageAccount($storageAccountName, $resourceGroup,
         Write-Host "File share already exists: $sharename"         
     }
 }
-function global:CreateShare($resourceGroup, $sharename, $deleteExisting) {
+function global:CreateShare([ValidateNotNullOrEmpty()] $resourceGroup, [ValidateNotNullOrEmpty()] $sharename, $deleteExisting) {
     $storageAccountName = ReadSecretValue -secretname azure-secret -valueName azurestorageaccountname 
     
     CreateShareInStorageAccount -storageAccountName $storageAccountName -resourceGroup $resourceGroup -sharename $sharename -deleteExisting $deleteExisting
@@ -105,7 +105,7 @@ function global:Get-FirstIP {
     INT64-toIP -int $startaddr
 }
 
-function global:SetupCronTab($resourceGroup) {
+function global:SetupCronTab([ValidateNotNullOrEmpty()] $resourceGroup) {
     $virtualmachines = az vm list -g $resourceGroup --query "[?storageProfile.osDisk.osType != 'Windows'].name" -o tsv
     ForEach ($vm in $virtualmachines) {
         if ($vm -match "master" ) {
@@ -115,7 +115,7 @@ function global:SetupCronTab($resourceGroup) {
     }
 }
 
-function global:UpdateOSInVMs($resourceGroup) {
+function global:UpdateOSInVMs([ValidateNotNullOrEmpty()] $resourceGroup) {
     $virtualmachines = az vm list -g $resourceGroup --query "[?storageProfile.osDisk.osType != 'Windows'].name" -o tsv
     ForEach ($vm in $virtualmachines) {
         Write-Host "Updating OS in vm: $vm"
@@ -125,7 +125,7 @@ function global:UpdateOSInVMs($resourceGroup) {
 }
 
 
-function global:RestartVMsInResourceGroup( $resourceGroup) {
+function global:RestartVMsInResourceGroup([ValidateNotNullOrEmpty()] $resourceGroup) {
     # az vm run-command invoke -g Prod-Kub-AHMN-RG -n k8s-master-37819884-0 --command-id RunShellScript --scripts "apt-get update && sudo apt-get upgrade"
     Write-Host "Restarting VMs in resource group: ${resourceGroup}: $(az vm list -g $resourceGroup --query "[].name" -o tsv)"
     az vm restart --ids $(az vm list -g $resourceGroup --query "[].id" -o tsv)
@@ -156,7 +156,7 @@ function global:RestartVMsInResourceGroup( $resourceGroup) {
 
 }
 
-function global:FixEtcdRestartIssueOnMaster( $resourceGroup) {
+function global:FixEtcdRestartIssueOnMaster([ValidateNotNullOrEmpty()] $resourceGroup) {
 
     $virtualmachines = az vm list -g $resourceGroup --query "[].name" -o tsv
     ForEach ($vm in $virtualmachines) {
@@ -169,7 +169,7 @@ function global:FixEtcdRestartIssueOnMaster( $resourceGroup) {
 }
 
 
-function global:SetHostFileInVms( $resourceGroup) {
+function global:SetHostFileInVms( [ValidateNotNullOrEmpty()] $resourceGroup) {
     $AKS_PERS_LOCATION = az group show --name $resourceGroup --query "location" -o tsv
 
     $MASTER_VM_NAME = "${resourceGroup}.${AKS_PERS_LOCATION}.cloudapp.azure.com"
@@ -206,7 +206,7 @@ function global:SetHostFileInVms( $resourceGroup) {
 }
 
 
-function global:CleanResourceGroup($resourceGroup, $location, $vnet, $subnet, $subnetResourceGroup, $storageAccount) {
+function global:CleanResourceGroup([ValidateNotNullOrEmpty()] $resourceGroup, [ValidateNotNullOrEmpty()] $location, $vnet, $subnet, $subnetResourceGroup, $storageAccount) {
     Write-Host "checking if resource group already exists"
     $resourceGroupExists = az group exists --name ${resourceGroup}
     if ($resourceGroupExists -eq "true") {
@@ -330,7 +330,7 @@ function global:CleanResourceGroup($resourceGroup, $location, $vnet, $subnet, $s
 
 }
 
-function global:CreateStorageIfNotExists($resourceGroup) {
+function global:CreateStorageIfNotExists([ValidateNotNullOrEmpty()] $resourceGroup) {
     #Create an hashtable variable 
     [hashtable]$Return = @{} 
 
@@ -364,12 +364,14 @@ function global:CreateStorageIfNotExists($resourceGroup) {
         }    
     }
     else {
+        Write-Host "Checking if storage account name is valid"
         $storageAccountCanBeCreated = az storage account check-name --name $storageAccountName --query "nameAvailable" --output tsv        
         if ($storageAccountCanBeCreated -ne "True" ) {
             Write-Warning "$(az storage account check-name --name $storageAccountName --query 'message' --output tsv)"
             Write-Error "$storageAccountName is not a valid storage account name"
         }
         else {
+            Write-Host "Creating storage account: [${storageAccountName}]"
             az storage account create -n $storageAccountName -g $resourceGroup -l $location --kind StorageV2 --sku Standard_LRS                       
         }
     }
@@ -378,7 +380,7 @@ function global:CreateStorageIfNotExists($resourceGroup) {
     return $Return
 }
 
-function global:GetVnet($subscriptionId) {
+function global:GetVnet([ValidateNotNullOrEmpty()] $subscriptionId) {
     #Create an hashtable variable 
     [hashtable]$Return = @{} 
 
@@ -540,7 +542,7 @@ function global:FindOpenPort($portArray) {
     return $Return
 }
 
-function global:AddFolderToPathEnvironmentVariable($folder) {
+function global:AddFolderToPathEnvironmentVariable([ValidateNotNullOrEmpty()] $folder) {
     # add the c:\kubernetes folder to system PATH
     Write-Host "Checking if $folder is in PATH"
     $pathItems = ($env:path).split(";")
@@ -603,7 +605,7 @@ function global:DownloadAzCliIfNeeded() {
     
 }
 
-function global:CreateSSHKey($resourceGroup, $localFolder) {
+function global:CreateSSHKey([ValidateNotNullOrEmpty()] $resourceGroup, [ValidateNotNullOrEmpty()] $localFolder) {
     #Create an hashtable variable 
     [hashtable]$Return = @{} 
 
@@ -715,7 +717,7 @@ function global:GetResourceGroupAndLocation($defaultResourceGroup) {
     Return $Return         
 }
 
-function global:SetNetworkSecurityGroupRule($resourceGroup, $networkSecurityGroup, $rulename, $ruledescription, $sourceTag, $port, $priority ) {
+function global:SetNetworkSecurityGroupRule([ValidateNotNullOrEmpty()] $resourceGroup, [ValidateNotNullOrEmpty()] $networkSecurityGroup, [ValidateNotNullOrEmpty()] $rulename, [ValidateNotNullOrEmpty()] $ruledescription, [ValidateNotNullOrEmpty()] $sourceTag, [ValidateNotNullOrEmpty()] $port, [ValidateNotNullOrEmpty()] $priority ) {
     if ([string]::IsNullOrWhiteSpace($(az network nsg rule show --name "$rulename" --nsg-name $networkSecurityGroup --resource-group $resourceGroup))) {
         Write-Host "Creating rule: $rulename"
         az network nsg rule create -g $resourceGroup --nsg-name $networkSecurityGroup -n "$rulename" --priority $priority `
@@ -735,14 +737,14 @@ function global:SetNetworkSecurityGroupRule($resourceGroup, $networkSecurityGrou
     }
     
 }
-function global:DeleteNetworkSecurityGroupRule($resourceGroup, $networkSecurityGroup, $rulename ) {
+function global:DeleteNetworkSecurityGroupRule([ValidateNotNullOrEmpty()] $resourceGroup, [ValidateNotNullOrEmpty()] $networkSecurityGroup, [ValidateNotNullOrEmpty()] $rulename ) {
     if (![string]::IsNullOrWhiteSpace($(az network nsg rule show --name "$rulename" --nsg-name $networkSecurityGroup --resource-group $resourceGroup))) {
         Write-Host "Deleting $rulename rule"
         az network nsg rule delete -g $resourceGroup --nsg-name $networkSecurityGroup -n $rulename
     }    
 }
 
-function global:DownloadKubectl($localFolder) {
+function global:DownloadKubectl([ValidateNotNullOrEmpty()] $localFolder) {
     # download kubectl
     $kubeCtlFile = "$localFolder\kubectl.exe"
     $desiredKubeCtlVersion = "v1.9.3"
@@ -774,7 +776,7 @@ function global:DownloadKubectl($localFolder) {
     
 }
 
-function global:DownloadFile($url, $targetFile) {
+function global:DownloadFile([ValidateNotNullOrEmpty()] $url, [ValidateNotNullOrEmpty()] $targetFile) {
     # https://learn-powershell.net/2013/02/08/powershell-and-events-object-events/
     $web = New-Object System.Net.WebClient
     $web.UseDefaultCredentials = $True
@@ -806,7 +808,7 @@ function global:DownloadFile($url, $targetFile) {
     Unregister-Event -SourceIdentifier Web.DownloadProgressChanged
     #endregion Download file from website    
 }
-function global:DownloadFileOld($url, $targetFile) {
+function global:DownloadFileOld([ValidateNotNullOrEmpty()] $url, [ValidateNotNullOrEmpty()] $targetFile) {
     # from https://stackoverflow.com/questions/21422364/is-there-any-way-to-monitor-the-progress-of-a-download-using-a-webclient-object
     $uri = New-Object "System.Uri" "$url"
     $request = [System.Net.HttpWebRequest]::Create($uri)
@@ -837,7 +839,7 @@ function global:DownloadFileOld($url, $targetFile) {
     $responseStream.Dispose()
 }
 
-function global:FixLoadBalancers($resourceGroup) {
+function global:FixLoadBalancers([ValidateNotNullOrEmpty()] $resourceGroup) {
     # hacks here to get around bugs in the acs-engine loadbalancer code
     Write-Host "Checking if load balancers are setup correctly for resourceGroup: $resourceGroup"
     # 1. assign the nics to the loadbalancer
@@ -957,7 +959,7 @@ function global:FixLoadBalancers($resourceGroup) {
     # end hacks
 }
 
-function global:SetupDNS($dnsResourceGroup, $dnsrecordname, $externalIP) {
+function global:SetupDNS([ValidateNotNullOrEmpty()] $dnsResourceGroup, [ValidateNotNullOrEmpty()] $dnsrecordname, [ValidateNotNullOrEmpty()] $externalIP) {
     Write-Host "Setting DNS zones"
 
     if ([string]::IsNullOrWhiteSpace($(az network dns zone show --name "$dnsrecordname" -g $dnsResourceGroup))) {
@@ -971,7 +973,7 @@ function global:SetupDNS($dnsResourceGroup, $dnsrecordname, $externalIP) {
     ShowNameServerEntries -dnsResourceGroup $dnsResourceGroup -dnsrecordname $dnsrecordname
 }
 
-function global:ShowNameServerEntries($dnsResourceGroup, $dnsrecordname) {
+function global:ShowNameServerEntries([ValidateNotNullOrEmpty()] $dnsResourceGroup, [ValidateNotNullOrEmpty()] $dnsrecordname) {
     # list out the name servers
     Write-Host "Name servers to set in GoDaddy for *.$dnsrecordname"
     az network dns zone show -g $dnsResourceGroup -n "$dnsrecordname" --query "nameServers" -o tsv
@@ -1010,7 +1012,7 @@ function global:GetLoadBalancerIPs() {
     
     return $Return
 }
-function global:CheckUrl($url, $hostHeader) {
+function global:CheckUrl([ValidateNotNullOrEmpty()] $url, [ValidateNotNullOrEmpty()] $hostHeader) {
 
     [hashtable]$Return = @{} 
 
@@ -1074,7 +1076,7 @@ function global:WriteDNSCommands() {
     Write-Host ""
 }
 
-function global:GetPublicNameofMasterVM($resourceGroup) {
+function global:GetPublicNameofMasterVM([ValidateNotNullOrEmpty()] $resourceGroup) {
     [hashtable]$Return = @{} 
 
     $resourceGroupLocation = az group show --name $resourceGroup --query "location" -o tsv
@@ -1085,7 +1087,7 @@ function global:GetPublicNameofMasterVM($resourceGroup) {
     return $Return
 }
 
-function global:GetPrivateIPofMasterVM($resourceGroup) {
+function global:GetPrivateIPofMasterVM([ValidateNotNullOrEmpty()] $resourceGroup) {
     [hashtable]$Return = @{} 
 
     $virtualmachines = az vm list -g $resourceGroup --query "[?storageProfile.osDisk.osType != 'Windows'].name" -o tsv
@@ -1099,7 +1101,7 @@ function global:GetPrivateIPofMasterVM($resourceGroup) {
     return $Return
 }
 
-function global:CreateVM($vm, $resourceGroup, $subnetId, $networkSecurityGroup, $publicKeyFile, $image) {
+function global:CreateVM([ValidateNotNullOrEmpty()] $vm, [ValidateNotNullOrEmpty()] $resourceGroup, [ValidateNotNullOrEmpty()] $subnetId, [ValidateNotNullOrEmpty()] $networkSecurityGroup, [ValidateNotNullOrEmpty()] $publicKeyFile, [ValidateNotNullOrEmpty()] $image) {
     [hashtable]$Return = @{} 
 
     $publicIP = "${vm}PublicIP"

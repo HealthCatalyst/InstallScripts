@@ -1,4 +1,4 @@
-$version = "2018.02.27.04"
+$version = "2018.03.23.01"
 
 # This script is meant for quick & easy install via:
 #   curl -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/azure/main.ps1 | iex;
@@ -73,10 +73,10 @@ while ($userinput -ne "q") {
             SwitchToKubCluster -folderToUse $folderToUse
         } 
         '1' {
-            Invoke-WebRequest -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/azure/create-acs-cluster.ps1 | Invoke-Expression;
+            Invoke-WebRequest -useb $GITHUB_URL/azure/create-acs-cluster.ps1?f=$randomstring | Invoke-Expression;
         } 
         '2' {
-            Invoke-WebRequest -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/azure/setup-loadbalancer.ps1 | Invoke-Expression;
+            Invoke-WebRequest -useb $GITHUB_URL/kubernetes/setup-loadbalancer.ps1?f=$randomstring | Invoke-Expression;
         } 
         '3' {
             Do { 
@@ -135,10 +135,10 @@ while ($userinput -ne "q") {
             WriteDNSCommands
         } 
         '11' {
-            Invoke-WebRequest -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/nlp/installnlpkubernetes.ps1 | Invoke-Expression;
+            Invoke-WebRequest -useb $GITHUB_URL/nlp/installnlpkubernetes.ps1?f=$randomstring | Invoke-Expression;
         } 
         '12' {
-            Invoke-WebRequest -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/realtime/installrealtimekubernetes.ps1 | Invoke-Expression;
+            Invoke-WebRequest -useb $GITHUB_URL/realtime/installrealtimekubernetes.ps1?f=$randomstring | Invoke-Expression;
         } 
         '20' {
             Write-Host "Current cluster: $(kubectl config current-context)"
@@ -379,7 +379,3 @@ while ($userinput -ne "q") {
     [Console]::ResetColor()
     Clear-Host
 }
-
-
-
-

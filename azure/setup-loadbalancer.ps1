@@ -23,27 +23,9 @@ $AKS_USE_SSL = ""
 $AKS_IP_WHITELIST = ""
 $SetupNSG = $true
 
-$loggedInUser = az account show --query "user.name"  --output tsv
-
-Write-Output "user: $loggedInUser"
-
-# choose Azure login and subscription
-if ( "$loggedInUser" ) {
-    $SUBSCRIPTION_NAME = az account show --query "name"  --output tsv
-    Write-Output "You are currently logged in as [$loggedInUser] into subscription [$SUBSCRIPTION_NAME]"
-    
-    Do { $confirmation = Read-Host "Do you want to use this account? (y/n)"}
-    while ([string]::IsNullOrWhiteSpace($confirmation))
-        
-    if ($confirmation -eq 'n') {
-        az login
-    }    
-}
-else {
-    az login
-}
-
-$AKS_SUBSCRIPTION_ID = az account show --query "id" --output tsv
+$userInfo = $(CheckIfUserLogged)
+$AKS_SUBSCRIPTION_ID = $userInfo.AKS_SUBSCRIPTION_ID
+$IS_CAFE_ENVIRONMENT = $userInfo.IS_CAFE_ENVIRONMENT
 
 # Get resource group name from kube secrets
 $AKS_PERS_RESOURCE_GROUP_BASE64 = kubectl get secret azure-secret -o jsonpath='{.data.resourcegroup}' --ignore-not-found=true
@@ -86,10 +68,11 @@ $AKS_SUBNET_RESOURCE_GROUP = ReadSecretValue -secretname azure-vnet -valueName "
 
 Write-Output "Found vnet info from secret: vnet: $AKS_VNET_NAME, subnet: $AKS_SUBNET_NAME, subnetResourceGroup: $AKS_SUBNET_RESOURCE_GROUP"
 
-$AKS_ALLOW_ADMIN_ACCESS_OUTSIDE_VNET = Read-Host "Do you want to allow admin access to this cluster from outside the vnet: ${AKS_VNET_NAME}? (y/n) (default: n)"
-
-if ([string]::IsNullOrWhiteSpace($AKS_ALLOW_ADMIN_ACCESS_OUTSIDE_VNET)) {
+if ($IS_CAFE_ENVIRONMENT) {
     $AKS_ALLOW_ADMIN_ACCESS_OUTSIDE_VNET = "n"
+}
+else {
+    $AKS_ALLOW_ADMIN_ACCESS_OUTSIDE_VNET = "y"    
 }
 
 $AKS_IP_WHITELIST = ""
@@ -134,28 +117,28 @@ $AKS_USE_WAF = "n"
 #     $AKS_USE_WAF = "n"
 # }
 
-if ([string]::IsNullOrWhiteSpace($(kubectl get secret traefik-cert-ahmn -o jsonpath='{.data}' -n kube-system --ignore-not-found=true))) {
-    Do { $AKS_USE_SSL = Read-Host "Do you want to setup SSL? (y/n)"}
-    while ([string]::IsNullOrWhiteSpace($AKS_USE_SSL))
+if ($IS_CAFE_ENVIRONMENT) {
+    $AKS_USE_SSL = "y"    
 }
 else {
-    $AKS_USE_SSL = "y"
-    Write-Output "SSL cert already stored as secret (traefik-cert-ahmn) so setting up SSL"
+    $AKS_USE_SSL = "n"    
 }
 
-Do { 
-    $SETUP_DNS = Read-Host "Do you want to setup DNS entries in Azure? (y/n) (default: n)"
-    if ([string]::IsNullOrWhiteSpace($SETUP_DNS)) {
-        $SETUP_DNS = "n"
+if ($IS_CAFE_ENVIRONMENT) {
+    Do { 
+        $SETUP_DNS = Read-Host "Do you want to setup DNS entries in Azure? (y/n) (default: n)"
+        if ([string]::IsNullOrWhiteSpace($SETUP_DNS)) {
+            $SETUP_DNS = "n"
+        }
     }
-}
-while ([string]::IsNullOrWhiteSpace($SETUP_DNS))
+    while ([string]::IsNullOrWhiteSpace($SETUP_DNS))
 
-# if we need to setup DNS then ask which resourceGroup to use
-if ($SETUP_DNS -eq "y") {
-    $DNS_RESOURCE_GROUP = Read-Host "Resource group containing DNS zones? (default: dns)"
-    if ([string]::IsNullOrWhiteSpace($DNS_RESOURCE_GROUP)) {
-        $DNS_RESOURCE_GROUP = "dns"
+    # if we need to setup DNS then ask which resourceGroup to use
+    if ($SETUP_DNS -eq "y") {
+        $DNS_RESOURCE_GROUP = Read-Host "Resource group containing DNS zones? (default: dns)"
+        if ([string]::IsNullOrWhiteSpace($DNS_RESOURCE_GROUP)) {
+            $DNS_RESOURCE_GROUP = "dns"
+        }
     }
 }
 

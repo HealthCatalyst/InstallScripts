@@ -12,11 +12,11 @@ Invoke-WebRequest -useb $GITHUB_URL/azure/common.ps1 | Invoke-Expression;
 # Get-Content ./azure/common.ps1 -Raw | Invoke-Expression;
 
 DownloadAzCliIfNeeded
+$userInfo = $(CheckIfUserLogged)
+$AKS_SUBSCRIPTION_ID = $userInfo.AKS_SUBSCRIPTION_ID
+$IS_CAFE_ENVIRONMENT = $userInfo.IS_CAFE_ENVIRONMENT
 
-$loggedInUser = az account show --query "user.name"  --output tsv
 $namespace = "fabricrealtime"
-
-Write-Output "user: $loggedInUser"
 
 $AKS_PERS_RESOURCE_GROUP_BASE64 = kubectl get secret azure-secret -o jsonpath='{.data.resourcegroup}'
 if (![string]::IsNullOrWhiteSpace($AKS_PERS_RESOURCE_GROUP_BASE64)) {
@@ -29,22 +29,6 @@ if ([string]::IsNullOrWhiteSpace($AKS_PERS_RESOURCE_GROUP)) {
 }
 else {
     Write-Output "Using resource group: $AKS_PERS_RESOURCE_GROUP"        
-}
-
-if ( "$loggedInUser" ) {
-    $SUBSCRIPTION_NAME = az account show --query "name"  --output tsv
-    Write-Output "You are currently logged in as [$loggedInUser] into subscription [$SUBSCRIPTION_NAME]"
-
-    Do { $confirmation = Read-Host "Do you want to use this account? (y/n)"}
-    while ([string]::IsNullOrWhiteSpace($confirmation))
-    
-    if ($confirmation -eq 'n') {
-        az login
-    }    
-}
-else {
-    # login
-    az login
 }
 
 if ([string]::IsNullOrWhiteSpace($(kubectl get namespace fabricrealtime --ignore-not-found=true))) {

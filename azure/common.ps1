@@ -1,6 +1,6 @@
 # This file contains common functions for Azure
 # 
-$versioncommon = "2018.03.22.02"
+$versioncommon = "2018.03.23.01"
 
 Write-Host "---- Including common.ps1 version $versioncommon -----"
 function global:GetCommonVersion() {
@@ -673,13 +673,16 @@ function global:CheckIfUserLogged() {
         az login
     }
     
+    $subscriptionName = $(az account show --query "name"  --output tsv)
     $subscriptionId = $(az account show --query "id" --output tsv)
 
     Write-Host "SubscriptionId: ${subscriptionId}"
 
     az account get-access-token --subscription $subscriptionId
 
+    $Return.AKS_SUBSCRIPTION_NAME = "$subscriptionName"    
     $Return.AKS_SUBSCRIPTION_ID = "$subscriptionId"
+    $Return.IS_CAFE_ENVIRONMENT = $($subscriptionName -match "CAFE" )
     return $Return
 }
 
@@ -1128,6 +1131,47 @@ function global:CreateVM([ValidateNotNullOrEmpty()] $vm, [ValidateNotNullOrEmpty
         
     $Return.IP = $ip
     return $Return                 
+}
+
+function global:TestConnection() {
+    Write-Host "Testing if we can connect to private IP Address: $privateIpOfMasterVM"
+    # from https://stackoverflow.com/questions/11696944/powershell-v3-invoke-webrequest-https-error
+    add-type 
+@"
+    using System.Net;
+    using System.Security.Cryptography.X509Certificates;
+    public class TrustAllCertsPolicy : ICertificatePolicy {
+        public bool CheckValidationResult(
+            ServicePoint srvPoint, X509Certificate certificate,
+            WebRequest request, int certificateProblem) {
+            return true;
+        }
+    }
+"@
+    $AllProtocols = [System.Net.SecurityProtocolType]'Ssl3,Tls,Tls11,Tls12'
+    $previousSecurityProtocol=[System.Net.ServicePointManager]::SecurityProtocol
+    [System.Net.ServicePointManager]::SecurityProtocol = $AllProtocols
+    $previousSecurityPolicy = [System.Net.ServicePointManager]::CertificatePolicy
+    [System.Net.ServicePointManager]::CertificatePolicy = New-Object TrustAllCertsPolicy
+    
+    $canConnectToPrivateIP = $(Test-NetConnection $privateIpOfMasterVM -Port 443 -InformationLevel Quiet)
+    
+    if ($canConnectToPrivateIP -eq "True") {
+        Write-Host "Replacing master vm name, [$publicNameOfMasterVM], with private ip, [$privateIpOfMasterVM], in kube config file"
+        (Get-Content "$kubeconfigjsonfile").replace("$publicNameOfMasterVM", "$privateIpOfMasterVM") | Set-Content "$kubeconfigjsonfile"
+    }
+    else {
+        Write-Host "Could not connect to private IP, [$privateIpOfMasterVM], so leaving the master VM name [$publicNameOfMasterVM] in the kubeconfig"
+        $canConnectToMasterVM = $(Test-NetConnection $publicNameOfMasterVM -Port 443 -InformationLevel Quiet)
+        if ($canConnectToMasterVM -ne "True") {
+            Write-Error "Cannot connect to master VM: $publicNameOfMasterVM"
+            Test-NetConnection $publicNameOfMasterVM -Port 443
+        }
+    }
+    
+    [System.Net.ServicePointManager]::CertificatePolicy = $previousSecurityPolicy
+    [System.Net.ServicePointManager]::SecurityProtocol = $previousSecurityProtocol
+        
 }
 #-------------------
 Write-Host "end common.ps1 version $versioncommon"

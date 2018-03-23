@@ -1,4 +1,4 @@
-Write-output "--- create-acs-cluster Version 2018.03.22.03 ----"
+Write-output "--- create-acs-cluster Version 2018.03.23.01 ----"
 
 #
 # This script is meant for quick & easy install via:
@@ -21,21 +21,26 @@ write-output "Checking if you're already logged in..."
 
 DownloadAzCliIfNeeded
 
-$AKS_SUBSCRIPTION_ID = $(CheckIfUserLogged).AKS_SUBSCRIPTION_ID
+$userInfo=$(CheckIfUserLogged)
+$AKS_SUBSCRIPTION_ID = $userInfo.AKS_SUBSCRIPTION_ID
+$IS_CAFE_ENVIRONMENT=$userInfo.IS_CAFE_ENVIRONMENT
 
 # ask for customerid
-Do { $customerid = Read-Host "Health Catalyst Customer ID (e.g., ahmn)"}
-while ([string]::IsNullOrWhiteSpace($customerid))
+if ($IS_CAFE_ENVIRONMENT){
+    Do { $customerid = Read-Host "Health Catalyst Customer ID (e.g., ahmn)"}
+    while ([string]::IsNullOrWhiteSpace($customerid))    
+    $DEFAULT_RESOURCE_GROUP = "Prod-Kub-$($customerid.ToUpper())-RG"
+}
+else {
+    $customerid="hcut"
+    $DEFAULT_RESOURCE_GROUP = "Dev-Kub-$($customerid.ToUpper())-RG"
+}
 
 Write-Output "Customer ID: $customerid"
-
-# ask for resource group name to create
-$DEFAULT_RESOURCE_GROUP = "Prod-Kub-$($customerid.ToUpper())-RG"
 
 $ResourceGroupInfo = GetResourceGroupAndLocation -defaultResourceGroup $DEFAULT_RESOURCE_GROUP
 $AKS_PERS_RESOURCE_GROUP = $ResourceGroupInfo.AKS_PERS_RESOURCE_GROUP
 $AKS_PERS_LOCATION = $ResourceGroupInfo.AKS_PERS_LOCATION
-
 
 $AKS_SUPPORT_WINDOWS_CONTAINERS = Read-Host "Support Windows containers (y/n) (default: n)"
 if ([string]::IsNullOrWhiteSpace($AKS_SUPPORT_WINDOWS_CONTAINERS)) {
@@ -379,42 +384,10 @@ $privateIpOfMasterVM = $(GetPrivateIPofMasterVM -resourceGroup $AKS_PERS_RESOURC
 $publicNameOfMasterVM = $(GetPublicNameofMasterVM -resourceGroup $AKS_PERS_RESOURCE_GROUP).Name
 $kubeconfigjsonfile = "$acsoutputfolder\kubeconfig\kubeconfig.$AKS_PERS_LOCATION.json"
 
-Write-Host "Testing if we can connect to private IP Address: $privateIpOfMasterVM"
-# from https://stackoverflow.com/questions/11696944/powershell-v3-invoke-webrequest-https-error
-add-type @"
-using System.Net;
-using System.Security.Cryptography.X509Certificates;
-public class TrustAllCertsPolicy : ICertificatePolicy {
-    public bool CheckValidationResult(
-        ServicePoint srvPoint, X509Certificate certificate,
-        WebRequest request, int certificateProblem) {
-        return true;
-    }
-}
-"@
-$AllProtocols = [System.Net.SecurityProtocolType]'Ssl3,Tls,Tls11,Tls12'
-$previousSecurityProtocol=[System.Net.ServicePointManager]::SecurityProtocol
-[System.Net.ServicePointManager]::SecurityProtocol = $AllProtocols
-$previousSecurityPolicy = [System.Net.ServicePointManager]::CertificatePolicy
-[System.Net.ServicePointManager]::CertificatePolicy = New-Object TrustAllCertsPolicy
-
-$canConnectToPrivateIP = $(Test-NetConnection $privateIpOfMasterVM -Port 443 -InformationLevel Quiet)
-
-if ($canConnectToPrivateIP -eq "True") {
+if($IS_CAFE_ENVIRONMENT){
     Write-Host "Replacing master vm name, [$publicNameOfMasterVM], with private ip, [$privateIpOfMasterVM], in kube config file"
-    (Get-Content "$kubeconfigjsonfile").replace("$publicNameOfMasterVM", "$privateIpOfMasterVM") | Set-Content "$kubeconfigjsonfile"
+    (Get-Content "$kubeconfigjsonfile").replace("$publicNameOfMasterVM", "$privateIpOfMasterVM") | Set-Content "$kubeconfigjsonfile"    
 }
-else {
-    Write-Host "Could not connect to private IP, [$privateIpOfMasterVM], so leaving the master VM name [$publicNameOfMasterVM] in the kubeconfig"
-    $canConnectToMasterVM = $(Test-NetConnection $publicNameOfMasterVM -Port 443 -InformationLevel Quiet)
-    if ($canConnectToMasterVM -ne "True") {
-        Write-Error "Cannot connect to master VM: $publicNameOfMasterVM"
-        Test-NetConnection $publicNameOfMasterVM -Port 443
-    }
-}
-
-[System.Net.ServicePointManager]::CertificatePolicy = $previousSecurityPolicy
-[System.Net.ServicePointManager]::SecurityProtocol = $previousSecurityProtocol
 
 Copy-Item -Path "$kubeconfigjsonfile" -Destination "$env:userprofile\.kube\config"
 

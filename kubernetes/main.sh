@@ -42,7 +42,6 @@ while [[ "$input" != "q" ]]; do
     echo "15: Mount Azure Storage as shared folder"
     echo "------ Product Install -------"
     echo "25: Install NLP"
-    echo "26: Install Realtime"
     echo "----- Troubleshooting ----"
     echo "31: Show status of cluster"
     # echo "32: Launch Kubernetes Admin Dashboard"
@@ -59,14 +58,6 @@ while [[ "$input" != "q" ]]; do
     echo "44: Show detailed status of NLP"
     echo "45: Show NLP logs"
     # echo "46: Restart NLP"
-    echo "------ Realtime -----"
-    echo "51: Show status of realtime"
-    echo "52: Show web site urls"
-    echo "53: Show realtime passwords"
-    echo "54: Show Realtime detailed status"
-    echo "55: Show Realtime logs"
-    echo "56: Show urls to download client certificates"
-    echo "57: Show DNS entries for /etc/hosts"
     echo "-----------"
     echo "q: Quit"
 
@@ -99,8 +90,6 @@ while [[ "$input" != "q" ]]; do
     15)  mountAzureFile
         ;;
     25)  curl -sSL https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/nlp/installnlpkubernetes.sh?p=$RANDOM | bash
-        ;;
-    26)  curl -sSL https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/realtime/installrealtimekubernetes.sh?p=$RANDOM | bash
         ;;
     31)  echo "Current cluster: $(kubectl config current-context)"
         kubectl version --short
@@ -167,55 +156,7 @@ while [[ "$input" != "q" ]]; do
                 kubectl logs --tail=20 $pod -n fabricnlp
                 read -n1 -r -p "Press space to continue..." key < /dev/tty
         done
-        ;;
-    51)  kubectl get 'deployments,pods,services,ingress,secrets,persistentvolumeclaims,persistentvolumes,nodes' --namespace=fabricrealtime -o wide
-        ;;
-    52) certhostname=$(ReadSecret certhostname fabricrealtime)
-        echo "Send HL7 to Mirth: server=${certhostname} port=6661"
-        echo "Rabbitmq Queue: server=${certhostname} port=5671"
-        echo "RabbitMq Mgmt UI is at: http://${certhostname}/rabbitmq/"
-        echo "Mirth Mgmt UI is at: http://${certhostname}/mirth/"
-        ;;
-    53)  Write-Host "MySql root password: $(ReadSecretPassword mysqlrootpassword fabricrealtime)"
-            Write-Host "MySql NLP_APP_USER password: $(ReadSecretPassword mysqlpassword fabricrealtime)"
-            Write-Host "certhostname: $(ReadSecret certhostname fabricrealtime)"
-            Write-Host "certpassword: $(ReadSecretPassword certpassword fabricrealtime)"
-            Write-Host "rabbitmq mgmtui user: admin password: $(ReadSecretPassword rabbitmqmgmtuipassword fabricrealtime)"
-        ;;
-    54)  pods=$(kubectl get pods -n fabricrealtime -o jsonpath='{.items[*].metadata.name}')
-        for pod in $pods
-        do
-                Write-Output "=============== Describe Pod: $pod ================="
-                kubectl describe pods $pod -n fabricrealtime
-                read -n1 -r -p "Press space to continue..." key < /dev/tty
-        done
-        ;;
-    55)  pods=$(kubectl get pods -n fabricrealtime -o jsonpath='{.items[*].metadata.name}')
-        for pod in $pods
-        do
-                Write-Output "=============== Logs for Pod: $pod ================="
-                kubectl logs --tail=20 $pod -n fabricrealtime
-                read -n1 -r -p "Press space to continue..." key < /dev/tty
-        done
-        ;;
-    56) certhostname=$(ReadSecret certhostname fabricrealtime)
-        certpassword=$(ReadSecretPassword certpassword fabricrealtime)
-        url="http://${certhostname}/certificates/client/fabricrabbitmquser_client_cert.p12"
-        echo "Download the client certificate:"
-        echo "$url"
-        echo "Double-click and install in Local Machine. password: $certpassword"
-        echo "Open Certificate Management, right click on cert and give everyone access to key"
-        
-        url="http://${certhostname}/certificates/client/fabric_ca_cert.p12"
-        echo "Optional: Download the CA certificate:"
-        echo "$url"
-        echo "Double-click and install in Local Machine. password: $certpassword"
-
-        ;;
-    57) echo "If you didn't setup DNS, add the following entries in your c:\windows\system32\drivers\etc\hosts file to access the urls from your browser"
-        loadBalancerIP="$(dig +short myip.opendns.com @resolver1.opendns.com)"
-        certhostname="$(ReadSecret certhostname fabricrealtime)"
-        echo "$loadBalancerIP $certhostname"            
+        ;;          
     ;;
     q) echo  "Exiting" 
     ;;

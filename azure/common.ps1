@@ -1,6 +1,6 @@
 # This file contains common functions for Azure
 # 
-$versioncommon = "2018.03.23.01"
+$versioncommon = "2018.03.23.02"
 
 Write-Host "---- Including common.ps1 version $versioncommon -----"
 function global:GetCommonVersion() {
@@ -644,7 +644,7 @@ function global:CreateSSHKey([ValidateNotNullOrEmpty()] $resourceGroup, [Validat
         
 }
 
-function global:CheckIfUserLogged() {
+function global:GetLoggedInUserInfo() {
 
     #Create an hashtable variable 
     [hashtable]$Return = @{} 
@@ -659,14 +659,14 @@ function global:CheckIfUserLogged() {
     
     if ( "$loggedInUser" ) {
         $subscriptionName = az account show --query "name"  --output tsv
-        Write-Host "You are currently logged in as [$loggedInUser] into subscription [$subscriptionName]"
+        # Write-Host "You are currently logged in as [$loggedInUser] into subscription [$subscriptionName]"
         
-        Do { $confirmation = Read-Host "Do you want to use this account? (y/n)"}
-        while ([string]::IsNullOrWhiteSpace($confirmation))
+        # Do { $confirmation = Read-Host "Do you want to use this account? (y/n)"}
+        # while ([string]::IsNullOrWhiteSpace($confirmation))
     
-        if ($confirmation -eq 'n') {
-            az login
-        }    
+        # if ($confirmation -eq 'n') {
+        #     az login
+        # }    
     }
     else {
         # login
@@ -1137,7 +1137,7 @@ function global:TestConnection() {
     Write-Host "Testing if we can connect to private IP Address: $privateIpOfMasterVM"
     # from https://stackoverflow.com/questions/11696944/powershell-v3-invoke-webrequest-https-error
     add-type 
-@"
+    @"
     using System.Net;
     using System.Security.Cryptography.X509Certificates;
     public class TrustAllCertsPolicy : ICertificatePolicy {
@@ -1149,7 +1149,7 @@ function global:TestConnection() {
     }
 "@
     $AllProtocols = [System.Net.SecurityProtocolType]'Ssl3,Tls,Tls11,Tls12'
-    $previousSecurityProtocol=[System.Net.ServicePointManager]::SecurityProtocol
+    $previousSecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol
     [System.Net.ServicePointManager]::SecurityProtocol = $AllProtocols
     $previousSecurityPolicy = [System.Net.ServicePointManager]::CertificatePolicy
     [System.Net.ServicePointManager]::CertificatePolicy = New-Object TrustAllCertsPolicy
@@ -1172,6 +1172,36 @@ function global:TestConnection() {
     [System.Net.ServicePointManager]::CertificatePolicy = $previousSecurityPolicy
     [System.Net.ServicePointManager]::SecurityProtocol = $previousSecurityProtocol
         
+}
+
+
+function global:GetUrlAndIPForLoadBalancer([ValidateNotNullOrEmpty()]  $resourceGroup) {
+
+    [hashtable]$Return = @{} 
+
+    $userInfo = $(GetLoggedInUserInfo)
+    $IS_CAFE_ENVIRONMENT = $userInfo.IS_CAFE_ENVIRONMENT
+
+    $loadBalancerIP = kubectl get svc traefik-ingress-service-public -n kube-system -o jsonpath='{.status.loadBalancer.ingress[].ip}' --ignore-not-found=true
+    $loadBalancerInternalIP = kubectl get svc traefik-ingress-service-internal -n kube-system -o jsonpath='{.status.loadBalancer.ingress[].ip}'
+    if ([string]::IsNullOrWhiteSpace($loadBalancerIP)) {
+        $loadBalancerIP = $loadBalancerInternalIP
+    }
+    
+    if ($IS_CAFE_ENVIRONMENT) {
+        $customerid = ReadSecret -secretname customerid
+        $customerid = $customerid.ToLower().Trim()
+        $url="dashboard.$customerid.healthcatalyst.net"
+        $loadBalancerIP =$loadBalancerInternalIP
+    }
+    else {
+        $url = $(GetPublicNameofMasterVM( $resourceGroup)).Name
+    }
+
+
+    $Return.IP = $loadBalancerIP
+    $Return.Url = $url
+    return $Return                 
 }
 #-------------------
 Write-Host "end common.ps1 version $versioncommon"

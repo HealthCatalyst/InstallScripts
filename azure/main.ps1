@@ -1,4 +1,4 @@
-$version = "2018.03.23.01"
+$version = "2018.03.23.02"
 
 # This script is meant for quick & easy install via:
 #   curl -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/azure/main.ps1 | iex;
@@ -267,18 +267,16 @@ while ($userinput -ne "q") {
             Start-Process powershell -verb RunAs -ArgumentList "ipconfig /flushdns"
         } 
         '30' {
-            $loadBalancerIP = kubectl get svc traefik-ingress-service-public -n kube-system -o jsonpath='{.status.loadBalancer.ingress[].ip}' --ignore-not-found=true
-            $loadBalancerInternalIP = kubectl get svc traefik-ingress-service-internal -n kube-system -o jsonpath='{.status.loadBalancer.ingress[].ip}'
-            if ([string]::IsNullOrWhiteSpace($loadBalancerIP)) {
-                $loadBalancerIP = $loadBalancerInternalIP
-            }
-            $customerid = ReadSecret -secretname customerid
-            $customerid = $customerid.ToLower().Trim()
+            $AKS_PERS_RESOURCE_GROUP = ReadSecretValue -secretname azure-secret -valueName resourcegroup
+
+            $urlAndIPForLoadBalancer=$(GetUrlAndIPForLoadBalancer "$AKS_PERS_RESOURCE_GROUP")
+            $url=$($urlAndIPForLoadBalancer.Url)
+            $ip=$($urlAndIPForLoadBalancer.IP)
                                     
             # Invoke-WebRequest -useb -Headers @{"Host" = "nlp.$customerid.healthcatalyst.net"} -Uri http://$loadBalancerIP/nlpweb | Select-Object -Expand Content
     
             Write-Output "To test out the load balancer, open Git Bash and run:"
-            Write-Output "curl --header 'Host: dashboard.$customerid.healthcatalyst.net' 'http://$loadBalancerInternalIP/' -k" 
+            Write-Output "curl --header 'Host: $url' 'http://$ip/' -k" 
             } 
         '31' {
             $DEFAULT_RESOURCE_GROUP = ReadSecretValue -secretname azure-secret -valueName resourcegroup

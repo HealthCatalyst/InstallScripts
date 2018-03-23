@@ -1,4 +1,4 @@
-Write-Host "--- create-bare-metal Version 2018.02.27.03 ----"
+Write-Host "--- create-bare-metal Version 2018.03.23.01 ----"
 
 #
 # This script is meant for quick & easy install via:
@@ -21,7 +21,7 @@ $AKS_SUPPORT_WINDOWS_CONTAINERS = "n"
 
 DownloadAzCliIfNeeded
 
-$AKS_SUBSCRIPTION_ID = $(CheckIfUserLogged).AKS_SUBSCRIPTION_ID
+$AKS_SUBSCRIPTION_ID = $(GetLoggedInUserInfo).AKS_SUBSCRIPTION_ID
 
 # ask for customerid
 Do { $customerid = Read-Host "Health Catalyst Customer ID (e.g., ahmn)"}

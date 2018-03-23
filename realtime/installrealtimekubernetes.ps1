@@ -1,4 +1,4 @@
-Write-Output "Version 2018.03.22.01"
+Write-Output "Version 2018.03.23.01"
 
 # curl -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/realtime/installrealtimekubernetes.ps1 | iex;
 
@@ -12,7 +12,7 @@ Invoke-WebRequest -useb $GITHUB_URL/azure/common.ps1 | Invoke-Expression;
 # Get-Content ./azure/common.ps1 -Raw | Invoke-Expression;
 
 DownloadAzCliIfNeeded
-$userInfo = $(CheckIfUserLogged)
+$userInfo = $(GetLoggedInUserInfo)
 $AKS_SUBSCRIPTION_ID = $userInfo.AKS_SUBSCRIPTION_ID
 $IS_CAFE_ENVIRONMENT = $userInfo.IS_CAFE_ENVIRONMENT
 

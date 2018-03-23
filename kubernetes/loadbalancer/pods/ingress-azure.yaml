@@ -39,10 +39,10 @@ spec:
         - --web
         - --kubernetes
         - --configfile=/config/traefik.toml
-        - --logLevel=DEBUG
+        - --logLevel=INFO
         # - --kubernetes.namespaces=["default","kube-system","fabricnlp"]
         - --kubernetes.labelselector=expose=external
         - --kubernetes.debugloggeneratedtemplate
         - --kubernetes.trace
-        - --debug
+        # - --debug
 ---

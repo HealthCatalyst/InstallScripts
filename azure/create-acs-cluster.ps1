@@ -1,4 +1,4 @@
-Write-output "--- create-acs-cluster Version 2018.03.23.01 ----"
+Write-output "--- create-acs-cluster Version 2018.03.23.02 ----"
 
 #
 # This script is meant for quick & easy install via:
@@ -21,7 +21,7 @@ write-output "Checking if you're already logged in..."
 
 DownloadAzCliIfNeeded
 
-$userInfo=$(CheckIfUserLogged)
+$userInfo=$(GetLoggedInUserInfo)
 $AKS_SUBSCRIPTION_ID = $userInfo.AKS_SUBSCRIPTION_ID
 $IS_CAFE_ENVIRONMENT=$userInfo.IS_CAFE_ENVIRONMENT
 

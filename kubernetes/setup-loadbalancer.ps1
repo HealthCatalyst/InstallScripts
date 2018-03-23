@@ -1,4 +1,4 @@
-Write-output "Version 2018.02.25.01"
+Write-output "Version 2018.03.23.01"
 
 #
 # This script is meant for quick & easy install via:
@@ -23,7 +23,7 @@ $AKS_USE_SSL = ""
 $AKS_IP_WHITELIST = ""
 $SetupNSG = $true
 
-$userInfo = $(CheckIfUserLogged)
+$userInfo = $(GetLoggedInUserInfo)
 $AKS_SUBSCRIPTION_ID = $userInfo.AKS_SUBSCRIPTION_ID
 $IS_CAFE_ENVIRONMENT = $userInfo.IS_CAFE_ENVIRONMENT
 

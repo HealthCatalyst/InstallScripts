@@ -1,6 +1,6 @@
 # This file contains common functions for Azure
 # 
-$versioncommon = "2018.03.23.02"
+$versioncommon = "2018.03.26.01"
 
 Write-Host "---- Including common.ps1 version $versioncommon -----"
 function global:GetCommonVersion() {
@@ -649,7 +649,7 @@ function global:GetLoggedInUserInfo() {
     #Create an hashtable variable 
     [hashtable]$Return = @{} 
 
-    Write-Host "Checking if you're already logged in..."
+    Write-Host "Checking if you're already logged into Azure..."
 
     # to print out the result to screen also use: <command> | Tee-Object -Variable cmdOutput
     $loggedInUser = $(az account show --query "user.name"  --output tsv)

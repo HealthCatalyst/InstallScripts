@@ -1,0 +1,21 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: traefik-ingress-service-internal-open
+  namespace: kube-system
+  labels:
+    k8s-traefik: traefik  
+  annotations:
+spec:
+  selector:
+    k8s-app: traefik-ingress-lb-internal
+  externalTrafficPolicy: "Local"
+  ports:
+    - protocol: TCP
+      port: 80
+      name: web
+    - protocol: TCP
+      port: 443
+      name: ssl      
+  type: LoadBalancer
+---

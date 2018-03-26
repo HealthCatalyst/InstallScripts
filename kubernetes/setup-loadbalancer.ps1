@@ -1,4 +1,4 @@
-Write-output "Version 2018.03.23.01"
+Write-output "Version 2018.03.26.01"
 
 #
 # This script is meant for quick & easy install via:
@@ -391,24 +391,24 @@ if ("$AKS_OPEN_TO_PUBLIC" -eq "y") {
 
     Write-Host "Using Public IP: [$publicip]"
 
-    ReadYamlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "kubernetes/loadbalancer/services/external/loadbalancer-public.yaml" -customerid $customerid `
+    ReadYamlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "kubernetes/loadbalancer/services/external/loadbalancer.external.yaml" -customerid $customerid `
         | Foreach-Object {$_ -replace 'PUBLICIP', "$publicip"} `
         | kubectl create -f -
+    Write-Output "Setting up an internal load balancer"
+    ReadYamlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "kubernetes/loadbalancer/services/external/loadbalancer.internal.open.yaml" -customerid $customerid `
+        | kubectl create -f -
+    
 }
 else {
-    Write-Output "Setting up an internal load balancer"
-    ReadYamlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "kubernetes/loadbalancer/services/external/loadbalancer-public.restricted.yaml" -customerid $customerid `
+    Write-Output "Setting up an external load balancer"
+    ReadYamlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "kubernetes/loadbalancer/services/external/loadbalancer.external.restricted.yaml" -customerid $customerid `
         | kubectl create -f -
+    # Write-Output "Setting up an internal load balancer"
+    Write-Output "Setting up an internal load balancer"
+    ReadYamlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "kubernetes/loadbalancer/services/external/loadbalancer.internal.yaml" -customerid $customerid `
+        | kubectl create -f -
+
 }
-
-if ("$AKS_OPEN_TO_PUBLIC" -ne "y") {
-    # remove IngressPublicIP
-}
-
-# Write-Output "Setting up an internal load balancer"
-ReadYamlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "kubernetes/loadbalancer/services/external/loadbalancer-internal.yaml" -customerid $customerid `
-    | kubectl create -f -
-
 
 $loadBalancerIPResult = GetLoadBalancerIPs
 $EXTERNAL_IP = $loadBalancerIPResult.ExternalIP

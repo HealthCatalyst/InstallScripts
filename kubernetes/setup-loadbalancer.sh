@@ -85,7 +85,7 @@ echo "Downloading $GITHUB_URL/$yamlfile"
 ReadYamlAndReplaceCustomer $GITHUB_URL "$yamlfile" $customerid \
         | kubectl apply -f -
 
-yamlfile="kubernetes/loadbalancer/services/external/loadbalancer-onprem.yaml"
+yamlfile="kubernetes/loadbalancer/services/external/loadbalancer.onprem.yaml"
 echo "Downloading $GITHUB_URL/$yamlfile"
 ReadYamlAndReplaceCustomer $GITHUB_URL "$yamlfile" $customerid \
         | kubectl apply -f -

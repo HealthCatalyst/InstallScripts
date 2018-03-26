@@ -11,9 +11,9 @@ metadata:
     kubernetes.io/ingress.class: traefik
 spec:
   rules:
-  - host: dashboard.CUSTOMERID.healthcatalyst.net
-    http:
-      paths:
-      - backend:
-          serviceName: traefik-dashboard
-          servicePort: 80
+    - http:
+        paths:
+        - path: /dashboard
+          backend:
+            serviceName: traefik-dashboard
+            servicePort: 80  

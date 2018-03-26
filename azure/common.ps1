@@ -1,6 +1,6 @@
 # This file contains common functions for Azure
 # 
-$versioncommon = "2018.03.26.01"
+$versioncommon = "2018.03.26.02"
 
 Write-Host "---- Including common.ps1 version $versioncommon -----"
 function global:GetCommonVersion() {
@@ -849,6 +849,13 @@ function global:FixLoadBalancers([ValidateNotNullOrEmpty()] $resourceGroup) {
 
     # find loadbalancer with name 
     $loadbalancer = "${resourceGroup}-internal"
+
+    # if internal load balancer exists then fix it
+    if ([string]::IsNullOrWhiteSpace($(az network lb show --name $loadbalancer --resource-group $resourceGroup --query "name" -o tsv))) {
+        Write-Host "Loadbalancer $loadbalancer does not exist so no need to fix it"
+        return
+    }
+    
     $loadbalancerBackendPoolName = $resourceGroup # the name may change in the future so we should look it up
     # for each worker VM
     $virtualmachines = az vm list -g $resourceGroup --query "[].name" -o tsv
@@ -892,6 +899,7 @@ function global:FixLoadBalancers([ValidateNotNullOrEmpty()] $resourceGroup) {
             }
         }
     }
+    
 
     # 2. fix the ports in load balancing rules
     Write-Host "Checking if the correct ports are setup in the load balancer"
@@ -1191,8 +1199,8 @@ function global:GetUrlAndIPForLoadBalancer([ValidateNotNullOrEmpty()]  $resource
     if ($IS_CAFE_ENVIRONMENT) {
         $customerid = ReadSecret -secretname customerid
         $customerid = $customerid.ToLower().Trim()
-        $url="dashboard.$customerid.healthcatalyst.net"
-        $loadBalancerIP =$loadBalancerInternalIP
+        $url = "dashboard.$customerid.healthcatalyst.net"
+        $loadBalancerIP = $loadBalancerInternalIP
     }
     else {
         $url = $(GetPublicNameofMasterVM( $resourceGroup)).Name

@@ -1,6 +1,6 @@
 # This file contains common functions for Azure
 # 
-$versioncommon = "2018.03.26.02"
+$versioncommon = "2018.03.26.03"
 
 Write-Host "---- Including common.ps1 version $versioncommon -----"
 function global:GetCommonVersion() {
@@ -850,10 +850,15 @@ function global:FixLoadBalancers([ValidateNotNullOrEmpty()] $resourceGroup) {
     # find loadbalancer with name 
     $loadbalancer = "${resourceGroup}-internal"
 
+    $loadbalancerExists=$(az network lb show --name $loadbalancer --resource-group $resourceGroup --query "name" -o tsv)
+
     # if internal load balancer exists then fix it
-    if ([string]::IsNullOrWhiteSpace($(az network lb show --name $loadbalancer --resource-group $resourceGroup --query "name" -o tsv))) {
+    if ([string]::IsNullOrWhiteSpace($loadbalancerExists)) {
         Write-Host "Loadbalancer $loadbalancer does not exist so no need to fix it"
         return
+    }
+    else {
+        Write-Host "loadbalancer $loadbalancer exists with $loadbalancerExists"
     }
     
     $loadbalancerBackendPoolName = $resourceGroup # the name may change in the future so we should look it up

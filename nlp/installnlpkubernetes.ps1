@@ -1,4 +1,4 @@
-Write-Output "--- installnlpkubernetes.ps1 Version 2018.03.14.01 ---"
+Write-Output "--- installnlpkubernetes.ps1 Version 2018.03.26.01 ---"
 
 # curl -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/nlp/installnlpkubernetes.ps1 | iex;
 
@@ -32,22 +32,6 @@ if ([string]::IsNullOrWhiteSpace($AKS_PERS_RESOURCE_GROUP)) {
 }
 else {
     Write-Output "Using resource group: $AKS_PERS_RESOURCE_GROUP"        
-}
-
-if ( "$loggedInUser" ) {
-    $SUBSCRIPTION_NAME = az account show --query "name"  --output tsv
-    Write-Output "You are currently logged in as [$loggedInUser] into subscription [$SUBSCRIPTION_NAME]"
-
-    Do { $confirmation = Read-Host "Do you want to use this account? (y/n)"}
-    while ([string]::IsNullOrWhiteSpace($confirmation))
-    
-    if ($confirmation -eq 'n') {
-        az login
-    }    
-}
-else {
-    # login
-    az login
 }
 
 if ([string]::IsNullOrWhiteSpace($(kubectl get secret traefik-cert-ahmn -o jsonpath='{.data}' -n kube-system --ignore-not-found=true))) {

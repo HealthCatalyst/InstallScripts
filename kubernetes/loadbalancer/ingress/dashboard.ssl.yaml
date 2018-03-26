@@ -2,7 +2,7 @@
 apiVersion: extensions/v1beta1
 kind: Ingress
 metadata:
-  name: traefik-default-route-ssl
+  name: traefik-dashboard-route-ssl
   namespace: kube-system
   labels:
     k8s-traefik: traefik  

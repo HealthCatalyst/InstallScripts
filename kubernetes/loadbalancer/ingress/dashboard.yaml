@@ -2,7 +2,7 @@
 apiVersion: extensions/v1beta1
 kind: Ingress
 metadata:
-  name: traefik-default-route
+  name: traefik-dashboard-route
   namespace: kube-system
   labels:
     k8s-traefik: traefik

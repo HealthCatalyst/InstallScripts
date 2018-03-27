@@ -1,4 +1,4 @@
-Write-Host "--- create-bare-metal Version 2018.03.23.02 ----"
+Write-Host "--- create-bare-metal Version 2018.03.27.01 ----"
 
 #
 # This script is meant for quick & easy install via:
@@ -16,44 +16,37 @@ Invoke-WebRequest -useb ${GITHUB_URL}/kubernetes/common-kube.ps1?f=$randomstring
 Invoke-WebRequest -useb $GITHUB_URL/azure/common.ps1?f=$randomstring | Invoke-Expression;
 # Get-Content ./azure/common.ps1 -Raw | Invoke-Expression;
 
-$AKS_SERVICE_PRINCIPAL_NAME = ""
-$AKS_SUPPORT_WINDOWS_CONTAINERS = "n"
-
 DownloadAzCliIfNeeded
+
+$config = $(ReadConfigFile).Config
+Write-Host $config
 
 $AKS_SUBSCRIPTION_ID = $(GetLoggedInUserInfo).AKS_SUBSCRIPTION_ID
 
-# ask for customerid
-Do { $customerid = Read-Host "Health Catalyst Customer ID (e.g., ahmn)"}
-while ([string]::IsNullOrWhiteSpace($customerid))
+$customerid=$($config.customerid)
 
 Write-Host "Customer ID: $customerid"
 
-# ask for resource group name to create
-$DEFAULT_RESOURCE_GROUP = "Test-Kub-$($customerid.ToUpper())-RG"
+$AKS_PERS_RESOURCE_GROUP = $config.azure.resourceGroup
+$AKS_PERS_LOCATION = $config.azure.location
 
-$ResourceGroupInfo = GetResourceGroupAndLocation -defaultResourceGroup $DEFAULT_RESOURCE_GROUP
-$AKS_PERS_RESOURCE_GROUP = $ResourceGroupInfo.AKS_PERS_RESOURCE_GROUP
-$AKS_PERS_LOCATION = $ResourceGroupInfo.AKS_PERS_LOCATION
+CreateResourceGroupIfNotExists -resourceGroup $AKS_PERS_RESOURCE_GROUP -location $AKS_PERS_LOCATION
 
-$AKS_SUPPORT_WINDOWS_CONTAINERS = Read-Host "Support Windows containers (y/n) (default: n)"
-if ([string]::IsNullOrWhiteSpace($AKS_SUPPORT_WINDOWS_CONTAINERS)) {
-    $AKS_SUPPORT_WINDOWS_CONTAINERS = "n"
-}
+$AKS_SUPPORT_WINDOWS_CONTAINERS = $config.azure.create_windows_containers
 
 # service account to own the resources
-$AKS_SERVICE_PRINCIPAL_NAME = Read-Host "Service account to use (default: ${AKS_PERS_RESOURCE_GROUP}Kubernetes)"
+$AKS_SERVICE_PRINCIPAL_NAME = $config.service_principal.name
+
 if ([string]::IsNullOrWhiteSpace($AKS_SERVICE_PRINCIPAL_NAME)) {
     $AKS_SERVICE_PRINCIPAL_NAME = "${AKS_PERS_RESOURCE_GROUP}Kubernetes"
 }
 
-# where to store the SSH keys on local machine
-$AKS_LOCAL_FOLDER = Read-Host "Folder to store SSH keys (default: c:\kubernetes)"
+$AKS_LOCAL_FOLDER = $config.local_folder
 
 if ([string]::IsNullOrWhiteSpace($AKS_LOCAL_FOLDER)) {$AKS_LOCAL_FOLDER = "C:\kubernetes"}
 
 if (!(Test-Path -Path "$AKS_LOCAL_FOLDER")) {
-    Write-Host "$AKS_LOCAL_FOLDER does not exist.  Creating it..."
+    Write-Output "$AKS_LOCAL_FOLDER does not exist.  Creating it..."
     New-Item -ItemType directory -Path $AKS_LOCAL_FOLDER
 }
 
@@ -84,19 +77,20 @@ else {
     }        
 }
 
+$AKS_PERS_STORAGE_ACCOUNT_NAME = $(CreateStorageIfNotExists -resourceGroup $AKS_PERS_RESOURCE_GROUP -deleteStorageAccountIfExists $config.storage_account.delete_if_exists).AKS_PERS_STORAGE_ACCOUNT_NAME
+
+$AKS_VNET_NAME = $config.networking.vnet
+$AKS_SUBNET_NAME = $config.networking.subnet
+$AKS_SUBNET_RESOURCE_GROUP = $config.networking.subnet_resource_group
 
 # see if the user wants to use a specific virtual network
-$VnetInfo = GetVnet -subscriptionId $AKS_SUBSCRIPTION_ID
-$AKS_VNET_NAME = $VnetInfo.AKS_VNET_NAME
-$AKS_SUBNET_NAME = $VnetInfo.AKS_SUBNET_NAME
-$AKS_SUBNET_RESOURCE_GROUP = $VnetInfo.AKS_SUBNET_RESOURCE_GROUP
-$AKS_SUBNET_ID = $VnetInfo.AKS_SUBNET_ID
+$VnetInfo = GetVnetInfo -subscriptionId $AKS_SUBSCRIPTION_ID -subnetResourceGroup $AKS_SUBNET_RESOURCE_GROUP -vnetName $AKS_VNET_NAME -subnetName $AKS_SUBNET_NAME
+$AKS_FIRST_STATIC_IP = $VnetInfo.AKS_FIRST_STATIC_IP
+$AKS_SUBNET_CIDR = $VnetInfo.AKS_SUBNET_CIDR
 
 CleanResourceGroup -resourceGroup ${AKS_PERS_RESOURCE_GROUP} -location $AKS_PERS_LOCATION -vnet $AKS_VNET_NAME `
     -subnet $AKS_SUBNET_NAME -subnetResourceGroup $AKS_SUBNET_RESOURCE_GROUP `
     -storageAccount $AKS_PERS_STORAGE_ACCOUNT_NAME
-
-$AKS_PERS_STORAGE_ACCOUNT_NAME = $(CreateStorageIfNotExists -resourceGroup $AKS_PERS_RESOURCE_GROUP).AKS_PERS_STORAGE_ACCOUNT_NAME
 
 Write-Host "Using Storage Account: $AKS_PERS_STORAGE_ACCOUNT_NAME"
 

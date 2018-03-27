@@ -1451,16 +1451,22 @@ function global:GetConfigFile() {
 
     [hashtable]$Return = @{} 
 
-    $folder = "c:\kubernetes\configs"
+    $folder = $ENV:CatalystConfigPath
+    if ([string]::IsNullOrEmpty("$folder")) {
+        $folder = "c:\kubernetes\configs"
+    }
     if (Test-Path -Path $folder -PathType Container) {
+        Write-Host "Looking in $folder for *.json files"
+        Write-Host "You can CatalystConfigPath environment variable to use a different path"
+
         $files = Get-ChildItem "$folder" -Filter *.json
 
         if ($files.Count -gt 0) {
-            Write-Output "------  Files in $folder -------"
+            Write-Host "Choose config file from $folder"
             for ($i = 1; $i -le $files.count; $i++) {
                 Write-Host "$i. $($($files[$i-1]).Name)"
             }    
-            Write-Output "------  End Files -------"
+            Write-Host "-------------"
             $index = Read-Host "Enter number of file to use (1 - $($files.count))"
             $Return.FilePath = $($($files[$index - 1]).FullName)
             return $Return

@@ -1,0 +1,34 @@
+{
+    "azure": {
+        "resourceGroup": "fabrickubernetes",
+        "location": "eastus",
+        "create_windows_containers": false,
+        "use_azure_networking": true
+    },
+    "service_principal": {
+        "name": "",
+        "delete_if_exists": true
+    },
+    "local_folder": "c:\\kubernetes",
+    "customerid": "hcut",
+    "ssl": false,
+    "allow_kubectl_from_outside_vnet": true,
+    "ingress": {
+        "external": "public",
+        "internal": "public",
+        "external_ip_whitelist": ""
+    },
+    "networking": {
+        "vnet": "kubnettest",
+        "subnet": "kubsubnet",
+        "subnet_resource_group": "Imran"
+    },
+    "network_security_group": {
+        "name": "",
+        "create_nsg_rules": false
+    },
+    "dns": {
+        "create_dns_entries": false,
+        "dns_resource_group": "dns"
+    }
+}

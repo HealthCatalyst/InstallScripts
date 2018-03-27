@@ -850,7 +850,7 @@ function global:FixLoadBalancers([ValidateNotNullOrEmpty()] $resourceGroup) {
     # find loadbalancer with name 
     $loadbalancer = "${resourceGroup}-internal"
 
-    $loadbalancerExists=$(az network lb show --name $loadbalancer --resource-group $resourceGroup --query "name" -o tsv)
+    $loadbalancerExists = $(az network lb show --name $loadbalancer --resource-group $resourceGroup --query "name" -o tsv)
 
     # if internal load balancer exists then fix it
     if ([string]::IsNullOrWhiteSpace($loadbalancerExists)) {
@@ -1215,6 +1215,207 @@ function global:GetUrlAndIPForLoadBalancer([ValidateNotNullOrEmpty()]  $resource
     $Return.IP = $loadBalancerIP
     $Return.Url = $url
     return $Return                 
+}
+
+function global:SetupWAF() {
+    # not working yet
+
+    # $nsgname = "IngressNSG"
+    # $iprangetoallow = ""
+    # if ([string]::IsNullOrEmpty($(az network nsg show --name "$nsgname" --resource-group "$AKS_PERS_RESOURCE_GROUP" ))) {
+    #     az network nsg create --name "$nsgname" --resource-group "$AKS_PERS_RESOURCE_GROUP"
+    # }
+
+    # if ([string]::IsNullOrEmpty($(az network nsg rule show --nsg-name "$nsgname" --name "IPFilter" --resource-group "$AKS_PERS_RESOURCE_GROUP" ))) {
+    #     # Rule priority, between 100 (highest priority) and 4096 (lowest priority). Must be unique for each rule in the collection.
+    #     # Space-separated list of CIDR prefixes or IP ranges. Alternatively, specify ONE of 'VirtualNetwork', 'AzureLoadBalancer', 'Internet' or '*' to match all IPs.
+    #     az network nsg rule create --name "IPFilter" `
+    #         --nsg-name "$nsgname" `
+    #         --priority 220 `
+    #         --resource-group "$AKS_PERS_RESOURCE_GROUP" `
+    #         --description "IP Filtering" `
+    #         --access "Allow" `
+    #         --source-address-prefixes "$iprangetoallow"
+    # }
+
+    # Write-Output "Creating network security group to restrict IP address"
+
+    Write-Output "Setting up Azure Application Gateway"
+
+    $gatewayName = "${customerid}Gateway"
+
+    az network application-gateway show --name "$gatewayName" --resource-group "$AKS_PERS_RESOURCE_GROUP"
+    $gatewayipName = "${gatewayName}PublicIP"
+
+    Write-Output "Checking if Application Gateway already exists"
+    if ([string]::IsNullOrEmpty($(az network application-gateway show --name "$gatewayName" --resource-group "$AKS_PERS_RESOURCE_GROUP" ))) {
+
+        # note application gateway provides no way to specify the resourceGroup of the vnet so we HAVE to create the App Gateway in the same resourceGroup
+        # as the vnet and NOT in the resourceGroup of the cluster
+        $gatewayip = az network public-ip show -g $AKS_PERS_RESOURCE_GROUP -n "$gatewayipName" --query "ipAddress" -o tsv;
+        if ([string]::IsNullOrWhiteSpace($gatewayip)) {
+            az network public-ip create -g $AKS_PERS_RESOURCE_GROUP -n "$gatewayipName" --location $AKS_PERS_LOCATION --allocation-method Dynamic
+
+            # Write-Output "Waiting for IP address to get assigned to $gatewayipName"
+            # Do { 
+            #     Start-Sleep -Seconds 10
+            #     Write-Output "."                
+            #     $gatewayip = az network public-ip show -g $AKS_PERS_RESOURCE_GROUP -n "$gatewayipName" --query "ipAddress" -o tsv; 
+            # }
+            # while ([string]::IsNullOrWhiteSpace($gatewayip))
+        }  
+    
+        # Write-Host "Using Gateway IP: [$gatewayip]"
+
+        $mysubnetid = "/subscriptions/${AKS_SUBSCRIPTION_ID}/resourceGroups/${AKS_SUBNET_RESOURCE_GROUP}/providers/Microsoft.Network/virtualNetworks/${AKS_VNET_NAME}/subnets/${AKS_SUBNET_NAME}"
+            
+        Write-Output "Using subnet id: $mysubnetid"
+
+        Write-Output "Creating new application gateway with WAF (This can take 10-15 minutes)"
+        # https://docs.microsoft.com/en-us/cli/azure/network/application-gateway?view=azure-cli-latest#az_network_application_gateway_create
+
+        az network application-gateway create `
+            --sku WAF_Medium `
+            --name "$gatewayName" `
+            --location "$AKS_PERS_LOCATION" `
+            --resource-group "$AKS_PERS_RESOURCE_GROUP" `
+            --vnet-name "$AKS_VNET_NAME" `
+            --subnet "$mysubnetid" `
+            --public-ip-address "$gatewayipName" `
+            --servers "$EXTERNAL_IP"  `
+    
+        # https://docs.microsoft.com/en-us/azure/application-gateway/application-gateway-faq
+
+        Write-Output "Waiting for Azure Application Gateway to be created."
+        az network application-gateway wait `
+            --name "$gatewayName" `
+            --resource-group "$AKS_PERS_RESOURCE_GROUP" `
+            --created
+    }
+    else {
+
+        # # set public IP
+        $frontendPoolName = az network application-gateway show --name "$gatewayName" --resource-group "$AKS_SUBNET_RESOURCE_GROUP" --query "frontendIpConfigurations[0].name" -o tsv
+        Write-Output "Setting $gatewayipName as IP for frontend pool $frontendPoolName"
+        az network application-gateway frontend-ip update `
+            --gateway-name "$gatewayName" `
+            --resource-group "$AKS_PERS_RESOURCE_GROUP" `
+            --name "$frontendPoolName" `
+            --public-ip-address "$gatewayipName"
+
+        $backendPoolName = az network application-gateway show --name "$gatewayName" --resource-group "$AKS_SUBNET_RESOURCE_GROUP" --query "backendAddressPools[0].name" -o tsv
+        Write-Output "Setting $EXTERNAL_IP as IP for backend pool $backendPoolName"
+        # set backend private IP
+        az network application-gateway address-pool update  `
+            --gateway-name "$gatewayName" `
+            --resource-group "$AKS_PERS_RESOURCE_GROUP" `
+            --name "$backendPoolName" `
+            --servers "$EXTERNAL_IP"
+
+        az network application-gateway wait `
+            --name "$gatewayName" `
+            --resource-group "$AKS_PERS_RESOURCE_GROUP" `
+            --updated            
+    }
+
+    if ($(az network application-gateway waf-config show --gateway-name "$gatewayName" --resource-group "$AKS_PERS_RESOURCE_GROUP" --query "firewallMode" -o tsv) -eq "Prevention") {
+    }
+    else {
+        Write-Output "Enabling Prevention mode of firewall"
+        az network application-gateway waf-config set `
+            --enabled true `
+            --firewall-mode Prevention `
+            --gateway-name "$gatewayName" `
+            --resource-group "$AKS_PERS_RESOURCE_GROUP" `
+            --rule-set-type "OWASP" `
+            --rule-set-version "3.0"            
+    }
+    
+    # if ([string]::IsNullOrEmpty($(az network application-gateway probe show --gateway-name "$gatewayName" --name "MyCustomProbe" --resource-group "$AKS_SUBNET_RESOURCE_GROUP"))) {
+    #     # create a custom probe
+    #     az network application-gateway probe create --gateway-name "$gatewayName" `
+    #         --resource-group "$AKS_SUBNET_RESOURCE_GROUP" `
+    #         --name "MyCustomProbe" `
+    #         --path "/" `
+    #         --protocol "Http" `
+    #         --host "dashboard.${dnsrecordname}"
+
+    #     # associate custom probe with HttpSettings: appGatewayBackendHttpSettings
+    #     az network application-gateway http-settings update --gateway-name "$gatewayName" `
+    #         --name "appGatewayBackendHttpSettings" `
+    #         --resource-group "$AKS_SUBNET_RESOURCE_GROUP" `
+    #         --probe "MyCustomProbe" `
+    #         --enable-probe true `
+    #         --host-name "dashboard.${dnsrecordname}"
+    # }
+
+
+    Write-Output "Checking for health of backend pool"
+    az network application-gateway show-backend-health `
+        --name "$gatewayName" `
+        --resource-group "$AKS_PERS_RESOURCE_GROUP" `
+        --query "backendAddressPools[0].backendHttpSettingsCollection[0].servers[0].health"
+
+    # set EXTERNAL_IP to be the IP of the Application Gateway
+    $EXTERNAL_IP = az network public-ip show -g $AKS_PERS_RESOURCE_GROUP -n "$gatewayipName" --query "ipAddress" -o tsv;
+}
+function global:ConfigureWAF() {
+    # not working yet
+    $publicip = az network public-ip show -g $AKS_PERS_RESOURCE_GROUP -n IngressPublicIP --query "ipAddress" -o tsv;
+    if ([string]::IsNullOrWhiteSpace($publicip)) {
+        az network public-ip create -g $AKS_PERS_RESOURCE_GROUP -n IngressPublicIP --location $AKS_PERS_LOCATION --allocation-method Static
+        $publicip = az network public-ip show -g $AKS_PERS_RESOURCE_GROUP -n IngressPublicIP --query "ipAddress" -o tsv;
+    }  
+
+    Write-Host "Using Public IP: [$publicip]"
+    # get vnet and subnet name
+    Do { $confirmation = Read-Host "Would you like to connect the Azure WAF to an existing virtual network? (y/n)"}
+    while ([string]::IsNullOrWhiteSpace($confirmation))
+
+    if ($confirmation -eq 'y') {
+        Write-Output "Finding existing vnets..."
+        # az network vnet list --query "[].[name,resourceGroup ]" -o tsv    
+
+        $vnets = az network vnet list --query "[].[name]" -o tsv
+
+        Do { 
+            Write-Output "------  Existing vnets -------"
+            for ($i = 1; $i -le $vnets.count; $i++) {
+                Write-Host "$i. $($vnets[$i-1])"
+            }    
+            Write-Output "------  End vnets -------"
+
+            $index = Read-Host "Enter number of vnet to use (1 - $($vnets.count))"
+            $AKS_VNET_NAME = $($vnets[$index - 1])
+        }
+        while ([string]::IsNullOrWhiteSpace($AKS_VNET_NAME))    
+
+        if ("$AKS_VNET_NAME") {
+        
+            # Do { $AKS_SUBNET_RESOURCE_GROUP = Read-Host "Resource Group of Virtual Network"}
+            # while ([string]::IsNullOrWhiteSpace($AKS_SUBNET_RESOURCE_GROUP)) 
+
+            $AKS_SUBNET_RESOURCE_GROUP = az network vnet list --query "[?name == '$AKS_VNET_NAME'].resourceGroup" -o tsv
+            Write-Output "Using subnet resource group: [$AKS_SUBNET_RESOURCE_GROUP]"
+
+            Write-Output "Finding existing subnets in $AKS_VNET_NAME ..."
+            $subnets = az network vnet subnet list --resource-group $AKS_SUBNET_RESOURCE_GROUP --vnet-name $AKS_VNET_NAME --query "[].name" -o tsv
+        
+            Do { 
+                Write-Output "------  Subnets in $AKS_VNET_NAME -------"
+                for ($i = 1; $i -le $subnets.count; $i++) {
+                    Write-Host "$i. $($subnets[$i-1])"
+                }    
+                Write-Output "------  End Subnets -------"
+
+                Write-Host "NOTE: Each customer should have their own gateway subnet.  This subnet should be different than the cluster subnet"
+                $index = Read-Host "Enter number of subnet to use (1 - $($subnets.count))"
+                $AKS_SUBNET_NAME = $($subnets[$index - 1])
+            }
+            while ([string]::IsNullOrWhiteSpace($AKS_SUBNET_NAME)) 
+
+        }
+    }  
 }
 #-------------------
 Write-Host "end common.ps1 version $versioncommon"

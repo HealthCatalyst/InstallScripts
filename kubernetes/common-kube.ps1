@@ -137,6 +137,25 @@ function global:ReadYamlAndReplaceCustomer([ValidateNotNullOrEmpty()] $baseUrl, 
     }
 }
 
+# $files is a list of files separated by spaces
+function global:DownloadAndDeployYamlFiles([ValidateNotNullOrEmpty()] $folder, [ValidateNotNullOrEmpty()] $files, [ValidateNotNullOrEmpty()] $baseUrl, [ValidateNotNullOrEmpty()] $customerid, $public_ip ){
+    [hashtable]$Return = @{} 
+
+    foreach ($file in $files.Split(" ")) { 
+        if([string]::IsNullOrEmpty($public_ip)){
+            ReadYamlAndReplaceCustomer -baseUrl $baseUrl -templateFile "${folder}/${file}" -customerid $customerid | kubectl apply -f -
+        }
+        else
+        {
+            ReadYamlAndReplaceCustomer -baseUrl $baseUrl -templateFile "${folder}/${file}" -customerid $customerid `
+            | Foreach-Object {$_ -replace 'PUBLICIP', "$publicip"} `
+            | kubectl apply -f -
+        }
+    }
+
+    return $Return
+}
+
 # from https://github.com/majkinetor/posh/blob/master/MM_Network/Stop-ProcessByPort.ps1
 function global:Stop-ProcessByPort( [ValidateNotNullOrEmpty()] [int] $Port ) {    
     $netstat = netstat.exe -ano | Select-Object -Skip 4

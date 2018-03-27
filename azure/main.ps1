@@ -1,4 +1,4 @@
-$version = "2018.03.23.02"
+$version = "2018.03.27.01"
 
 # This script is meant for quick & easy install via:
 #   curl -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/azure/main.ps1 | iex;
@@ -70,7 +70,7 @@ while ($userinput -ne "q") {
             $index = Read-Host "Enter number of folder to use (1 - $($folders.count))"
             $folderToUse = $($folders[$index - 1])
 
-            SwitchToKubCluster -folderToUse $folderToUse
+            SwitchToKubCluster -folderToUse "C:\kubernetes\$folderToUse"
         } 
         '1' {
             Invoke-WebRequest -useb $GITHUB_URL/azure/create-acs-cluster.ps1?f=$randomstring | Invoke-Expression;

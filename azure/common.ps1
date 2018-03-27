@@ -1457,7 +1457,7 @@ function global:GetConfigFile() {
     }
     if (Test-Path -Path $folder -PathType Container) {
         Write-Host "Looking in $folder for *.json files"
-        Write-Host "You can CatalystConfigPath environment variable to use a different path"
+        Write-Host "You can set CatalystConfigPath environment variable to use a different path"
 
         $files = Get-ChildItem "$folder" -Filter *.json
 

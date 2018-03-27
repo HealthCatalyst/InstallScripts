@@ -12,13 +12,13 @@ Write-Host "GITHUB_URL: $GITHUB_URL"
 $set = "abcdefghijklmnopqrstuvwxyz0123456789".ToCharArray()
 $randomstring += $set | Get-Random
 
-# Invoke-WebRequest -useb ${GITHUB_URL}/kubernetes/common-kube.ps1?f=$randomstring | Invoke-Expression;
-Get-Content ./kubernetes/common-kube.ps1 -Raw | Invoke-Expression;
+Invoke-WebRequest -useb ${GITHUB_URL}/kubernetes/common-kube.ps1?f=$randomstring | Invoke-Expression;
+# Get-Content ./kubernetes/common-kube.ps1 -Raw | Invoke-Expression;
 
 Invoke-WebRequest -useb $GITHUB_URL/azure/common.ps1?f=$randomstring | Invoke-Expression;
 # Get-Content ./azure/common.ps1 -Raw | Invoke-Expression;
 
-$config = $(Get-Content ./deployments/fabrickubernetes.json -Raw | ConvertFrom-Json)
+$config = $(ReadConfigFile).Config
 Write-Host $config
 
 $AKS_IP_WHITELIST = ""

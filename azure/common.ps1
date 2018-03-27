@@ -1446,5 +1446,54 @@ function global:ConfigureWAF() {
         }
     }  
 }
+
+function global:GetConfigFile() {
+
+    [hashtable]$Return = @{} 
+
+    $folder = "c:\kubernetes\configs"
+    if (Test-Path -Path $folder -PathType Container) {
+        $files = Get-ChildItem "$folder" -Filter *.json
+
+        if ($files.Count -gt 0) {
+            Write-Output "------  Files in $folder -------"
+            for ($i = 1; $i -le $files.count; $i++) {
+                Write-Host "$i. $($($files[$i-1]).Name)"
+            }    
+            Write-Output "------  End Files -------"
+            $index = Read-Host "Enter number of file to use (1 - $($files.count))"
+            $Return.FilePath = $($($files[$index - 1]).FullName)
+            return $Return
+        }
+    }
+
+    Write-Host "Sample config file: https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/deployments/sample.json"
+    Do { $fullpath = Read-Host "Type full path to config file: "}
+    while ([string]::IsNullOrWhiteSpace($fullpath))
+    
+    $Return.FilePath = $fullpath
+    return $Return
+}
+
+function global:ReadConfigFile() {
+    [hashtable]$Return = @{} 
+
+    $configfilepath = $(GetConfigFile).FilePath
+
+    Write-Host "Reading config from $configfilepath"
+    $config = $(Get-Content $configfilepath -Raw | ConvertFrom-Json)
+
+    $Return.Config = $config
+    return $Return
+}
+
+function global:SaveConfigFile() {
+    [hashtable]$Return = @{} 
+
+    New-Item -ItemType Directory -Force -Path $folder
+
+    return $Return
+}
+
 #-------------------
 Write-Host "end common.ps1 version $versioncommon"

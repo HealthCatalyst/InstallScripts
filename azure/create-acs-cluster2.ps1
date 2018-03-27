@@ -10,15 +10,15 @@ $GITHUB_URL = "https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/m
 Invoke-WebRequest -useb ${GITHUB_URL}/kubernetes/common-kube.ps1 | Invoke-Expression;
 # Get-Content ./kubernetes/common-kube.ps1 -Raw | Invoke-Expression;
 
-# Invoke-WebRequest -useb $GITHUB_URL/azure/common.ps1 | Invoke-Expression;
-Get-Content ./azure/common.ps1 -Raw | Invoke-Expression;
+Invoke-WebRequest -useb $GITHUB_URL/azure/common.ps1 | Invoke-Expression;
+# Get-Content ./azure/common.ps1 -Raw | Invoke-Expression;
 
 
 write-output "Checking if you're already logged in..."
 
 DownloadAzCliIfNeeded
 
-$config = $(Get-Content ./deployments/fabrickubernetes.json -Raw | ConvertFrom-Json)
+$config = $(ReadConfigFile).Config
 Write-Host $config
 
 $userInfo=$(GetLoggedInUserInfo)

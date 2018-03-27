@@ -1,6 +1,6 @@
 # This file contains common functions for Azure
 # 
-$versioncommon = "2018.03.26.03"
+$versioncommon = "2018.03.27.01"
 
 Write-Host "---- Including common.ps1 version $versioncommon -----"
 function global:GetCommonVersion() {
@@ -212,16 +212,16 @@ function global:CleanResourceGroup([ValidateNotNullOrEmpty()] $resourceGroup, [V
     if ($resourceGroupExists -eq "true") {
 
         if ($(az vm list -g $resourceGroup --query "[].id" -o tsv).length -ne 0) {
-            Write-Host "The resource group [${resourceGroup}] already exists with the following VMs"
+            Write-Warning "The resource group [${resourceGroup}] already exists with the following VMs"
             az resource list --resource-group "${resourceGroup}" --resource-type "Microsoft.Compute/virtualMachines" --query "[].id"
         
-            Do { $confirmation = Read-Host "Would you like to continue (all above resources will be deleted)? (y/n)"}
-            while ([string]::IsNullOrWhiteSpace($confirmation)) 
+            # Do { $confirmation = Read-Host "Would you like to continue (all above resources will be deleted)? (y/n)"}
+            # while ([string]::IsNullOrWhiteSpace($confirmation)) 
 
-            if ($confirmation -eq 'n') {
-                Read-Host "Hit ENTER to exit"
-                exit 0
-            }    
+            # if ($confirmation -eq 'n') {
+            #     Read-Host "Hit ENTER to exit"
+            #     exit 0
+            # }    
         }
         else {
             Write-Host "The resource group [${resourceGroup}] already exists but has no VMs"
@@ -330,13 +330,12 @@ function global:CleanResourceGroup([ValidateNotNullOrEmpty()] $resourceGroup, [V
 
 }
 
-function global:CreateStorageIfNotExists([ValidateNotNullOrEmpty()] $resourceGroup) {
+function global:CreateStorageIfNotExists([ValidateNotNullOrEmpty()] $resourceGroup, $deleteStorageAccountIfExists) {
     #Create an hashtable variable 
     [hashtable]$Return = @{} 
 
     $location = az group show --name $resourceGroup --query "location" -o tsv
 
-    $storageAccountName = Read-Host "Storage Account Name (leave empty for default)"
     if ([string]::IsNullOrWhiteSpace($storageAccountName)) {
         $storageAccountName = "${resourceGroup}storage"
         # remove non-alphanumeric characters and use lowercase since azure doesn't allow those in a storage account
@@ -352,16 +351,18 @@ function global:CreateStorageIfNotExists([ValidateNotNullOrEmpty()] $resourceGro
     $storageAccountConnectionString = az storage account show-connection-string --name $storageAccountName --resource-group $resourceGroup --query "connectionString" --output tsv
     [Console]::ResetColor()
     if (![string]::IsNullOrEmpty($storageAccountConnectionString)) {
-        Write-Warning "Storage account, [$storageAccountName], already exists.  Deleting it will remove this data permanently"
-        Do { $confirmation = Read-Host "Delete storage account: (WARNING: deletes data) (y/n)"}
-        while ([string]::IsNullOrWhiteSpace($confirmation)) 
+        if ($deleteStorageAccountIfExists) {
+            Write-Warning "Storage account, [$storageAccountName], already exists.  Deleting it will remove this data permanently"
+            Do { $confirmation = Read-Host "Delete storage account: (WARNING: deletes data) (y/n)"}
+            while ([string]::IsNullOrWhiteSpace($confirmation)) 
     
-        if ($confirmation -eq 'y') {
-            az storage account delete -n $storageAccountName -g $resourceGroup --yes
-            Write-Host "Creating storage account: [${storageAccountName}]"
-            # https://docs.microsoft.com/en-us/azure/storage/common/storage-quickstart-create-account?tabs=azure-cli
-            az storage account create -n $storageAccountName -g $resourceGroup -l $location --kind StorageV2 --sku Standard_LRS                       
-        }    
+            if ($confirmation -eq 'y') {
+                az storage account delete -n $storageAccountName -g $resourceGroup --yes
+                Write-Host "Creating storage account: [${storageAccountName}]"
+                # https://docs.microsoft.com/en-us/azure/storage/common/storage-quickstart-create-account?tabs=azure-cli
+                az storage account create -n $storageAccountName -g $resourceGroup -l $location --kind StorageV2 --sku Standard_LRS                       
+            }    
+        }
     }
     else {
         Write-Host "Checking if storage account name is valid"
@@ -460,34 +461,7 @@ function global:GetVnet([ValidateNotNullOrEmpty()] $subscriptionId) {
             }        
         }
     
-        # verify the subnet exists
-        $mysubnetid = "/subscriptions/${subscriptionId}/resourceGroups/${subnetResourceGroup}/providers/Microsoft.Network/virtualNetworks/${vnetName}/subnets/${subnetName}"
-    
-        $subnetexists = az resource show --ids $mysubnetid --query "id" -o tsv
-        if (!"$subnetexists") {
-            Write-Host "The subnet was not found: $mysubnetid"
-            Read-Host "Hit ENTER to exit"
-            exit 0        
-        }
-        else {
-            Write-Host "Found subnet: [$mysubnetid]"
-        }
-        
-        Write-Host "Looking up CIDR for Subnet: [${subnetName}]"
-        $subnetCidr = az network vnet subnet show --name ${subnetName} --resource-group ${subnetResourceGroup} --vnet-name ${vnetname} --query "addressPrefix" --output tsv
-    
-        Write-Host "Subnet CIDR=[$subnetCidr]"
-        # suggest and ask for the first static IP to use
-        $firstStaticIP = ""
-        $suggestedFirstStaticIP = Get-FirstIP -ip ${subnetCidr}
-    
-        # $firstStaticIP = Read-Host "First static IP: (default: $suggestedFirstStaticIP )"
-        
-        if ([string]::IsNullOrWhiteSpace($firstStaticIP)) {
-            $firstStaticIP = "$suggestedFirstStaticIP"
-        }
-    
-        Write-Host "First static IP=[${firstStaticIP}]"
+        $vnetinfo = $(GetVnetInfo -subscriptionId $subscriptionId -subnetResourceGroup $subnetResourceGroup -vnetName $vnetName -subnetName $subnetName)
     }
     else {
         # create a vnet
@@ -501,14 +475,53 @@ function global:GetVnet([ValidateNotNullOrEmpty()] $subscriptionId) {
     $Return.AKS_VNET_NAME = $vnetName
     $Return.AKS_SUBNET_NAME = $subnetName
     $Return.AKS_SUBNET_RESOURCE_GROUP = $subnetResourceGroup
-    $Return.AKS_FIRST_STATIC_IP = $firstStaticIP
-    $Return.AKS_SUBNET_ID = $mysubnetid
-    $Return.AKS_SUBNET_CIDR = $subnetCidr
+    $Return.AKS_FIRST_STATIC_IP = $vnetinfo.AKS_FIRST_STATIC_IP
+    $Return.AKS_SUBNET_ID = $vnetinfo.AKS_SUBNET_ID
+    $Return.AKS_SUBNET_CIDR = $vnetinfo.AKS_SUBNET_CIDR
 
     #Return the hashtable
     Return $Return     
 }
 
+function global:GetVnetInfo([ValidateNotNullOrEmpty()] $subscriptionId, [ValidateNotNullOrEmpty()] $subnetResourceGroup, [ValidateNotNullOrEmpty()] $vnetName, [ValidateNotNullOrEmpty()] $subnetName) {
+    [hashtable]$Return = @{} 
+
+    # verify the subnet exists
+    $mysubnetid = "/subscriptions/${subscriptionId}/resourceGroups/${subnetResourceGroup}/providers/Microsoft.Network/virtualNetworks/${vnetName}/subnets/${subnetName}"
+    
+    $subnetexists = az resource show --ids $mysubnetid --query "id" -o tsv
+    if (!"$subnetexists") {
+        Write-Host "The subnet was not found: $mysubnetid"
+        Read-Host "Hit ENTER to exit"
+        exit 0        
+    }
+    else {
+        Write-Host "Found subnet: [$mysubnetid]"
+    }
+        
+    Write-Host "Looking up CIDR for Subnet: [${subnetName}]"
+    $subnetCidr = az network vnet subnet show --name ${subnetName} --resource-group ${subnetResourceGroup} --vnet-name ${vnetname} --query "addressPrefix" --output tsv
+    
+    Write-Host "Subnet CIDR=[$subnetCidr]"
+    # suggest and ask for the first static IP to use
+    $firstStaticIP = ""
+    $suggestedFirstStaticIP = Get-FirstIP -ip ${subnetCidr}
+    
+    # $firstStaticIP = Read-Host "First static IP: (default: $suggestedFirstStaticIP )"
+        
+    if ([string]::IsNullOrWhiteSpace($firstStaticIP)) {
+        $firstStaticIP = "$suggestedFirstStaticIP"
+    }
+    
+    Write-Host "First static IP=[${firstStaticIP}]"
+
+    $Return.AKS_FIRST_STATIC_IP = $firstStaticIP
+    $Return.AKS_SUBNET_ID = $mysubnetid
+    $Return.AKS_SUBNET_CIDR = $subnetCidr
+    
+    #Return the hashtable
+    Return $Return                 
+}
 function global:Test-CommandExists {
     Param ($command)
     # from https://blogs.technet.microsoft.com/heyscriptingguy/2013/02/19/use-a-powershell-function-to-see-if-a-command-exists/
@@ -551,7 +564,7 @@ function global:AddFolderToPathEnvironmentVariable([ValidateNotNullOrEmpty()] $f
         $oldpath = (Get-ItemProperty -Path "Registry::HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\Session Manager\Environment" -Name PATH).path
         # see if the registry value is wrong too
         if ( ($oldpath).split(";") -notcontains "$folder") {
-            $newpath = "$oldpath;$folder"
+            $newpath = "$folder;$oldpath"
             Read-Host "Script needs elevated privileges to set PATH.  Hit ENTER to launch script to set PATH"
             Start-Process powershell -verb RunAs -ArgumentList "Set-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\Session Manager\Environment' -Name PATH -Value '$newPath'; Read-Host 'Press ENTER'"
             Write-Host "New PATH:"
@@ -717,6 +730,22 @@ function global:GetResourceGroupAndLocation($defaultResourceGroup) {
     $Return.AKS_PERS_LOCATION = $location
 
     #Return the hashtable
+    Return $Return         
+
+}
+
+function global:CreateResourceGroupIfNotExists([ValidateNotNullOrEmpty()] $resourceGroup, [ValidateNotNullOrEmpty()] $location ) {
+    [hashtable]$Return = @{} 
+
+    Write-Host "Using resource group [$resourceGroup]"
+    
+    Write-Host "checking if resource group already exists"
+    $resourceGroupExists = az group exists --name ${resourceGroup}
+    if ($resourceGroupExists -ne "true") {
+        Write-Host "Create the Resource Group"
+        az group create --name $resourceGroup --location $location --verbose
+    }
+
     Return $Return         
 }
 

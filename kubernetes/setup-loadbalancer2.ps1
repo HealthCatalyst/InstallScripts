@@ -1,4 +1,4 @@
-Write-output "Version 2018.03.26.02"
+Write-output "Version 2018.03.27.01"
 
 #
 # This script is meant for quick & easy install via:
@@ -18,19 +18,17 @@ Get-Content ./kubernetes/common-kube.ps1 -Raw | Invoke-Expression;
 Invoke-WebRequest -useb $GITHUB_URL/azure/common.ps1?f=$randomstring | Invoke-Expression;
 # Get-Content ./azure/common.ps1 -Raw | Invoke-Expression;
 
-$config = $(Get-Content ./deployments/testsite.json -Raw | ConvertFrom-Json)
+$config = $(Get-Content ./deployments/fabrickubernetes.json -Raw | ConvertFrom-Json)
 Write-Host $config
 
-$AKS_OPEN_TO_PUBLIC = ""
-$AKS_USE_SSL = ""
 $AKS_IP_WHITELIST = ""
-$SetupNSG = $true
 
 $userInfo = $(GetLoggedInUserInfo)
-$AKS_SUBSCRIPTION_ID = $userInfo.AKS_SUBSCRIPTION_ID
-$IS_CAFE_ENVIRONMENT = $userInfo.IS_CAFE_ENVIRONMENT
+# $AKS_SUBSCRIPTION_ID = $userInfo.AKS_SUBSCRIPTION_ID
+# $IS_CAFE_ENVIRONMENT = $userInfo.IS_CAFE_ENVIRONMENT
 
 $AKS_PERS_RESOURCE_GROUP = $config.azure.resourceGroup
+$AKS_PERS_LOCATION = $config.azure.location
 
 # Get location name from resource group
 $AKS_PERS_LOCATION = az group show --name $AKS_PERS_RESOURCE_GROUP --query "location" -o tsv
@@ -74,7 +72,7 @@ else {
 if ($($config.network_security_group.create_nsg_rules)) {
     Write-Output "Adding or updating rules to Network Security Group for the subnet"
     $sourceTagForAdminAccess = "VirtualNetwork"
-    if ($AKS_ALLOW_ADMIN_ACCESS_OUTSIDE_VNET -eq "y") {
+    if($($config.allow_kubectl_from_outside_vnet)){
         $sourceTagForAdminAccess = "Internet"
         Write-Output "Enabling admin access to cluster from Internet"
     }
@@ -112,7 +110,7 @@ if ($($config.network_security_group.create_nsg_rules)) {
         Write-Output "Since we already have rules open port 80 and 443 to the Internet, we do not need to create separate ones for the Internet"
     }
     else {
-        if ($AKS_OPEN_TO_PUBLIC -eq "y") {
+        if($($config.ingress.external) -ne "vnetonly"){
             SetNetworkSecurityGroupRule -resourceGroup $AKS_PERS_RESOURCE_GROUP -networkSecurityGroup $AKS_PERS_NETWORK_SECURITY_GROUP `
                 -rulename "HttpPort" `
                 -ruledescription "allow HTTP access from ${sourceTagForHttpAccess}." `
@@ -273,6 +271,5 @@ else {
     Write-Output "To access the urls from your browser, add the following entries in your c:\windows\system32\drivers\etc\hosts file"
     Write-Output "$EXTERNAL_IP dashboard.$dnsrecordname"
 }
-
 
 

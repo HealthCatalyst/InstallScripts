@@ -1,13 +1,22 @@
 {
+    "kubectl": {
+        "version": ""
+    },
     "azure": {
         "resourceGroup": "fabrickubernetes",
         "location": "eastus",
         "create_windows_containers": false,
-        "use_azure_networking": true
+        "use_azure_networking": true,
+        "acs_engine": {
+            "version": ""
+        }
     },
     "service_principal": {
         "name": "",
         "delete_if_exists": true
+    },
+    "storage_account": {
+        "delete_if_exists": false
     },
     "local_folder": "c:\\kubernetes",
     "customerid": "hcut",

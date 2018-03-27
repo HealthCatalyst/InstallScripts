@@ -1,4 +1,4 @@
-Write-Host "--- create-bare-metal Version 2018.03.23.01 ----"
+Write-Host "--- create-bare-metal Version 2018.03.23.02 ----"
 
 #
 # This script is meant for quick & easy install via:
@@ -76,7 +76,7 @@ else {
         $clustername = "${AKS_PERS_RESOURCE_GROUP}"
         $fileToUse = "$AKS_LOCAL_FOLDER\$clustername\temp\.kube\config"
         if (Test-Path $fileToUse) {
-            SwitchToKubCluster -kubfolder $AKS_LOCAL_FOLDER -clustername $clustername 
+            SwitchToKubCluster -folderToUse "${AKS_LOCAL_FOLDER}\${clustername}" 
         }
         else {
             CleanKubConfig

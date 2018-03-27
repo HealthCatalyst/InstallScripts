@@ -276,11 +276,11 @@ function global:LoadStack([ValidateNotNullOrEmpty()] $namespace, [ValidateNotNul
         kubectl create namespace $namespace
     }
     
-    $configpath="./$appfolder/index.json"
-    # $configpath = "$baseUrl/${appfolder}/index.json"
-    # $config = $(Invoke-WebRequest -useb $configpath | ConvertFrom-Json)
+    $configpath = "$baseUrl/${appfolder}/index.json"
+    $config = $(Invoke-WebRequest -useb $configpath | ConvertFrom-Json)
 
-    $config = $(Get-Content "$configpath" -Raw | ConvertFrom-Json)
+    # $configpath="./$appfolder/index.json"
+    # $config = $(Get-Content "$configpath" -Raw | ConvertFrom-Json)
 
     Write-Host "Installing stack $($config.name) version $($config.version) from $configpath"
 
@@ -296,7 +296,7 @@ function global:LoadStack([ValidateNotNullOrEmpty()] $namespace, [ValidateNotNul
             $sourceSecretName = $($secret.valueFromSecret.name)
             $sourceSecretNamespace = $($secret.valueFromSecret.namespace)
             $value = ReadSecret -secretname $sourceSecretName -namespace $sourceSecretNamespace
-            Write-Host "Setting secret $($secret.name) to value from $sourceSecretName in namespace $sourceSecretNamespace with value $value"
+            Write-Host "Setting secret [$($secret.name)] to secret [$sourceSecretName] in namespace [$sourceSecretNamespace] with value [$value]"
             SaveSecretValue -secretname "$($secret.name)" -valueName "value" -value $value -namespace "$namespace"
         }
     }

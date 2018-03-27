@@ -20,13 +20,13 @@
         "volumes": {
             "onprem": [
                 "certificateserver.yaml",
-                " mysqlserver.yaml",
+                "mysqlserver.yaml",
                 "rabbitmq-cert.yaml",
                 "rabbitmq.yaml"
             ],
             "azure": [
                 "certificateserver.yaml",
-                " mysqlserver.yaml",
+                "mysqlserver.yaml",
                 "rabbitmq-cert.yaml",
                 "rabbitmq.yaml"
             ]

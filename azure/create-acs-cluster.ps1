@@ -1,4 +1,4 @@
-Write-output "--- create-acs-cluster Version 2018.03.23.02 ----"
+Write-output "--- create-acs-cluster Version 2018.03.27.01 ----"
 
 #
 # This script is meant for quick & easy install via:
@@ -14,56 +14,45 @@ Invoke-WebRequest -useb $GITHUB_URL/azure/common.ps1 | Invoke-Expression;
 # Get-Content ./azure/common.ps1 -Raw | Invoke-Expression;
 
 
-$AKS_USE_AZURE_NETWORKING = "n"
-$AKS_SUPPORT_WINDOWS_CONTAINERS = "n"
-
 write-output "Checking if you're already logged in..."
 
 DownloadAzCliIfNeeded
+
+$config = $(ReadConfigFile).Config
+Write-Host $config
 
 $userInfo=$(GetLoggedInUserInfo)
 $AKS_SUBSCRIPTION_ID = $userInfo.AKS_SUBSCRIPTION_ID
 $IS_CAFE_ENVIRONMENT=$userInfo.IS_CAFE_ENVIRONMENT
 
-# ask for customerid
-if ($IS_CAFE_ENVIRONMENT){
-    Do { $customerid = Read-Host "Health Catalyst Customer ID (e.g., ahmn)"}
-    while ([string]::IsNullOrWhiteSpace($customerid))    
-    $DEFAULT_RESOURCE_GROUP = "Prod-Kub-$($customerid.ToUpper())-RG"
-}
-else {
-    $customerid="hcut"
-    $DEFAULT_RESOURCE_GROUP = "Dev-Kub-$($customerid.ToUpper())-RG"
-}
+$customerid=$($config.customerid)
 
 Write-Output "Customer ID: $customerid"
 
-$ResourceGroupInfo = GetResourceGroupAndLocation -defaultResourceGroup $DEFAULT_RESOURCE_GROUP
-$AKS_PERS_RESOURCE_GROUP = $ResourceGroupInfo.AKS_PERS_RESOURCE_GROUP
-$AKS_PERS_LOCATION = $ResourceGroupInfo.AKS_PERS_LOCATION
+$AKS_PERS_RESOURCE_GROUP = $config.azure.resourceGroup
+$AKS_PERS_LOCATION = $config.azure.location
 
-$AKS_SUPPORT_WINDOWS_CONTAINERS = Read-Host "Support Windows containers (y/n) (default: n)"
-if ([string]::IsNullOrWhiteSpace($AKS_SUPPORT_WINDOWS_CONTAINERS)) {
-    $AKS_SUPPORT_WINDOWS_CONTAINERS = "n"
-}
+CreateResourceGroupIfNotExists -resourceGroup $AKS_PERS_RESOURCE_GROUP -location $AKS_PERS_LOCATION
 
-if ("$AKS_SUPPORT_WINDOWS_CONTAINERS" -eq "n") {
+$AKS_SUPPORT_WINDOWS_CONTAINERS = $config.azure.create_windows_containers
+$AKS_USE_AZURE_NETWORKING = $config.azure.use_azure_networking
+
+if ($AKS_SUPPORT_WINDOWS_CONTAINERS) {
     # azure networking is not supported with windows containers
-    # do we want to use azure networking or kube networking
-    $AKS_USE_AZURE_NETWORKING = Read-Host "Use Azure networking (default: y)"
-    if ([string]::IsNullOrWhiteSpace($AKS_USE_AZURE_NETWORKING)) {
-        $AKS_USE_AZURE_NETWORKING = "y"
+    if($AKS_USE_AZURE_NETWORKING){
+        Write-Error "Azure networking is not supported with Windows containers"
     }
 }
 
 # service account to own the resources
-$AKS_SERVICE_PRINCIPAL_NAME = Read-Host "Service account to use (default: ${AKS_PERS_RESOURCE_GROUP}Kubernetes)"
+$AKS_SERVICE_PRINCIPAL_NAME = $config.service_principal.name
+
 if ([string]::IsNullOrWhiteSpace($AKS_SERVICE_PRINCIPAL_NAME)) {
     $AKS_SERVICE_PRINCIPAL_NAME = "${AKS_PERS_RESOURCE_GROUP}Kubernetes"
 }
 
 # where to store the SSH keys on local machine
-$AKS_LOCAL_FOLDER = Read-Host "Folder to store SSH keys (default: c:\kubernetes)"
+$AKS_LOCAL_FOLDER = $config.local_folder
 
 if ([string]::IsNullOrWhiteSpace($AKS_LOCAL_FOLDER)) {$AKS_LOCAL_FOLDER = "C:\kubernetes"}
 
@@ -114,13 +103,14 @@ acs-engine version
 $AKS_CLUSTER_NAME = "kubcluster"
 # $AKS_CLUSTER_NAME = Read-Host "Cluster Name: (e.g., fabricnlpcluster)"
 
-$AKS_PERS_STORAGE_ACCOUNT_NAME = $(CreateStorageIfNotExists -resourceGroup $AKS_PERS_RESOURCE_GROUP).AKS_PERS_STORAGE_ACCOUNT_NAME
+$AKS_PERS_STORAGE_ACCOUNT_NAME = $(CreateStorageIfNotExists -resourceGroup $AKS_PERS_RESOURCE_GROUP -deleteStorageAccountIfExists $config.storage_account.delete_if_exists).AKS_PERS_STORAGE_ACCOUNT_NAME
+
+$AKS_VNET_NAME = $config.networking.vnet
+$AKS_SUBNET_NAME = $config.networking.subnet
+$AKS_SUBNET_RESOURCE_GROUP = $config.networking.subnet_resource_group
 
 # see if the user wants to use a specific virtual network
-$VnetInfo = GetVnet -subscriptionId $AKS_SUBSCRIPTION_ID
-$AKS_VNET_NAME = $VnetInfo.AKS_VNET_NAME
-$AKS_SUBNET_NAME = $VnetInfo.AKS_SUBNET_NAME
-$AKS_SUBNET_RESOURCE_GROUP = $VnetInfo.AKS_SUBNET_RESOURCE_GROUP
+$VnetInfo = GetVnetInfo -subscriptionId $AKS_SUBSCRIPTION_ID -subnetResourceGroup $AKS_SUBNET_RESOURCE_GROUP -vnetName $AKS_VNET_NAME -subnetName $AKS_SUBNET_NAME
 $AKS_FIRST_STATIC_IP = $VnetInfo.AKS_FIRST_STATIC_IP
 $AKS_SUBNET_CIDR = $VnetInfo.AKS_SUBNET_CIDR
 
@@ -140,8 +130,8 @@ if ("$AKS_SERVICE_PRINCIPAL_CLIENTID") {
     Write-Host "Service Principal already exists with name: [$AKS_SERVICE_PRINCIPAL_NAME]"
     $AKS_SERVICE_PRINCIPAL_CLIENTSECRET = ReadSecretPassword -secretname "serviceprincipal"
     if ([string]::IsNullOrWhiteSpace($AKS_SERVICE_PRINCIPAL_CLIENTSECRET)) {
-        $AKS_SERVICE_PRINCIPAL_CLIENTSECRET = Read-Host "Service account password to use (leave empty to recreate service account))"
-        if ([string]::IsNullOrWhiteSpace($AKS_SERVICE_PRINCIPAL_CLIENTSECRET)) {
+
+        if($($config.service_principal.delete_if_exists)) {
             Write-Output "Deleting service principal:$AKS_SERVICE_PRINCIPAL_CLIENTID ..."
             az ad sp delete --id "$AKS_SERVICE_PRINCIPAL_CLIENTID" --verbose
             # https://github.com/Azure/azure-cli/issues/1332
@@ -198,11 +188,11 @@ $templateFile = "acs.template.json"
 if (!"$AKS_VNET_NAME") {
     $templateFile = "acs.template.nosubnet.json"    
 }
-elseif ("$AKS_SUPPORT_WINDOWS_CONTAINERS" -eq "y") {
+elseif ($AKS_SUPPORT_WINDOWS_CONTAINERS) {
     # https://github.com/Azure/acs-engine/issues/1767
     $templateFile = "acs.template.linuxwindows.json"    
 }
-elseif ("$AKS_USE_AZURE_NETWORKING" -eq "y") {
+elseif ($AKS_USE_AZURE_NETWORKING) {
     $templateFile = "acs.template.azurenetwork.json"             
 }
 
@@ -279,7 +269,7 @@ Write-Output "Generating ACS engine template"
 
 acs-engine generate $output --output-directory $acsoutputfolder
 
-if ("$AKS_SUPPORT_WINDOWS_CONTAINERS" -eq "y") {
+if ($AKS_SUPPORT_WINDOWS_CONTAINERS) {
 
     if ("$AKS_VNET_NAME") {
         Write-Output "Adding subnet to azuredeploy.json to work around acs-engine bug"
@@ -330,7 +320,7 @@ az group deployment create `
 
 # if joining a vnet, and not using azure networking then we have to manually set the route-table
 if ("$AKS_VNET_NAME") {
-    if ("$AKS_USE_AZURE_NETWORKING" -eq "n") {
+    if (!$AKS_USE_AZURE_NETWORKING) {
         Write-Output "Attaching route table"
         # https://github.com/Azure/acs-engine/blob/master/examples/vnet/k8s-vnet-postdeploy.sh
         $rt = az network route-table list -g "${AKS_PERS_RESOURCE_GROUP}" --query "[?name != 'temproutetable'].id" -o tsv

@@ -1,6 +1,6 @@
 # This file contains common functions for Azure
 # 
-$versioncommon = "2018.03.27.01"
+$versioncommon = "2018.03.27.02"
 
 Write-Host "---- Including common.ps1 version $versioncommon -----"
 function global:GetCommonVersion() {
@@ -8,29 +8,29 @@ function global:GetCommonVersion() {
 }
 
 function global:CreateShareInStorageAccount([ValidateNotNullOrEmpty()] $storageAccountName, [ValidateNotNullOrEmpty()] $resourceGroup, [ValidateNotNullOrEmpty()] $sharename, $deleteExisting) { 
-    $AZURE_STORAGE_CONNECTION_STRING = az storage account show-connection-string -n $storageAccountName -g $resourceGroup -o tsv
+    $storageAccountConnectionString = az storage account show-connection-string -n $storageAccountName -g $resourceGroup -o tsv
     
-    # Write-Host "Storage connection string: $AZURE_STORAGE_CONNECTION_STRING"
+    # Write-Host "Storage connection string: $storageAccountConnectionString"
 
     if ($deleteExisting) {
-        if ($(az storage share exists -n $sharename --connection-string $AZURE_STORAGE_CONNECTION_STRING --query "exists" -o tsv)) {
+        if ($(az storage share exists -n $sharename --connection-string $storageAccountConnectionString --query "exists" -o tsv)) {
             Write-Host "Deleting the file share: $sharename"
-            az storage share delete -n $sharename --connection-string $AZURE_STORAGE_CONNECTION_STRING
+            az storage share delete -n $sharename --connection-string $storageAccountConnectionString
         
             
             Write-Host "Waiting for completion of delete for the file share: $sharename"        
             Do {
                 Start-Sleep -Seconds 5 
-                $SHARE_EXISTS = $(az storage share exists -n $sharename --connection-string $AZURE_STORAGE_CONNECTION_STRING --query "exists" -o tsv)
+                $SHARE_EXISTS = $(az storage share exists -n $sharename --connection-string $storageAccountConnectionString --query "exists" -o tsv)
                 Write-Host "."
             }
             while ($SHARE_EXISTS -ne "false")
         }
     }
 
-    if ($(az storage share exists -n $sharename --connection-string $AZURE_STORAGE_CONNECTION_STRING --query "exists" -o tsv) -eq "false") {
+    if ($(az storage share exists -n $sharename --connection-string $storageAccountConnectionString --query "exists" -o tsv) -eq "false") {
         Write-Host "Creating the file share: $sharename"        
-        az storage share create -n $sharename --connection-string $AZURE_STORAGE_CONNECTION_STRING --quota 512       
+        az storage share create -n $sharename --connection-string $storageAccountConnectionString --quota 512       
     }
     else {
         Write-Host "File share already exists: $sharename"         
@@ -1501,5 +1501,50 @@ function global:SaveConfigFile() {
     return $Return
 }
 
+function global:GetResourceGroup() {
+    [hashtable]$Return = @{} 
+    $Return.ResourceGroup = ReadSecretValue -secretname azure-secret -valueName "resourcegroup"    
+
+    return $Return
+}
+function global:CreateAzureStorage([ValidateNotNullOrEmpty()] $namespace) {
+    [hashtable]$Return = @{} 
+
+    if ([string]::IsNullOrWhiteSpace($namespace)) {
+        Write-Error "no parameter passed to CreateAzureStorage"
+        exit
+    }
+    
+    $resourceGroup = $(GetResourceGroup).ResourceGroup
+
+    Write-Output "Using resource group: $resourceGroup"        
+    
+    if ([string]::IsNullOrWhiteSpace($(kubectl get namespace $namespace --ignore-not-found=true))) {
+        kubectl create namespace $namespace
+    }
+    
+    $shareName = "$namespace"
+    $storageAccountName = ReadSecretValue -secretname azure-secret -valueName "azurestorageaccountname" 
+    
+    $storageAccountConnectionString = az storage account show-connection-string -n $storageAccountName -g $resourceGroup -o tsv
+    
+    Write-Output "Create the file share: $shareName"
+    az storage share create -n $shareName --connection-string $storageAccountConnectionString --quota 512
+    return $Return
+}
+
+function global:WaitForLoadBalancers([ValidateNotNullOrEmpty()] $resourceGroup) {
+    $loadBalancerIP = kubectl get svc traefik-ingress-service-public -n kube-system -o jsonpath='{.status.loadBalancer.ingress[].ip}' --ignore-not-found=true
+    if ([string]::IsNullOrWhiteSpace($loadBalancerIP)) {
+        $loadBalancerIP = kubectl get svc traefik-ingress-service-internal -n kube-system -o jsonpath='{.status.loadBalancer.ingress[].ip}'
+    }
+    $loadBalancerInternalIP = kubectl get svc traefik-ingress-service-internal -n kube-system -o jsonpath='{.status.loadBalancer.ingress[].ip}'
+    
+    Write-Host "Sleeping for 10 seconds so kube services get IPs assigned"
+    Start-Sleep -Seconds 10
+    
+    FixLoadBalancers -resourceGroup $resourceGroup
+        
+}
 #-------------------
 Write-Host "end common.ps1 version $versioncommon"

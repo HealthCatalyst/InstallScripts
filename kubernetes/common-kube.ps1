@@ -1,5 +1,5 @@
 # this file contains common functions for kubernetes
-$versionkubecommon = "2018.03.27.02"
+$versionkubecommon = "2018.03.27.03"
 
 $set = "abcdefghijklmnopqrstuvwxyz0123456789".ToCharArray()
 $randomstring += $set | Get-Random
@@ -81,6 +81,24 @@ function global:AskForPassword ([ValidateNotNullOrEmpty()] $secretname, $prompt,
     }
 }
 
+function global:GenerateSecretPassword ([ValidateNotNullOrEmpty()] $secretname, $namespace) {
+    if ([string]::IsNullOrWhiteSpace($namespace)) { $namespace = "default"}
+    if ([string]::IsNullOrWhiteSpace($(kubectl get secret $secretname -n $namespace -o jsonpath='{.data}' --ignore-not-found=true))) {
+
+        $mysqlrootpassword = ""
+        # MySQL password requirements: https://dev.mysql.com/doc/refman/5.6/en/validate-password-plugin.html
+        # we also use sed to replace configs: https://unix.stackexchange.com/questions/32907/what-characters-do-i-need-to-escape-when-using-sed-in-a-sh-script
+        Do {
+            $mysqlrootpassword = GeneratePassword
+        }
+        while (($mysqlrootpassword -notmatch "^[a-z0-9!.*@\s]+$") -or ($mysqlrootpassword.Length -lt 8 ))
+        kubectl create secret generic $secretname --namespace=$namespace --from-literal=password=$mysqlrootpassword
+    }
+    else {
+        Write-Host "$secretname secret already set so will reuse it"
+    }
+}
+
 function global:AskForPasswordAnyCharacters ([ValidateNotNullOrEmpty()] $secretname, $prompt, $namespace, $defaultvalue) {
     if ([string]::IsNullOrWhiteSpace($namespace)) { $namespace = "default"}
     if ([string]::IsNullOrWhiteSpace($(kubectl get secret $secretname -n $namespace -o jsonpath='{.data}' --ignore-not-found=true))) {
@@ -138,18 +156,17 @@ function global:ReadYamlAndReplaceCustomer([ValidateNotNullOrEmpty()] $baseUrl, 
 }
 
 # $files is a list of files separated by spaces
-function global:DownloadAndDeployYamlFiles([ValidateNotNullOrEmpty()] $folder, [ValidateNotNullOrEmpty()] $files, [ValidateNotNullOrEmpty()] $baseUrl, [ValidateNotNullOrEmpty()] $customerid, $public_ip ){
+function global:DownloadAndDeployYamlFiles([ValidateNotNullOrEmpty()] $folder, [ValidateNotNullOrEmpty()] $files, [ValidateNotNullOrEmpty()] $baseUrl, [ValidateNotNullOrEmpty()] $customerid, $public_ip ) {
     [hashtable]$Return = @{} 
 
     foreach ($file in $files.Split(" ")) { 
-        if([string]::IsNullOrEmpty($public_ip)){
+        if ([string]::IsNullOrEmpty($public_ip)) {
             ReadYamlAndReplaceCustomer -baseUrl $baseUrl -templateFile "${folder}/${file}" -customerid $customerid | kubectl apply -f -
         }
-        else
-        {
+        else {
             ReadYamlAndReplaceCustomer -baseUrl $baseUrl -templateFile "${folder}/${file}" -customerid $customerid `
-            | Foreach-Object {$_ -replace 'PUBLICIP', "$publicip"} `
-            | kubectl apply -f -
+                | Foreach-Object {$_ -replace 'PUBLICIP', "$publicip"} `
+                | kubectl apply -f -
         }
     }
 
@@ -234,5 +251,12 @@ function global:CleanKubConfig() {
     [Environment]::SetEnvironmentVariable("KUBECONFIG", "", [EnvironmentVariableTarget]::User)
 }
 
+function global:CleanSecrets([ValidateNotNullOrEmpty()] $namespace){
+    kubectl delete secret mysqlrootpassword -n $namespace --ignore-not-found=true
+    kubectl delete secret mysqlpassword -n $namespace --ignore-not-found=true
+    kubectl delete secret certhostname -n $namespace --ignore-not-found=true
+    kubectl delete secret certpassword -n $namespace --ignore-not-found=true
+    kubectl delete secret rabbitmqmgmtuipassword -n $namespace --ignore-not-found=true    
+}
 # --------------------
 Write-Host "end common-kube.ps1 version $versioncommon"

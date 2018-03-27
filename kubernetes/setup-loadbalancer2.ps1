@@ -213,9 +213,6 @@ DownloadAndDeployYamlFiles -folder $folder -files $files -baseUrl $GITHUB_URL -c
 
 Write-Host "Deploying ingress"
 $folder = "kubernetes/loadbalancer/ingress"
-# foreach ($file in "default.yaml default-internal.yaml".Split(" ")) { 
-#     ReadYamlAndReplaceCustomer -baseUrl $GITHUB_URL -templateFile "${folder}/${file}" -customerid $customerid | kubectl apply -f -
-# }    
 
 if ($($config.ssl) ) {
     $files = "dashboard.ssl.yaml"

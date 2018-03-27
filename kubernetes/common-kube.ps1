@@ -277,7 +277,8 @@ function global:LoadStack([ValidateNotNullOrEmpty()] $namespace, [ValidateNotNul
     }
     
     $configpath="./$appfolder/index.json"
-    # Invoke-WebRequest -useb $GITHUB_URL/azure/common.ps1 | Invoke-Expression;
+    # $configpath = "$baseUrl/${appfolder}/index.json"
+    # $config = $(Invoke-WebRequest -useb $configpath | ConvertFrom-Json)
 
     $config = $(Get-Content "$configpath" -Raw | ConvertFrom-Json)
 

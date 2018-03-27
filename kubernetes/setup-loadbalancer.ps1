@@ -264,7 +264,7 @@ FixLoadBalancers -resourceGroup $AKS_PERS_RESOURCE_GROUP
 
 $dnsrecordname = $($config.dns.name)
 
-SaveSecretValue -secretname "dns_name" -valueName "value" -value $dnsrecordname
+SaveSecretValue -secretname "dnsname" -valueName "value" -value $dnsrecordname
 
 if ($($config.dns.create_dns_entries)) {
     SetupDNS -dnsResourceGroup $DNS_RESOURCE_GROUP -dnsrecordname $dnsrecordname -externalIP $EXTERNAL_IP 

@@ -1,5 +1,5 @@
 # this file contains common functions for kubernetes
-$versionkubecommon = "2018.03.27.03"
+$versionkubecommon = "2018.03.27.04"
 
 $set = "abcdefghijklmnopqrstuvwxyz0123456789".ToCharArray()
 $randomstring += $set | Get-Random
@@ -251,12 +251,66 @@ function global:CleanKubConfig() {
     [Environment]::SetEnvironmentVariable("KUBECONFIG", "", [EnvironmentVariableTarget]::User)
 }
 
-function global:CleanSecrets([ValidateNotNullOrEmpty()] $namespace){
+function global:CleanSecrets([ValidateNotNullOrEmpty()] $namespace) {
     kubectl delete secret mysqlrootpassword -n $namespace --ignore-not-found=true
     kubectl delete secret mysqlpassword -n $namespace --ignore-not-found=true
     kubectl delete secret certhostname -n $namespace --ignore-not-found=true
     kubectl delete secret certpassword -n $namespace --ignore-not-found=true
     kubectl delete secret rabbitmqmgmtuipassword -n $namespace --ignore-not-found=true    
+}
+
+function global:DeployYamlFiles([ValidateNotNullOrEmpty()] $namespace, [ValidateNotNullOrEmpty()] $baseUrl, [ValidateNotNullOrEmpty()] $appfolder, [ValidateNotNullOrEmpty()] $folder, [ValidateNotNullOrEmpty()] $customerid, $resources){
+    [hashtable]$Return = @{} 
+
+    Write-Host "-- Deploying $folder --"
+    foreach ($file in $resources) {
+        ReadYamlAndReplaceCustomer -baseUrl $baseUrl -templateFile "${appfolder}/${folder}/${file}" -customerid $customerid | kubectl apply -f -
+    }
+    return $Return
+}
+function global:LoadStack([ValidateNotNullOrEmpty()] $namespace, [ValidateNotNullOrEmpty()] $baseUrl, [ValidateNotNullOrEmpty()] $appfolder, $isAzure) {
+    [hashtable]$Return = @{} 
+
+    if ([string]::IsNullOrWhiteSpace($(kubectl get namespace $namespace --ignore-not-found=true))) {
+        Write-Host "namespace $namespace does not exist so creating it"
+        kubectl create namespace $namespace
+    }
+    
+    # Invoke-WebRequest -useb $GITHUB_URL/azure/common.ps1 | Invoke-Expression;
+
+    $config = $(Get-Content "./$appfolder/index.json" -Raw | ConvertFrom-Json)
+
+    foreach ($secret in $($config.secrets.password)) {
+        GenerateSecretPassword -secretname "$secret" -namespace "$namespace"
+    }
+    foreach ($secret in $($config.secrets.value)) {
+        AskForSecretValue -secretname "$secret" -prompt "Client Certificate hostname" -namespace "$namespace"        
+    }
+   
+    CleanOutNamespace -namespace $namespace
+    
+    $customerid = ReadSecret -secretname customerid
+    $customerid = $customerid.ToLower().Trim()
+    Write-Output "Customer ID: $customerid"
+    
+    if ($isAzure) {
+        DeployYamlFiles -namespace $namespace -baseUrl $baseUrl -appfolder $appfolder -folder "volumes/azure" -customerid $customerid -resources $($config.resources.volumes.azure)
+    }
+    else {
+        DeployYamlFiles -namespace $namespace -baseUrl $baseUrl -appfolder $appfolder -folder "volumes/onprem" -customerid $customerid -resources $($config.resources.volumes.onprem)
+    }
+
+    DeployYamlFiles -namespace $namespace -baseUrl $baseUrl -appfolder $appfolder -folder "pods" -customerid $customerid -resources $($config.resources.pods)
+
+    DeployYamlFiles -namespace $namespace -baseUrl $baseUrl -appfolder $appfolder -folder "services/cluster" -customerid $customerid -resources $($config.resources.services.cluster)
+
+    DeployYamlFiles -namespace $namespace -baseUrl $baseUrl -appfolder $appfolder -folder "services/external" -customerid $customerid -resources $($config.resources.services.external)
+    
+    DeployYamlFiles -namespace $namespace -baseUrl $baseUrl -appfolder $appfolder -folder "ingress/http" -customerid $customerid -resources $($config.resources.ingress.http)
+
+    DeployYamlFiles -namespace $namespace -baseUrl $baseUrl -appfolder $appfolder -folder "ingress/tcp" -customerid $customerid -resources $($config.resources.ingress.tcp)
+    
+    return $Return
 }
 # --------------------
 Write-Host "end common-kube.ps1 version $versioncommon"

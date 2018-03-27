@@ -37,7 +37,7 @@
     },
     "network_security_group": {
         "name": "",
-        "create_nsg_rules": false
+        "create_nsg_rules": true
     },
     "dns": {
         "create_dns_entries": false,

@@ -11,18 +11,7 @@ Invoke-WebRequest -useb ${GITHUB_URL}/kubernetes/common-kube.ps1 | Invoke-Expres
 Invoke-WebRequest -useb $GITHUB_URL/azure/common.ps1 | Invoke-Expression;
 # Get-Content ./azure/common.ps1 -Raw | Invoke-Expression;
 
-DownloadAzCliIfNeeded
-GetLoggedInUserInfo
-
 $namespace = "fabricrealtime"
-
-$AKS_PERS_RESOURCE_GROUP = ReadSecretValue -secretname azure-secret -valueName "resourcegroup"
-
-if ([string]::IsNullOrWhiteSpace($AKS_PERS_RESOURCE_GROUP)) {
-    Write-Error "secret azure-secret not found"
-    exit
-}
-Write-Output "Using resource group: $AKS_PERS_RESOURCE_GROUP"        
 
 if ([string]::IsNullOrWhiteSpace($(kubectl get namespace $namespace --ignore-not-found=true))) {
     kubectl create namespace $namespace

@@ -63,7 +63,7 @@ sudo chmod -R 777 /mnt/data
 # curl https://packages.microsoft.com/config/rhel/7/prod.repo | sudo tee /etc/yum.repos.d/microsoft.repo
 
 # Install PowerShell
-# sudo yum install -y powershell
+sudo yum install -y powershell
 
 # Start PowerShell
 # pwsh

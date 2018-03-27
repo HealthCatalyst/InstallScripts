@@ -49,6 +49,9 @@ fi
 
 sudo mkdir -p /mnt/data/fabricrealtime
 
+# curl -sSL "$GITHUB_URL/realtime/installyaml.ps1" | pwsh
+
+
 customerid="$(ReadSecret customerid)"
 if [[ -z "$customerid" ]]; then
     echo "customerid not set"

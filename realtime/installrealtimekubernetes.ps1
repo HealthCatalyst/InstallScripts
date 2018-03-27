@@ -1,4 +1,4 @@
-Write-Output "Version 2018.03.27.01"
+Write-Output "Version 2018.03.27.02"
 
 # curl -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/realtime/installrealtimekubernetes.ps1 | iex;
 
@@ -18,6 +18,6 @@ $namespace = "fabricrealtime"
 
 CreateAzureStorage -namespace $namespace
 
-Invoke-WebRequest -useb "$GITHUB_URL/realtime/installyaml.ps1?f=$randomstring" | Invoke-Expression;
+LoadStack -namespace $namespace -baseUrl $GITHUB_URL -appfolder "realtime" -isAzure $false
 
 WaitForLoadBalancers -resourceGroup $(GetResourceGroup).ResourceGroup

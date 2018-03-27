@@ -74,6 +74,7 @@ while ($userinput -ne "q") {
         } 
         '1' {
             Invoke-WebRequest -useb $GITHUB_URL/azure/create-acs-cluster.ps1?f=$randomstring | Invoke-Expression;
+            Invoke-WebRequest -useb $GITHUB_URL/kubernetes/setup-loadbalancer.ps1?f=$randomstring | Invoke-Expression;
         } 
         '2' {
             Invoke-WebRequest -useb $GITHUB_URL/kubernetes/setup-loadbalancer.ps1?f=$randomstring | Invoke-Expression;

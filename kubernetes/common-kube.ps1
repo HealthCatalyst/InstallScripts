@@ -1,5 +1,5 @@
 # this file contains common functions for kubernetes
-$versionkubecommon = "2018.02.27.03"
+$versionkubecommon = "2018.03.27.01"
 
 $set = "abcdefghijklmnopqrstuvwxyz0123456789".ToCharArray()
 $randomstring += $set | Get-Random
@@ -172,6 +172,7 @@ function global:Stop-ProcessByPort( [ValidateNotNullOrEmpty()] [int] $Port ) {
 
 
 function global:CleanOutNamespace([ValidateNotNullOrEmpty()] $namespace) {
+    [hashtable]$Return = @{} 
 
     Write-Host "--- Cleaning out any old resources in $namespace ---"
 
@@ -190,14 +191,22 @@ function global:CleanOutNamespace([ValidateNotNullOrEmpty()] $namespace) {
         }
     }
     while (![string]::IsNullOrEmpty($CLEANUP_DONE))
+
+    return $Return
 }
 
 function global:SwitchToKubCluster([ValidateNotNullOrEmpty()] $kubfolder, [ValidateNotNullOrEmpty()] $clustername) {
-    $fileToUse = "$kubfolder\$clustername\temp\.kube\config"
+
+    [hashtable]$Return = @{} 
+
+    $fileToUse = "${kubfolder}\${clustername}\temp\.kube\config"
+
+    Write-Host "Checking if file exists: $fileToUse"
+
     if (Test-Path -Path $fileToUse) {
         Write-Host "Switching kube config to this cluster: $clustername"
 
-        $userKubeConfigFolder = "$env:userprofile\.kube"
+        $userKubeConfigFolder = "${env:userprofile}\.kube"
         If (!(Test-Path $userKubeConfigFolder)) {
             Write-Output "Creating $userKubeConfigFolder"
             New-Item -ItemType Directory -Force -Path "$userKubeConfigFolder"
@@ -214,6 +223,8 @@ function global:SwitchToKubCluster([ValidateNotNullOrEmpty()] $kubfolder, [Valid
     else {
         Write-Error "$fileToUse not found"
     }
+
+    return $Return
 }
 function global:CleanKubConfig() {
     Write-Host "Clearing out kube config"

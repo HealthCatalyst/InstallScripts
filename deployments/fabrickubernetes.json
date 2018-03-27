@@ -40,6 +40,7 @@
         "create_nsg_rules": false
     },
     "dns": {
+        "name": "fabrickubernetes.eastus.cloudapp.azure.com",
         "create_dns_entries": false,
         "dns_resource_group": "dns"
     }

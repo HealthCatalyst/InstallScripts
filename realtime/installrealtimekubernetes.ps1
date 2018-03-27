@@ -18,6 +18,6 @@ $namespace = "fabricrealtime"
 
 CreateAzureStorage -namespace $namespace
 
-LoadStack -namespace $namespace -baseUrl $GITHUB_URL -appfolder "realtime" -isAzure $false
+LoadStack -namespace $namespace -baseUrl $GITHUB_URL -appfolder "realtime" -isAzure $true
 
 WaitForLoadBalancers -resourceGroup $(GetResourceGroup).ResourceGroup

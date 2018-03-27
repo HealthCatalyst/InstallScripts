@@ -1,5 +1,5 @@
 # this file contains common functions for kubernetes
-$versionkubecommon = "2018.03.27.04"
+$versionkubecommon = "2018.03.27.05"
 
 $set = "abcdefghijklmnopqrstuvwxyz0123456789".ToCharArray()
 $randomstring += $set | Get-Random
@@ -276,15 +276,28 @@ function global:LoadStack([ValidateNotNullOrEmpty()] $namespace, [ValidateNotNul
         kubectl create namespace $namespace
     }
     
+    $configpath="./$appfolder/index.json"
     # Invoke-WebRequest -useb $GITHUB_URL/azure/common.ps1 | Invoke-Expression;
 
-    $config = $(Get-Content "./$appfolder/index.json" -Raw | ConvertFrom-Json)
+    $config = $(Get-Content "$configpath" -Raw | ConvertFrom-Json)
+
+    Write-Host "Installing stack $($config.name) version $($config.version) from $configpath"
 
     foreach ($secret in $($config.secrets.password)) {
         GenerateSecretPassword -secretname "$secret" -namespace "$namespace"
     }
     foreach ($secret in $($config.secrets.value)) {
-        AskForSecretValue -secretname "$secret" -prompt "Client Certificate hostname" -namespace "$namespace"        
+        # AskForSecretValue -secretname "$secret" -prompt "Client Certificate hostname" -namespace "$namespace"        
+        if($secret -is [String]){
+            AskForSecretValue -secretname "$secret" -prompt "Client Certificate hostname" -namespace "$namespace"
+        }
+        else {
+            $sourceSecretName = $($secret.valueFromSecret.name)
+            $sourceSecretNamespace = $($secret.valueFromSecret.namespace)
+            $value = ReadSecret -secretname $sourceSecretName -namespace $sourceSecretNamespace
+            Write-Host "Setting secret $($secret.name) to value from $sourceSecretName in namespace $sourceSecretNamespace with value $value"
+            SaveSecretValue -secretname "$($secret.name)" -valueName "value" -value $value -namespace "$namespace"
+        }
     }
    
     CleanOutNamespace -namespace $namespace

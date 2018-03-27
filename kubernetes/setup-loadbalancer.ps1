@@ -262,14 +262,16 @@ $INTERNAL_IP = $loadBalancerIPResult.InternalIP
 
 FixLoadBalancers -resourceGroup $AKS_PERS_RESOURCE_GROUP
 
-$dnsrecordname = "$customerid.healthcatalyst.net"
+$dnsrecordname = $($config.dns.name)
+
+SaveSecretValue -secretname "dns_name" -valueName "value" -value $dnsrecordname
 
 if ($($config.dns.create_dns_entries)) {
     SetupDNS -dnsResourceGroup $DNS_RESOURCE_GROUP -dnsrecordname $dnsrecordname -externalIP $EXTERNAL_IP 
 }
 else {
     Write-Output "To access the urls from your browser, add the following entries in your c:\windows\system32\drivers\etc\hosts file"
-    Write-Output "$EXTERNAL_IP dashboard.$dnsrecordname"
+    Write-Output "$EXTERNAL_IP $dnsrecordname"
 }
 
 

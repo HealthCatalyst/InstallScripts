@@ -1,6 +1,6 @@
 {
     "name": "Fabric Realtime",
-    "version": "4.0.0.1",
+    "version": "4.0.0.2",
     "secrets": {
         "password": [
             "mysqlrootpassword",
@@ -8,9 +8,13 @@
             "certpassword",
             "rabbitmqmgmtuipassword"
         ],
-        "value": [
-            "certhostname"
-        ]
+        "value": [{
+            "name": "certhostname",
+            "valueFromSecret": {
+                "name": "dns_name",
+                "namespace": "default"
+            }
+        }]
     },
     "resources": {
         "volumes": {

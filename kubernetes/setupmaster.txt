@@ -9,7 +9,7 @@ set -e
 GITHUB_URL="https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master"
 source <(curl -sSL "$GITHUB_URL/kubernetes/common.sh")
 
-version="2018.02.15.06"
+version="2018.03.27.01"
 echo "---- setupmaster version $version ----"
 
 u="$(whoami)"
@@ -43,6 +43,9 @@ kubectl apply -f ${GITHUB_URL}/kubernetes/flannel.yml
 # kubectl create -f "$GITHUB_URL/azure/cafe-kube-dns.yml"
 
 kubectl get nodes
+
+echo "sleeping 10 secs to wait for pods"
+sleep 10
 
 kubectl get pods -n kube-system -o wide
 

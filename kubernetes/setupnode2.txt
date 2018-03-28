@@ -29,7 +29,7 @@ EOF
 # install kubeadm
 # https://saurabh-deochake.github.io/posts/2017/07/post-1/
 sudo setenforce 0
-sudo systemctl stop kubelet 2>/dev/null
+# sudo systemctl stop kubelet 2>/dev/null
 sudo yum remove -y kubelet kubeadm kubectl kubernetes-cni
 
 echo "kubernetes versions available in repo"

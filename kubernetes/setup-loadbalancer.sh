@@ -9,7 +9,7 @@ GITHUB_URL="https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/mast
 source <(curl -sSL "$GITHUB_URL/kubernetes/common.sh?p=$RANDOM")
 # source ./kubernetes/common.sh
 
-version="2018.03.20.01"
+version="2018.03.27.01"
 
 echo "---- setup-loadbalancer.sh version $version ------"
 
@@ -86,11 +86,6 @@ ReadYamlAndReplaceCustomer $GITHUB_URL "$yamlfile" $customerid \
         | kubectl apply -f -
 
 yamlfile="kubernetes/loadbalancer/services/external/loadbalancer.onprem.yaml"
-echo "Downloading $GITHUB_URL/$yamlfile"
-ReadYamlAndReplaceCustomer $GITHUB_URL "$yamlfile" $customerid \
-        | kubectl apply -f -
-
-yamlfile="kubernetes/loadbalancer/ingress/default-onprem.yaml"
 echo "Downloading $GITHUB_URL/$yamlfile"
 ReadYamlAndReplaceCustomer $GITHUB_URL "$yamlfile" $customerid \
         | kubectl apply -f -

@@ -30,8 +30,8 @@ EOF
 # https://saurabh-deochake.github.io/posts/2017/07/post-1/
 sudo setenforce 0
 sudo systemctl stop kubelet
-sudo yum remove -y kubelet-1.9.3-0 kubeadm-1.9.3-0 kubectl-1.9.3-0 kubernetes-cni-0.6.0-0
-sudo yum install -y kubelet-1.9.3-0 kubeadm-1.9.3-0 kubectl-1.9.3-0 kubernetes-cni-0.6.0-0
+sudo yum remove -y kubelet kubeadm kubectl kubernetes-cni
+sudo yum install -y kubelet-1.9.4-0 kubeadm-1.9.4-0 kubectl-1.9.4-0 kubernetes-cni-0.6.0-0
 sudo yum versionlock kubelet
 sudo yum versionlock kubeadm
 sudo yum versionlock kubectl

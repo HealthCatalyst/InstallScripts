@@ -32,6 +32,9 @@ sudo setenforce 0
 # sudo systemctl stop kubelet 2>/dev/null
 sudo yum remove -y kubelet kubeadm kubectl kubernetes-cni
 
+echo "checking to see if port 10250 is still busy"
+sudo lsof -i -P -n | grep LISTEN
+
 echo "kubernetes versions available in repo"
 sudo yum --showduplicates list kubelet kubeadm kubectl kubernetes-cni
 

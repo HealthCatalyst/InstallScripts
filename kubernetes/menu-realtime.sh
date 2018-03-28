@@ -33,7 +33,7 @@ while [[ "$input" != "q" ]]; do
     case "$input" in
     1)  curl -sSL -o installstack.ps1 https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/kubernetes/installstack.ps1?p=$RANDOM
         clear
-        pwsh -f installrealtime.onprem.ps1 -namespace "fabricrealtime" -appfolder "realtime" -isAzure 0 -NonInteractive
+        pwsh -f installstack.ps1 -namespace "fabricrealtime" -appfolder "realtime" -isAzure 0 -NonInteractive | tee ./installstack.log
         ;;
     2)  kubectl get 'deployments,pods,services,ingress,secrets,persistentvolumeclaims,persistentvolumes,nodes' --namespace=fabricrealtime -o wide
         ;;

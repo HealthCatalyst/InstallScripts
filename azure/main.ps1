@@ -139,7 +139,7 @@ while ($userinput -ne "q") {
             Invoke-WebRequest -useb $GITHUB_URL/nlp/installnlpkubernetes.ps1?f=$randomstring | Invoke-Expression;
         } 
         '12' {
-            Invoke-WebRequest -useb $GITHUB_URL/realtime/installrealtimekubernetes.ps1?f=$randomstring | Invoke-Expression;
+            Invoke-WebRequest -useb $GITHUB_URL/kubernetes/installstack.ps1?f=$randomstring | Invoke-Expression -namespace "fabricrealtime" -appfolder "realtime" -isAzure 0;
         } 
         '20' {
             Write-Host "Current cluster: $(kubectl config current-context)"

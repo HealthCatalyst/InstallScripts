@@ -5,7 +5,7 @@ set -e
 #   curl -sSL https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/kubernetes/main.sh | bash
 #
 #
-version="2018.03.27.04"
+version="2018.03.27.05"
 
 GITHUB_URL="https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master"
 
@@ -61,6 +61,7 @@ while [[ "$input" != "q" ]]; do
     echo "45: Show NLP logs"
     # echo "46: Restart NLP"
     echo "-----------"
+    echo "51: Load Fabric Realtime Menu"
     echo "q: Quit"
 
     read -p "Please make a selection:" -e input  < /dev/tty 
@@ -175,6 +176,8 @@ while [[ "$input" != "q" ]]; do
                 read -n1 -r -p "Press space to continue..." key < /dev/tty
         done
         ;;          
+    51) curl -sSL https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/kubernetes/menu-realtime.sh | bash
+        ;;
     q) echo  "Exiting" 
     ;;
     *) echo "Menu item $1 is not known"

@@ -17,5 +17,5 @@ CreateOnPremStorage -namespace $namespace
 
 LoadStack -namespace $namespace -baseUrl $GITHUB_URL -appfolder "realtime" -isAzure $false
 
-# curl -sSL -o installrealtime.onprem.ps1 https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/realtime/installrealtime.onprem.ps1
-# pwsh -f installrealtime.onprem.ps1
+# curl -sSL -o installrealtime.onprem.ps1 https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/realtime/installrealtime.onprem.ps1?p=ff
+# pwsh -f installrealtime.onprem.ps1 -NonInteractive

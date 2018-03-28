@@ -5,7 +5,7 @@ set -e
 #   curl -sSL https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/kubernetes/main.sh | bash
 #
 #
-version="2018.03.27.01"
+version="2018.03.27.02"
 
 GITHUB_URL="https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master"
 
@@ -158,7 +158,6 @@ while [[ "$input" != "q" ]]; do
                 read -n1 -r -p "Press space to continue..." key < /dev/tty
         done
         ;;          
-    ;;
     q) echo  "Exiting" 
     ;;
     *) echo "Menu item $1 is not known"
@@ -166,6 +165,9 @@ while [[ "$input" != "q" ]]; do
     esac
 
 echo ""
+if [[ "$input" -eq "q" ]]; then
+    exit
+fi
 read -p "[Press Enter to Continue]" < /dev/tty 
 clear
 done

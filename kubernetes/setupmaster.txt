@@ -19,7 +19,7 @@ echo "User name: $u"
 # sudo kubeadm init --kubernetes-version=v1.9.3 --pod-network-cidr=192.168.0.0/16
 
 # for flannel network plugin
-sudo kubeadm init --kubernetes-version=v1.9.4 --pod-network-cidr=10.244.0.0/16
+sudo kubeadm init --kubernetes-version=v1.9.3 --pod-network-cidr=10.244.0.0/16
 
 # which CNI plugin to use: https://chrislovecnm.com/kubernetes/cni/choosing-a-cni-provider/
 

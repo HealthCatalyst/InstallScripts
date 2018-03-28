@@ -17,6 +17,7 @@ sudo yum -y install yum-versionlock
 sudo yum update -y
 
 # remove older versions
+sudo systemctl stop docker
 sudo yum -y remove docker-engine.x86_64 docker-ce docker-engine-selinux.noarch docker-cimprov.x86_64 docker-engine
 sudo rm -rf /var/lib/docker
 
@@ -25,6 +26,9 @@ sudo yum-config-manager \
     https://docs.docker.com/v1.13/engine/installation/linux/repo_files/centos/docker.repo
 
 sudo yum repolist
+
+echo "docker versions available in repo"
+sudo yum --showduplicates list docker-engine
 
 sudo yum install -y docker-engine-17.03.1.ce-1.el7.centos
 sudo yum versionlock docker-engine

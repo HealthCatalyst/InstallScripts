@@ -5,7 +5,7 @@ set -e
 #   curl -sSL https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/kubernetes/main.sh | bash
 #
 #
-version="2018.03.27.03"
+version="2018.03.27.04"
 
 GITHUB_URL="https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master"
 
@@ -41,6 +41,7 @@ while [[ "$input" != "q" ]]; do
     echo "12: Add this VM as Worker"
     echo "14: Mount shared folder"
     echo "15: Mount Azure Storage as shared folder"
+    echo "16: Uninstall Docker & Kubernetes"
     echo "------ Product Install -------"
     echo "25: Install NLP"
     echo "----- Troubleshooting ----"
@@ -97,6 +98,12 @@ while [[ "$input" != "q" ]]; do
     14)  mountSMB
         ;;
     15)  mountAzureFile
+        ;;
+    16) sudo docker system prune
+        sudo yum remove -y kubelet kubeadm kubectl kubernetes-cni
+        sudo yum -y remove docker-engine.x86_64 docker-ce docker-engine-selinux.noarch docker-cimprov.x86_64 docker-engine
+        sudo yum -y remove docker docker-common docker-selinux docker-engine    
+        echo "Please restart this computer"
         ;;
     25)  curl -sSL https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/nlp/installnlpkubernetes.sh?p=$RANDOM | bash
         ;;

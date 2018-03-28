@@ -1,0 +1,37 @@
+{
+    "name": "Dashboard",
+    "version": "4.0.0.2",
+    "secrets": {
+        "password": [],
+        "value": []
+    },
+    "resources": {
+        "dns": [],
+        "configmaps": [],
+        "roles": [
+            "heapster-rbac.yaml",
+            "dashboard-user.yaml"
+        ],
+        "volumes": {
+            "onprem": [],
+            "azure": []
+        },
+        "volumeclaims": [],
+        "pods": [
+            "influxdb.yaml",
+            "grafana.yaml",
+            "heapster.yaml",
+            "kubernetes-dashboard.yaml"
+        ],
+        "services": {
+            "cluster": [],
+            "external": []
+        },
+        "ingress": {
+            "http": [
+                "dashboard.yaml"
+            ],
+            "tcp": []
+        }
+    }
+}

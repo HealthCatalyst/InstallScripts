@@ -4,7 +4,7 @@ set -e
 # This script is meant for quick & easy install via:
 #   curl -sSL https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/kubernetes/menu-realtime.sh | bash
 #
-version="2018.03.27.01"
+version="2018.03.28.01"
 
 GITHUB_URL="https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master"
 
@@ -31,9 +31,9 @@ while [[ "$input" != "q" ]]; do
     read -p "Please make a selection:" -e input  < /dev/tty 
 
     case "$input" in
-    1)  curl -sSL -o installrealtime.onprem.ps1 https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/realtime/installrealtime.onprem.ps1?p=$RANDOM
+    1)  curl -sSL -o installstack.ps1 https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/kubernetes/installstack.ps1?p=$RANDOM
         clear
-        pwsh -f installrealtime.onprem.ps1 -NonInteractive
+        pwsh -f installrealtime.onprem.ps1 -namespace "fabricrealtime" -appfolder "realtime" -isAzure 0 -NonInteractive
         ;;
     2)  kubectl get 'deployments,pods,services,ingress,secrets,persistentvolumeclaims,persistentvolumes,nodes' --namespace=fabricrealtime -o wide
         ;;

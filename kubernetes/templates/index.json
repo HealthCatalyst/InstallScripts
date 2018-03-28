@@ -1,0 +1,27 @@
+{
+    "name": "Name os stack",
+    "version": "4.0.0.2",
+    "secrets": {
+        "password": [],
+        "value": []
+    },
+    "resources": {
+        "dns": [],
+        "configmaps": [],
+        "roles": [],
+        "volumes": {
+            "onprem": [],
+            "azure": []
+        },
+        "volumeclaims": [],
+        "pods": [],
+        "services": {
+            "cluster": [],
+            "external": []
+        },
+        "ingress": {
+            "http": [],
+            "tcp": []
+        }
+    }
+}

@@ -7,6 +7,8 @@ set -e
 #
 version="2018.03.27.03"
 
+echo "main.sh version $version"
+
 GITHUB_URL="https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master"
 
 source <(curl -sSL "$GITHUB_URL/kubernetes/common.sh?p=$RANDOM")

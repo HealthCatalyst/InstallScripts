@@ -1,6 +1,6 @@
 Write-Output "Version 2018.03.27.02"
 
-# curl -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/realtime/installrealtimekubernetes.ps1 | iex;
+# curl -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/realtime/installrealtime.onprem.ps1 | iex;
 
 $GITHUB_URL = "https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master"
 # $GITHUB_URL = "."
@@ -16,3 +16,6 @@ $namespace = "fabricrealtime"
 CreateOnPremStorage -namespace $namespace
 
 LoadStack -namespace $namespace -baseUrl $GITHUB_URL -appfolder "realtime" -isAzure $false
+
+# curl -sSL -o installrealtime.onprem.ps1 https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/realtime/installrealtime.onprem.ps1
+# pwsh -f installrealtime.onprem.ps1

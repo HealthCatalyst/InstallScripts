@@ -89,6 +89,8 @@ while [[ "$input" != "q" ]]; do
     8)  sudo kubeadm reset
         sudo docker system prune -f
         sudo yum remove -y kubelet kubeadm kubectl kubernetes-cni
+        sudo docker volume rm etcd
+        sudo rm -rf /var/etcd/backups/*
         sudo yum -y remove docker-engine.x86_64 docker-ce docker-engine-selinux.noarch docker-cimprov.x86_64 docker-engine
         sudo yum -y remove docker docker-common docker-selinux docker-engine    
         echo "Please restart this computer"

@@ -9,15 +9,18 @@ GITHUB_URL="https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/mast
 source <(curl -sSL "$GITHUB_URL/kubernetes/common.sh?p=$RANDOM")
 # source ./kubernetes/common.sh
 
-version="2018.03.19.01"
+version="2018.03.27.01"
 
 echo "---- setup-kubdashboard.sh version $version ------"
 
 # enable running pods on master
 # kubectl taint node mymasternode node-role.kubernetes.io/master:NoSchedule
 
-kubectl -n kube-system delete $(kubectl -n kube-system get pod -o name | grep dashboard)
+dashboards=$(kubectl -n kube-system get pod -o name --ignore-not-found=true | grep dashboard)
 
+if [[ ! -z "$dashboards"]]; then
+    kubectl -n kube-system delete $dashboards 
+fi
 # kubectl delete 'pods,services,configMaps,deployments,ingress' -l k8s-traefik=traefik -n kube-system --ignore-not-found=true
 
 # kubectl delete ServiceAccount traefik-ingress-controller-serviceaccount -n kube-system --ignore-not-found=true

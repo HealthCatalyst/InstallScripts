@@ -6,11 +6,13 @@ set -e
 #
 #
 
-version="2018.02.15.01"
+version="2018.03.27.01"
 echo "---- setupnode version $version ----"
 
 u="$(whoami)"
 echo "User name: $u"
+
+sudo yum -y install yum-versionlock
 
 sudo yum update -y
 
@@ -25,6 +27,7 @@ sudo yum-config-manager \
 sudo yum repolist
 
 sudo yum install -y docker-engine-17.03.1.ce-1.el7.centos
+sudo yum versionlock docker-engine
 
 # https://kubernetes.io/docs/setup/independent/install-kubeadm/
 # log rotation for docker: https://docs.docker.com/config/daemon/

@@ -11,7 +11,7 @@
         "value": [{
             "name": "certhostname",
             "valueFromSecret": {
-                "name": "dnsname",
+                "name": "dnshostname",
                 "namespace": "default"
             }
         }]

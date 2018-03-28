@@ -326,5 +326,20 @@ function global:LoadStack([ValidateNotNullOrEmpty()] $namespace, [ValidateNotNul
     
     return $Return
 }
+
+# from http://www.bricelam.net/2012/09/simple-template-engine-for-powershell.html
+function Merge-Tokens($template, $tokens)
+{
+    return [regex]::Replace(
+        $template,
+        '\$(?<tokenName>\w+)\$',
+        {
+            param($match)
+
+            $tokenName = $match.Groups['tokenName'].Value
+
+            return $tokens[$tokenName]
+        })
+}
 # --------------------
 Write-Host "end common-kube.ps1 version $versioncommon"

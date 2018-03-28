@@ -1533,6 +1533,24 @@ function global:CreateAzureStorage([ValidateNotNullOrEmpty()] $namespace) {
     return $Return
 }
 
+function global:CreateOnPremStorage([ValidateNotNullOrEmpty()] $namespace) {
+    [hashtable]$Return = @{} 
+
+    if ([string]::IsNullOrWhiteSpace($namespace)) {
+        Write-Error "no parameter passed to CreateOnPremStorage"
+        exit
+    }
+    
+   
+    $shareName = "$namespace"
+    $sharePath = "/mnt/data/$shareName"
+
+    Write-Output "Create the file share: $sharePath"
+
+    New-Item -ItemType Directory -Force -Path $sharePath   
+    
+    return $Return
+}
 function global:WaitForLoadBalancers([ValidateNotNullOrEmpty()] $resourceGroup) {
     $loadBalancerIP = kubectl get svc traefik-ingress-service-public -n kube-system -o jsonpath='{.status.loadBalancer.ingress[].ip}' --ignore-not-found=true
     if ([string]::IsNullOrWhiteSpace($loadBalancerIP)) {

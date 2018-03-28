@@ -56,9 +56,9 @@ sudo chmod -R 777 /mnt/data
 # kubectl run nginx --image=nginx --port=80
 
 # Register the Microsoft RedHat repository
-# sudo yum-config-manager \
-#    --add-repo \
-#    https://packages.microsoft.com/config/rhel/7/prod.repo
+sudo yum-config-manager \
+   --add-repo \
+   https://packages.microsoft.com/config/rhel/7/prod.repo
 
 # curl https://packages.microsoft.com/config/rhel/7/prod.repo | sudo tee /etc/yum.repos.d/microsoft.repo
 

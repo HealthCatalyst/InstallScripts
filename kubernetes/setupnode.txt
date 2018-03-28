@@ -18,7 +18,9 @@ sudo yum update -y
 
 # remove older versions
 sudo systemctl stop docker
+sudo yum remove -y kubelet kubeadm kubectl kubernetes-cni
 sudo yum -y remove docker-engine.x86_64 docker-ce docker-engine-selinux.noarch docker-cimprov.x86_64 docker-engine
+sudo yum -y remove docker docker-common docker-selinux docker-engine
 sudo rm -rf /var/lib/docker
 
 sudo yum-config-manager \
@@ -30,7 +32,7 @@ sudo yum repolist
 echo "docker versions available in repo"
 sudo yum --showduplicates list docker-engine
 
-sudo yum install -y docker-engine-17.03.1.ce-1.el7.centos
+sudo yum install -y docker-engine-selinux-17.03.1.ce-1.el7.centos.noarch docker-engine-17.03.1.ce-1.el7.centos
 sudo yum versionlock docker-engine
 
 # https://kubernetes.io/docs/setup/independent/install-kubeadm/

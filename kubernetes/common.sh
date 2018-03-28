@@ -286,3 +286,4 @@ function CleanOutNamespace(){
         fi
     done
 }
+echo "--- Finished including common.sh version $versioncommon ---"

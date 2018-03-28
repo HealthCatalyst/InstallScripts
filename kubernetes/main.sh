@@ -5,7 +5,7 @@ set -e
 #   curl -sSL https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/kubernetes/main.sh | bash
 #
 #
-version="2018.03.27.02"
+version="2018.03.27.03"
 
 GITHUB_URL="https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master"
 
@@ -36,6 +36,7 @@ while [[ "$input" != "q" ]]; do
     echo "5: Mount Azure Storage as shared folder"
     echo "6: Setup Load Balancer"
     echo "7: Setup Kubernetes Dashboard"
+    echo "8: Uninstall Docker & Kubernetes"
     echo "------ Worker Node -------"
     echo "12: Add this VM as Worker"
     echo "14: Mount shared folder"
@@ -83,6 +84,13 @@ while [[ "$input" != "q" ]]; do
     6)  curl -sSL https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/kubernetes/setup-loadbalancer.sh?p=$RANDOM | bash
         ;;
     7)  curl -sSL https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/kubernetes/dashboard/setup-kubdashboard.sh?p=$RANDOM | bash
+        ;;
+    8)  sudo kubeadm reset
+        sudo docker system prune
+        sudo yum remove -y kubelet kubeadm kubectl kubernetes-cni
+        sudo yum -y remove docker-engine.x86_64 docker-ce docker-engine-selinux.noarch docker-cimprov.x86_64 docker-engine
+        sudo yum -y remove docker docker-common docker-selinux docker-engine    
+        echo "Please restart this computer"
         ;;
     12)  curl -sSL https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/kubernetes/setupnode.txt?p=$RANDOM | bash
         ;;

@@ -5,7 +5,7 @@ set -e
 #   curl -sSL https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/kubernetes/main.sh | bash
 #
 #
-version="2018.03.27.02"
+version="2018.03.27.03"
 
 GITHUB_URL="https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master"
 
@@ -64,10 +64,10 @@ while [[ "$input" != "q" ]]; do
     read -p "Please make a selection:" -e input  < /dev/tty 
 
     case "$input" in
-    1)  curl -sSL https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/kubernetes/setupnode.txt?p=$RANDOM | bash
-        curl -sSL https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/kubernetes/setupmaster.txt?p=$RANDOM | bash
-        curl -sSL https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/kubernetes/setup-loadbalancer.sh?p=$RANDOM | bash
-        curl -sSL https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/kubernetes/dashboard/setup-kubdashboard.sh?p=$RANDOM | bash
+    1)  curl -sSL https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/kubernetes/setupnode.txt?p=$RANDOM | bash 2>&1 | tee ~/setupnode.log
+        curl -sSL https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/kubernetes/setupmaster.txt?p=$RANDOM | bash 2>&1 | tee ~/setupmaster.log
+        curl -sSL https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/kubernetes/setup-loadbalancer.sh?p=$RANDOM | bash 2>&1 | tee ~/setup-loadbalancer.log
+        curl -sSL https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/kubernetes/dashboard/setup-kubdashboard.sh?p=$RANDOM | bash 2>&1 | tee ~/setup-kubdashboard.log
         ;;
     2)  echo "Current cluster: $(kubectl config current-context)"
         kubectl version --short
@@ -80,17 +80,17 @@ while [[ "$input" != "q" ]]; do
         ;;
     5)  mountAzureFile
         ;;
-    6)  curl -sSL https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/kubernetes/setup-loadbalancer.sh?p=$RANDOM | bash
+    6)  curl -sSL https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/kubernetes/setup-loadbalancer.sh?p=$RANDOM | bash 2>&1 | tee ~/setup-loadbalancer.log
         ;;
-    7)  curl -sSL https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/kubernetes/dashboard/setup-kubdashboard.sh?p=$RANDOM | bash
+        curl -sSL https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/kubernetes/dashboard/setup-kubdashboard.sh?p=$RANDOM | bash 2>&1 | tee ~/setup-kubdashboard.log
         ;;
-    12)  curl -sSL https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/kubernetes/setupnode.txt?p=$RANDOM | bash
+    12)  curl -sSL https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/kubernetes/setupnode.txt?p=$RANDOM | bash 2>&1 | tee ~/setupnode.log
         ;;
     14)  mountSMB
         ;;
     15)  mountAzureFile
         ;;
-    25)  curl -sSL https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/nlp/installnlpkubernetes.sh?p=$RANDOM | bash
+    25)  curl -sSL https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/nlp/installnlpkubernetes.sh?p=$RANDOM | bash 2>&1 | tee ~/installnlpkubernetes.log
         ;;
     31)  echo "Current cluster: $(kubectl config current-context)"
         kubectl version --short

@@ -2,24 +2,28 @@
 set -e
 #
 # This script is meant for quick & easy install via:
-#   curl -sSL https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/kubernetes/setup-loadbalancer.sh | bash
+#   curl -sSL https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/kubernetes/dashboard/setup-kubdashboard.sh | bash
 #
 GITHUB_URL="https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master"
 
 source <(curl -sSL "$GITHUB_URL/kubernetes/common.sh?p=$RANDOM")
 # source ./kubernetes/common.sh
 
-version="2018.03.27.01"
+version="2018.03.27.02"
 
 echo "---- setup-kubdashboard.sh version $version ------"
 
 # enable running pods on master
 # kubectl taint node mymasternode node-role.kubernetes.io/master:NoSchedule
 
-dashboards=$(kubectl -n kube-system get pod -o name --ignore-not-found=true | grep dashboard)
+echo "checking if there is an existing dashboard"
+dashboards="$(kubectl -n kube-system get pod -o name --ignore-not-found=true | grep dashboard)"
 
-if [[ ! -z "$dashboards"]]; then
+if [[ ! -z "$dashboards" ]]; then
+    echo "Deleting existing dashboard"
     kubectl -n kube-system delete $dashboards 
+else
+    echo "No existing dashboard found"
 fi
 # kubectl delete 'pods,services,configMaps,deployments,ingress' -l k8s-traefik=traefik -n kube-system --ignore-not-found=true
 

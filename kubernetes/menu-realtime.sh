@@ -32,6 +32,7 @@ while [[ "$input" != "q" ]]; do
 
     case "$input" in
     1)  curl -sSL -o installrealtime.onprem.ps1 https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/realtime/installrealtime.onprem.ps1?p=$RANDOM
+        clear
         pwsh -f installrealtime.onprem.ps1 -NonInteractive
         ;;
     2)  kubectl get 'deployments,pods,services,ingress,secrets,persistentvolumeclaims,persistentvolumes,nodes' --namespace=fabricrealtime -o wide

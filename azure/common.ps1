@@ -1,6 +1,6 @@
 # This file contains common functions for Azure
 # 
-$versioncommon = "2018.03.27.02"
+$versioncommon = "2018.03.28.01"
 
 Write-Host "---- Including common.ps1 version $versioncommon -----"
 function global:GetCommonVersion() {
@@ -1563,6 +1563,26 @@ function global:WaitForLoadBalancers([ValidateNotNullOrEmpty()] $resourceGroup) 
     
     FixLoadBalancers -resourceGroup $resourceGroup
         
+}
+
+function global:InstallStack([ValidateNotNullOrEmpty()] $baseUrl, [ValidateNotNullOrEmpty()] $namespace, [ValidateNotNullOrEmpty()] $appfolder, $isAzure ) {
+    if ($isAzure) {
+        DownloadAzCliIfNeeded
+        $userInfo = $(GetLoggedInUserInfo)
+    }
+    
+    if ($isAzure) {
+        CreateAzureStorage -namespace $namespace
+    }
+    else {
+        CreateOnPremStorage -namespace $namespace    
+    }
+    
+    LoadStack -namespace $namespace -baseUrl $baseUrl -appfolder "$appfolder" -isAzure $isAzure
+    
+    if ($isAzure) {
+        WaitForLoadBalancers -resourceGroup $(GetResourceGroup).ResourceGroup
+    }    
 }
 #-------------------
 Write-Host "end common.ps1 version $versioncommon"

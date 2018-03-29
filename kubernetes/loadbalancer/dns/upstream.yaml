@@ -1,9 +1,0 @@
-# from http://blog.kubernetes.io/2017/04/configuring-private-dns-zones-upstream-nameservers-kubernetes.html
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: kube-dns
-  namespace: kube-system
-data:
-  upstreamNameservers: |
-    ["8.8.8.8"]

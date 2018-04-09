@@ -3,7 +3,7 @@
 # You can run this by pasting the following in powershell
 # Invoke-WebRequest -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/developer/doslibrary.ps1 | Invoke-Expression;
 
-Write-output "--- doslibrary.ps1 Version 2018.03.14.01 ----"
+Write-output "--- doslibrary.ps1 Version 2018.04.09.01 ----"
 
 $dpsUrl = "http://localhost/DataProcessingService"
 $metadataUrl = "http://localhost/MetadataService" 
@@ -489,7 +489,9 @@ function runHL7Sourcemart() {
     $(executeBatchAsStreaming -batchdefinitionId $batchdefinitionId).BatchExecutionId
 }
 function runSql([ValidateNotNull()] $sql) {
-    Invoke-Sqlcmd -Query $sql -ConnectionString $connectionString
+#    Invoke-Sqlcmd -Query $sql -ConnectionString $connectionString
+    Invoke-Sqlcmd -Query $sql -Database "EdwAdmin"
+
 }
 
 function downloadCerts() {
@@ -641,7 +643,7 @@ function foo() {
     # https://docs.microsoft.com/en-us/sql/relational-databases/data-tier-applications/deploy-a-data-tier-application
     
     ## Set a SMO Server object to the default instance on the local computer.  
-    CD SQLSERVER:\SQL\localhost\DEFAULT  
+    Set-Location SQLSERVER:\SQL\localhost\DEFAULT  
     $srv = get-item .  
 
     ## Open a Common.ServerConnection to the same instance.  

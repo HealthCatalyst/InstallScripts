@@ -277,7 +277,7 @@ function Get-AccessToken($authUrl, $clientId, $scope, $secret)
     return $accessTokenResponse.access_token
 }
 
-function Save-ApiRegistration($authUrl, $body, $accessToken)
+function Add-ApiRegistration($authUrl, $body, $accessToken)
 {
     $url = "$authUrl/api/apiresource"
     $headers = @{"Accept" = "application/json"}
@@ -311,7 +311,7 @@ function Save-ApiRegistration($authUrl, $body, $accessToken)
     }
 }
 
-function Save-ClientRegistration($authUrl, $body, $accessToken)
+function Add-ClientRegistration($authUrl, $body, $accessToken)
 {
     $url = "$authUrl/api/client"
     $headers = @{"Accept" = "application/json"}
@@ -545,8 +545,8 @@ Export-ModuleMember -function Test-Prerequisite
 Export-ModuleMember -function Test-PrerequisiteExact
 Export-ModuleMember -function Get-CouchDbRemoteInstallationStatus
 Export-ModuleMember -function Get-AccessToken
-Export-ModuleMember -function Save-ApiRegistration
-Export-ModuleMember -function Save-ClientRegistration
+Export-ModuleMember -function Add-ApiRegistration
+Export-ModuleMember -function Add-ClientRegistration
 Export-ModuleMember -function Get-CurrentScriptDirectory
 Export-ModuleMember -function Get-InstallationSettings
 Export-ModuleMember -function Add-InstallationSetting

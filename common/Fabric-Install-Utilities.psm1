@@ -292,11 +292,11 @@ function Save-ApiRegistration($authUrl, $body, $accessToken)
         $exception = $_.Exception
         $apiResourceObject = ConvertFrom-Json -InputObject $body
         if ($exception -ne $null -and $exception.Response.StatusCode.value__ -eq 409) {
-            Write-Success "API Resource $($apiResourceObject.name) is already registered...attempting to update"
+            Write-Success "API Resource $($apiResourceObject.name) is already registered...updating registration settings."
             Write-Host ""
             try{
                 $registrationResponse = Invoke-RestMethod -Method Put -Uri "$url/$($apiResourceObject.name)" -Body $body -ContentType "application/json" -Headers $headers
-                return $registrationResponse.clientSecret
+                return ""
             }catch{
                 $exception = $_.Exception
                 $error = Get-ErrorFromResponse -response $exception.Response
@@ -327,11 +327,11 @@ function Save-ClientRegistration($authUrl, $body, $accessToken)
         $exception = $_.Exception
         $clientObject = ConvertFrom-Json -InputObject $body
         if ($exception -ne $null -and $exception.Response.StatusCode.value__ -eq 409) {
-            Write-Success "Client $($clientObject.clientName) is already registered...attempting to update"
+            Write-Success "Client $($clientObject.clientName) is already registered...updating registration settings."
             Write-Host ""
             try{
-                $registrationResponse = Invoke-RestMethod -Method Put -Uri "$url/$($clientObject.clientId)" -Body $body -ContentType "application/json" -Headers $headers
-                return $registrationResponse.clientSecret
+                Invoke-RestMethod -Method Put -Uri "$url/$($clientObject.clientId)" -Body $body -ContentType "application/json" -Headers $headers
+                return ""
             }catch{
                 $exception = $_.Exception
                 $error = Get-ErrorFromResponse -response $exception.Response
@@ -434,7 +434,7 @@ function Get-Certificate($certificateThumbprint)
 }
 
 function Get-DecryptedString($encryptionCertificate, $encryptedString){
-    if($encryptedString.Contains("!!enc!!:")){
+    if($encryptedString.StartsWith("!!enc!!:")){
         $cleanedEncryptedString = $encryptedString.Replace("!!enc!!:","")
         $clearTextValue = [System.Text.Encoding]::UTF8.GetString($encryptionCertificate.PrivateKey.Decrypt([System.Convert]::FromBase64String($cleanedEncryptedString), $true))
         return $clearTextValue
@@ -485,6 +485,18 @@ function Add-ServiceUserToDiscovery($userName, $connString)
                     INSERT INTO CatalystAdmin.IdentityRoleBASE (IdentityID, RoleID) VALUES (@IdentityID, @DiscoveryServiceUserRoleID);
                 END"
     Invoke-Sql $connString $query @{userName=$userName} | Out-Null
+}
+
+function Read-FabricInstallerSecret($defaultSecret)
+{
+    $fabricInstallerSecret = $defaultSecret
+    $userEnteredFabricInstallerSecret = Read-Host  "Enter the Fabric Installer Secret or hit enter to accept the default [$defaultSecret]"
+    Write-Host ""
+    if(![string]::IsNullOrEmpty($userEnteredFabricInstallerSecret)){   
+         $fabricInstallerSecret = $userEnteredFabricInstallerSecret
+    }
+
+    return $fabricInstallerSecret
 }
 
 function Invoke-Sql($connectionString, $sql, $parameters=@{}){    
@@ -540,3 +552,4 @@ Export-ModuleMember -Function Write-Console
 Export-ModuleMember -Function Test-IsRunAsAdministrator
 Export-ModuleMember -Function Add-ServiceUserToDiscovery
 Export-ModuleMember -Function Invoke-Sql
+Export-ModuleMember -Function Read-FabricInstallerSecret

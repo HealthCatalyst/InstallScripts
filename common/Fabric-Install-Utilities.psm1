@@ -499,6 +499,15 @@ function Read-FabricInstallerSecret($defaultSecret)
     return $fabricInstallerSecret
 }
 
+function Get-ErrorFromResponse($response) {
+    $result = $response.GetResponseStream()
+    $reader = New-Object System.IO.StreamReader($result)
+    $reader.BaseStream.Position = 0
+    $reader.DiscardBufferedData()
+    $responseBody = $reader.ReadToEnd();
+    return $responseBody
+}
+
 function Invoke-Sql($connectionString, $sql, $parameters=@{}){    
     $connection = New-Object System.Data.SqlClient.SQLConnection($connectionString)
     $command = New-Object System.Data.SqlClient.SqlCommand($sql, $connection)
@@ -553,3 +562,4 @@ Export-ModuleMember -Function Test-IsRunAsAdministrator
 Export-ModuleMember -Function Add-ServiceUserToDiscovery
 Export-ModuleMember -Function Invoke-Sql
 Export-ModuleMember -Function Read-FabricInstallerSecret
+Export-ModuleMember -Function Get-ErrorFromResponse

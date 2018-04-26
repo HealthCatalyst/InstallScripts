@@ -2,18 +2,28 @@
 set -e
 #
 # This script is meant for quick & easy install via:
-#   'curl -sSL https://healthcatalyst.github.io/InstallScripts/signintoactivedirectory.txt | sh -s <username> <domain>'
+#   curl -sSL https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/signintoactivedirectory.txt | sh -s <username> <domain> 
+# e.g.,
+#  curl -sSL https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/signintoactivedirectory.txt | sh -s imran.qureshi hqcatalyst.local
 
 u="$(whoami)"
-echo "Running version 1.01 as: $u"
+echo "Running signintoactivedirectory version 2018.04.26.01 as: $u"
 
 username="$1"
 domain="$2"
-uppercasedomain=${domain^^}
-usernameplusdomain="$username@$uppercasedomain"
+username_lc="${username,,}"
+domain_lc="${domain,,}"
+domain_uc="${domain^^}"
+usernameplusdomain="$username_lc@$domain_uc"
+
+hcfolder="/opt/install"
 
 set -x
 
-kinit -kt user.keytab $usernameplusdomain -V
+echo "running kinit to generate the kerberos token from ${hcfolder}/user.keytab"
+kinit $usernameplusdomain -k -t ${hcfolder}/user.keytab -V
+
+echo "listing current kerberos tokens"
+klist
 
 set +x

@@ -6,8 +6,8 @@
 
 $GITHUB_URL = "https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master"
 
-Invoke-WebRequest -useb ${GITHUB_URL}/developer/doslibrary.ps1 | Invoke-Expression;
-# Get-Content ./developer/doslibrary.ps1 -Raw | Invoke-Expression;
+# Invoke-WebRequest -useb ${GITHUB_URL}/developer/doslibrary.ps1 | Invoke-Expression;
+Get-Content ./developer/doslibrary.ps1 -Raw | Invoke-Expression;
 
 Write-output "--- runengine.ps1 Version 2018.03.14.01 ----"
 

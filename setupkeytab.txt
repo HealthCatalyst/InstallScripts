@@ -2,17 +2,45 @@
 set -e
 #
 # This script is meant for quick & easy install via:
-#   'curl -sSL https://healthcatalyst.github.io/InstallScripts/setupkeytab.txt | sh -s <username> <domain> <password>'
+#   curl -sSL https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/setupkeytab.txt | sh -s <username> <domain> <password> <ad hostname>
+# e.g.,
+#  curl -sSL https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/setupkeytab.txt | sh -s imran.qureshi hqcatalyst.local <password> hcsad1
 
 username="$1"
 domain="$2"
-uppercasedomain=${domain^^}
 password="$3"
+ad_hostname="$4"
+
+echo "Username: $username"
+echo "Domain: $domain"
+echo "Domain Controller: $ad_hostname"
+
+username_lc="${username,,}"
+domain_lc="${domain,,}"
+domain_uc="${domain^^}"
+echo "username_lc: $username_lc"
+echo "domain_lc: $domain_lc"
+echo "domain_uc: $domain_uc"
 
 u="$(whoami)"
-echo "Running version 1.01 as: $u"
+echo "Running setupkeytab version 2018.04.26.01 as: $u"
+
+hcfolder="/opt/install"
+hckrbconf="${hcfolder}/krb5.conf"
+if [[ ! -f "$hckrbconf" ]]; then
+    echo "$hckrbconf was not found so exiting"
+    exit 0
+fi
+
+# find and replace values in config files with parameters
+sed -i 's/$domain/'"$domain_lc"'/g' $hckrbconf
+sed -i 's/$DOMAIN/'"$domain_uc"'/g' $hckrbconf
+sed -i 's/$server/'"$ad_hostname"'/g' $hckrbconf
+
+cp "$hckrbconf" /etc/krb5.conf
 
 usernameplusdomain="$username@$uppercasedomain"
+usernameplusdomain="$username_lc@$domain_uc"
 
 echo "User name: $usernameplusdomain"
 
@@ -21,16 +49,15 @@ echo "User name: $usernameplusdomain"
 
 set -x
 
-# create keytab file
+echo "creating keytab file in ${hcfolder}/user.keytab"
 ktutil <<EOF
 addent -password -p $usernameplusdomain -k 1 -e RC4-HMAC
 $password
-wkt user.keytab
-list
-exit
+wkt ${hcfolder}/user.keytab
+quit
 EOF
 
-# try to authenticate
-/opt/install/signintoactivedirectory.sh $username $domain
+echo "calling signintoactivedirectory to try to authenticate"
+${hcfolder}/signintoactivedirectory.sh $username_lc $domain_uc
 
 set +x

@@ -3,7 +3,7 @@
 # You can run this by pasting the following in powershell
 # Invoke-WebRequest -useb https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/developer/doslibrary.ps1 | Invoke-Expression;
 
-Write-output "--- doslibrary.ps1 Version 2018.04.09.01 ----"
+Write-output "--- doslibrary.ps1 Version 2018.04.24.01 ----"
 
 $dpsUrl = "http://localhost/DataProcessingService"
 $metadataUrl = "http://localhost/MetadataService" 
@@ -443,6 +443,11 @@ function runAndWaitForDatamart([ValidateNotNull()] $datamartName) {
     return $Return
 }
 
+function runSharedTerminologyDataMarts() {
+    $result = runAndWaitForDatamart -datamartName "Terminology Normalize View"
+    if ($($result.Status) -ne "Succeeded") {return; }
+
+}
 
 function runSharedDataMarts() {
     $result = runAndWaitForDatamart -datamartName "SharedPersonSourceProvider"
@@ -488,7 +493,7 @@ function runHL7Sourcemart() {
     Write-Host "Running batch definition $batchdefinitionId for datamart $datamartName id: $datamartId"
     $(executeBatchAsStreaming -batchdefinitionId $batchdefinitionId).BatchExecutionId
 }
-function runSql([ValidateNotNull()] $sql) {
+function runSql([ValidateNotNull()][string] $sql) {
 #    Invoke-Sqlcmd -Query $sql -ConnectionString $connectionString
     Invoke-Sqlcmd -Query $sql -Database "EdwAdmin"
 
@@ -514,7 +519,7 @@ BEGIN
 CREATE LOGIN [nodeuser] WITH PASSWORD=N'ILoveNode2017', DEFAULT_DATABASE=[SAM], DEFAULT_LANGUAGE=[us_english], CHECK_EXPIRATION=ON, CHECK_POLICY=ON
 END
 "@
-    Invoke-Sqlcmd -Query $sql -ConnectionString $connectionString -Verbose
+    runSql -Query $sql -ConnectionString $connectionString -Verbose
     $sql = 
     @"
 USE [SAM];
@@ -522,7 +527,7 @@ GO
 CREATE USER [nodeuser] FOR LOGIN [nodeuser]
 GO
 "@
-    Invoke-Sqlcmd -Query $sql -ConnectionString $connectionString -Verbose
+    runSql -sql $sql -Verbose
     $sql = 
     @"
 USE [SAM];
@@ -530,7 +535,7 @@ GO
 exec sp_addrolemember 'db_datareader', 'nodeuser';
 GO
 "@
-    Invoke-Sqlcmd -Query $sql -ConnectionString $connectionString -Verbose
+    runSql -sql $sql -Verbose
 }
 
 function runFabricEHRDocker() {
@@ -542,7 +547,7 @@ function startFabricEHRNodeJs() {
 
 function showDiscoveryServiceUrls() {
     $sql = "SELECT [ServiceNM],[ServiceUrl] FROM [EDWAdmin].[CatalystAdmin].[DiscoveryServiceBASE]"
-    Invoke-Sqlcmd -Query $sql -ConnectionString $connectionString    
+    runSql -sql $sql    
 }
 
 function showUserPermissions() {
@@ -555,7 +560,7 @@ function showUserPermissions() {
     ORDER BY ib.IdentityID    
 "@
 
-    $rows = Invoke-Sqlcmd -Query $sql -ConnectionString $connectionString
+    $rows = runSql -sql $sql
 
     foreach ($row in $rows) {
         Write-Host $row

@@ -25,6 +25,9 @@ echo "domain_uc: $domain_uc"
 u="$(whoami)"
 echo "Running setupkeytab version 2018.04.26.01 as: $u"
 
+echo "making sure the needed packages are install"
+yum install -y wget krb5-libs krb5-workstation ntp rsync; yum clean all
+
 hcfolder="/opt/install"
 hckrbconf="${hcfolder}/krb5.conf"
 if [[ ! -f "$hckrbconf" ]]; then

@@ -2,12 +2,12 @@
 set -e
 #
 # This script is meant for quick & easy install via:
-#   curl -sSL https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/signintoactivedirectory.txt | sh -s <username> <domain> 
+#   curl -sSL https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/signintoactivedirectory.txt | sudo sh -s <username> <domain> 
 # e.g.,
-#  curl -sSL https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/signintoactivedirectory.txt | sh -s imran.qureshi hqcatalyst.local
+#  curl -sSL https://raw.githubusercontent.com/HealthCatalyst/InstallScripts/master/signintoactivedirectory.txt | sudo sh -s imran.qureshi hqcatalyst.local
 
 u="$(whoami)"
-echo "Running signintoactivedirectory version 2018.04.26.01 as: $u"
+echo "Running signintoactivedirectory version 2018.04.26.02 as: $u"
 
 username="$1"
 domain="$2"
@@ -15,6 +15,11 @@ username_lc="${username,,}"
 domain_lc="${domain,,}"
 domain_uc="${domain^^}"
 usernameplusdomain="$username_lc@$domain_uc"
+
+echo "username_lc: $username_lc"
+echo "domain_lc: $domain_lc"
+echo "domain_uc: $domain_uc"
+echo "User name and domain: $usernameplusdomain"
 
 hcfolder="/opt/install"
 

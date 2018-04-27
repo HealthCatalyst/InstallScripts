@@ -26,7 +26,7 @@ echo "domain_lc: $domain_lc"
 echo "domain_uc: $domain_uc"
 
 echo "making sure the needed packages are install"
-yum install -y wget krb5-libs krb5-workstation ntp rsync; yum clean all
+yum install -y krb5-libs krb5-workstation ntp rsync; yum clean all
 
 hcfolder="/opt/install"
 hckrbconf="${hcfolder}/krb5.conf"

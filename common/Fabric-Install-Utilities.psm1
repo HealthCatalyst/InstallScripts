@@ -310,7 +310,7 @@ function Add-ApiRegistration($authUrl, $body, $accessToken)
             if($exception -ne $null -and $exception.Response -ne $null){
                 $error = Get-ErrorFromResponse -response $exception.Response
             }
-            Write-Error "There was an error registering API $($apiResourceObject.clientName) with Fabric.Identity: $error, halting installation."
+            Write-Error "There was an error registering API $($apiResourceObject.name) with Fabric.Identity: $error, halting installation."
             throw $exception
         }
     }

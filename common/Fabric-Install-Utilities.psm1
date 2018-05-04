@@ -305,7 +305,12 @@ function Add-ApiRegistration($authUrl, $body, $accessToken)
             }
         }
         else {
-            Write-Error "Could not register API $($apiResourceObject.name) with Fabric.Identity, halting installation."
+            $error = "Unknown error."
+            $exception = $_.Exception
+            if($exception -ne $null -and $exception.Response -ne $null){
+                $error = Get-ErrorFromResponse -response $exception.Response
+            }
+            Write-Error "There was an error registering API $($apiResourceObject.name) with Fabric.Identity: $error, halting installation."
             throw $exception
         }
     }
@@ -340,7 +345,12 @@ function Add-ClientRegistration($authUrl, $body, $accessToken)
             }
         }
         else {
-            Write-Error "Could not register client $($clientObject.clientName) with Fabric.Identity, halting installation."
+            $error = "Unknown error."
+            $exception = $_.Exception
+            if($exception -ne $null -and $exception.Response -ne $null){
+                $error = Get-ErrorFromResponse -response $exception.Response
+            }
+            Write-Error "There was an error registering client $($clientObject.clientName) with Fabric.Identity: $error, halting installation."
             throw $exception
         }
     }

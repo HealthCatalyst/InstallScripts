@@ -509,6 +509,22 @@ function Read-FabricInstallerSecret($defaultSecret)
     return $fabricInstallerSecret
 }
 
+function Invoke-ResetFabricInstallerSecret([Parameter(Mandatory=$true)] [string] $identityDbConnectionString){
+    $fabricInstallerSecret = [System.Convert]::ToBase64String([guid]::NewGuid().ToByteArray()).Substring(0,16)
+    Write-Host "New Installer secret: $fabricInstallerSecret"
+    $sha = [System.Security.Cryptography.SHA256]::Create()
+    $hashedSecret = [System.Convert]::ToBase64String($sha.ComputeHash([System.Text.Encoding]::UTF8.GetBytes($fabricInstallerSecret)))
+    $query = "DECLARE @ClientID int;
+              
+              SELECT @ClientID = Id FROM Clients WHERE ClientId = 'fabric-installer';
+
+              UPDATE ClientSecrets
+              SET Value = @value
+              WHERE ClientId = @ClientID"
+    Invoke-Sql -connectionString $identityDbConnectionString -sql $query -parameters @{value=$hashedSecret} | Out-Null
+    return $fabricInstallerSecret
+}
+
 function Get-ErrorFromResponse($response) {
     $result = $response.GetResponseStream()
     $reader = New-Object System.IO.StreamReader($result)
@@ -573,3 +589,4 @@ Export-ModuleMember -Function Add-ServiceUserToDiscovery
 Export-ModuleMember -Function Invoke-Sql
 Export-ModuleMember -Function Read-FabricInstallerSecret
 Export-ModuleMember -Function Get-ErrorFromResponse
+Export-ModuleMember -Function Invoke-ResetFabricInstallerSecret

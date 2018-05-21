@@ -30,7 +30,7 @@ echo "username_lc: $username_lc"
 echo "domain_lc: $domain_lc"
 echo "domain_uc: $domain_uc"
 
-echo "making sure the needed packages are install"
+echo "making sure the needed packages are installed"
 yum install -y krb5-libs krb5-workstation ntp rsync; yum clean all
 
 hcfolder="/opt/install"

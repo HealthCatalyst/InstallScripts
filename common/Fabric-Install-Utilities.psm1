@@ -54,7 +54,12 @@ function New-AppRoot($appDirectory, $iisUser){
         $readAccessRule = New-Object System.Security.AccessControl.FileSystemAccessRule($iisUser, "Read", "ContainerInherit,ObjectInherit", "None", "Allow")
         $acl.AddAccessRule($writeAccessRule)
         $acl.AddAccessRule($readAccessRule)
-        Set-Acl -Path $logDirectory $acl
+        try {
+            Set-Acl -Path $logDirectory $acl
+        } catch [System.InvalidOperationException]
+        {
+           icacls $logDirectory /t /q /c /reset   
+        }
     }else{
         Write-Console "Log directory: $logDirectory exisits"
     }

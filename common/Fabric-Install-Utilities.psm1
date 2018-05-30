@@ -54,21 +54,21 @@ function New-AppRoot($appDirectory, $iisUser){
         $readAccessRule = New-Object System.Security.AccessControl.FileSystemAccessRule($iisUser, "Read", "ContainerInherit,ObjectInherit", "None", "Allow")
 
         try {			
-			$acl.AddAccessRule($writeAccessRule)
+            $acl.AddAccessRule($writeAccessRule)
         } catch [System.InvalidOperationException]
         {
             # Attempt to fix parent identity directory before log directory
             RepairAclCanonicalOrder(Get-Acl $appDirectory)
             RepairAclCanonicalOrder($acl)
-			$acl.AddAccessRule($writeAccessRule)
+            $acl.AddAccessRule($writeAccessRule)
         }
 		
         try {
-			$acl.AddAccessRule($readAccessRule)
+            $acl.AddAccessRule($readAccessRule)
         } catch [System.InvalidOperationException]
         {
             RepairAclCanonicalOrder($acl)
-			$acl.AddAccessRule($readAccessRule)
+            $acl.AddAccessRule($readAccessRule)
         }
 		
 		try {

@@ -52,13 +52,31 @@ function New-AppRoot($appDirectory, $iisUser){
         $acl = (Get-Item $logDirectory).GetAccessControl('Access')
         $writeAccessRule = New-Object System.Security.AccessControl.FileSystemAccessRule($iisUser, "Write", "ContainerInherit,ObjectInherit", "None", "Allow")
         $readAccessRule = New-Object System.Security.AccessControl.FileSystemAccessRule($iisUser, "Read", "ContainerInherit,ObjectInherit", "None", "Allow")
-        $acl.AddAccessRule($writeAccessRule)
-        $acl.AddAccessRule($readAccessRule)
+
+        try {			
+			$acl.AddAccessRule($writeAccessRule)
+        } catch [System.InvalidOperationException]
+        {
+            # Attempt to fix parent identity directory before log directory
+            RepairAclCanonicalOrder(Get-Acl $appDirectory)
+            RepairAclCanonicalOrder($acl)
+			$acl.AddAccessRule($writeAccessRule)
+        }
+		
         try {
+			$acl.AddAccessRule($readAccessRule)
+        } catch [System.InvalidOperationException]
+        {
+            RepairAclCanonicalOrder($acl)
+			$acl.AddAccessRule($readAccessRule)
+        }
+		
+		try {
             Set-Acl -Path $logDirectory $acl
         } catch [System.InvalidOperationException]
         {
-           icacls $logDirectory /t /q /c /reset   
+            RepairAclCanonicalOrder($acl)
+            Set-Acl -Path $logDirectory $acl
         }
     }else{
         Write-Console "Log directory: $logDirectory exisits"
@@ -562,6 +580,37 @@ function Write-Success($message){
 
 function Write-Console($message){
     Write-Host $message -ForegroundColor Gray
+}
+
+function RepairAclCanonicalOrder($Acl) {
+    if ($Acl.AreAccessRulesCanonical) {
+        return
+    }
+
+    # Convert ACL to a raw security descriptor:
+    $RawSD = New-Object System.Security.AccessControl.RawSecurityDescriptor($Acl.Sddl)
+
+    # Create a new, empty DACL
+    $NewDacl = New-Object System.Security.AccessControl.RawAcl(
+        [System.Security.AccessControl.RawAcl]::AclRevision,
+        $RawSD.DiscretionaryAcl.Count  # Capacity of ACL
+    )
+
+    # Put in reverse canonical order and insert each ACE (I originally had a different method that
+    # preserved the order as much as it could, but that order isn't preserved later when we put this
+    # back into a DirectorySecurity object, so I went with this shorter command)
+    $RawSD.DiscretionaryAcl | Sort-Object @{E={$_.IsInherited}; Descending=$true}, AceQualifier | ForEach-Object {
+        $NewDacl.InsertAce(0, $_)
+    }
+
+    # Replace the DACL with the re-ordered one
+    $RawSD.DiscretionaryAcl = $NewDacl
+
+    # Commit those changes back to the original SD object (but not to disk yet):
+    $Acl.SetSecurityDescriptorSddlForm($RawSD.GetSddlForm("Access"))
+
+    # Commit changes
+    $Acl | Set-Acl
 }
 
 Export-ModuleMember -function Add-EnvironmentVariable

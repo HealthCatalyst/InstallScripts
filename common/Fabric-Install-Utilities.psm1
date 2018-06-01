@@ -158,9 +158,6 @@ function Publish-WebSite($zipPackage, $appDirectory, $appName, $overwriteWebConf
         }
 
         if(!(Test-IsDirectory $itemTargetFilePath)){
-            if($itemTargetFilePath.EndsWith("web.config")){
-                $overwrite = $overwriteWebConfig
-            }
             try{
                 Write-Console "......Extracting $itemTargetFilePath..."
                 [System.IO.Compression.ZipFileExtensions]::ExtractToFile($item, $itemTargetFilePath, $overwrite)
@@ -318,8 +315,11 @@ function Add-ApiRegistration($authUrl, $body, $accessToken)
             Write-Success "API Resource $($apiResourceObject.name) is already registered...updating registration settings."
             Write-Host ""
             try{
-                $registrationResponse = Invoke-RestMethod -Method Put -Uri "$url/$($apiResourceObject.name)" -Body $body -ContentType "application/json" -Headers $headers
-                return ""
+                Invoke-RestMethod -Method Put -Uri "$url/$($apiResourceObject.name)" -Body $body -ContentType "application/json" -Headers $headers
+                
+                # Reset api secret
+                $apiResponse = Invoke-RestMethod -Method Post -Uri "$url/$($apiResourceObject.name)/resetPassword" -ContentType "application/json" -Headers $headers
+                return $apiResponse.apiSecret
             }catch{
                 $exception = $_.Exception
                 $error = Get-ErrorFromResponse -response $exception.Response

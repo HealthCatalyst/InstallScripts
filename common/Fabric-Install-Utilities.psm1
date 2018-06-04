@@ -304,7 +304,7 @@ function Add-ApiRegistration($authUrl, $body, $accessToken)
     if($accessToken){
         $headers.Add("Authorization", "Bearer $accessToken")
     }
-    
+
     try{
         $registrationResponse = Invoke-RestMethod -Method Post -Uri $url -Body $body -ContentType "application/json" -Headers $headers
         return $registrationResponse.apiSecret
@@ -316,7 +316,7 @@ function Add-ApiRegistration($authUrl, $body, $accessToken)
             Write-Host ""
             try{
                 Invoke-RestMethod -Method Put -Uri "$url/$($apiResourceObject.name)" -Body $body -ContentType "application/json" -Headers $headers
-                
+
                 # Reset api secret
                 $apiResponse = Invoke-RestMethod -Method Post -Uri "$url/$($apiResourceObject.name)/resetPassword" -ContentType "application/json" -Headers $headers
                 return $apiResponse.apiSecret
@@ -357,9 +357,12 @@ function Add-ClientRegistration($authUrl, $body, $accessToken)
         if ($exception -ne $null -and $exception.Response.StatusCode.value__ -eq 409) {
             Write-Success "Client $($clientObject.clientName) is already registered...updating registration settings."
             Write-Host ""
-            try{
+            try{                
                 Invoke-RestMethod -Method Put -Uri "$url/$($clientObject.clientId)" -Body $body -ContentType "application/json" -Headers $headers
-                return ""
+
+                # Reset client secret
+                $apiResponse = Invoke-RestMethod -Method Post -Uri "$url/$($clientObject.clientId)/resetPassword" -ContentType "application/json" -Headers $headers
+                return $apiResponse.clientSecret
             }catch{
                 $exception = $_.Exception
                 $error = Get-ErrorFromResponse -response $exception.Response

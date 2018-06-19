@@ -46,7 +46,7 @@ function New-AppRoot($appDirectory, $iisUser){
 
     
     if(!(Test-Path $logDirectory)) {
-        Write-Console "Creating applciation log directory: $logDirectory."
+        Write-Console "Creating application log directory: $logDirectory."
         mkdir $logDirectory | Out-Null
         Write-Console "Setting Write and Read access for $iisUser on $logDirectory."
         $acl = (Get-Item $logDirectory).GetAccessControl('Access')
@@ -79,7 +79,7 @@ function New-AppRoot($appDirectory, $iisUser){
             Set-Acl -Path $logDirectory $acl
         }
     }else{
-        Write-Console "Log directory: $logDirectory exisits"
+        Write-Console "Log directory: $logDirectory exists"
     }
 }
 
@@ -585,6 +585,55 @@ function Write-Console($message){
     Write-Host $message -ForegroundColor Gray
 }
 
+function Test-DiscoveryHasBuildVersion($discoveryUrl, $credential) {
+    $response = [xml](Invoke-WebRequest -Method Get -Uri "$discoveryUrl/`$metadata" -Credential $credential -ContentType "application/xml")
+	
+	return $response.Edmx.DataServices.Schema.EntityType.Property.Name -contains 'BuildNumber'
+}
+
+function Add-DiscoveryRegistration($discoveryUrl, $serviceUrl, $credential, $buildVersion, $serviceName, $serviceVersion, $friendlyName, $description) {
+    $hasVersion = Test-DiscoveryHasBuildVersion $discoveryUrl $credential
+
+    if($hasVersion) {
+        $registrationBody = @{
+        ServiceName   = $serviceName
+        Version       = $serviceVersion
+        ServiceUrl    = $serviceUrl
+        DiscoveryType = "Service"
+        IsHidden      = $true
+        FriendlyName  = $friendlyName
+        Description   = $description
+        BuildNumber  = $buildVersion
+        }
+    }
+    else {
+       $registrationBody = @{
+        ServiceName   = $serviceName
+        Version       = $serviceVersion
+        ServiceUrl    = $serviceUrl
+        DiscoveryType = "Service"
+        IsHidden      = $true
+        FriendlyName  = $friendlyName
+        Description   = $description
+        }
+    }
+
+    $url = "$discoveryUrl/Services"
+    $jsonBody = $registrationBody | ConvertTo-Json	
+    try{
+        Invoke-RestMethod -Method Post -Uri "$url" -Body "$jsonBody" -ContentType "application/json" -Credential $credential | Out-Null
+        Write-Success "$friendlyName successfully registered with DiscoveryService."
+    }catch{
+        $exception = $_.Exception
+        Write-Error "Unable to register $friendlyName with DiscoveryService. Ensure that DiscoveryService is running at $discoveryUrl, that Windows Authentication is enabled for DiscoveryService and Anonymous Authentication is disabled for DiscoveryService. Error $($_.Exception.Message) Halting installation."
+        if($exception.Response -ne $null){
+            $error = Get-ErrorFromResponse -response $exception.Response
+            Write-Error "    There was an error updating the resource: $error."
+        }
+        throw
+    }
+}
+
 function RepairAclCanonicalOrder($Acl) {
     if ($Acl.AreAccessRulesCanonical) {
         return
@@ -647,3 +696,5 @@ Export-ModuleMember -Function Invoke-Sql
 Export-ModuleMember -Function Read-FabricInstallerSecret
 Export-ModuleMember -Function Get-ErrorFromResponse
 Export-ModuleMember -Function Invoke-ResetFabricInstallerSecret
+Export-ModuleMember -Function Test-DiscoveryHasBuildVersion
+Export-ModuleMember -Function Add-DiscoveryRegistration

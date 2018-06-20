@@ -593,29 +593,18 @@ function Test-DiscoveryHasBuildVersion($discoveryUrl, $credential) {
 
 function Add-DiscoveryRegistration($discoveryUrl, $credential, $discoveryPostBody) {
     $hasVersion = Test-DiscoveryHasBuildVersion $discoveryUrl $credential
+    $registrationBody = @{
+        ServiceName   = $discoveryPostBody.serviceName
+        Version       = $discoveryPostBody.serviceVersion
+        ServiceUrl    = $discoveryPostBody.serviceUrl
+        DiscoveryType = "Service"
+        IsHidden      = $true
+        FriendlyName  = $discoveryPostBody.friendlyName
+        Description   = $discoveryPostBody.description
+    }
 
     if($hasVersion) {
-        $registrationBody = @{
-        ServiceName   = $discoveryPostBody.serviceName
-        Version       = $discoveryPostBody.serviceVersion
-        ServiceUrl    = $discoveryPostBody.serviceUrl
-        DiscoveryType = "Service"
-        IsHidden      = $true
-        FriendlyName  = $discoveryPostBody.friendlyName
-        Description   = $discoveryPostBody.description
-        BuildNumber  = $discoveryPostBody.buildVersion
-        }
-    }
-    else {
-       $registrationBody = @{
-        ServiceName   = $discoveryPostBody.serviceName
-        Version       = $discoveryPostBody.serviceVersion
-        ServiceUrl    = $discoveryPostBody.serviceUrl
-        DiscoveryType = "Service"
-        IsHidden      = $true
-        FriendlyName  = $discoveryPostBody.friendlyName
-        Description   = $discoveryPostBody.description
-        }
+        $registrationBody.BuildNumber = $discoveryPostBody.buildVersion
     }
 
     $url = "$discoveryUrl/Services"

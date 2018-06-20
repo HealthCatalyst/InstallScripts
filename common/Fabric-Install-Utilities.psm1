@@ -588,33 +588,33 @@ function Write-Console($message){
 function Test-DiscoveryHasBuildVersion($discoveryUrl, $credential) {
     $response = [xml](Invoke-WebRequest -Method Get -Uri "$discoveryUrl/`$metadata" -Credential $credential -ContentType "application/xml")
 	
-	return $response.Edmx.DataServices.Schema.EntityType.Property.Name -contains 'BuildNumber'
+    return $response.Edmx.DataServices.Schema.EntityType.Property.Name -contains 'BuildNumber'
 }
 
-function Add-DiscoveryRegistration($discoveryUrl, $serviceUrl, $credential, $buildVersion, $serviceName, $serviceVersion, $friendlyName, $description) {
+function Add-DiscoveryRegistration($discoveryUrl, $credential, $discoveryPostBody) {
     $hasVersion = Test-DiscoveryHasBuildVersion $discoveryUrl $credential
 
     if($hasVersion) {
         $registrationBody = @{
-        ServiceName   = $serviceName
-        Version       = $serviceVersion
-        ServiceUrl    = $serviceUrl
+        ServiceName   = $discoveryPostBody.serviceName
+        Version       = $discoveryPostBody.serviceVersion
+        ServiceUrl    = $discoveryPostBody.serviceUrl
         DiscoveryType = "Service"
         IsHidden      = $true
-        FriendlyName  = $friendlyName
-        Description   = $description
-        BuildNumber  = $buildVersion
+        FriendlyName  = $discoveryPostBody.friendlyName
+        Description   = $discoveryPostBody.description
+        BuildNumber  = $discoveryPostBody.buildVersion
         }
     }
     else {
        $registrationBody = @{
-        ServiceName   = $serviceName
-        Version       = $serviceVersion
-        ServiceUrl    = $serviceUrl
+        ServiceName   = $discoveryPostBody.serviceName
+        Version       = $discoveryPostBody.serviceVersion
+        ServiceUrl    = $discoveryPostBody.serviceUrl
         DiscoveryType = "Service"
         IsHidden      = $true
-        FriendlyName  = $friendlyName
-        Description   = $description
+        FriendlyName  = $discoveryPostBody.friendlyName
+        Description   = $discoveryPostBody.description
         }
     }
 
@@ -622,10 +622,10 @@ function Add-DiscoveryRegistration($discoveryUrl, $serviceUrl, $credential, $bui
     $jsonBody = $registrationBody | ConvertTo-Json	
     try{
         Invoke-RestMethod -Method Post -Uri "$url" -Body "$jsonBody" -ContentType "application/json" -Credential $credential | Out-Null
-        Write-Success "$friendlyName successfully registered with DiscoveryService."
+        Write-Success "$discoveryPostBody.friendlyName successfully registered with DiscoveryService."
     }catch{
         $exception = $_.Exception
-        Write-Error "Unable to register $friendlyName with DiscoveryService. Ensure that DiscoveryService is running at $discoveryUrl, that Windows Authentication is enabled for DiscoveryService and Anonymous Authentication is disabled for DiscoveryService. Error $($_.Exception.Message) Halting installation."
+        Write-Error "Unable to register $discoveryPostBody.friendlyName with DiscoveryService. Ensure that DiscoveryService is running at $discoveryUrl, that Windows Authentication is enabled for DiscoveryService and Anonymous Authentication is disabled for DiscoveryService. Error $($_.Exception.Message) Halting installation."
         if($exception.Response -ne $null){
             $error = Get-ErrorFromResponse -response $exception.Response
             Write-Error "    There was an error updating the resource: $error."
@@ -696,5 +696,4 @@ Export-ModuleMember -Function Invoke-Sql
 Export-ModuleMember -Function Read-FabricInstallerSecret
 Export-ModuleMember -Function Get-ErrorFromResponse
 Export-ModuleMember -Function Invoke-ResetFabricInstallerSecret
-Export-ModuleMember -Function Test-DiscoveryHasBuildVersion
 Export-ModuleMember -Function Add-DiscoveryRegistration

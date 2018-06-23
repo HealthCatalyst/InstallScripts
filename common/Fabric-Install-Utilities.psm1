@@ -587,12 +587,16 @@ function Write-Console($message){
 
 function Test-DiscoveryHasBuildVersion($discoveryUrl, $credential) {
     $response = [xml](Invoke-RestMethod -Method Get -Uri "$discoveryUrl/`$metadata" -Credential $credential -ContentType "application/xml")
-	
+
     return $response.Edmx.DataServices.Schema.EntityType.Property.Name -contains 'BuildNumber'
 }
 
 function Add-DiscoveryRegistration($discoveryUrl, $credential, $discoveryPostBody) {
-    $hasVersion = Test-DiscoveryHasBuildVersion $discoveryUrl $credential
+    # append default /v1 if version does not exist
+    if($discoveryUrl -notmatch '/v\d$') {
+        $discoveryUrl = "$discoveryUrl/v1"
+    }
+
     $registrationBody = @{
         ServiceName   = $discoveryPostBody.serviceName
         Version       = $discoveryPostBody.serviceVersion
@@ -603,15 +607,16 @@ function Add-DiscoveryRegistration($discoveryUrl, $credential, $discoveryPostBod
         Description   = $discoveryPostBody.description
     }
 
+    $hasVersion = Test-DiscoveryHasBuildVersion $discoveryUrl $credential
     if($hasVersion) {
         $registrationBody.BuildNumber = $discoveryPostBody.buildVersion
     }
 
     $url = "$discoveryUrl/Services"
-    $jsonBody = $registrationBody | ConvertTo-Json	
+    $jsonBody = $registrationBody | ConvertTo-Json
     try{
         Invoke-RestMethod -Method Post -Uri "$url" -Body "$jsonBody" -ContentType "application/json" -Credential $credential | Out-Null
-        Write-Success "$discoveryPostBody.friendlyName successfully registered with DiscoveryService."
+        Write-Success "$($discoveryPostBody.friendlyName) successfully registered with DiscoveryService."
     }catch{
         $exception = $_.Exception
         Write-Error "Unable to register $discoveryPostBody.friendlyName with DiscoveryService. Ensure that DiscoveryService is running at $discoveryUrl, that Windows Authentication is enabled for DiscoveryService and Anonymous Authentication is disabled for DiscoveryService. Error $($_.Exception.Message) Halting installation."

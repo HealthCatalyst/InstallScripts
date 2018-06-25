@@ -592,11 +592,6 @@ function Test-DiscoveryHasBuildVersion($discoveryUrl, $credential) {
 }
 
 function Add-DiscoveryRegistration($discoveryUrl, $credential, $discoveryPostBody) {
-    # append default /v1 if version does not exist
-    if($discoveryUrl -notmatch '/v\d+/*$') {
-        $discoveryUrl = "$discoveryUrl/v1"
-    }
-
     $registrationBody = @{
         ServiceName   = $discoveryPostBody.serviceName
         Version       = $discoveryPostBody.serviceVersion

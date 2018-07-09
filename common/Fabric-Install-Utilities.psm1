@@ -49,7 +49,7 @@ function New-AppRoot($appDirectory, $iisUser){
         Write-Console "Creating application log directory: $logDirectory."
         mkdir $logDirectory | Out-Null
         Write-Console "Setting Write and Read access for $iisUser on $logDirectory."
-        $acl = (Get-Item $logDirectory).GetAccessControl('Access')
+        $acl = Get-Acl $logDirectory
         $writeAccessRule = New-Object System.Security.AccessControl.FileSystemAccessRule($iisUser, "Write", "ContainerInherit,ObjectInherit", "None", "Allow")
         $readAccessRule = New-Object System.Security.AccessControl.FileSystemAccessRule($iisUser, "Read", "ContainerInherit,ObjectInherit", "None", "Allow")
 

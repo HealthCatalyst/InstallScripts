@@ -339,7 +339,7 @@ function Add-ApiRegistration($authUrl, $body, $accessToken)
     }
 }
 
-function Add-ClientRegistration($authUrl, $body, $accessToken)
+function Add-ClientRegistration($authUrl, $body, $accessToken, $shouldResetSecret = $true)
 {
     $url = "$authUrl/api/client"
     $headers = @{"Accept" = "application/json"}
@@ -361,8 +361,12 @@ function Add-ClientRegistration($authUrl, $body, $accessToken)
                 Invoke-RestMethod -Method Put -Uri "$url/$($clientObject.clientId)" -Body $body -ContentType "application/json" -Headers $headers
 
                 # Reset client secret
-                $apiResponse = Invoke-RestMethod -Method Post -Uri "$url/$($clientObject.clientId)/resetPassword" -ContentType "application/json" -Headers $headers
-                return $apiResponse.clientSecret
+                if($shouldResetSecret) {
+                    $apiResponse = Invoke-RestMethod -Method Post -Uri "$url/$($clientObject.clientId)/resetPassword" -ContentType "application/json" -Headers $headers
+                    return $apiResponse.clientSecret
+                }
+                
+                return "";
             }catch{
                 $exception = $_.Exception
                 $error = Get-ErrorFromResponse -response $exception.Response
@@ -405,7 +409,7 @@ function Get-InstallationSettings($configSection)
             $installationSettings.Add($variable.name, $variable.value)
         }
     }
-    
+
     try{
         $encryptionCertificateThumbprint = $installationSettings.encryptionCertificateThumbprint
         $encryptionCertificate = Get-EncryptionCertificate $encryptionCertificateThumbprint
@@ -423,7 +427,7 @@ function Get-InstallationSettings($configSection)
         }
         $installationSettingsDecrypted.Add($key, $value)
     }
-    
+
     return $installationSettingsDecrypted
 }
 

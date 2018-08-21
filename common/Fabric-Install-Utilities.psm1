@@ -613,7 +613,11 @@ function Write-Console($message){
 }
 
 function Test-DiscoveryHasBuildVersion($discoveryUrl, $credential) {
-    $response = [xml](Invoke-RestMethod -Method Get -Uri "$discoveryUrl/`$metadata" -Credential $credential -ContentType "application/xml")
+    if($null -eq $credential){
+        $response = [xml](Invoke-RestMethod -Method Get -Uri "$discoveryUrl/`$metadata" -UseDefaultCredentials -ContentType "application/xml")
+    }else{
+        $response = [xml](Invoke-RestMethod -Method Get -Uri "$discoveryUrl/`$metadata" -Credential $credential -ContentType "application/xml")
+    }
 
     return $response.Edmx.DataServices.Schema.EntityType.Property.Name -contains 'BuildNumber'
 }
@@ -637,7 +641,11 @@ function Add-DiscoveryRegistration($discoveryUrl, $credential, $discoveryPostBod
     $url = "$discoveryUrl/Services"
     $jsonBody = $registrationBody | ConvertTo-Json
     try{
-        Invoke-RestMethod -Method Post -Uri "$url" -Body "$jsonBody" -ContentType "application/json" -Credential $credential | Out-Null
+        if($null -eq $credential){
+            Invoke-RestMethod -Method Post -Uri "$url" -Body "$jsonBody" -ContentType "application/json" -UseDefaultCredentials | Out-Null
+        }else{
+            Invoke-RestMethod -Method Post -Uri "$url" -Body "$jsonBody" -ContentType "application/json" -Credential $credential | Out-Null
+        }
         Write-Success "$($discoveryPostBody.friendlyName) successfully registered with DiscoveryService."
     }catch{
         $exception = $_.Exception

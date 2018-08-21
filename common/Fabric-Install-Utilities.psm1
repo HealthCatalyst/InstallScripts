@@ -110,6 +110,29 @@ function New-AppPool($appName, $userName, $credential){
     Invoke-WaitForWebAppPoolToChangeState -name $appPool.Name -state "Started"
 }
 
+function Test-AppPoolExistsAndRunsAsUser([string]$appPoolName, [string]$userName){
+    if(Test-AppPoolExists -appPoolName $appPoolName){
+        $appPool = Get-AppPool -appPoolName $appPoolName
+        return Test-AppPoolRunsAsUser -appPool $appPool -userName $userName
+    }
+    return $false
+}
+
+function Get-AppPool([string]$appPoolName){
+    return Get-Item "IIS:\AppPools\$appPoolName"
+}
+
+function Test-AppPoolExists([string]$appPoolName){
+    return Test-Path "IIS:\AppPools\$appPoolName" -PathType Container
+}
+
+function Test-AppPoolRunsAsUser([Microsoft.IIs.PowerShell.Framework.ConfigurationElement]$appPool, [string]$userName){
+    if($null -ne $appPool -and $null -ne $appPool.processModel){
+        return $userName -ieq $appPool.processModel.userName
+    }
+    return $false;
+}
+
 function New-Site($appName, $portNumber, $appDirectory, $hostHeader){
     cd IIS:\Sites
 
@@ -690,3 +713,4 @@ Export-ModuleMember -Function Read-FabricInstallerSecret
 Export-ModuleMember -Function Get-ErrorFromResponse
 Export-ModuleMember -Function Invoke-ResetFabricInstallerSecret
 Export-ModuleMember -Function Add-DiscoveryRegistration
+Export-ModuleMember -Function Test-AppPoolExistsAndRunsAsUser

@@ -614,6 +614,7 @@ function Write-Console($message){
 
 function Test-DiscoveryHasBuildVersion($discoveryUrl, $credential) {
     $response = [xml](Invoke-RestMethod -Method Get -Uri "$discoveryUrl/`$metadata" -Credential $credential -ContentType "application/xml")
+    
     return $response.Edmx.DataServices.Schema.EntityType.Property.Name -contains 'BuildNumber'
 }
 

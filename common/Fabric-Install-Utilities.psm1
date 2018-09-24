@@ -414,10 +414,25 @@ function Get-CurrentScriptDirectory()
     return Split-Path $script:MyInvocation.MyCommand.Path
 }
 
-function Get-InstallationSettings($configSection)
+function Get-InstallationSettings
 {
-    $installationConfig = [xml](Get-Content install.config)
-    $sectionSettings = $installationConfig.installation.settings.scope | where {$_.name -eq $configSection}
+    param(
+        [Parameter(Mandatory=$true)]
+        [string] $configSection,
+        [ValidateScript({
+            if (!(Test-Path $_)) {
+                throw "Path $_ does not exist. Please enter valid path to the install.config."
+            }
+            if (!(Test-Path $_ -PathType Leaf)) {
+                throw "Path $_ is not a file. Please enter a valid path to the install.config."
+            }
+            return $true
+        })]  
+        [string] $installConfigPath = "install.config"
+    )
+
+    $installationConfig = [xml](Get-Content $installConfigPath)
+    $sectionSettings = $installationConfig.installation.settings.scope | Where-Object {$_.name -eq $configSection}
     $installationSettings = @{}
 
     foreach($variable in $sectionSettings.variable){
@@ -426,7 +441,7 @@ function Get-InstallationSettings($configSection)
         }
     }
 
-    $commonSettings = $installationConfig.installation.settings.scope | where {$_.name -eq "common"}
+    $commonSettings = $installationConfig.installation.settings.scope | Where-Object {$_.name -eq "common"}
     foreach($variable in $commonSettings.variable){
         if($variable.name -and $variable.value -and !$installationSettings.Contains($variable.name)){
             $installationSettings.Add($variable.name, $variable.value)

@@ -469,14 +469,31 @@ function Get-InstallationSettings
     return $installationSettingsDecrypted
 }
 
-function Add-InstallationSetting($configSection, $configSetting, $configValue)
+function Add-InstallationSetting
 {
-    $currentDirectory = Get-CurrentScriptDirectory
-    $configFile = "install.config"
-    $installationConfig = [xml](Get-Content "$currentDirectory\$configFile")
-    $sectionSettings = $installationConfig.installation.settings.scope | where {$_.name -eq $configSection}
-    $existingSetting = $sectionSettings.variable | where {$_.name -eq $configSetting}
-    if($existingSetting -eq $null){
+    param(
+        [Parameter(Mandatory=$true)]
+        [string] $configSection,
+        [Parameter(Mandatory=$true)]
+        [string] $configSetting,
+        [Parameter(Mandatory=$true)]
+        [string] $configValue,
+        [ValidateScript({
+            if (!(Test-Path $_)) {
+                throw "Path $_ does not exist. Please enter valid path to the install.config."
+            }
+            if (!(Test-Path $_ -PathType Leaf)) {
+                throw "Path $_ is not a file. Please enter a valid path to the install.config."
+            }
+            return $true
+        })]  
+        [string] $installConfigPath = "$(Get-CurrentScriptDirectory)\install.config"
+    )
+
+    $installationConfig = [xml](Get-Content $installConfigPath)
+    $sectionSettings = $installationConfig.installation.settings.scope | Where-Object {$_.name -eq $configSection}
+    $existingSetting = $sectionSettings.variable | Where-Object {$_.name -eq $configSetting}
+    if($null -eq $existingSetting){
         $setting = $installationConfig.CreateElement("variable")
         
         $nameAttribute = $installationConfig.CreateAttribute("name")
@@ -491,13 +508,34 @@ function Add-InstallationSetting($configSection, $configSetting, $configValue)
     }else{
         $existingSetting.value = $configValue
     }
-    $installationConfig.Save("$currentDirectory\$configFile")
+    $installationConfig.Save("$installConfigPath")
 }
 
-function Add-SecureInstallationSetting($configSection, $configSetting, $configValue, $encryptionCertificate)
+function Add-SecureInstallationSetting
 {
+    param(
+        [Parameter(Mandatory=$true)]
+        [string] $configSection,
+        [Parameter(Mandatory=$true)]
+        [string] $configSetting,
+        [Parameter(Mandatory=$true)]
+        [string] $configValue,
+        [Parameter(Mandatory=$true)]
+        $encryptionCertificate,
+        [ValidateScript({
+            if (!(Test-Path $_)) {
+                throw "Path $_ does not exist. Please enter valid path to the install.config."
+            }
+            if (!(Test-Path $_ -PathType Leaf)) {
+                throw "Path $_ is not a file. Please enter a valid path to the install.config."
+            }
+            return $true
+        })]  
+        [string] $installConfigPath = "$(Get-CurrentScriptDirectory)\install.config"
+    )
+
     $encryptedConfigValue = Get-EncryptedString $encryptionCertificate $configValue
-    Add-InstallationSetting $configSection $configSetting $encryptedConfigValue
+    Add-InstallationSetting $configSection $configSetting $encryptedConfigValue $installConfigPath
 }
 
 function Get-EncryptionCertificate($encryptionCertificateThumbprint)

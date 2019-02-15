@@ -88,12 +88,12 @@ function New-AppPool($appName, $userName, $credential){
     if(!(Test-Path $appName -PathType Container))
     {
         Write-Console "AppPool $appName does not exist...creating."
-        $successful = $FALSE
+        $successful = $false
         $failCount = 0
         while (!$successful) {
             try {
                 $appPool = New-WebAppPool $appName -ErrorAction Stop
-                $successful = $TRUE
+                $successful = $true
             }
             catch {
                 $failCount = $failCount + 1
@@ -101,7 +101,7 @@ function New-AppPool($appName, $userName, $credential){
                     throw
                 }
 
-                Write-Host "Retry #$failCount"
+                Write-Host "Failed to create app pool $appName $failCount times, retrying..."
             }
         }
         

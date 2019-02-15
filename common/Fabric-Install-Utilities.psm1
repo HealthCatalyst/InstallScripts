@@ -84,11 +84,27 @@ function New-AppRoot($appDirectory, $iisUser){
 }
 
 function New-AppPool($appName, $userName, $credential){
-    Set-Location IIS:\AppPools
+    Set-Location "IIS:\AppPools"
     if(!(Test-Path $appName -PathType Container))
     {
         Write-Console "AppPool $appName does not exist...creating."
-        $appPool = New-WebAppPool $appName
+        $successful = $FALSE
+        $failCount = 0
+        while (!$successful) {
+            try {
+                $appPool = New-WebAppPool $appName -ErrorAction Stop
+                $successful = $TRUE
+            }
+            catch {
+                $failCount = $failCount + 1
+                if ($failCount -gt 3) {
+                    throw
+                }
+
+                Write-Host "Retry #$failCount"
+            }
+        }
+        
         $appPool | Set-ItemProperty -Name "managedRuntimeVersion" -Value ""
         
     }else{

@@ -323,18 +323,6 @@ function Get-CouchDbRemoteInstallationStatus($couchDbServer, $minVersion)
     return "NotInstalled"
 }
 
-function Get-AccessToken($authUrl, $clientId, $scope, $secret)
-{
-    $url = "$authUrl/connect/token"
-    $body = @{
-        client_id = "$clientId"
-        grant_type = "client_credentials"
-        scope = "$scope"
-        client_secret = "$secret"
-    }
-    $accessTokenResponse = Invoke-RestMethod -Method Post -Uri $url -Body $body
-    return $accessTokenResponse.access_token
-}
 
 function Add-ApiRegistration($authUrl, $body, $accessToken)
 {
@@ -841,7 +829,6 @@ Export-ModuleMember -function Get-EncryptedString
 Export-ModuleMember -function Test-Prerequisite
 Export-ModuleMember -function Test-PrerequisiteExact
 Export-ModuleMember -function Get-CouchDbRemoteInstallationStatus
-Export-ModuleMember -function Get-AccessToken
 Export-ModuleMember -function Add-ApiRegistration
 Export-ModuleMember -function Add-ClientRegistration
 Export-ModuleMember -function Get-CurrentScriptDirectory

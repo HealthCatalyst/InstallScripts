@@ -332,8 +332,15 @@ function Get-AccessToken($authUrl, $clientId, $scope, $secret)
         scope = "$scope"
         client_secret = "$secret"
     }
-    $accessTokenResponse = Invoke-RestMethod -Method Post -Uri $url -Body $body
-    return $accessTokenResponse.access_token
+    try{
+    	$accessTokenResponse = Invoke-RestMethod -Method Post -Uri $url -Body $body
+    	return $accessTokenResponse.access_token
+    }catch{
+    	$exception = $_.Exception
+	    $error = Get-ErrorFromResponse -response $exception.Response
+	    Write-Error "There was an error getting the access token at $url : $error. Halting installation."
+	    throw $exception
+    }
 }
 
 function Add-ApiRegistration($authUrl, $body, $accessToken)

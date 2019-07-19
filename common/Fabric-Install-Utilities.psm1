@@ -517,20 +517,27 @@ function Add-InstallationSetting
     $sectionSettings = $installationConfig.installation.settings.scope | Where-Object {$_.name -eq $configSection}
     $existingSetting = $sectionSettings.variable | Where-Object {$_.name -eq $configSetting}
     if($null -eq $existingSetting){
-        $setting = $installationConfig.CreateElement("variable")
-        
-        $nameAttribute = $installationConfig.CreateAttribute("name")
-        $nameAttribute.Value = $configSetting
-        $setting.Attributes.Append($nameAttribute)
+       $setting = $installationConfig.CreateElement("variable")
 
-        $valueAttribute = $installationConfig.CreateAttribute("value")
-        $valueAttribute.Value = $configValue
-        $setting.Attributes.Append($valueAttribute)
+       $nameAttribute = $installationConfig.CreateAttribute("name")
+       $nameAttribute.Value = $configSetting
+       $setting.Attributes.Append($nameAttribute)
 
-        $sectionSettings.AppendChild($setting)
-    }else{
+       $valueAttribute = $installationConfig.CreateAttribute("value")
+       $valueAttribute.Value = $configValue
+       $setting.Attributes.Append($valueAttribute)
+
+       $sectionSettings.AppendChild($setting)
+    }elseif($existingSetting -is [System.Array]){
+       if($existingSetting.Count -ne 1){
+           Write-Output "More than one setting $configSetting found in scope $configSection, only updating the first value"
+       }
+       $existingSetting[0].value = $configValue
+    }
+    else{
         $existingSetting.value = $configValue
     }
+
     $installationConfig.Save("$installConfigPath")
 }
 

@@ -580,13 +580,21 @@ function Get-Certificate($certificateThumbprint)
 }
 
 function Get-DecryptedString($encryptionCertificate, $encryptedString){
-    if($encryptedString.StartsWith("!!enc!!:")){
+    if ($encryptedString.StartsWith("!!enc!!:")) {
         $cleanedEncryptedString = $encryptedString.Replace("!!enc!!:","")
-        $clearTextValue = [System.Text.Encoding]::UTF8.GetString($encryptionCertificate.PrivateKey.Decrypt([System.Convert]::FromBase64String($cleanedEncryptedString), $true))
-        return $clearTextValue
-    }else{
+    } else{
         return $encryptedString
     }
+
+    if ($null -eq $encryptionCertificate.PrivateKey) {
+        $privateKey = [System.Security.Cryptography.X509Certificates.RSACertificateExtensions]::GetRSAPrivateKey($encryptionCertificate)
+        $clearTextValue = [System.Text.Encoding]::UTF8.GetString($privateKey.Decrypt([System.Convert]::FromBase64String($cleanedEncryptedString), [System.Security.Cryptography.RSAEncryptionPadding]::OaepSHA1))
+    }
+    else {
+        $clearTextValue = [System.Text.Encoding]::UTF8.GetString($encryptionCertificate.PrivateKey.Decrypt([System.Convert]::FromBase64String($cleanedEncryptedString), $true))
+    }
+
+    return $clearTextValue
 }
 
 function Get-CertsFromLocation($certLocation){

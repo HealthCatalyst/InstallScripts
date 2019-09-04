@@ -587,11 +587,35 @@ function Get-DecryptedString($encryptionCertificate, $encryptedString){
     }
 
     if ($null -eq $encryptionCertificate.PrivateKey) {
-        $privateKey = [System.Security.Cryptography.X509Certificates.RSACertificateExtensions]::GetRSAPrivateKey($encryptionCertificate)
-        $clearTextValue = [System.Text.Encoding]::UTF8.GetString($privateKey.Decrypt([System.Convert]::FromBase64String($cleanedEncryptedString), [System.Security.Cryptography.RSAEncryptionPadding]::OaepSHA1))
+        Write-Host "CNG certificate detected."
+        try {
+            $privateKey = [System.Security.Cryptography.X509Certificates.RSACertificateExtensions]::GetRSAPrivateKey($encryptionCertificate)
+        }
+        catch {
+            $exception = $_.Exception
+            Write-Host "Could not get private key for the provided certificate. Certificate thumbprint: $($encryptionCertificate.Thumbprint)"
+            throw $exception
+        }
+
+        try {
+            $clearTextValue = [System.Text.Encoding]::UTF8.GetString($privateKey.Decrypt([System.Convert]::FromBase64String($cleanedEncryptedString), [System.Security.Cryptography.RSAEncryptionPadding]::OaepSHA1))
+        }
+        catch {
+            $exception = $_.Exception
+            Write-Host "Could not decrypt value using the provided certificate, the value may have been encrypted with a different certificate. Certificate thumbprint: $($encryptionCertificate.Thumbprint)"
+            throw $exception
+        }
     }
     else {
-        $clearTextValue = [System.Text.Encoding]::UTF8.GetString($encryptionCertificate.PrivateKey.Decrypt([System.Convert]::FromBase64String($cleanedEncryptedString), $true))
+        Write-Host "CSP certificate detected."
+        try {
+            $clearTextValue = [System.Text.Encoding]::UTF8.GetString($encryptionCertificate.PrivateKey.Decrypt([System.Convert]::FromBase64String($cleanedEncryptedString), $true))
+        }
+        catch {
+            $exception = $_.Exception
+            Write-Host "Could not decrypt value using the provided certificate, the value may have been encrypted with a different certificate. Certificate thumbprint: $($encryptionCertificate.Thumbprint)"
+            throw $exception
+        }
     }
 
     return $clearTextValue
